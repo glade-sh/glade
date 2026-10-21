@@ -1,0 +1,5 @@
+captured_utc=2026-10-19T03:00:04.492263+00:00
+api=68.0
+route=isTest
+source_sha256:N_C_NULL/class-Ln68NNCNullT=888b6783b9b2753d08e3ca125628f9c069776c08b7a3ebcf7aeacd10887bf82a
+source_sha256:N_C_MIXED/class-Ln68NNCMixedT=dacce35d5f4e4c429d6743f4990dadad41c19ba8d8ea274e68049fff63965d11

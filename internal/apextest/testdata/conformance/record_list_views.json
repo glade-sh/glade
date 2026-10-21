@@ -1,0 +1,1607 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 21,
+  "nativeObservationCount": 126,
+  "provenance": "Salesforce Developer scratch org observations; anonymous and named test routes. API 62 uses the replacement split-assertion observations. Only helper and observer names and transport are normalized. The native sanitizer masks the two assertion payload keys and retains their first value; the observer applies the same key normalization.",
+  "rows": [
+    {
+      "id": "D01B",
+      "routes": {
+        "anonymous": {
+          "id": "D01B",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<Lead>();payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D01B|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D01B",
+          "stage": "observed",
+          "classes": {
+            "RecordListD01BProbe": "@IsTest private class RecordListD01BProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<Lead>();payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D01B|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD01BProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D01I",
+      "routes": {
+        "anonymous": {
+          "id": "D01I",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<Lead>();payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D01I|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D01I",
+          "stage": "observed",
+          "classes": {
+            "RecordListD01IProbe": "@IsTest private class RecordListD01IProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<Lead>();payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D01I|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD01IProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D01N",
+      "routes": {
+        "anonymous": {
+          "id": "D01N",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<Lead>();payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D01N|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D01N",
+          "stage": "observed",
+          "classes": {
+            "RecordListD01NProbe": "@IsTest private class RecordListD01NProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<Lead>();payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D01N|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            }
+          },
+          "tests": [
+            "RecordListD01NProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D02B",
+      "routes": {
+        "anonymous": {
+          "id": "D02B",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Type listType=List<Lead>.class;List<SObject> values=(List<SObject>)listType.newInstance();payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D02B|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D02B",
+          "stage": "observed",
+          "classes": {
+            "RecordListD02BProbe": "@IsTest private class RecordListD02BProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Type listType=List<Lead>.class;List<SObject> values=(List<SObject>)listType.newInstance();payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D02B|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD02BProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D02I",
+      "routes": {
+        "anonymous": {
+          "id": "D02I",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Type listType=List<Lead>.class;List<SObject> values=(List<SObject>)listType.newInstance();payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D02I|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D02I",
+          "stage": "observed",
+          "classes": {
+            "RecordListD02IProbe": "@IsTest private class RecordListD02IProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Type listType=List<Lead>.class;List<SObject> values=(List<SObject>)listType.newInstance();payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D02I|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD02IProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D02N",
+      "routes": {
+        "anonymous": {
+          "id": "D02N",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Type listType=List<Lead>.class;List<SObject> values=(List<SObject>)listType.newInstance();payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D02N|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D02N",
+          "stage": "observed",
+          "classes": {
+            "RecordListD02NProbe": "@IsTest private class RecordListD02NProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Type listType=List<Lead>.class;List<SObject> values=(List<SObject>)listType.newInstance();payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D02N|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            }
+          },
+          "tests": [
+            "RecordListD02NProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D03B",
+      "routes": {
+        "anonymous": {
+          "id": "D03B",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": true,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": true,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": true,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<SObject>();payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D03B|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D03B",
+          "stage": "observed",
+          "classes": {
+            "RecordListD03BProbe": "@IsTest private class RecordListD03BProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<SObject>();payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D03B|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": true,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": true,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 0,
+                "isNull": false,
+                "caseInstance": true,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD03BProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D03I",
+      "routes": {
+        "anonymous": {
+          "id": "D03I",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<SObject>();payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D03I|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D03I",
+          "stage": "observed",
+          "classes": {
+            "RecordListD03IProbe": "@IsTest private class RecordListD03IProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<SObject>();payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D03I|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD03IProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D03N",
+      "routes": {
+        "anonymous": {
+          "id": "D03N",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<SObject>();payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D03N|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D03N",
+          "stage": "observed",
+          "classes": {
+            "RecordListD03NProbe": "@IsTest private class RecordListD03NProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<SObject>();payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D03N|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            }
+          },
+          "tests": [
+            "RecordListD03NProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D04B",
+      "routes": {
+        "anonymous": {
+          "id": "D04B",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')};payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D04B|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D04B",
+          "stage": "observed",
+          "classes": {
+            "RecordListD04BProbe": "@IsTest private class RecordListD04BProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')};payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D04B|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD04BProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D04I",
+      "routes": {
+        "anonymous": {
+          "id": "D04I",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')};payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D04I|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D04I",
+          "stage": "observed",
+          "classes": {
+            "RecordListD04IProbe": "@IsTest private class RecordListD04IProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')};payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D04I|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD04IProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D04N",
+      "routes": {
+        "anonymous": {
+          "id": "D04N",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')};payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D04N|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D04N",
+          "stage": "observed",
+          "classes": {
+            "RecordListD04NProbe": "@IsTest private class RecordListD04NProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')};payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D04N|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            }
+          },
+          "tests": [
+            "RecordListD04NProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D05B",
+      "routes": {
+        "anonymous": {
+          "id": "D05B",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": null,
+                "isNull": true,
+                "caseInstance": false,
+                "leadInstance": false,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": null,
+                "isNull": true,
+                "caseInstance": false,
+                "leadInstance": false,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": null,
+                "isNull": true,
+                "caseInstance": false,
+                "leadInstance": false,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=null;payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D05B|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D05B",
+          "stage": "observed",
+          "classes": {
+            "RecordListD05BProbe": "@IsTest private class RecordListD05BProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=null;payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D05B|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": null,
+                "isNull": true,
+                "caseInstance": false,
+                "leadInstance": false,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": null,
+                "isNull": true,
+                "caseInstance": false,
+                "leadInstance": false,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": null,
+                "isNull": true,
+                "caseInstance": false,
+                "leadInstance": false,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD05BProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D05I",
+      "routes": {
+        "anonymous": {
+          "id": "D05I",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is not an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is not an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is not an instance of class List<Lead>"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=null;payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D05I|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D05I",
+          "stage": "observed",
+          "classes": {
+            "RecordListD05IProbe": "@IsTest private class RecordListD05IProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=null;payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D05I|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is not an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is not an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is not an instance of class List<Lead>"
+            }
+          },
+          "tests": [
+            "RecordListD05IProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D05N",
+      "routes": {
+        "anonymous": {
+          "id": "D05N",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isNotInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isNotInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isNotInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=null;payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D05N|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D05N",
+          "stage": "observed",
+          "classes": {
+            "RecordListD05NProbe": "@IsTest private class RecordListD05NProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=null;payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D05N|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isNotInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isNotInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isNotInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD05NProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D06B",
+      "routes": {
+        "anonymous": {
+          "id": "D06B",
+          "stage": "observed",
+          "classes": {
+            "RecordListView": "public class RecordListView{public static List<SObject> returned(){return new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')};}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=RecordListView.returned();payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D06B|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D06B",
+          "stage": "observed",
+          "classes": {
+            "RecordListView": "public class RecordListView{public static List<SObject> returned(){return new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')};}}",
+            "RecordListD06BProbe": "@IsTest private class RecordListD06BProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=RecordListView.returned();payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D06B|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": false,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD06BProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D06I",
+      "routes": {
+        "anonymous": {
+          "id": "D06I",
+          "stage": "observed",
+          "classes": {
+            "RecordListView": "public class RecordListView{public static List<SObject> returned(){return new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')};}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=RecordListView.returned();payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D06I|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D06I",
+          "stage": "observed",
+          "classes": {
+            "RecordListView": "public class RecordListView{public static List<SObject> returned(){return new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')};}}",
+            "RecordListD06IProbe": "@IsTest private class RecordListD06IProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=RecordListView.returned();payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D06I|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD06IProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D06N",
+      "routes": {
+        "anonymous": {
+          "id": "D06N",
+          "stage": "observed",
+          "classes": {
+            "RecordListView": "public class RecordListView{public static List<SObject> returned(){return new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')};}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=RecordListView.returned();payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D06N|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D06N",
+          "stage": "observed",
+          "classes": {
+            "RecordListView": "public class RecordListView{public static List<SObject> returned(){return new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')};}}",
+            "RecordListD06NProbe": "@IsTest private class RecordListD06NProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=RecordListView.returned();payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D06N|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            }
+          },
+          "tests": [
+            "RecordListD06NProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D07B",
+      "routes": {
+        "anonymous": {
+          "id": "D07B",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": true,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": true,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": true,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<SObject>();values.addAll(new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')});payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D07B|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D07B",
+          "stage": "observed",
+          "classes": {
+            "RecordListD07BProbe": "@IsTest private class RecordListD07BProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<SObject>();values.addAll(new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')});payload.put('leadInstance',values instanceof List<Lead>);payload.put('caseInstance',values instanceof List<Case>);payload.put('isNull',values==null);payload.put('size',values==null?null:values.size());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D07B|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": true,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": true,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "size": 1,
+                "isNull": false,
+                "caseInstance": true,
+                "leadInstance": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD07BProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D07I",
+      "routes": {
+        "anonymous": {
+          "id": "D07I",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<SObject>();values.addAll(new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')});payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D07I|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D07I",
+          "stage": "observed",
+          "classes": {
+            "RecordListD07IProbe": "@IsTest private class RecordListD07IProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<SObject>();values.addAll(new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')});payload.put('assertionMethod','isInstanceOfType');Assert.isInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D07I|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "[ID]": "isInstanceOfType",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "RecordListD07IProbe"
+          ]
+        }
+      }
+    },
+    {
+      "id": "D07N",
+      "routes": {
+        "anonymous": {
+          "id": "D07N",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<SObject>();values.addAll(new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')});payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D07N|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "D07N",
+          "stage": "observed",
+          "classes": {
+            "RecordListD07NProbe": "@IsTest private class RecordListD07NProbe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> values=new List<SObject>();values.addAll(new List<Lead>{new Lead(LastName='Synthetic',Company='Synthetic')});payload.put('assertionMethod','isNotInstanceOfType');Assert.isNotInstanceOfType(values,List<Lead>.class);payload.put('assertionPassed',true);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|D07N|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "67.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            },
+            "68.0": {
+              "outcome": "assertion-failure",
+              "exceptionType": "System.AssertException",
+              "exceptionMessage": "System.AssertException: Assertion Failed: The provided object is an instance of class List<Lead>"
+            }
+          },
+          "tests": [
+            "RecordListD07NProbe"
+          ]
+        }
+      }
+    }
+  ],
+  "stillPendingCount": 24,
+  "unobservedShapes": [
+    {
+      "id": "D08A",
+      "referenceRow": "D01I",
+      "reason": "The native reference measures a Lead list view. The equivalent Account allocation and assertion needed by the retained compatibility path was not captured; no Account result is inferred.",
+      "measuredApex": "List<SObject> values=new List<Account>();Assert.isInstanceOfType(values,List<Account>.class);",
+      "helpers": {},
+      "routes": [
+        "anonymous",
+        "isTest"
+      ]
+    },
+    {
+      "id": "D08B",
+      "referenceRow": "D02I",
+      "reason": "The native reference measures a Lead list view. The equivalent Account allocation and assertion needed by the retained compatibility path was not captured; no Account result is inferred.",
+      "measuredApex": "Type listType=List<Account>.class;List<SObject> values=(List<SObject>)listType.newInstance();Assert.isInstanceOfType(values,List<Account>.class);",
+      "helpers": {},
+      "routes": [
+        "anonymous",
+        "isTest"
+      ]
+    },
+    {
+      "id": "D08C",
+      "referenceRow": "D04I",
+      "reason": "The native reference measures a Lead list view. The equivalent Account allocation and assertion needed by the retained compatibility path was not captured; no Account result is inferred.",
+      "measuredApex": "List<SObject> values=new List<Account>{new Account(Name='Synthetic')};Assert.isInstanceOfType(values,List<Account>.class);",
+      "helpers": {},
+      "routes": [
+        "anonymous",
+        "isTest"
+      ]
+    },
+    {
+      "id": "D08D",
+      "referenceRow": "D06I",
+      "reason": "The native reference measures a Lead list view. The equivalent Account allocation and assertion needed by the retained compatibility path was not captured; no Account result is inferred.",
+      "measuredApex": "List<SObject> values=AccountListView.returned();Assert.isInstanceOfType(values,List<Account>.class);",
+      "helpers": {
+        "AccountListView": "public class AccountListView{public static List<SObject> returned(){return new List<Account>{new Account(Name='Synthetic')};}}"
+      },
+      "routes": [
+        "anonymous",
+        "isTest"
+      ]
+    }
+  ]
+}

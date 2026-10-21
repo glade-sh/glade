@@ -1,0 +1,2107 @@
+{
+  "carries": [
+    {
+      "api": "62.0",
+      "capture": "native-capture",
+      "context": "anonymous",
+      "id": "direct-anonymous-api62",
+      "outcome": "compile-rejected-before-history-dml",
+      "rawNativeMessage": "Compilation failed at Line 2 column 27 with the error:\n\nField does not exist: Revision__c on TrackedParcel__c",
+      "reason": "The anonymous source could not compile its custom parent field, so this capture does not answer history DML behavior."
+    },
+    {
+      "api": "64.0",
+      "capture": "native-capture",
+      "context": "anonymous",
+      "id": "direct-anonymous-api64",
+      "outcome": "compile-rejected-before-history-dml",
+      "rawNativeMessage": "Compilation failed at Line 2 column 27 with the error:\n\nField does not exist: Revision__c on TrackedParcel__c",
+      "reason": "The anonymous source could not compile its custom parent field, so this capture does not answer history DML behavior."
+    },
+    {
+      "api": "67.0",
+      "capture": "native-capture",
+      "context": "anonymous",
+      "id": "direct-anonymous-api67",
+      "outcome": "compile-rejected-before-history-dml",
+      "rawNativeMessage": "Compilation failed at Line 2 column 27 with the error:\n\nField does not exist: Revision__c on TrackedParcel__c",
+      "reason": "The anonymous source could not compile its custom parent field, so this capture does not answer history DML behavior."
+    },
+    {
+      "api": "68.0",
+      "capture": "native-capture",
+      "context": "anonymous",
+      "id": "direct-anonymous-api68",
+      "outcome": "compile-rejected-before-history-dml",
+      "rawNativeMessage": "Compilation failed at Line 2 column 27 with the error:\n\nField does not exist: Revision__c on TrackedParcel__c",
+      "reason": "The anonymous source could not compile its custom parent field, so this capture does not answer history DML behavior."
+    },
+    {
+      "api": "67.0",
+      "capture": "native-capture",
+      "context": "istest",
+      "id": "direct-test-api67",
+      "outcome": "parent-field-access-failed-before-history-dml",
+      "rawNativeMessage": "System.DmlException: Operation failed due to fields being inaccessible on Sobject TrackedParcel__c, check errors on Exception or Result!",
+      "reason": "The parent insert failed on field access before the history-row operation; do not treat this as a history-DML result."
+    },
+    {
+      "api": "68.0",
+      "capture": "native-capture",
+      "context": "istest",
+      "id": "direct-test-api68",
+      "outcome": "parent-field-access-failed-before-history-dml",
+      "rawNativeMessage": "System.DmlException: Operation failed due to fields being inaccessible on Sobject TrackedParcel__c, check errors on Exception or Result!",
+      "reason": "The parent insert failed on field access before the history-row operation; do not treat this as a history-DML result."
+    }
+  ],
+  "compileRejections": [
+    {
+      "api": "62.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryLifecycleObserved62"
+      ],
+      "expectedErrors": [
+        "DML operation Update not allowed on TrackedParcel__History",
+        "DML operation Delete not allowed on TrackedParcel__History"
+      ],
+      "id": "typed-lifecycle-api62",
+      "projectManifest": "lifecycle"
+    },
+    {
+      "api": "64.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryLifecycleObserved64"
+      ],
+      "expectedErrors": [
+        "DML operation Update not allowed on TrackedParcel__History",
+        "DML operation Delete not allowed on TrackedParcel__History"
+      ],
+      "id": "typed-lifecycle-api64",
+      "projectManifest": "lifecycle"
+    },
+    {
+      "api": "67.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryLifecycleObserved67"
+      ],
+      "expectedErrors": [
+        "DML operation Update not allowed on TrackedParcel__History",
+        "DML operation Delete not allowed on TrackedParcel__History"
+      ],
+      "id": "typed-lifecycle-api67",
+      "projectManifest": "lifecycle"
+    },
+    {
+      "api": "68.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryLifecycleObserved68"
+      ],
+      "expectedErrors": [
+        "DML operation Update not allowed on TrackedParcel__History",
+        "DML operation Delete not allowed on TrackedParcel__History"
+      ],
+      "id": "typed-lifecycle-api68",
+      "projectManifest": "lifecycle"
+    },
+    {
+      "api": "64.0",
+      "capture": "native-capture",
+      "classes": [
+        "DisabledHistoryProbe"
+      ],
+      "expectedErrors": [
+        "Invalid type: PlainParcel__History"
+      ],
+      "id": "disabled-history-type-api64",
+      "projectManifest": "disabled_type"
+    }
+  ],
+  "nativeOrgSha256": "bdfb37c18f33c38f01c452c3b971391e21af1d88976f04f7f345483198c0a5bd",
+  "normalizedCommands": {
+    "checkOnlyDeploy": "sf project deploy start --target-org <scratch-org> --source-dir force-app --dry-run --wait 15 --json",
+    "deployClasses": "sf project deploy start --target-org <scratch-org> --source-dir force-app/main/default/classes --wait 15 --json",
+    "deployProject": "sf project deploy start --target-org <scratch-org> --source-dir force-app --wait 15 --json",
+    "deploySchema": "sf project deploy start --target-org <scratch-org> --source-dir force-app/main/default/objects --wait 15 --json",
+    "runAnonymous": "sf apex run --target-org <scratch-org> --api-version <api> --file <synthetic-apex> --json",
+    "runTest": "sf apex run test --target-org <scratch-org> --class-names <synthetic-class> --synchronous --result-format json --wait 15 --json"
+  },
+  "projectManifests": {
+    "descriptor": {
+      "captureProject": "project",
+      "content": "{\"sourceApiVersion\": \"68.0\", \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}]}",
+      "sha256": "5f9fb4103004d08d33aecd3d46db3f1cd9969c9537ae5e4543ae4c676904b881"
+    },
+    "direct_dml": {
+      "captureProject": "dml-project",
+      "content": "{\"sourceApiVersion\":\"68.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}",
+      "sha256": "7ff5bda2718249a43a089cbcc31c4a80cf2750e8e2c652d075d9e9283241516a"
+    },
+    "disabled_type": {
+      "captureProject": "negative-project",
+      "content": "{\"sourceApiVersion\":\"64.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}",
+      "sha256": "ffd52a5cc3201bdd6d482b9814410fb0fc0f97e345af13f39365cbc879f62614"
+    },
+    "helper_dml": {
+      "captureProject": "dml-helper-project",
+      "content": "{\"sourceApiVersion\":\"68.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}",
+      "sha256": "7ff5bda2718249a43a089cbcc31c4a80cf2750e8e2c652d075d9e9283241516a"
+    },
+    "lifecycle": {
+      "captureProject": "lifecycle-project",
+      "content": "{\"sourceApiVersion\":\"68.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}",
+      "sha256": "7ff5bda2718249a43a089cbcc31c4a80cf2750e8e2c652d075d9e9283241516a"
+    },
+    "required_input": {
+      "captureProject": "required-project",
+      "content": "{\"sourceApiVersion\":\"64.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}",
+      "sha256": "ffd52a5cc3201bdd6d482b9814410fb0fc0f97e345af13f39365cbc879f62614"
+    }
+  },
+  "runtimeCells": [
+    {
+      "anonymousSource": "System.debug('HISTORY_TYPE|'+HistoryTypeOracle62.snapshot());",
+      "api": "62.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryTypeOracle62"
+      ],
+      "context": "anonymous",
+      "expected": {
+        "constructedField": "Revision__c",
+        "createable": false,
+        "deletable": false,
+        "disabledVisible": false,
+        "enabledVisible": true,
+        "fields": {
+          "createdbyid": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [
+              "User"
+            ],
+            "relationshipName": "CreatedBy",
+            "type": "REFERENCE",
+            "updateable": false
+          },
+          "createddate": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "DATETIME",
+            "updateable": false
+          },
+          "datatype": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "field": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "id": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ID",
+            "updateable": false
+          },
+          "isdeleted": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "BOOLEAN",
+            "updateable": false
+          },
+          "newvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "oldvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "parentid": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [
+              "TrackedParcel__c"
+            ],
+            "relationshipName": "Parent",
+            "type": "REFERENCE",
+            "updateable": false
+          }
+        },
+        "label": "History: Audit parcel",
+        "name": "TrackedParcel__History",
+        "pluralLabel": "History: Audit parcel",
+        "queryable": true,
+        "sobjectListSize": 1,
+        "sobjectName": "TrackedParcel__History",
+        "updateable": false
+      },
+      "family": "descriptor",
+      "id": "descriptor-api62-anonymous",
+      "marker": "HISTORY_TYPE|",
+      "projectManifest": "descriptor",
+      "testClass": "",
+      "testMethod": ""
+    },
+    {
+      "anonymousSource": "",
+      "api": "62.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryTypeOracle62",
+        "HistoryTypeObserved62"
+      ],
+      "context": "istest",
+      "expected": {
+        "constructedField": "Revision__c",
+        "createable": false,
+        "deletable": false,
+        "disabledVisible": false,
+        "enabledVisible": true,
+        "fields": {
+          "createdbyid": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [
+              "User"
+            ],
+            "relationshipName": "CreatedBy",
+            "type": "REFERENCE",
+            "updateable": false
+          },
+          "createddate": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "DATETIME",
+            "updateable": false
+          },
+          "datatype": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "field": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "id": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ID",
+            "updateable": false
+          },
+          "isdeleted": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "BOOLEAN",
+            "updateable": false
+          },
+          "newvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "oldvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "parentid": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [
+              "TrackedParcel__c"
+            ],
+            "relationshipName": "Parent",
+            "type": "REFERENCE",
+            "updateable": false
+          }
+        },
+        "label": "History: Audit parcel",
+        "name": "TrackedParcel__History",
+        "pluralLabel": "History: Audit parcel",
+        "queryable": true,
+        "sobjectListSize": 1,
+        "sobjectName": "TrackedParcel__History",
+        "updateable": false
+      },
+      "family": "descriptor",
+      "id": "descriptor-api62-istest",
+      "marker": "HISTORY_TYPE|",
+      "projectManifest": "descriptor",
+      "testClass": "HistoryTypeObserved62",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "System.debug('HISTORY_TYPE|'+HistoryTypeOracle64.snapshot());",
+      "api": "64.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryTypeOracle64"
+      ],
+      "context": "anonymous",
+      "expected": {
+        "constructedField": "Revision__c",
+        "createable": false,
+        "deletable": false,
+        "disabledVisible": false,
+        "enabledVisible": true,
+        "fields": {
+          "createdbyid": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [
+              "User"
+            ],
+            "relationshipName": "CreatedBy",
+            "type": "REFERENCE",
+            "updateable": false
+          },
+          "createddate": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "DATETIME",
+            "updateable": false
+          },
+          "datatype": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "field": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "id": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ID",
+            "updateable": false
+          },
+          "isdeleted": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "BOOLEAN",
+            "updateable": false
+          },
+          "newvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "oldvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "parentid": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [
+              "TrackedParcel__c"
+            ],
+            "relationshipName": "Parent",
+            "type": "REFERENCE",
+            "updateable": false
+          }
+        },
+        "label": "History: Audit parcel",
+        "name": "TrackedParcel__History",
+        "pluralLabel": "History: Audit parcel",
+        "queryable": true,
+        "sobjectListSize": 1,
+        "sobjectName": "TrackedParcel__History",
+        "updateable": false
+      },
+      "family": "descriptor",
+      "id": "descriptor-api64-anonymous",
+      "marker": "HISTORY_TYPE|",
+      "projectManifest": "descriptor",
+      "testClass": "",
+      "testMethod": ""
+    },
+    {
+      "anonymousSource": "",
+      "api": "64.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryTypeOracle64",
+        "HistoryTypeObserved64"
+      ],
+      "context": "istest",
+      "expected": {
+        "constructedField": "Revision__c",
+        "createable": false,
+        "deletable": false,
+        "disabledVisible": false,
+        "enabledVisible": true,
+        "fields": {
+          "createdbyid": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [
+              "User"
+            ],
+            "relationshipName": "CreatedBy",
+            "type": "REFERENCE",
+            "updateable": false
+          },
+          "createddate": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "DATETIME",
+            "updateable": false
+          },
+          "datatype": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "field": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "id": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ID",
+            "updateable": false
+          },
+          "isdeleted": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "BOOLEAN",
+            "updateable": false
+          },
+          "newvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "oldvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "parentid": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [
+              "TrackedParcel__c"
+            ],
+            "relationshipName": "Parent",
+            "type": "REFERENCE",
+            "updateable": false
+          }
+        },
+        "label": "History: Audit parcel",
+        "name": "TrackedParcel__History",
+        "pluralLabel": "History: Audit parcel",
+        "queryable": true,
+        "sobjectListSize": 1,
+        "sobjectName": "TrackedParcel__History",
+        "updateable": false
+      },
+      "family": "descriptor",
+      "id": "descriptor-api64-istest",
+      "marker": "HISTORY_TYPE|",
+      "projectManifest": "descriptor",
+      "testClass": "HistoryTypeObserved64",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "System.debug('HISTORY_TYPE|'+HistoryTypeOracle67.snapshot());",
+      "api": "67.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryTypeOracle67"
+      ],
+      "context": "anonymous",
+      "expected": {
+        "constructedField": "Revision__c",
+        "createable": false,
+        "deletable": false,
+        "disabledVisible": false,
+        "enabledVisible": true,
+        "fields": {
+          "createdbyid": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [
+              "User"
+            ],
+            "relationshipName": "CreatedBy",
+            "type": "REFERENCE",
+            "updateable": false
+          },
+          "createddate": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "DATETIME",
+            "updateable": false
+          },
+          "datatype": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "field": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "id": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ID",
+            "updateable": false
+          },
+          "isdeleted": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "BOOLEAN",
+            "updateable": false
+          },
+          "newvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "oldvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "parentid": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [
+              "TrackedParcel__c"
+            ],
+            "relationshipName": "Parent",
+            "type": "REFERENCE",
+            "updateable": false
+          }
+        },
+        "label": "History: Audit parcel",
+        "name": "TrackedParcel__History",
+        "pluralLabel": "History: Audit parcel",
+        "queryable": true,
+        "sobjectListSize": 1,
+        "sobjectName": "TrackedParcel__History",
+        "updateable": false
+      },
+      "family": "descriptor",
+      "id": "descriptor-api67-anonymous",
+      "marker": "HISTORY_TYPE|",
+      "projectManifest": "descriptor",
+      "testClass": "",
+      "testMethod": ""
+    },
+    {
+      "anonymousSource": "",
+      "api": "67.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryTypeOracle67",
+        "HistoryTypeObserved67"
+      ],
+      "context": "istest",
+      "expected": {
+        "constructedField": "Revision__c",
+        "createable": false,
+        "deletable": false,
+        "disabledVisible": false,
+        "enabledVisible": true,
+        "fields": {
+          "createdbyid": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [
+              "User"
+            ],
+            "relationshipName": "CreatedBy",
+            "type": "REFERENCE",
+            "updateable": false
+          },
+          "createddate": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "DATETIME",
+            "updateable": false
+          },
+          "datatype": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "field": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "id": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ID",
+            "updateable": false
+          },
+          "isdeleted": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "BOOLEAN",
+            "updateable": false
+          },
+          "newvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "oldvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "parentid": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [
+              "TrackedParcel__c"
+            ],
+            "relationshipName": "Parent",
+            "type": "REFERENCE",
+            "updateable": false
+          }
+        },
+        "label": "History: Audit parcel",
+        "name": "TrackedParcel__History",
+        "pluralLabel": "History: Audit parcel",
+        "queryable": true,
+        "sobjectListSize": 1,
+        "sobjectName": "TrackedParcel__History",
+        "updateable": false
+      },
+      "family": "descriptor",
+      "id": "descriptor-api67-istest",
+      "marker": "HISTORY_TYPE|",
+      "projectManifest": "descriptor",
+      "testClass": "HistoryTypeObserved67",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "System.debug('HISTORY_TYPE|'+HistoryTypeOracle68.snapshot());",
+      "api": "68.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryTypeOracle68"
+      ],
+      "context": "anonymous",
+      "expected": {
+        "constructedField": "Revision__c",
+        "createable": false,
+        "deletable": false,
+        "disabledVisible": false,
+        "enabledVisible": true,
+        "fields": {
+          "createdbyid": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [
+              "User"
+            ],
+            "relationshipName": "CreatedBy",
+            "type": "REFERENCE",
+            "updateable": false
+          },
+          "createddate": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "DATETIME",
+            "updateable": false
+          },
+          "datatype": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "field": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "id": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ID",
+            "updateable": false
+          },
+          "isdeleted": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "BOOLEAN",
+            "updateable": false
+          },
+          "newvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "oldvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "parentid": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [
+              "TrackedParcel__c"
+            ],
+            "relationshipName": "Parent",
+            "type": "REFERENCE",
+            "updateable": false
+          }
+        },
+        "label": "History: Audit parcel",
+        "name": "TrackedParcel__History",
+        "pluralLabel": "History: Audit parcel",
+        "queryable": true,
+        "sobjectListSize": 1,
+        "sobjectName": "TrackedParcel__History",
+        "updateable": false
+      },
+      "family": "descriptor",
+      "id": "descriptor-api68-anonymous",
+      "marker": "HISTORY_TYPE|",
+      "projectManifest": "descriptor",
+      "testClass": "",
+      "testMethod": ""
+    },
+    {
+      "anonymousSource": "",
+      "api": "68.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryTypeOracle68",
+        "HistoryTypeObserved68"
+      ],
+      "context": "istest",
+      "expected": {
+        "constructedField": "Revision__c",
+        "createable": false,
+        "deletable": false,
+        "disabledVisible": false,
+        "enabledVisible": true,
+        "fields": {
+          "createdbyid": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [
+              "User"
+            ],
+            "relationshipName": "CreatedBy",
+            "type": "REFERENCE",
+            "updateable": false
+          },
+          "createddate": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "DATETIME",
+            "updateable": false
+          },
+          "datatype": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "field": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "PICKLIST",
+            "updateable": false
+          },
+          "id": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ID",
+            "updateable": false
+          },
+          "isdeleted": {
+            "createable": false,
+            "defaultedOnCreate": true,
+            "nillable": false,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "BOOLEAN",
+            "updateable": false
+          },
+          "newvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "oldvalue": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": true,
+            "referenceTo": [],
+            "relationshipName": null,
+            "type": "ANYTYPE",
+            "updateable": false
+          },
+          "parentid": {
+            "createable": false,
+            "defaultedOnCreate": false,
+            "nillable": false,
+            "referenceTo": [
+              "TrackedParcel__c"
+            ],
+            "relationshipName": "Parent",
+            "type": "REFERENCE",
+            "updateable": false
+          }
+        },
+        "label": "History: Audit parcel",
+        "name": "TrackedParcel__History",
+        "pluralLabel": "History: Audit parcel",
+        "queryable": true,
+        "sobjectListSize": 1,
+        "sobjectName": "TrackedParcel__History",
+        "updateable": false
+      },
+      "family": "descriptor",
+      "id": "descriptor-api68-istest",
+      "marker": "HISTORY_TYPE|",
+      "projectManifest": "descriptor",
+      "testClass": "HistoryTypeObserved68",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "System.debug('HISTORY_INSERT|'+HistoryInsertOracle62.snapshot());",
+      "api": "62.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle62"
+      ],
+      "context": "anonymous",
+      "expected": {
+        "errorMessage": "DML operation INSERT not allowed on TrackedParcel__History",
+        "errorType": "System.TypeException",
+        "insertAccepted": false
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api62-anonymous",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "",
+      "testMethod": ""
+    },
+    {
+      "anonymousSource": "",
+      "api": "62.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle62",
+        "HistoryInsertHelperObserved62"
+      ],
+      "context": "istest",
+      "expected": {
+        "insertAccepted": true,
+        "parentMatches": true,
+        "queriedRows": 1,
+        "storedField": "Revision__c"
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api62-istest",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "HistoryInsertHelperObserved62",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "System.debug('HISTORY_INSERT|'+HistoryInsertOracle63.snapshot());",
+      "api": "63.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle63"
+      ],
+      "context": "anonymous",
+      "expected": {
+        "errorMessage": "DML operation INSERT not allowed on TrackedParcel__History",
+        "errorType": "System.TypeException",
+        "insertAccepted": false
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api63-anonymous",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "",
+      "testMethod": ""
+    },
+    {
+      "anonymousSource": "",
+      "api": "63.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle63",
+        "HistoryInsertHelperObserved63"
+      ],
+      "context": "istest",
+      "expected": {
+        "insertAccepted": true,
+        "parentMatches": true,
+        "queriedRows": 1,
+        "storedField": "Revision__c"
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api63-istest",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "HistoryInsertHelperObserved63",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "System.debug('HISTORY_INSERT|'+HistoryInsertOracle64.snapshot());",
+      "api": "64.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle64"
+      ],
+      "context": "anonymous",
+      "expected": {
+        "errorMessage": "DML operation INSERT not allowed on TrackedParcel__History",
+        "errorType": "System.TypeException",
+        "insertAccepted": false
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api64-anonymous",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "",
+      "testMethod": ""
+    },
+    {
+      "anonymousSource": "",
+      "api": "64.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle64",
+        "HistoryInsertHelperObserved64"
+      ],
+      "context": "istest",
+      "expected": {
+        "insertAccepted": true,
+        "parentMatches": true,
+        "queriedRows": 1,
+        "storedField": "Revision__c"
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api64-istest",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "HistoryInsertHelperObserved64",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "System.debug('HISTORY_INSERT|'+HistoryInsertOracle65.snapshot());",
+      "api": "65.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle65"
+      ],
+      "context": "anonymous",
+      "expected": {
+        "errorMessage": "DML operation INSERT not allowed on TrackedParcel__History",
+        "errorType": "System.TypeException",
+        "insertAccepted": false
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api65-anonymous",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "",
+      "testMethod": ""
+    },
+    {
+      "anonymousSource": "",
+      "api": "65.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle65",
+        "HistoryInsertHelperObserved65"
+      ],
+      "context": "istest",
+      "expected": {
+        "insertAccepted": true,
+        "parentMatches": true,
+        "queriedRows": 1,
+        "storedField": "Revision__c"
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api65-istest",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "HistoryInsertHelperObserved65",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "System.debug('HISTORY_INSERT|'+HistoryInsertOracle66.snapshot());",
+      "api": "66.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle66"
+      ],
+      "context": "anonymous",
+      "expected": {
+        "errorMessage": "DML operation INSERT not allowed on TrackedParcel__History",
+        "errorType": "System.TypeException",
+        "insertAccepted": false
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api66-anonymous",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "",
+      "testMethod": ""
+    },
+    {
+      "anonymousSource": "",
+      "api": "66.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle66",
+        "HistoryInsertHelperObserved66"
+      ],
+      "context": "istest",
+      "expected": {
+        "insertAccepted": true,
+        "parentMatches": true,
+        "queriedRows": 1,
+        "storedField": "Revision__c"
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api66-istest",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "HistoryInsertHelperObserved66",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "System.debug('HISTORY_INSERT|'+HistoryInsertOracle67.snapshot());",
+      "api": "67.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle67"
+      ],
+      "context": "anonymous",
+      "expected": {
+        "errorMessage": "DML operation INSERT not allowed on TrackedParcel__History",
+        "errorType": "System.TypeException",
+        "insertAccepted": false
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api67-anonymous",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "",
+      "testMethod": ""
+    },
+    {
+      "anonymousSource": "",
+      "api": "67.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle67",
+        "HistoryInsertHelperObserved67"
+      ],
+      "context": "istest",
+      "expected": {
+        "errorMessage": "DML operation INSERT not allowed on TrackedParcel__History",
+        "errorType": "System.TypeException",
+        "insertAccepted": false
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api67-istest",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "HistoryInsertHelperObserved67",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "System.debug('HISTORY_INSERT|'+HistoryInsertOracle68.snapshot());",
+      "api": "68.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle68"
+      ],
+      "context": "anonymous",
+      "expected": {
+        "errorMessage": "DML operation INSERT not allowed on TrackedParcel__History",
+        "errorType": "System.TypeException",
+        "insertAccepted": false
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api68-anonymous",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "",
+      "testMethod": ""
+    },
+    {
+      "anonymousSource": "",
+      "api": "68.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle68",
+        "HistoryInsertHelperObserved68"
+      ],
+      "context": "istest",
+      "expected": {
+        "errorMessage": "DML operation INSERT not allowed on TrackedParcel__History",
+        "errorType": "System.TypeException",
+        "insertAccepted": false
+      },
+      "family": "system_helper_insert",
+      "id": "system-helper-api68-istest",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "HistoryInsertHelperObserved68",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "",
+      "api": "62.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertObserved62"
+      ],
+      "context": "istest",
+      "expected": {
+        "insertAccepted": true,
+        "parentMatches": true,
+        "queriedRows": 1,
+        "storedField": "Revision__c"
+      },
+      "family": "direct_test_insert",
+      "id": "direct-test-api62",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "direct_dml",
+      "testClass": "HistoryInsertObserved62",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "",
+      "api": "64.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertObserved64"
+      ],
+      "context": "istest",
+      "expected": {
+        "insertAccepted": true,
+        "parentMatches": true,
+        "queriedRows": 1,
+        "storedField": "Revision__c"
+      },
+      "family": "direct_test_insert",
+      "id": "direct-test-api64",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "direct_dml",
+      "testClass": "HistoryInsertObserved64",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "",
+      "api": "67.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle64",
+        "HistoryCrossLower"
+      ],
+      "context": "istest",
+      "expected": {
+        "errorMessage": "DML operation INSERT not allowed on TrackedParcel__History",
+        "errorType": "System.TypeException",
+        "insertAccepted": false
+      },
+      "family": "cross_version_insert",
+      "id": "cross-HistoryCrossLower",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "HistoryCrossLower",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "",
+      "api": "64.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle67",
+        "HistoryCrossHigher"
+      ],
+      "context": "istest",
+      "expected": {
+        "errorMessage": "DML operation INSERT not allowed on TrackedParcel__History",
+        "errorType": "System.TypeException",
+        "insertAccepted": false
+      },
+      "family": "cross_version_insert",
+      "id": "cross-HistoryCrossHigher",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "HistoryCrossHigher",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "",
+      "api": "64.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryInsertOracle64",
+        "HistoryBridgeHigher",
+        "HistoryMiddleObserved"
+      ],
+      "context": "istest",
+      "expected": {
+        "errorMessage": "DML operation INSERT not allowed on TrackedParcel__History",
+        "errorType": "System.TypeException",
+        "insertAccepted": false
+      },
+      "family": "middle_bridge_insert",
+      "id": "middle-bridge-api64",
+      "marker": "HISTORY_INSERT|",
+      "projectManifest": "helper_dml",
+      "testClass": "HistoryMiddleObserved",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "",
+      "api": "62.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryErasedLifecycle62"
+      ],
+      "context": "istest",
+      "expected": {
+        "deleteAccepted": false,
+        "deleteMessage": "DML operation DELETE not allowed on TrackedParcel__History",
+        "deleteType": "System.TypeException",
+        "updateAccepted": false,
+        "updateMessage": "DML operation UPDATE not allowed on TrackedParcel__History",
+        "updateType": "System.TypeException"
+      },
+      "family": "erased_lifecycle",
+      "id": "erased-lifecycle-api62",
+      "marker": "HISTORY_LIFECYCLE|",
+      "projectManifest": "helper_dml",
+      "testClass": "HistoryErasedLifecycle62",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "",
+      "api": "64.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryErasedLifecycle64"
+      ],
+      "context": "istest",
+      "expected": {
+        "deleteAccepted": false,
+        "deleteMessage": "DML operation DELETE not allowed on TrackedParcel__History",
+        "deleteType": "System.TypeException",
+        "updateAccepted": false,
+        "updateMessage": "DML operation UPDATE not allowed on TrackedParcel__History",
+        "updateType": "System.TypeException"
+      },
+      "family": "erased_lifecycle",
+      "id": "erased-lifecycle-api64",
+      "marker": "HISTORY_LIFECYCLE|",
+      "projectManifest": "helper_dml",
+      "testClass": "HistoryErasedLifecycle64",
+      "testMethod": "observed"
+    },
+    {
+      "anonymousSource": "",
+      "api": "64.0",
+      "capture": "native-capture",
+      "classes": [
+        "HistoryRequiredObserved64"
+      ],
+      "context": "istest",
+      "expected": {
+        "case0": {
+          "accepted": false,
+          "code": "INVALID_API_INPUT",
+          "fields": [],
+          "message": "Invalid null value for field: ParentId"
+        },
+        "case1": {
+          "accepted": false,
+          "code": "INVALID_API_INPUT",
+          "fields": [],
+          "message": "Invalid null value for field: Field"
+        }
+      },
+      "family": "required_input_insert",
+      "id": "required-input-api64",
+      "marker": "HISTORY_REQUIRED|",
+      "projectManifest": "required_input",
+      "testClass": "HistoryRequiredObserved64",
+      "testMethod": "observed"
+    }
+  ],
+  "sourceFamily": "custom_history_native",
+  "sourceFiles": [
+    {
+      "className": "",
+      "content": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><enableHistory>false</enableHistory><label>PlainParcel</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>PlainParcels</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "path": "force-app/main/default/objects/PlainParcel__c/PlainParcel__c.object-meta.xml",
+      "role": "schema",
+      "sha256": "368e56eb5e9affe32a920db30fe5e02276685bcbaa897e90b33a5fc580183108"
+    },
+    {
+      "className": "",
+      "content": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Revision__c</fullName><label>Revision</label><length>40</length><trackHistory>false</trackHistory><type>Text</type></CustomField>",
+      "path": "force-app/main/default/objects/PlainParcel__c/fields/Revision__c.field-meta.xml",
+      "role": "schema",
+      "sha256": "9b732a7610adbc7a6f651831b10c76efd283dca58e96a7023ae6481f903c7f98"
+    },
+    {
+      "className": "",
+      "content": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><enableHistory>true</enableHistory><label>Audit parcel</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Audit parcels</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "path": "force-app/main/default/objects/TrackedParcel__c/TrackedParcel__c.object-meta.xml",
+      "role": "schema",
+      "sha256": "c09a47086c2e940941f98258ee7e2c25d4e6ec8e3d505fe978c817d72b551b8c"
+    },
+    {
+      "className": "",
+      "content": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Revision__c</fullName><label>Revision</label><length>40</length><trackHistory>true</trackHistory><type>Text</type></CustomField>",
+      "path": "force-app/main/default/objects/TrackedParcel__c/fields/Revision__c.field-meta.xml",
+      "role": "schema",
+      "sha256": "99d748cc3461f35c87ca5df0b29eab2550bb035e151685f2a721cd61824f2f2a"
+    },
+    {
+      "className": "HistoryTypeOracle62",
+      "content": "public class HistoryTypeOracle62 {\n public static String snapshot(){\n  Map<String,Object> out=new Map<String,Object>();\n  Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();\n  out.put('enabledVisible',allTypes.containsKey('TrackedParcel__History'));\n  out.put('disabledVisible',allTypes.containsKey('PlainParcel__History'));\n  Schema.DescribeSObjectResult obj=TrackedParcel__History.SObjectType.getDescribe();\n  out.put('name',obj.getName());out.put('label',obj.getLabel());out.put('pluralLabel',obj.getLabelPlural());\n  out.put('createable',obj.isCreateable());out.put('updateable',obj.isUpdateable());out.put('deletable',obj.isDeletable());out.put('queryable',obj.isQueryable());\n  Map<String,Object> fields=new Map<String,Object>();\n  for(String name:obj.fields.getMap().keySet()){\n   Schema.DescribeFieldResult field=obj.fields.getMap().get(name).getDescribe();\n   List<String> refs=new List<String>();for(Schema.SObjectType ref:field.getReferenceTo())refs.add(ref.getDescribe().getName());\n   fields.put(name.toLowerCase(),new Map<String,Object>{'type'=>String.valueOf(field.getType()),'createable'=>field.isCreateable(),'updateable'=>field.isUpdateable(),'nillable'=>field.isNillable(),'defaultedOnCreate'=>field.isDefaultedOnCreate(),'relationshipName'=>field.getRelationshipName(),'referenceTo'=>refs});\n  }\n  out.put('fields',fields);\n  TrackedParcel__History item=new TrackedParcel__History(Field='Revision__c',ParentId=null);\n  SObject raw=item;List<SObject> records=new List<TrackedParcel__History>{item};\n  out.put('constructedField',item.Field);out.put('sobjectName',raw.getSObjectType().getDescribe().getName());out.put('sobjectListSize',records.size());\n  return JSON.serialize(out);\n }\n}",
+      "path": "force-app/main/default/classes/HistoryTypeOracle62.cls",
+      "role": "class",
+      "sha256": "75dee6b50db72ba2cfdbc0007831d4cec26baf743c705e29f8f1478c2c642574"
+    },
+    {
+      "className": "HistoryTypeOracle62",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryTypeOracle62.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+    },
+    {
+      "className": "HistoryTypeObserved62",
+      "content": "@IsTest private class HistoryTypeObserved62 { @IsTest static void observed(){System.assert(false,'HISTORY_TYPE|'+HistoryTypeOracle62.snapshot());} }",
+      "path": "force-app/main/default/classes/HistoryTypeObserved62.cls",
+      "role": "class",
+      "sha256": "9a903dc1e2d9e9a09c23535cd3fbc880532ffd7ad8fe300d7416c9372dc8ba5c"
+    },
+    {
+      "className": "HistoryTypeObserved62",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryTypeObserved62.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+    },
+    {
+      "className": "HistoryTypeOracle64",
+      "content": "public class HistoryTypeOracle64 {\n public static String snapshot(){\n  Map<String,Object> out=new Map<String,Object>();\n  Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();\n  out.put('enabledVisible',allTypes.containsKey('TrackedParcel__History'));\n  out.put('disabledVisible',allTypes.containsKey('PlainParcel__History'));\n  Schema.DescribeSObjectResult obj=TrackedParcel__History.SObjectType.getDescribe();\n  out.put('name',obj.getName());out.put('label',obj.getLabel());out.put('pluralLabel',obj.getLabelPlural());\n  out.put('createable',obj.isCreateable());out.put('updateable',obj.isUpdateable());out.put('deletable',obj.isDeletable());out.put('queryable',obj.isQueryable());\n  Map<String,Object> fields=new Map<String,Object>();\n  for(String name:obj.fields.getMap().keySet()){\n   Schema.DescribeFieldResult field=obj.fields.getMap().get(name).getDescribe();\n   List<String> refs=new List<String>();for(Schema.SObjectType ref:field.getReferenceTo())refs.add(ref.getDescribe().getName());\n   fields.put(name.toLowerCase(),new Map<String,Object>{'type'=>String.valueOf(field.getType()),'createable'=>field.isCreateable(),'updateable'=>field.isUpdateable(),'nillable'=>field.isNillable(),'defaultedOnCreate'=>field.isDefaultedOnCreate(),'relationshipName'=>field.getRelationshipName(),'referenceTo'=>refs});\n  }\n  out.put('fields',fields);\n  TrackedParcel__History item=new TrackedParcel__History(Field='Revision__c',ParentId=null);\n  SObject raw=item;List<SObject> records=new List<TrackedParcel__History>{item};\n  out.put('constructedField',item.Field);out.put('sobjectName',raw.getSObjectType().getDescribe().getName());out.put('sobjectListSize',records.size());\n  return JSON.serialize(out);\n }\n}",
+      "path": "force-app/main/default/classes/HistoryTypeOracle64.cls",
+      "role": "class",
+      "sha256": "c9fa5155023a0e94a6c745ad5ade208a7e40c2271f666bd9a609f40fb8b5d836"
+    },
+    {
+      "className": "HistoryTypeOracle64",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryTypeOracle64.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "0d4b02c1da890722f8c5c7a3edffd07ed7e5259fcd250d2f7bfc438f92cb0a3e"
+    },
+    {
+      "className": "HistoryTypeObserved64",
+      "content": "@IsTest private class HistoryTypeObserved64 { @IsTest static void observed(){System.assert(false,'HISTORY_TYPE|'+HistoryTypeOracle64.snapshot());} }",
+      "path": "force-app/main/default/classes/HistoryTypeObserved64.cls",
+      "role": "class",
+      "sha256": "f6d00f9907980e36d031c097f79b79191a05ba9e856313286c26db7c641ed0da"
+    },
+    {
+      "className": "HistoryTypeObserved64",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryTypeObserved64.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "0d4b02c1da890722f8c5c7a3edffd07ed7e5259fcd250d2f7bfc438f92cb0a3e"
+    },
+    {
+      "className": "HistoryTypeOracle67",
+      "content": "public class HistoryTypeOracle67 {\n public static String snapshot(){\n  Map<String,Object> out=new Map<String,Object>();\n  Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();\n  out.put('enabledVisible',allTypes.containsKey('TrackedParcel__History'));\n  out.put('disabledVisible',allTypes.containsKey('PlainParcel__History'));\n  Schema.DescribeSObjectResult obj=TrackedParcel__History.SObjectType.getDescribe();\n  out.put('name',obj.getName());out.put('label',obj.getLabel());out.put('pluralLabel',obj.getLabelPlural());\n  out.put('createable',obj.isCreateable());out.put('updateable',obj.isUpdateable());out.put('deletable',obj.isDeletable());out.put('queryable',obj.isQueryable());\n  Map<String,Object> fields=new Map<String,Object>();\n  for(String name:obj.fields.getMap().keySet()){\n   Schema.DescribeFieldResult field=obj.fields.getMap().get(name).getDescribe();\n   List<String> refs=new List<String>();for(Schema.SObjectType ref:field.getReferenceTo())refs.add(ref.getDescribe().getName());\n   fields.put(name.toLowerCase(),new Map<String,Object>{'type'=>String.valueOf(field.getType()),'createable'=>field.isCreateable(),'updateable'=>field.isUpdateable(),'nillable'=>field.isNillable(),'defaultedOnCreate'=>field.isDefaultedOnCreate(),'relationshipName'=>field.getRelationshipName(),'referenceTo'=>refs});\n  }\n  out.put('fields',fields);\n  TrackedParcel__History item=new TrackedParcel__History(Field='Revision__c',ParentId=null);\n  SObject raw=item;List<SObject> records=new List<TrackedParcel__History>{item};\n  out.put('constructedField',item.Field);out.put('sobjectName',raw.getSObjectType().getDescribe().getName());out.put('sobjectListSize',records.size());\n  return JSON.serialize(out);\n }\n}",
+      "path": "force-app/main/default/classes/HistoryTypeOracle67.cls",
+      "role": "class",
+      "sha256": "2f5f39b46ce18371c0470db5e5aa505a46420437b1e6d59d83a40fb3023a5870"
+    },
+    {
+      "className": "HistoryTypeOracle67",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryTypeOracle67.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+    },
+    {
+      "className": "HistoryTypeObserved67",
+      "content": "@IsTest private class HistoryTypeObserved67 { @IsTest static void observed(){System.assert(false,'HISTORY_TYPE|'+HistoryTypeOracle67.snapshot());} }",
+      "path": "force-app/main/default/classes/HistoryTypeObserved67.cls",
+      "role": "class",
+      "sha256": "ea299512ac2db64ac02240ab474cf87f7654706463a1b3228da7224a2bae1eed"
+    },
+    {
+      "className": "HistoryTypeObserved67",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryTypeObserved67.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+    },
+    {
+      "className": "HistoryTypeOracle68",
+      "content": "public class HistoryTypeOracle68 {\n public static String snapshot(){\n  Map<String,Object> out=new Map<String,Object>();\n  Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();\n  out.put('enabledVisible',allTypes.containsKey('TrackedParcel__History'));\n  out.put('disabledVisible',allTypes.containsKey('PlainParcel__History'));\n  Schema.DescribeSObjectResult obj=TrackedParcel__History.SObjectType.getDescribe();\n  out.put('name',obj.getName());out.put('label',obj.getLabel());out.put('pluralLabel',obj.getLabelPlural());\n  out.put('createable',obj.isCreateable());out.put('updateable',obj.isUpdateable());out.put('deletable',obj.isDeletable());out.put('queryable',obj.isQueryable());\n  Map<String,Object> fields=new Map<String,Object>();\n  for(String name:obj.fields.getMap().keySet()){\n   Schema.DescribeFieldResult field=obj.fields.getMap().get(name).getDescribe();\n   List<String> refs=new List<String>();for(Schema.SObjectType ref:field.getReferenceTo())refs.add(ref.getDescribe().getName());\n   fields.put(name.toLowerCase(),new Map<String,Object>{'type'=>String.valueOf(field.getType()),'createable'=>field.isCreateable(),'updateable'=>field.isUpdateable(),'nillable'=>field.isNillable(),'defaultedOnCreate'=>field.isDefaultedOnCreate(),'relationshipName'=>field.getRelationshipName(),'referenceTo'=>refs});\n  }\n  out.put('fields',fields);\n  TrackedParcel__History item=new TrackedParcel__History(Field='Revision__c',ParentId=null);\n  SObject raw=item;List<SObject> records=new List<TrackedParcel__History>{item};\n  out.put('constructedField',item.Field);out.put('sobjectName',raw.getSObjectType().getDescribe().getName());out.put('sobjectListSize',records.size());\n  return JSON.serialize(out);\n }\n}",
+      "path": "force-app/main/default/classes/HistoryTypeOracle68.cls",
+      "role": "class",
+      "sha256": "e0a9880151ec9f882b68db24870fd2c0da2d7ba50e1283e14e11890a8520c33e"
+    },
+    {
+      "className": "HistoryTypeOracle68",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryTypeOracle68.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d"
+    },
+    {
+      "className": "HistoryTypeObserved68",
+      "content": "@IsTest private class HistoryTypeObserved68 { @IsTest static void observed(){System.assert(false,'HISTORY_TYPE|'+HistoryTypeOracle68.snapshot());} }",
+      "path": "force-app/main/default/classes/HistoryTypeObserved68.cls",
+      "role": "class",
+      "sha256": "ee8b1d0ff1bf577fc117bdbc8c2813dacf5316b0105a9f2575a8688dca36ea00"
+    },
+    {
+      "className": "HistoryTypeObserved68",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryTypeObserved68.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d"
+    },
+    {
+      "className": "HistoryInsertOracle62",
+      "content": "public class HistoryInsertOracle62 { public static String snapshot(){Map<String,Object> out=new Map<String,Object>();\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned specimen',Revision__c='one');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  try {\n   TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n   List<TrackedParcel__History> rows=[SELECT Id,ParentId,Field FROM TrackedParcel__History WHERE ParentId=:parent.Id];\n   out.put('insertAccepted',true);out.put('queriedRows',rows.size());out.put('storedField',rows.isEmpty()?null:rows[0].Field);out.put('parentMatches',rows.isEmpty()?false:rows[0].ParentId==parent.Id);\n  }catch(Exception e){out.put('insertAccepted',false);out.put('errorType',e.getTypeName());out.put('errorMessage',e.getMessage());}\n  return JSON.serialize(out);}}",
+      "path": "force-app/main/default/classes/HistoryInsertOracle62.cls",
+      "role": "class",
+      "sha256": "d1ff6d6aa9f0863c97c30a9a624f8d8746e9866c877ff83ac57c8e1ac385c36b"
+    },
+    {
+      "className": "HistoryInsertOracle62",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertOracle62.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+    },
+    {
+      "className": "HistoryInsertHelperObserved62",
+      "content": "@IsTest private class HistoryInsertHelperObserved62{@IsTest static void observed(){System.assert(false,'HISTORY_INSERT|'+HistoryInsertOracle62.snapshot());}}",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved62.cls",
+      "role": "class",
+      "sha256": "ece0d14c09f5f280efd69b9a821118af4b2405da6e2e418b239e86def7c56f83"
+    },
+    {
+      "className": "HistoryInsertHelperObserved62",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved62.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+    },
+    {
+      "className": "HistoryInsertOracle63",
+      "content": "public class HistoryInsertOracle63 { public static String snapshot(){Map<String,Object> out=new Map<String,Object>();\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned specimen',Revision__c='one');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  try {\n   TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n   List<TrackedParcel__History> rows=[SELECT Id,ParentId,Field FROM TrackedParcel__History WHERE ParentId=:parent.Id];\n   out.put('insertAccepted',true);out.put('queriedRows',rows.size());out.put('storedField',rows.isEmpty()?null:rows[0].Field);out.put('parentMatches',rows.isEmpty()?false:rows[0].ParentId==parent.Id);\n  }catch(Exception e){out.put('insertAccepted',false);out.put('errorType',e.getTypeName());out.put('errorMessage',e.getMessage());}\n  return JSON.serialize(out);}}",
+      "path": "force-app/main/default/classes/HistoryInsertOracle63.cls",
+      "role": "class",
+      "sha256": "2474436c80c121eb66b88934c67e4837a98cfbcee555a371bb807b426da06764"
+    },
+    {
+      "className": "HistoryInsertOracle63",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>63.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertOracle63.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "7390e47817c97ad3aec01c49eaea53aa3f8b4a5dab26a9de554aa7ce702e2c4b"
+    },
+    {
+      "className": "HistoryInsertHelperObserved63",
+      "content": "@IsTest private class HistoryInsertHelperObserved63{@IsTest static void observed(){System.assert(false,'HISTORY_INSERT|'+HistoryInsertOracle63.snapshot());}}",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved63.cls",
+      "role": "class",
+      "sha256": "b6d63fafbbb6be2dcfbb28b6579ea56bd8e231ce3cdc11553e29aa58bca554da"
+    },
+    {
+      "className": "HistoryInsertHelperObserved63",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>63.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved63.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "7390e47817c97ad3aec01c49eaea53aa3f8b4a5dab26a9de554aa7ce702e2c4b"
+    },
+    {
+      "className": "HistoryInsertOracle64",
+      "content": "public class HistoryInsertOracle64 { public static String snapshot(){Map<String,Object> out=new Map<String,Object>();\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned specimen',Revision__c='one');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  try {\n   TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n   List<TrackedParcel__History> rows=[SELECT Id,ParentId,Field FROM TrackedParcel__History WHERE ParentId=:parent.Id];\n   out.put('insertAccepted',true);out.put('queriedRows',rows.size());out.put('storedField',rows.isEmpty()?null:rows[0].Field);out.put('parentMatches',rows.isEmpty()?false:rows[0].ParentId==parent.Id);\n  }catch(Exception e){out.put('insertAccepted',false);out.put('errorType',e.getTypeName());out.put('errorMessage',e.getMessage());}\n  return JSON.serialize(out);}}",
+      "path": "force-app/main/default/classes/HistoryInsertOracle64.cls",
+      "role": "class",
+      "sha256": "58db1925bf1ba5f22dd0a779cd85dbcd89bcf6a1fa42ca2a7c04854d038a1f9f"
+    },
+    {
+      "className": "HistoryInsertOracle64",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertOracle64.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "0d4b02c1da890722f8c5c7a3edffd07ed7e5259fcd250d2f7bfc438f92cb0a3e"
+    },
+    {
+      "className": "HistoryInsertHelperObserved64",
+      "content": "@IsTest private class HistoryInsertHelperObserved64{@IsTest static void observed(){System.assert(false,'HISTORY_INSERT|'+HistoryInsertOracle64.snapshot());}}",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved64.cls",
+      "role": "class",
+      "sha256": "6aa6d3eb29ad7f6187f931f628aca2c39858eedec111f87aa27a70689ed0fc10"
+    },
+    {
+      "className": "HistoryInsertHelperObserved64",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved64.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "0d4b02c1da890722f8c5c7a3edffd07ed7e5259fcd250d2f7bfc438f92cb0a3e"
+    },
+    {
+      "className": "HistoryInsertOracle65",
+      "content": "public class HistoryInsertOracle65 { public static String snapshot(){Map<String,Object> out=new Map<String,Object>();\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned specimen',Revision__c='one');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  try {\n   TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n   List<TrackedParcel__History> rows=[SELECT Id,ParentId,Field FROM TrackedParcel__History WHERE ParentId=:parent.Id];\n   out.put('insertAccepted',true);out.put('queriedRows',rows.size());out.put('storedField',rows.isEmpty()?null:rows[0].Field);out.put('parentMatches',rows.isEmpty()?false:rows[0].ParentId==parent.Id);\n  }catch(Exception e){out.put('insertAccepted',false);out.put('errorType',e.getTypeName());out.put('errorMessage',e.getMessage());}\n  return JSON.serialize(out);}}",
+      "path": "force-app/main/default/classes/HistoryInsertOracle65.cls",
+      "role": "class",
+      "sha256": "14add5c8bcfb73b53edca79df5021cab11f2bcece69888832872d93ba0b2a1d8"
+    },
+    {
+      "className": "HistoryInsertOracle65",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertOracle65.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "62c496b4c1c6fd12d9773fcd11ea6ffcc9c9794dbbd053439950cbdd5eb1e241"
+    },
+    {
+      "className": "HistoryInsertHelperObserved65",
+      "content": "@IsTest private class HistoryInsertHelperObserved65{@IsTest static void observed(){System.assert(false,'HISTORY_INSERT|'+HistoryInsertOracle65.snapshot());}}",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved65.cls",
+      "role": "class",
+      "sha256": "2a940b7029062c76e06910f2ae2764fefeabf40be764585eee0268afe797cf9f"
+    },
+    {
+      "className": "HistoryInsertHelperObserved65",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved65.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "62c496b4c1c6fd12d9773fcd11ea6ffcc9c9794dbbd053439950cbdd5eb1e241"
+    },
+    {
+      "className": "HistoryInsertOracle66",
+      "content": "public class HistoryInsertOracle66 { public static String snapshot(){Map<String,Object> out=new Map<String,Object>();\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned specimen',Revision__c='one');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  try {\n   TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n   List<TrackedParcel__History> rows=[SELECT Id,ParentId,Field FROM TrackedParcel__History WHERE ParentId=:parent.Id];\n   out.put('insertAccepted',true);out.put('queriedRows',rows.size());out.put('storedField',rows.isEmpty()?null:rows[0].Field);out.put('parentMatches',rows.isEmpty()?false:rows[0].ParentId==parent.Id);\n  }catch(Exception e){out.put('insertAccepted',false);out.put('errorType',e.getTypeName());out.put('errorMessage',e.getMessage());}\n  return JSON.serialize(out);}}",
+      "path": "force-app/main/default/classes/HistoryInsertOracle66.cls",
+      "role": "class",
+      "sha256": "a3a8f5fbac659dfc7bda52dafb8f89472b6a545f033f28453a59219c8549d824"
+    },
+    {
+      "className": "HistoryInsertOracle66",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>66.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertOracle66.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "7124272a5458f12847f486abb1e95c7c271ee41b8f2efe4059c1c00a003520a6"
+    },
+    {
+      "className": "HistoryInsertHelperObserved66",
+      "content": "@IsTest private class HistoryInsertHelperObserved66{@IsTest static void observed(){System.assert(false,'HISTORY_INSERT|'+HistoryInsertOracle66.snapshot());}}",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved66.cls",
+      "role": "class",
+      "sha256": "56f1bc8a98cea685dd97f38de0d1168e8e984aa2d720a3182812001adc7e8c1a"
+    },
+    {
+      "className": "HistoryInsertHelperObserved66",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>66.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved66.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "7124272a5458f12847f486abb1e95c7c271ee41b8f2efe4059c1c00a003520a6"
+    },
+    {
+      "className": "HistoryInsertOracle67",
+      "content": "public class HistoryInsertOracle67 { public static String snapshot(){Map<String,Object> out=new Map<String,Object>();\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned specimen',Revision__c='one');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  try {\n   TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n   List<TrackedParcel__History> rows=[SELECT Id,ParentId,Field FROM TrackedParcel__History WHERE ParentId=:parent.Id];\n   out.put('insertAccepted',true);out.put('queriedRows',rows.size());out.put('storedField',rows.isEmpty()?null:rows[0].Field);out.put('parentMatches',rows.isEmpty()?false:rows[0].ParentId==parent.Id);\n  }catch(Exception e){out.put('insertAccepted',false);out.put('errorType',e.getTypeName());out.put('errorMessage',e.getMessage());}\n  return JSON.serialize(out);}}",
+      "path": "force-app/main/default/classes/HistoryInsertOracle67.cls",
+      "role": "class",
+      "sha256": "af7d20a41e89b9fc8c932bb7899458c43995034ac78aae0bce188c919826effe"
+    },
+    {
+      "className": "HistoryInsertOracle67",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertOracle67.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+    },
+    {
+      "className": "HistoryInsertHelperObserved67",
+      "content": "@IsTest private class HistoryInsertHelperObserved67{@IsTest static void observed(){System.assert(false,'HISTORY_INSERT|'+HistoryInsertOracle67.snapshot());}}",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved67.cls",
+      "role": "class",
+      "sha256": "511a1a6ee4f7c27d77a8cc818a6d0449407e8c843a2d31dc296b8bb30480e4dc"
+    },
+    {
+      "className": "HistoryInsertHelperObserved67",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved67.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+    },
+    {
+      "className": "HistoryInsertOracle68",
+      "content": "public class HistoryInsertOracle68 { public static String snapshot(){Map<String,Object> out=new Map<String,Object>();\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned specimen',Revision__c='one');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  try {\n   TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n   List<TrackedParcel__History> rows=[SELECT Id,ParentId,Field FROM TrackedParcel__History WHERE ParentId=:parent.Id];\n   out.put('insertAccepted',true);out.put('queriedRows',rows.size());out.put('storedField',rows.isEmpty()?null:rows[0].Field);out.put('parentMatches',rows.isEmpty()?false:rows[0].ParentId==parent.Id);\n  }catch(Exception e){out.put('insertAccepted',false);out.put('errorType',e.getTypeName());out.put('errorMessage',e.getMessage());}\n  return JSON.serialize(out);}}",
+      "path": "force-app/main/default/classes/HistoryInsertOracle68.cls",
+      "role": "class",
+      "sha256": "018577cd59fe7292102d62d220d9a079c7569ca4a6780a896b463a3b0142d370"
+    },
+    {
+      "className": "HistoryInsertOracle68",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertOracle68.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d"
+    },
+    {
+      "className": "HistoryInsertHelperObserved68",
+      "content": "@IsTest private class HistoryInsertHelperObserved68{@IsTest static void observed(){System.assert(false,'HISTORY_INSERT|'+HistoryInsertOracle68.snapshot());}}",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved68.cls",
+      "role": "class",
+      "sha256": "c00bec2d7d9dee164708dbd58c8da03d9ed82cbe26ace98e2ea8da0882b61556"
+    },
+    {
+      "className": "HistoryInsertHelperObserved68",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertHelperObserved68.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d"
+    },
+    {
+      "className": "HistoryBridgeHigher",
+      "content": "public class HistoryBridgeHigher {public static String snapshot(){return HistoryInsertOracle64.snapshot();}}",
+      "path": "force-app/main/default/classes/HistoryBridgeHigher.cls",
+      "role": "class",
+      "sha256": "cab45b73a2207d9d28482c7b26bd31781daa4b33953bfdab7d90373b3cd2f616"
+    },
+    {
+      "className": "HistoryBridgeHigher",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryBridgeHigher.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+    },
+    {
+      "className": "HistoryCrossHigher",
+      "content": "@IsTest private class HistoryCrossHigher{@IsTest static void observed(){System.assert(false,'HISTORY_INSERT|'+HistoryInsertOracle67.snapshot());}}",
+      "path": "force-app/main/default/classes/HistoryCrossHigher.cls",
+      "role": "class",
+      "sha256": "4aac3b4aa22de4031a971f452b247cc31174a384cc78027aad39c1ac51ef31e4"
+    },
+    {
+      "className": "HistoryCrossHigher",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryCrossHigher.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "0d4b02c1da890722f8c5c7a3edffd07ed7e5259fcd250d2f7bfc438f92cb0a3e"
+    },
+    {
+      "className": "HistoryCrossLower",
+      "content": "@IsTest private class HistoryCrossLower{@IsTest static void observed(){System.assert(false,'HISTORY_INSERT|'+HistoryInsertOracle64.snapshot());}}",
+      "path": "force-app/main/default/classes/HistoryCrossLower.cls",
+      "role": "class",
+      "sha256": "853bd4f3eada0d4cca41aaf8bf956c51300ec5c87b3c998cfb25136509a6d349"
+    },
+    {
+      "className": "HistoryCrossLower",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryCrossLower.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+    },
+    {
+      "className": "HistoryMiddleObserved",
+      "content": "@IsTest private class HistoryMiddleObserved{@IsTest static void observed(){System.assert(false,'HISTORY_INSERT|'+HistoryBridgeHigher.snapshot());}}",
+      "path": "force-app/main/default/classes/HistoryMiddleObserved.cls",
+      "role": "class",
+      "sha256": "c8097023fe615a09ef11e58d171e29270fa85467ff6f6ee9f2264cd23d9b512e"
+    },
+    {
+      "className": "HistoryMiddleObserved",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryMiddleObserved.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "0d4b02c1da890722f8c5c7a3edffd07ed7e5259fcd250d2f7bfc438f92cb0a3e"
+    },
+    {
+      "className": "HistoryErasedLifecycle62",
+      "content": "@IsTest private class HistoryErasedLifecycle62{\n @IsTest static void observed(){\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned lifecycle');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n  Map<String,Object> out=new Map<String,Object>();\n  try{Database.update((SObject)item,AccessLevel.SYSTEM_MODE);out.put('updateAccepted',true);}catch(Exception e){out.put('updateAccepted',false);out.put('updateType',e.getTypeName());out.put('updateMessage',e.getMessage());}\n  try{Database.delete((SObject)item,AccessLevel.SYSTEM_MODE);out.put('deleteAccepted',true);}catch(Exception e){out.put('deleteAccepted',false);out.put('deleteType',e.getTypeName());out.put('deleteMessage',e.getMessage());}\n  System.assert(false,'HISTORY_LIFECYCLE|'+JSON.serialize(out));\n }\n}",
+      "path": "force-app/main/default/classes/HistoryErasedLifecycle62.cls",
+      "role": "class",
+      "sha256": "677d7e259fe75039d1ad183b6394378086442905e4f5444ab0e0f595c7a831db"
+    },
+    {
+      "className": "HistoryErasedLifecycle62",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryErasedLifecycle62.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+    },
+    {
+      "className": "HistoryErasedLifecycle64",
+      "content": "@IsTest private class HistoryErasedLifecycle64{\n @IsTest static void observed(){\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned lifecycle');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n  Map<String,Object> out=new Map<String,Object>();\n  try{Database.update((SObject)item,AccessLevel.SYSTEM_MODE);out.put('updateAccepted',true);}catch(Exception e){out.put('updateAccepted',false);out.put('updateType',e.getTypeName());out.put('updateMessage',e.getMessage());}\n  try{Database.delete((SObject)item,AccessLevel.SYSTEM_MODE);out.put('deleteAccepted',true);}catch(Exception e){out.put('deleteAccepted',false);out.put('deleteType',e.getTypeName());out.put('deleteMessage',e.getMessage());}\n  System.assert(false,'HISTORY_LIFECYCLE|'+JSON.serialize(out));\n }\n}",
+      "path": "force-app/main/default/classes/HistoryErasedLifecycle64.cls",
+      "role": "class",
+      "sha256": "599c9a7c2d8fb3d0c23c27b8c254d0126a209221da118570823b34ab3cfd55d1"
+    },
+    {
+      "className": "HistoryErasedLifecycle64",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryErasedLifecycle64.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "0d4b02c1da890722f8c5c7a3edffd07ed7e5259fcd250d2f7bfc438f92cb0a3e"
+    },
+    {
+      "className": "HistoryInsertObserved62",
+      "content": "@IsTest private class HistoryInsertObserved62 {\n @IsTest static void observed(){\n  Map<String,Object> out=new Map<String,Object>();\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned specimen',Revision__c='one');insert parent;\n  try {\n   TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');insert item;\n   List<TrackedParcel__History> rows=[SELECT Id,ParentId,Field FROM TrackedParcel__History WHERE ParentId=:parent.Id];\n   out.put('insertAccepted',true);out.put('queriedRows',rows.size());out.put('storedField',rows.isEmpty()?null:rows[0].Field);out.put('parentMatches',rows.isEmpty()?false:rows[0].ParentId==parent.Id);\n  }catch(Exception e){out.put('insertAccepted',false);out.put('errorType',e.getTypeName());out.put('errorMessage',e.getMessage());}\n  System.assert(false,'HISTORY_INSERT|'+JSON.serialize(out));\n }\n}",
+      "path": "force-app/main/default/classes/HistoryInsertObserved62.cls",
+      "role": "class",
+      "sha256": "ffa7eb168d4982066b2e2b7e9af542654ca682b52afc866edd56f1137b4df78b"
+    },
+    {
+      "className": "HistoryInsertObserved62",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertObserved62.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+    },
+    {
+      "className": "HistoryInsertObserved64",
+      "content": "@IsTest private class HistoryInsertObserved64 {\n @IsTest static void observed(){\n  Map<String,Object> out=new Map<String,Object>();\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned specimen',Revision__c='one');insert parent;\n  try {\n   TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');insert item;\n   List<TrackedParcel__History> rows=[SELECT Id,ParentId,Field FROM TrackedParcel__History WHERE ParentId=:parent.Id];\n   out.put('insertAccepted',true);out.put('queriedRows',rows.size());out.put('storedField',rows.isEmpty()?null:rows[0].Field);out.put('parentMatches',rows.isEmpty()?false:rows[0].ParentId==parent.Id);\n  }catch(Exception e){out.put('insertAccepted',false);out.put('errorType',e.getTypeName());out.put('errorMessage',e.getMessage());}\n  System.assert(false,'HISTORY_INSERT|'+JSON.serialize(out));\n }\n}",
+      "path": "force-app/main/default/classes/HistoryInsertObserved64.cls",
+      "role": "class",
+      "sha256": "c7aa92390946f5560d48cd573b5cd97a286927519bde3898e534896c94aa2915"
+    },
+    {
+      "className": "HistoryInsertObserved64",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryInsertObserved64.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "0d4b02c1da890722f8c5c7a3edffd07ed7e5259fcd250d2f7bfc438f92cb0a3e"
+    },
+    {
+      "className": "HistoryLifecycleObserved62",
+      "content": "@IsTest private class HistoryLifecycleObserved62{\n @IsTest static void observed(){\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned lifecycle');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n  Map<String,Object> out=new Map<String,Object>();\n  try{Database.update(item,AccessLevel.SYSTEM_MODE);out.put('updateAccepted',true);}catch(Exception e){out.put('updateAccepted',false);out.put('updateType',e.getTypeName());out.put('updateMessage',e.getMessage());}\n  try{Database.delete(item,AccessLevel.SYSTEM_MODE);out.put('deleteAccepted',true);}catch(Exception e){out.put('deleteAccepted',false);out.put('deleteType',e.getTypeName());out.put('deleteMessage',e.getMessage());}\n  System.assert(false,'HISTORY_LIFECYCLE|'+JSON.serialize(out));\n }\n}",
+      "path": "force-app/main/default/classes/HistoryLifecycleObserved62.cls",
+      "role": "class",
+      "sha256": "8a52382ce6a1d5c0e32b2d12972465746dd384d4b57f0c85036ee9619ad1d1bd"
+    },
+    {
+      "className": "HistoryLifecycleObserved62",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryLifecycleObserved62.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+    },
+    {
+      "className": "HistoryLifecycleObserved64",
+      "content": "@IsTest private class HistoryLifecycleObserved64{\n @IsTest static void observed(){\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned lifecycle');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n  Map<String,Object> out=new Map<String,Object>();\n  try{Database.update(item,AccessLevel.SYSTEM_MODE);out.put('updateAccepted',true);}catch(Exception e){out.put('updateAccepted',false);out.put('updateType',e.getTypeName());out.put('updateMessage',e.getMessage());}\n  try{Database.delete(item,AccessLevel.SYSTEM_MODE);out.put('deleteAccepted',true);}catch(Exception e){out.put('deleteAccepted',false);out.put('deleteType',e.getTypeName());out.put('deleteMessage',e.getMessage());}\n  System.assert(false,'HISTORY_LIFECYCLE|'+JSON.serialize(out));\n }\n}",
+      "path": "force-app/main/default/classes/HistoryLifecycleObserved64.cls",
+      "role": "class",
+      "sha256": "f571368e2033b6f206929cdd1eb44a157d196dfb72b7d2440b9fdf78bcee85d8"
+    },
+    {
+      "className": "HistoryLifecycleObserved64",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryLifecycleObserved64.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "0d4b02c1da890722f8c5c7a3edffd07ed7e5259fcd250d2f7bfc438f92cb0a3e"
+    },
+    {
+      "className": "HistoryLifecycleObserved67",
+      "content": "@IsTest private class HistoryLifecycleObserved67{\n @IsTest static void observed(){\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned lifecycle');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n  Map<String,Object> out=new Map<String,Object>();\n  try{Database.update(item,AccessLevel.SYSTEM_MODE);out.put('updateAccepted',true);}catch(Exception e){out.put('updateAccepted',false);out.put('updateType',e.getTypeName());out.put('updateMessage',e.getMessage());}\n  try{Database.delete(item,AccessLevel.SYSTEM_MODE);out.put('deleteAccepted',true);}catch(Exception e){out.put('deleteAccepted',false);out.put('deleteType',e.getTypeName());out.put('deleteMessage',e.getMessage());}\n  System.assert(false,'HISTORY_LIFECYCLE|'+JSON.serialize(out));\n }\n}",
+      "path": "force-app/main/default/classes/HistoryLifecycleObserved67.cls",
+      "role": "class",
+      "sha256": "71b9ff7f81dfaf746d0685ad520e4323ef88b0f1d93dac14463c3505a33fcb08"
+    },
+    {
+      "className": "HistoryLifecycleObserved67",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryLifecycleObserved67.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+    },
+    {
+      "className": "HistoryLifecycleObserved68",
+      "content": "@IsTest private class HistoryLifecycleObserved68{\n @IsTest static void observed(){\n  TrackedParcel__c parent=new TrackedParcel__c(Name='Owned lifecycle');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n  TrackedParcel__History item=new TrackedParcel__History(ParentId=parent.Id,Field='Revision__c');Database.insert(item,AccessLevel.SYSTEM_MODE);\n  Map<String,Object> out=new Map<String,Object>();\n  try{Database.update(item,AccessLevel.SYSTEM_MODE);out.put('updateAccepted',true);}catch(Exception e){out.put('updateAccepted',false);out.put('updateType',e.getTypeName());out.put('updateMessage',e.getMessage());}\n  try{Database.delete(item,AccessLevel.SYSTEM_MODE);out.put('deleteAccepted',true);}catch(Exception e){out.put('deleteAccepted',false);out.put('deleteType',e.getTypeName());out.put('deleteMessage',e.getMessage());}\n  System.assert(false,'HISTORY_LIFECYCLE|'+JSON.serialize(out));\n }\n}",
+      "path": "force-app/main/default/classes/HistoryLifecycleObserved68.cls",
+      "role": "class",
+      "sha256": "4329838bfc578e59161538e9fa3be3d776baa02e9180ae86ce60d4fdba15610a"
+    },
+    {
+      "className": "HistoryLifecycleObserved68",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryLifecycleObserved68.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d"
+    },
+    {
+      "className": "DisabledHistoryProbe",
+      "content": "public class DisabledHistoryProbe {public static SObject build(){return new PlainParcel__History();}}",
+      "path": "force-app/main/default/classes/DisabledHistoryProbe.cls",
+      "role": "class",
+      "sha256": "5fac5a4c0b1c586290262f165753898b6df1b33c7ccf5c149d0092a9d49274e4"
+    },
+    {
+      "className": "DisabledHistoryProbe",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/DisabledHistoryProbe.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "0d4b02c1da890722f8c5c7a3edffd07ed7e5259fcd250d2f7bfc438f92cb0a3e"
+    },
+    {
+      "className": "HistoryRequiredObserved64",
+      "content": "@IsTest private class HistoryRequiredObserved64{@IsTest static void observed(){\n TrackedParcel__c parent=new TrackedParcel__c(Name='Owned required control');Database.insert(parent,AccessLevel.SYSTEM_MODE);\n List<TrackedParcel__History> inputs=new List<TrackedParcel__History>{new TrackedParcel__History(Field='Revision__c'),new TrackedParcel__History(ParentId=parent.Id)};\n Map<String,Object> out=new Map<String,Object>();Integer n=0;\n for(TrackedParcel__History item:inputs){try{Database.SaveResult sr=Database.insert(item,false,AccessLevel.SYSTEM_MODE);List<String> fields=new List<String>();String code=null;String message=null;if(!sr.isSuccess()){code=String.valueOf(sr.getErrors()[0].getStatusCode());message=sr.getErrors()[0].getMessage();fields=sr.getErrors()[0].getFields();}out.put('case'+n,new Map<String,Object>{'accepted'=>sr.isSuccess(),'code'=>code,'fields'=>fields,'message'=>message});}catch(Exception e){out.put('case'+n,new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()});}n++;}\n System.assert(false,'HISTORY_REQUIRED|'+JSON.serialize(out));}}",
+      "path": "force-app/main/default/classes/HistoryRequiredObserved64.cls",
+      "role": "class",
+      "sha256": "48126babc3498728afaa3acf7afc77856d86c7edadb7ec81104df676700be339"
+    },
+    {
+      "className": "HistoryRequiredObserved64",
+      "content": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>",
+      "path": "force-app/main/default/classes/HistoryRequiredObserved64.cls-meta.xml",
+      "role": "classMetadata",
+      "sha256": "0d4b02c1da890722f8c5c7a3edffd07ed7e5259fcd250d2f7bfc438f92cb0a3e"
+    }
+  ]
+}

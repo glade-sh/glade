@@ -1,0 +1,18 @@
+{
+  "deleteExit": 0,
+  "deleteStatus": 0,
+  "scratch": {
+    "exit": 0,
+    "status": 0,
+    "totalSize": 1,
+    "statuses": [
+      "Deleted"
+    ]
+  },
+  "active": {
+    "exit": 0,
+    "status": 0,
+    "totalSize": 0,
+    "statuses": []
+  }
+}

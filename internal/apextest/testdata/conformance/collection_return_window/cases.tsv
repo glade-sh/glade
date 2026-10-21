@@ -1,0 +1,8 @@
+case	shape	status
+alias	Two field holders share a list mutated through a receiver alias	native-matched
+callee	Nested list passed to another method	native-matched
+static	Static holder shares a list with a field holder	observed-only; static-only alias mismatch also present on prior runtime
+callback	Inherited callback mutates a list through a holder field	native-matched
+mapList	Map values retain list aliases through nested calls	native-matched
+mapClear	Map clear updates another field holder while unrelated list changes	native-matched
+unrelated	Unrelated list mutation leaves receiver list unchanged	native-matched

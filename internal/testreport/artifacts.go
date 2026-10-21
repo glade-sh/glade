@@ -51,6 +51,32 @@ func WriteGitHubAnnotations(w io.Writer, run Run) error {
 			}
 		}
 	}
+	return writeExcludedClassAnnotations(w, run.ExcludedClasses)
+}
+
+// writeExcludedClassAnnotations annotates each class the compile gate
+// excluded: every problem of a root at its line, and a dependent on its file.
+// A dependent's Line is its root's line, so it gets no line of its own.
+func writeExcludedClassAnnotations(w io.Writer, excluded []CompileExclusion) error {
+	for _, entry := range excluded {
+		problems := []CompileProblem{{Message: entry.Message}}
+		if entry.DependsOn == "" {
+			problems = entry.rootProblems()
+		}
+		for _, problem := range problems {
+			props := []string{}
+			if entry.File != "" {
+				props = append(props, "file="+escapeGitHubAnnotationProperty(entry.File))
+				if problem.Line > 0 {
+					props = append(props, fmt.Sprintf("line=%d", problem.Line))
+				}
+			}
+			props = append(props, "title="+escapeGitHubAnnotationProperty("CompileError "+entry.ClassName))
+			if _, err := fmt.Fprintf(w, "::error %s::%s\n", strings.Join(props, ","), escapeGitHubAnnotationData(problem.Message)); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -63,7 +89,14 @@ func WriteHTML(w io.Writer, run Run, opts HTMLReportOptions) error {
 	if _, err := fmt.Fprintf(w, "<!doctype html>\n<html><head><meta charset=\"utf-8\"><title>%s</title><style>%s</style></head><body>\n", html.EscapeString(title), reportCSS()); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(w, "<main><h1>%s</h1><section class=\"summary\"><span>%d total</span><span>%d passed</span><span>%d failed</span><span>%d errors</span><span>%d unsupported</span></section>\n", html.EscapeString(title), summary.Total, summary.Passed, summary.Failed, summary.Errors, summary.Unsupported); err != nil {
+	excludedSummary := ""
+	if summary.ExcludedClasses > 0 {
+		excludedSummary = fmt.Sprintf("<span>%d excluded</span>", summary.ExcludedClasses)
+	}
+	if _, err := fmt.Fprintf(w, "<main><h1>%s</h1><section class=\"summary\"><span>%d total</span><span>%d passed</span><span>%d failed</span><span>%d errors</span><span>%d unsupported</span>%s</section>\n", html.EscapeString(title), summary.Total, summary.Passed, summary.Failed, summary.Errors, summary.Unsupported, excludedSummary); err != nil {
+		return err
+	}
+	if err := writeHTMLExcludedClasses(w, run.ExcludedClasses); err != nil {
 		return err
 	}
 	if _, err := io.WriteString(w, "<table><thead><tr><th>Test</th><th>Status</th><th>Duration</th><th>Problem</th><th>Location</th></tr></thead><tbody>\n"); err != nil {
@@ -94,6 +127,37 @@ func WriteHTML(w io.Writer, run Run, opts HTMLReportOptions) error {
 	}
 	_, err := io.WriteString(w, "</tbody></table></main></body></html>\n")
 	return err
+}
+
+// writeHTMLExcludedClasses lists the classes the compile gate excluded.
+func writeHTMLExcludedClasses(w io.Writer, excluded []CompileExclusion) error {
+	if len(excluded) == 0 {
+		return nil
+	}
+	if _, err := io.WriteString(w, "<h2>Excluded classes</h2><table class=\"excluded\"><thead><tr><th>Class</th><th>Depends on</th><th>Root</th><th>Problem</th></tr></thead><tbody>\n"); err != nil {
+		return err
+	}
+	for _, entry := range excluded {
+		if _, err := fmt.Fprintf(w, "<tr class=\"status-compile_error\"><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
+			html.EscapeString(entry.ClassName),
+			html.EscapeString(entry.DependsOn),
+			html.EscapeString(entry.Root),
+			strings.ReplaceAll(html.EscapeString(excludedClassDetailHTML(entry)), "\n", "<br>"),
+		); err != nil {
+			return err
+		}
+	}
+	_, err := io.WriteString(w, "</tbody></table><h2>Tests</h2>\n")
+	return err
+}
+
+// excludedClassDetailHTML is a root's problems with their locations, or a
+// dependent's Salesforce message.
+func excludedClassDetailHTML(entry CompileExclusion) string {
+	if entry.DependsOn != "" {
+		return entry.Message
+	}
+	return excludedClassDetail(entry)
 }
 
 func firstProblemLocation(testCase Case) (file string, line int, col int) {

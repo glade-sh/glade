@@ -270,6 +270,13 @@ func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value, strict bool) 
 			receiver.Fields["index"] = Int(int64(len(tokens.List) - 1))
 		}
 	}
+	// N10/N11 capture nextToken-positioned scalar-null documents only.
+	// Unstarted, nested and quoted-null parser inputs keep their prior path.
+	if index == 0 && raw == nil && len(jsonParserTokens(receiver).List) == 1 {
+		if err := vm.jsonRootDatetimeNullError(typeName, jsonTypedInput{value: raw, root: true}); err != nil {
+			return Null, receiver, err
+		}
+	}
 	value, err := vm.typedValueFromJSON(typeName, jsonTypedInput{value: raw, sObjectRecord: recordType}, strict)
 	if err == nil {
 		receiver.Fields["cleared"] = Bool(true)

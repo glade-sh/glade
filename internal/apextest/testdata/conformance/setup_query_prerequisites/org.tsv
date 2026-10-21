@@ -1,0 +1,13 @@
+source_api	route	method	observation
+62.0	anonymous	community	{"count":1,"key":"PID_Customer_Community","name":"Customer Community","profileCount":1,"profileName":"Customer Community User","status":"Active","total":5,"userType":"CspLitePortal"}
+62.0	anonymous	metadata	{"absentGroup":0,"missingGroupException":"System.QueryException","missingGroupMessage":"List has no rows for assignment to SObject","presentGroup":1,"presentPermissionSet":1}
+62.0	anonymous	packageLicenses	{"SalesforceCPQ_CPQAAPerm":{"label":"Salesforce CPQ AA License","prefix":"0PL","status":"Active","total":2},"SalesforceCPQ_CPQStandardPerm":{"label":"Salesforce CPQ License","prefix":"0PL","status":"Active","total":2},"count":2}
+62.0	isTest	community	{"count":1,"key":"PID_Customer_Community","name":"Customer Community","profileCount":1,"profileName":"Customer Community User","status":"Active","total":5,"userType":"CspLitePortal"}
+62.0	isTest	metadata	{"absentGroup":0,"missingGroupException":"System.QueryException","missingGroupMessage":"List has no rows for assignment to SObject","presentGroup":1,"presentPermissionSet":1}
+62.0	isTest	packageLicenses	{"SalesforceCPQ_CPQAAPerm":{"label":"Salesforce CPQ AA License","prefix":"0PL","status":"Active","total":2},"SalesforceCPQ_CPQStandardPerm":{"label":"Salesforce CPQ License","prefix":"0PL","status":"Active","total":2},"count":2}
+67.0	anonymous	community	{"count":1,"key":"PID_Customer_Community","name":"Customer Community","profileCount":1,"profileName":"Customer Community User","status":"Active","total":5,"userType":"CspLitePortal"}
+67.0	anonymous	metadata	{"absentGroup":0,"missingGroupException":"System.QueryException","missingGroupMessage":"List has no rows for assignment to SObject","presentGroup":1,"presentPermissionSet":1}
+67.0	anonymous	packageLicenses	{"SalesforceCPQ_CPQAAPerm":{"label":"Salesforce CPQ AA License","prefix":"0PL","status":"Active","total":2},"SalesforceCPQ_CPQStandardPerm":{"label":"Salesforce CPQ License","prefix":"0PL","status":"Active","total":2},"count":2}
+67.0	isTest	community	{"count":1,"key":"PID_Customer_Community","name":"Customer Community","profileCount":1,"profileName":"Customer Community User","status":"Active","total":5,"userType":"CspLitePortal"}
+67.0	isTest	metadata	{"absentGroup":0,"missingGroupException":"System.QueryException","missingGroupMessage":"List has no rows for assignment to SObject","presentGroup":1,"presentPermissionSet":1}
+67.0	isTest	packageLicenses	{"SalesforceCPQ_CPQAAPerm":{"label":"Salesforce CPQ AA License","prefix":"0PL","status":"Active","total":2},"SalesforceCPQ_CPQStandardPerm":{"label":"Salesforce CPQ License","prefix":"0PL","status":"Active","total":2},"count":2}

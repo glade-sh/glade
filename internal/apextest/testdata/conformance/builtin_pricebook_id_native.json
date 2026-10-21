@@ -1,0 +1,335 @@
+{
+  "rowCount": 20,
+  "scalarCells": 64,
+  "matchedRows": 12,
+  "carriedRows": 8,
+  "expectedMethods": 3,
+  "carriedIDs": {
+    "WS01": "Default owned Developer org observes WebStore absent. Commerce field availability/writability requires an unavailable licensed context; Glade broad standard shape is not a native feature-provisioning claim."
+  },
+  "orgIDSHA256": "02d280f8bec8d006782e1c5a67ee314578b3237cbb4fcb6f53e24b483171852d",
+  "orgTSVSHA256": "e96f76bdb3c8829a5dbc8fa37f3c674299f727c0ca071f6a64ab5e5941222aaf",
+  "orgRunSHA256": "b21d66174f07173aba193ded790d7fe25db060e0d0f42cc2defa914bf5b26d16",
+  "testClass": "OwnedStoreBoundaryTest",
+  "projectAPI": "62.0",
+  "projectSource": "{\"sourceApiVersion\":\"62.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}\n",
+  "projectSourceSHA256": "c498cd6a2814b21c447d6e99066bf8646aed3c79a83a9dbe16360d4739126c1e",
+  "sources": {
+    "OwnedStoreBoundaryObserver": "public class OwnedStoreBoundaryObserver {\n public static String observe(String row) {\n  Map<String,Object> result=new Map<String,Object>();\n  if(row=='WS01'){\n   Schema.SObjectType token=Schema.getGlobalDescribe().get('WebStore');\n   result.put('objectPresent',token!=null);\n   Map<String,Object> seen=new Map<String,Object>();\n   if(token!=null){\n    Schema.DescribeSObjectResult objectInfo=token.getDescribe();\n    result.put('createable',objectInfo.isCreateable());result.put('updateable',objectInfo.isUpdateable());\n    Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>();\n    for(Schema.SObjectField field:objectInfo.fields.getMap().values())fields.put(field.getDescribe().getName().toLowerCase(),field);\n    for(String name:new List<String>{'OptionsAutoFacetingEnabled','OptionsCartAsyncProcessingEnabled','OptionsCartCalculateEnabled','OptionsCartToOrderAutoCustomFieldMapping','OptionsCommerceEinsteinActivitiesTracked','OptionsCommerceEinsteinDeployed','OptionsDuplicateCartItemsEnabled','OptionsGuestBrowsingEnabled','OptionsGuestCartEnabled','OptionsGuestCheckoutEnabled','OptionsPreserveGuestCartEnabled','OptionsSkipAdditionalEntitlementCheckForSearch','OptionsSkuDetectionEnabled','OptionsSplitShipmentEnabled'}){\n     Map<String,Object> item=new Map<String,Object>{'present'=>fields.containsKey(name.toLowerCase())};\n     if(fields.containsKey(name.toLowerCase())){Schema.DescribeFieldResult info=fields.get(name.toLowerCase()).getDescribe();item.put('type',String.valueOf(info.getType()));item.put('createable',info.isCreateable());item.put('updateable',info.isUpdateable());}\n     seen.put(name,item);\n    }\n   }\n   result.put('fields',seen);return JSON.serialize(result);\n  }\n  if(row=='BP01'){\n   Object boxed=Test.getStandardPricebookId();\n   String direct=String.valueOf(Test.getStandardPricebookId());\n   String viaId=convert(Test.getStandardPricebookId());\n   result.put('directLength',direct.length());result.put('viaIdLength',viaId.length());result.put('sameText',direct==viaId);\n   result.put('prefix',direct.left(3));result.put('idInstance',boxed instanceof Id);result.put('stringInstance',boxed instanceof String);\n   return JSON.serialize(result);\n  }\n  String plain='01s000000000001';String direct=String.valueOf(plain);String viaId=convert((Id)plain);\n  result.put('directLength',direct.length());result.put('viaIdLength',viaId.length());result.put('sameText',direct==viaId);result.put('plainPreserved',plain==direct);\n  return JSON.serialize(result);\n }\n private static String convert(Id value){return String.valueOf(value);}\n}\n",
+    "OwnedStoreBoundaryTest": "@IsTest private class OwnedStoreBoundaryTest {\n @IsTest static void ws01(){System.assert(false,'STORE_BOUNDARY|WS01|'+OwnedStoreBoundaryObserver.observe('WS01'));}\n @IsTest static void bp01(){System.assert(false,'STORE_BOUNDARY|BP01|'+OwnedStoreBoundaryObserver.observe('BP01'));}\n @IsTest static void bp02(){System.assert(false,'STORE_BOUNDARY|BP02|'+OwnedStoreBoundaryObserver.observe('BP02'));}\n}\n"
+  },
+  "sourceSHA256": {
+    "OwnedStoreBoundaryObserver": "9470e2da90edb1b4f5100fb68d38103fefe4a2974dabbbfa9fd67e1a42b6c6b6",
+    "OwnedStoreBoundaryTest": "0d5c7186b2221dce6d4c24c051c3863297cb876ce57093e23f8fbfd61f03a897"
+  },
+  "anonymousSource": "System.debug('STORE_BOUNDARY|WS01|'+OwnedStoreBoundaryObserver.observe('WS01'));\nSystem.debug('STORE_BOUNDARY|BP02|'+OwnedStoreBoundaryObserver.observe('BP02'));\nSystem.debug('STORE_BOUNDARY|CB01|'+OwnedClosedIdSetObserver.observe('CB01'));\nSystem.debug('STORE_BOUNDARY|CB02|'+OwnedClosedIdSetObserver.observe('CB02'));\nSystem.debug('STORE_BOUNDARY|CB03|'+OwnedClosedIdSetObserver.observe('CB03'));\nSystem.debug('STORE_BOUNDARY|CB04|'+OwnedClosedIdSetObserver.observe('CB04'));\nSystem.debug('STORE_BOUNDARY|CB05|'+OwnedClosedIdSetObserver.observe('CB05'));\n",
+  "anonymousSourceSHA256": "629ae63e405abc9bc378a97d6fcf44a28406396bd3f669dab811cf536c3fbadd",
+  "orgContext": {
+    "requestedEdition": "Developer",
+    "featuresRequested": [],
+    "settingsChanged": false,
+    "otherFeatureContext": "UNCAPTURED"
+  },
+  "captures": [
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>60.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "f7ea5c546ce40b12d915d6cb01c581debce5f111e65f8c004a5e74794c0cf6c5",
+      "deploymentID": "0Afgw000000OB3zCAG",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "a830bc2a9907b8212537cb4d2c330d3cfe3ecdd6f472132cec66eca6a5a26eb3"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "deploymentID": "0Afgw000000ODMuCAO",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "00b1224d3051d8eaf722291fa2112e38787f26db46ad704dba818684352cf408"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "deploymentID": "0Afgw000000OFFdCAO",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "469959a7e0d4013ca6d59e2c3e060001d9eb026209278080cb6c68883440892d"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "deploymentID": "0Afgw000000O8SiCAK",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "5af2f9ccd52c6572e8b920d8d17b17cfd7838f8e9a2def655cdf3dc8c0f00d3e"
+    }
+  ],
+  "rows": [
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "istest",
+      "id": "BP01",
+      "native": {
+        "stringInstance": true,
+        "idInstance": true,
+        "prefix": "01s",
+        "sameText": true,
+        "viaIdLength": 18,
+        "directLength": 18
+      },
+      "receiptSHA256": "3201ba056f37dc6a935e8f4bf552d71d9de6b003198aa04f3468ff754ae6e1db"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "istest",
+      "id": "BP02",
+      "native": {
+        "plainPreserved": true,
+        "sameText": false,
+        "viaIdLength": 18,
+        "directLength": 15
+      },
+      "receiptSHA256": "3201ba056f37dc6a935e8f4bf552d71d9de6b003198aa04f3468ff754ae6e1db"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "istest",
+      "id": "WS01",
+      "native": {
+        "fields": {},
+        "objectPresent": false
+      },
+      "receiptSHA256": "3201ba056f37dc6a935e8f4bf552d71d9de6b003198aa04f3468ff754ae6e1db"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "anonymous",
+      "id": "BP02",
+      "native": {
+        "plainPreserved": true,
+        "sameText": false,
+        "viaIdLength": 18,
+        "directLength": 15
+      },
+      "receiptSHA256": "b1f60d635856fa1905785fc789e516ff44fef504b19af5c23709b029c143e3d4"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "anonymous",
+      "id": "WS01",
+      "native": {
+        "fields": {},
+        "objectPresent": false
+      },
+      "receiptSHA256": "b1f60d635856fa1905785fc789e516ff44fef504b19af5c23709b029c143e3d4"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "BP01",
+      "native": {
+        "stringInstance": true,
+        "idInstance": true,
+        "prefix": "01s",
+        "sameText": true,
+        "viaIdLength": 18,
+        "directLength": 18
+      },
+      "receiptSHA256": "20678ab13a6aff3ea05acdf34fef5bb1d019e258eb501a2805ea15ca1048d2cd"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "BP02",
+      "native": {
+        "plainPreserved": true,
+        "sameText": false,
+        "viaIdLength": 18,
+        "directLength": 15
+      },
+      "receiptSHA256": "20678ab13a6aff3ea05acdf34fef5bb1d019e258eb501a2805ea15ca1048d2cd"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "WS01",
+      "native": {
+        "fields": {},
+        "objectPresent": false
+      },
+      "receiptSHA256": "20678ab13a6aff3ea05acdf34fef5bb1d019e258eb501a2805ea15ca1048d2cd"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "BP02",
+      "native": {
+        "plainPreserved": true,
+        "sameText": false,
+        "viaIdLength": 18,
+        "directLength": 15
+      },
+      "receiptSHA256": "cb0bf4e57590479237626ae3786f793095a0b0e3df1d5e74b0c42e60e2e350fd"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "WS01",
+      "native": {
+        "fields": {},
+        "objectPresent": false
+      },
+      "receiptSHA256": "cb0bf4e57590479237626ae3786f793095a0b0e3df1d5e74b0c42e60e2e350fd"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "BP01",
+      "native": {
+        "stringInstance": true,
+        "idInstance": true,
+        "prefix": "01s",
+        "sameText": true,
+        "viaIdLength": 18,
+        "directLength": 18
+      },
+      "receiptSHA256": "38492b0d3a932fd90418fa38ad97d6099322312401c80176950eddf254e01326"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "BP02",
+      "native": {
+        "plainPreserved": true,
+        "sameText": false,
+        "viaIdLength": 18,
+        "directLength": 15
+      },
+      "receiptSHA256": "38492b0d3a932fd90418fa38ad97d6099322312401c80176950eddf254e01326"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "WS01",
+      "native": {
+        "fields": {},
+        "objectPresent": false
+      },
+      "receiptSHA256": "38492b0d3a932fd90418fa38ad97d6099322312401c80176950eddf254e01326"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "BP02",
+      "native": {
+        "plainPreserved": true,
+        "sameText": false,
+        "viaIdLength": 18,
+        "directLength": 15
+      },
+      "receiptSHA256": "3fc0f8726c36536a0c48ec01b4568ff2ebd767f53e6eef896305dcd23f3ab0f6"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "WS01",
+      "native": {
+        "fields": {},
+        "objectPresent": false
+      },
+      "receiptSHA256": "3fc0f8726c36536a0c48ec01b4568ff2ebd767f53e6eef896305dcd23f3ab0f6"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "BP01",
+      "native": {
+        "stringInstance": true,
+        "idInstance": true,
+        "prefix": "01s",
+        "sameText": true,
+        "viaIdLength": 18,
+        "directLength": 18
+      },
+      "receiptSHA256": "2b9682ec28642ca57377773beda3b46c2f0d954f96654ed25af39e12c8269b41"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "BP02",
+      "native": {
+        "plainPreserved": true,
+        "sameText": false,
+        "viaIdLength": 18,
+        "directLength": 15
+      },
+      "receiptSHA256": "2b9682ec28642ca57377773beda3b46c2f0d954f96654ed25af39e12c8269b41"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "WS01",
+      "native": {
+        "fields": {},
+        "objectPresent": false
+      },
+      "receiptSHA256": "2b9682ec28642ca57377773beda3b46c2f0d954f96654ed25af39e12c8269b41"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "BP02",
+      "native": {
+        "plainPreserved": true,
+        "sameText": false,
+        "viaIdLength": 18,
+        "directLength": 15
+      },
+      "receiptSHA256": "0f89c20237a6686cbbb0720ed910e042094825e037345b85d55a0144e7bdd1f2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "WS01",
+      "native": {
+        "fields": {},
+        "objectPresent": false
+      },
+      "receiptSHA256": "0f89c20237a6686cbbb0720ed910e042094825e037345b85d55a0144e7bdd1f2"
+    }
+  ],
+  "projection": "Exact independently replayed observation line/method. BP01 exists only in named test context; no anonymous builtin observation invented. Closed-set rows use per-call rollback and a cross-method negative. WS01 is an explicit observed-absence carry, not a metadata fix.",
+  "uncaptured": [
+    "Other org feature/license contexts, namespace/package contexts and APIs remain unobserved.",
+    "No Commerce field types, writability, defaults or providers are inferred from WebStore absence.",
+    "Other departed local types, null sets, loop/try blocks and lexical expressions are outside the new Set<Id> scope."
+  ]
+}

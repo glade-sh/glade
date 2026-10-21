@@ -1,0 +1,5 @@
+{
+  "compiled": true,
+  "success": false,
+  "exceptionMessage": "System.AssertException: Assertion Failed: OBSERVED|community|{\"userType\":\"CspLitePortal\",\"profileName\":\"Customer Community User\",\"profileCount\":1,\"total\":5,\"status\":\"Active\",\"key\":\"PID_Customer_Community\",\"name\":\"Customer Community\",\"count\":1}"
+}

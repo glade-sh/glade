@@ -1,0 +1,326 @@
+{
+  "cluster": "static",
+  "cellCount": 9,
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cells": [
+    {
+      "id": "C154R34",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { public static String token(){return 'local-static';} }",
+          "Builder": "public class Builder extends BuilderBase { public static String chained(){return Builder.token();} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',Builder.chained());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R34|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "a2b279b6b3caf88a076a34ba447e4b24b14fa1f18b5b997ac8198305ec6a8aa8",
+          "class:Builder": "c1fa6b9d45a301de53391df9c3e9fb1895c3ee780cd4b69f4448273174623187",
+          "class:E10Observe": "49e0c28f2d12288fd52507926c31c3db01a40e498a2ca9d4639ba717e02c10f2"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local-static"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R35",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { private static String token(){return 'private-static';} }",
+          "Builder": "public class Builder extends BuilderBase { public static String chained(){return Builder.token();} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',Builder.chained());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R35|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "f9c250889e10bda6a4064e8e4304283497d5ec9aa5d06b43748aaa199a5ca2d6",
+          "class:Builder": "c1fa6b9d45a301de53391df9c3e9fb1895c3ee780cd4b69f4448273174623187",
+          "class:E10Observe": "1db68f1e994cc21be604112f6831af10606ba62615e3bb091b5eb710a2ce3556"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String BuilderBase.token()",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: String BuilderBase.token()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String BuilderBase.token()",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R36",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.BuilderBase.staticToken());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R36|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "f0bbf28382a3cc1c18ec1ac76f5a58c2fa9239b14f33c1228f1c80a5e49c023f"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "pkg-static"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R34",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { public static String token(){return 'local-static';} }",
+          "Builder": "public class Builder extends BuilderBase { public static String chained(){return Builder.token();} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',Builder.chained());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R34|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "a2b279b6b3caf88a076a34ba447e4b24b14fa1f18b5b997ac8198305ec6a8aa8",
+          "class:Builder": "c1fa6b9d45a301de53391df9c3e9fb1895c3ee780cd4b69f4448273174623187",
+          "class:E10Observe": "49e0c28f2d12288fd52507926c31c3db01a40e498a2ca9d4639ba717e02c10f2"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local-static"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R35",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { private static String token(){return 'private-static';} }",
+          "Builder": "public class Builder extends BuilderBase { public static String chained(){return Builder.token();} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',Builder.chained());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R35|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "f9c250889e10bda6a4064e8e4304283497d5ec9aa5d06b43748aaa199a5ca2d6",
+          "class:Builder": "c1fa6b9d45a301de53391df9c3e9fb1895c3ee780cd4b69f4448273174623187",
+          "class:E10Observe": "1db68f1e994cc21be604112f6831af10606ba62615e3bb091b5eb710a2ce3556"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String BuilderBase.token()",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: String BuilderBase.token()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String BuilderBase.token()",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R36",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.BuilderBase.staticToken());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R36|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "f0bbf28382a3cc1c18ec1ac76f5a58c2fa9239b14f33c1228f1c80a5e49c023f"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "pkg-static"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R34",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { public static String token(){return 'local-static';} }",
+          "Builder": "public class Builder extends BuilderBase { public static String chained(){return Builder.token();} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',Builder.chained());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R34|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "a2b279b6b3caf88a076a34ba447e4b24b14fa1f18b5b997ac8198305ec6a8aa8",
+          "class:Builder": "c1fa6b9d45a301de53391df9c3e9fb1895c3ee780cd4b69f4448273174623187",
+          "class:E10Observe": "49e0c28f2d12288fd52507926c31c3db01a40e498a2ca9d4639ba717e02c10f2"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local-static"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R35",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { private static String token(){return 'private-static';} }",
+          "Builder": "public class Builder extends BuilderBase { public static String chained(){return Builder.token();} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',Builder.chained());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R35|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "f9c250889e10bda6a4064e8e4304283497d5ec9aa5d06b43748aaa199a5ca2d6",
+          "class:Builder": "c1fa6b9d45a301de53391df9c3e9fb1895c3ee780cd4b69f4448273174623187",
+          "class:E10Observe": "1db68f1e994cc21be604112f6831af10606ba62615e3bb091b5eb710a2ce3556"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String BuilderBase.token()",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: String BuilderBase.token()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String BuilderBase.token()",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R36",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.BuilderBase.staticToken());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R36|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "f0bbf28382a3cc1c18ec1ac76f5a58c2fa9239b14f33c1228f1c80a5e49c023f"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "pkg-static"
+        }
+      },
+      "outcome": "runtime"
+    }
+  ]
+}

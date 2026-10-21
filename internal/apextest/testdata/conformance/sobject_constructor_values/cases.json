@@ -1,0 +1,470 @@
+[
+  {
+    "api": "62.0",
+    "route": "named",
+    "id": "tokenBoolean",
+    "source": "public class FieldValueTokenboolean62 { public static void observe() { Contact record=new Contact(HasOptedOutOfEmail=Contact.Email); } }\n",
+    "className": "FieldValueTokenboolean62",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Schema.SObjectField to Boolean"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "4e55eaade99d6947d52a98a87fd30ae2a34b9b05c25db978c8477c1ce1a06307"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "tokenBoolean",
+    "source": "Contact record=new Contact(HasOptedOutOfEmail=Contact.Email);",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Schema.SObjectField to Boolean"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "8d5bdfe402d8bfdaede040c86d763323034f3a6ded9aeea59c0c4082ec9f8517"
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "id": "tokenString",
+    "source": "public class FieldValueTokenstring62 { public static void observe() { Account record=new Account(Name=Account.Name); } }\n",
+    "className": "FieldValueTokenstring62",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Schema.SObjectField to String"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "a932207f06baee9cf421addf42e49fd2909dfc6cf93f00e4989f3f20933a110a"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "tokenString",
+    "source": "Account record=new Account(Name=Account.Name);",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Schema.SObjectField to String"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "10baa632e3ae10a5c6b52d00b40534408a43c8b57f2093e446fc019528f41a8a"
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "id": "stringBoolean",
+    "source": "public class FieldValueStringboolean62 { public static void observe() { Contact record=new Contact(HasOptedOutOfEmail='false'); } }\n",
+    "className": "FieldValueStringboolean62",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from String to Boolean"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "eac31487c9497637e6a440b1fe59136354bc3d316197c35ab265d1d28b6ac562"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "stringBoolean",
+    "source": "Contact record=new Contact(HasOptedOutOfEmail='false');",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from String to Boolean"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "c762cb1a9d3edc2e925d3ad8bb48f6b9517b88d26184f1464dd52b5146edff13"
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "id": "boolean",
+    "source": "public class FieldValueBoolean62 { public static void observe() { Contact record=new Contact(HasOptedOutOfEmail=true); } }\n",
+    "className": "FieldValueBoolean62",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "e6c952b4a79cea37a9ba5d457ecfb22e2fbb94735e3e66bcf345f89ef3c810b5"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "boolean",
+    "source": "Contact record=new Contact(HasOptedOutOfEmail=true);",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "72b9d3e1d5bcf0b35ffb189a962e86dc8f2d2c7f8405ee3c277d9bb2a67c86de"
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "id": "name",
+    "source": "public class FieldValueName62 { public static void observe() { Account record=new Account(Name='sample'); } }\n",
+    "className": "FieldValueName62",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "627b0eff057de7775a02813073235b386c843df71132ed9efec9c1ae5ac83cd7"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "name",
+    "source": "Account record=new Account(Name='sample');",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "7ab03a414807e82450825d8621d11396bfc9d4fe2d5d7178ea0d1c122edc9eed"
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "id": "stringNumber",
+    "source": "public class FieldValueStringnumber62 { public static void observe() { Account record=new Account(NumberOfEmployees='3'); } }\n",
+    "className": "FieldValueStringnumber62",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from String to Integer"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "9049e743eb590d3df3aa9a5a06214aff3bfdeae49910801acd06c7a368f36a4e"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "stringNumber",
+    "source": "Account record=new Account(NumberOfEmployees='3');",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from String to Integer"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "b12ef4af75c8aec0d7bc444c844f7790e53d91b6675ed9a63a113d902853c0eb"
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "id": "number",
+    "source": "public class FieldValueNumber62 { public static void observe() { Account record=new Account(NumberOfEmployees=3); } }\n",
+    "className": "FieldValueNumber62",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "4327c727c60de021e2660ff10a46c7b9fae3db3a6d46fb79b7202b1dc1aad3e7"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "number",
+    "source": "Account record=new Account(NumberOfEmployees=3);",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "e22c0e4d7e72ccfa8c6dcb06ae03d2f9cb70505041f3392d1f5b46fdca5dd7b8"
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "id": "nullBoolean",
+    "source": "public class FieldValueNullboolean62 { public static void observe() { Contact record=new Contact(HasOptedOutOfEmail=null); } }\n",
+    "className": "FieldValueNullboolean62",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "09f4b990ebe36b59aab840b0248b5d321e35eada021a3bb7b1997caa3ec7473e"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "nullBoolean",
+    "source": "Contact record=new Contact(HasOptedOutOfEmail=null);",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "252d67019f6f6238c272e9b2d9113ea55fae57328e606ba688130f31daf3332b"
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "id": "objectBoolean",
+    "source": "public class FieldValueObjectboolean62 { public static void observe() { Object value=true; Contact record=new Contact(HasOptedOutOfEmail=value); } }\n",
+    "className": "FieldValueObjectboolean62",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Object to Boolean"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "e04d3f0c2508d9bd973264515ff5c369b01973b0e5a92be40ed6ee79beb931a0"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "objectBoolean",
+    "source": "Object value=true; Contact record=new Contact(HasOptedOutOfEmail=value);",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Object to Boolean"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "f3e978f63178a006969e49de791835db37ba3308206ce99f5a121b74780d9872"
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "id": "numberString",
+    "source": "public class FieldValueNumberstring62 { public static void observe() { Account record=new Account(Name=3); } }\n",
+    "className": "FieldValueNumberstring62",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Integer to String"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "e6eb8d35d3fe7b6023d9dba4973da3a4e8e2ec4b2f05e3ed076795a2cbd6ad52"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "numberString",
+    "source": "Account record=new Account(Name=3);",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Integer to String"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "ce628250af95a1a771b42652cb8dceff668d28cafee7d23e69d12cf9658c70cb"
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "id": "tokenBoolean",
+    "source": "public class FieldValueTokenboolean67 { public static void observe() { Contact record=new Contact(HasOptedOutOfEmail=Contact.Email); } }\n",
+    "className": "FieldValueTokenboolean67",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Schema.SObjectField to Boolean"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "b3bc2cc4c156b8f80760e6be50eeeaed1766bbb4b1a1a85735fb2a76d2240d81"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "tokenBoolean",
+    "source": "Contact record=new Contact(HasOptedOutOfEmail=Contact.Email);",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Schema.SObjectField to Boolean"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "8d5bdfe402d8bfdaede040c86d763323034f3a6ded9aeea59c0c4082ec9f8517"
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "id": "tokenString",
+    "source": "public class FieldValueTokenstring67 { public static void observe() { Account record=new Account(Name=Account.Name); } }\n",
+    "className": "FieldValueTokenstring67",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Schema.SObjectField to String"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "0bc68a75d6be22c1bd8cc5b56c8f0372891e408a299de59df99726a5d4b03f1f"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "tokenString",
+    "source": "Account record=new Account(Name=Account.Name);",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Schema.SObjectField to String"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "10baa632e3ae10a5c6b52d00b40534408a43c8b57f2093e446fc019528f41a8a"
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "id": "stringBoolean",
+    "source": "public class FieldValueStringboolean67 { public static void observe() { Contact record=new Contact(HasOptedOutOfEmail='false'); } }\n",
+    "className": "FieldValueStringboolean67",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from String to Boolean"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "39d85688bb558b69e1027458029b9629a88493ecf60afa0628530b0f9a6441d0"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "stringBoolean",
+    "source": "Contact record=new Contact(HasOptedOutOfEmail='false');",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from String to Boolean"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "c762cb1a9d3edc2e925d3ad8bb48f6b9517b88d26184f1464dd52b5146edff13"
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "id": "boolean",
+    "source": "public class FieldValueBoolean67 { public static void observe() { Contact record=new Contact(HasOptedOutOfEmail=true); } }\n",
+    "className": "FieldValueBoolean67",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "fa14050732d7b3d7c3cc76ed30b8ae7ad1638e401ef76d248fb967b14b80a190"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "boolean",
+    "source": "Contact record=new Contact(HasOptedOutOfEmail=true);",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "72b9d3e1d5bcf0b35ffb189a962e86dc8f2d2c7f8405ee3c277d9bb2a67c86de"
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "id": "name",
+    "source": "public class FieldValueName67 { public static void observe() { Account record=new Account(Name='sample'); } }\n",
+    "className": "FieldValueName67",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "1843792b4d9831ef36e2de0c592bcfbb9b101a557cd57bd983f2dafa7596ba37"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "name",
+    "source": "Account record=new Account(Name='sample');",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "7ab03a414807e82450825d8621d11396bfc9d4fe2d5d7178ea0d1c122edc9eed"
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "id": "stringNumber",
+    "source": "public class FieldValueStringnumber67 { public static void observe() { Account record=new Account(NumberOfEmployees='3'); } }\n",
+    "className": "FieldValueStringnumber67",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from String to Integer"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "9a1241355506ebf7195d4d6979b3a9b285bc225819fcdec9a82b4c14f8d1be35"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "stringNumber",
+    "source": "Account record=new Account(NumberOfEmployees='3');",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from String to Integer"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "b12ef4af75c8aec0d7bc444c844f7790e53d91b6675ed9a63a113d902853c0eb"
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "id": "number",
+    "source": "public class FieldValueNumber67 { public static void observe() { Account record=new Account(NumberOfEmployees=3); } }\n",
+    "className": "FieldValueNumber67",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "113002220e975103a8cb54d9db87eb8ebcbb042a631dba4cac268e53c51b06ad"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "number",
+    "source": "Account record=new Account(NumberOfEmployees=3);",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "e22c0e4d7e72ccfa8c6dcb06ae03d2f9cb70505041f3392d1f5b46fdca5dd7b8"
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "id": "nullBoolean",
+    "source": "public class FieldValueNullboolean67 { public static void observe() { Contact record=new Contact(HasOptedOutOfEmail=null); } }\n",
+    "className": "FieldValueNullboolean67",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "1b196b2df2ef22304b0d08f8165f137fdbb93b656a82c0578f8857116886c303"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "nullBoolean",
+    "source": "Contact record=new Contact(HasOptedOutOfEmail=null);",
+    "accepted": true,
+    "problems": [],
+    "context": "full-field-access",
+    "sourceSha256": "252d67019f6f6238c272e9b2d9113ea55fae57328e606ba688130f31daf3332b"
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "id": "objectBoolean",
+    "source": "public class FieldValueObjectboolean67 { public static void observe() { Object value=true; Contact record=new Contact(HasOptedOutOfEmail=value); } }\n",
+    "className": "FieldValueObjectboolean67",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Object to Boolean"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "e4b8aadc8283c1a6758c24fce7d26712361798f8c65577ba687346e5cc2b42ff"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "objectBoolean",
+    "source": "Object value=true; Contact record=new Contact(HasOptedOutOfEmail=value);",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Object to Boolean"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "f3e978f63178a006969e49de791835db37ba3308206ce99f5a121b74780d9872"
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "id": "numberString",
+    "source": "public class FieldValueNumberstring67 { public static void observe() { Account record=new Account(Name=3); } }\n",
+    "className": "FieldValueNumberstring67",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Integer to String"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "15c0c46a2e6cec7456132e42ac73e69446b38361627f212070c86213c0107db8"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "numberString",
+    "source": "Account record=new Account(Name=3);",
+    "accepted": false,
+    "problems": [
+      "Illegal assignment from Integer to String"
+    ],
+    "context": "full-field-access",
+    "sourceSha256": "ce628250af95a1a771b42652cb8dceff668d28cafee7d23e69d12cf9658c70cb"
+  }
+]

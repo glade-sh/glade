@@ -49,6 +49,7 @@ func TestTryTestServerRunFailsClosedOnProtocolMismatch(t *testing.T) {
 }
 
 func TestConnectedRunKeepsArtifactPathsClientLocal(t *testing.T) {
+	unsetTestTimeoutEnv(t)
 	root := t.TempDir()
 	writeServeTestProject(t, root)
 	historyPath := defaultCLIDurationHistoryPath(root)
@@ -130,7 +131,7 @@ func TestConnectedRunKeepsArtifactPathsClientLocal(t *testing.T) {
 	if runRequest.Run == nil {
 		t.Fatal("connected run omitted V1 run policy")
 	}
-	if got, want := runRequest.Run.TimeoutMS, int64(300_000); got != want {
+	if got, want := runRequest.Run.TimeoutMS, int64(600_000); got != want {
 		t.Fatalf("default timeout = %d, want %d", got, want)
 	}
 	if !runRequest.Run.ParallelMethods || runRequest.Run.Parallelism < 1 {

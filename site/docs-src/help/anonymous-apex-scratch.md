@@ -21,7 +21,7 @@ illustrated steps and recovery details for this interface.
 ## Before you start
 
 - The [bundled Glade extension](/guide/editor) is installed in VS Code; no particular theme or profile is required.
-- The project's Apex source version is eligible for Execute Anonymous (65.0, 66.0, or 67.0).
+- The project's Apex source version is eligible for Execute Anonymous (65.0, 66.0, 67.0, or 68.0).
 - The active Glade local data environment is the one you want to write to.
 
 The screenshots use a clean VS Code profile with Glade, Catppuccin Mocha,

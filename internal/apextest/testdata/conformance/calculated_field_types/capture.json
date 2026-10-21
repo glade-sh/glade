@@ -1,0 +1,20 @@
+{
+  "apis": [
+    "62",
+    "67",
+    "68"
+  ],
+  "contexts": [
+    "anonymous",
+    "istest"
+  ],
+  "orgIdSha256": "55d9bf011e4b7fbc6d9186288fb1e0c2eac80d3511f01f96c84746489ddf1afc",
+  "edition": "Developer",
+  "source": "Owned synthetic global describe and selected field describe",
+  "unavailableObjects": [
+    "RegulatoryCodeViolation",
+    "Quote"
+  ],
+  "unavailableObjectMeaning": "Edition-context carry; no field semantics observed for these objects.",
+  "calculatedIntegerOracle": "Existing owned describe catalog: RegulatoryCodeViolation.DaysOpen and Quote.LineItemCount, type int, calculated true, createable/updateable false."
+}

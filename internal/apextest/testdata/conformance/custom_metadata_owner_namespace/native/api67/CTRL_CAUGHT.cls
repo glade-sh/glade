@@ -1,0 +1,1 @@
+@IsTest private class MetadataOwner67CTRLCAUGHT { @IsTest static void observed(){Object value;try{List<Integer> empty=new List<Integer>();Integer ignored=empty[0];}catch(Exception e){value=e.getTypeName();}System.assert(false,'METADATA_OWNER|CTRL_CAUGHT|'+JSON.serialize(value));} }

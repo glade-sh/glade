@@ -90,6 +90,14 @@ func (vm *VM) lookupFieldInMapWithOptions(fields map[string]Field, fieldName str
 		}
 		field.StorageName = candidate
 		score := vm.fieldProvenanceScore(field)
+		if !preferDependency && !field.Dependency && vm.currentMethod.SourceUnit != "" && field.SourceUnit == vm.currentMethod.SourceUnit {
+			score += 128
+		}
+		// The canonical slot and retained source slot may describe the same
+		// field. Keep their read/write choice deterministic within one unit.
+		if strings.EqualFold(candidate, requested) {
+			score++
+		}
 		if candidate == requested || field.Name == requested {
 			score += 16
 		}

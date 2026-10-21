@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+<apiVersion>62.0</apiVersion>
+<assignments><name>CopyFields</name><label>Copy fields</label><locationX>0</locationX><locationY>0</locationY>
+<assignmentItems><assignToReference>FindParent.Description</assignToReference><operator>Assign</operator><value><elementReference>$Record.LastName</elementReference></value></assignmentItems>
+<assignmentItems><assignToReference>FindParent.Phone</assignToReference><operator>Assign</operator><value><elementReference>$Record.Phone</elementReference></value></assignmentItems>
+<connector><targetReference>SaveParent</targetReference></connector></assignments>
+<interviewLabel>Grove lookup source {!$Flow.CurrentDateTime}</interviewLabel><label>Grove lookup source</label><processType>AutoLaunchedFlow</processType>
+<recordLookups><name>FindParent</name><label>Find parent</label><locationX>0</locationX><locationY>0</locationY><assignNullValuesIfNoRecordsFound>true</assignNullValuesIfNoRecordsFound><connector><targetReference>CopyFields</targetReference></connector><filterLogic>and</filterLogic><filters><field>Id</field><operator>EqualTo</operator><value><elementReference>$Record.AccountId</elementReference></value></filters><getFirstRecordOnly>true</getFirstRecordOnly><object>Account</object><storeOutputAutomatically>true</storeOutputAutomatically></recordLookups>
+<recordUpdates><name>SaveParent</name><label>Save parent</label><locationX>0</locationX><locationY>0</locationY><inputReference>FindParent</inputReference></recordUpdates>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>FindParent</targetReference></connector><object>Contact</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordAfterSave</triggerType></start><status>Active</status></Flow>

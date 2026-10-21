@@ -1,0 +1,10 @@
+{
+  "api": "68.0",
+  "route": "istest",
+  "rows_expected": 32,
+  "rows_observed": 32,
+  "complete": true,
+  "capture_finished": true,
+  "manifest_sha256": "22e6e95ffce06ade584e44977192d51ceef0365ca576a2b06540319821fd726a",
+  "release_drift": "Same-release62/67/68 both routes. API59 not requested; required before any API68-only conclusion."
+}

@@ -1,0 +1,191 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "loop-variable",
+  "shapeCount": 2,
+  "nativeObservationCount": 12,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C166PF_101",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;for(Integer n:new List<Integer>{1}){n++;r=String.valueOf(n);}System.assert(false,'C126_RESULT|C166PF_101|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "82474087101eec0b49794d6b6a39b22b8a98085ff07567fecb98308e9a057a9f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe101": "@IsTest private class C166Observe101{@IsTest static void observe(){String r;for(Integer n:new List<Integer>{1}){n++;r=String.valueOf(n);}System.assert(false,'C126_RESULT|C166PF_101|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe101"
+          ],
+          "sourceSha256": {
+            "class:C166Observe101": "7835ad9d860146745ee0418f11d34e9bef9649e837d8258f54216d1b7afe47dc"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_102",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;for(Decimal n:new List<Decimal>{1}){--n;r=String.valueOf(n);}System.assert(false,'C126_RESULT|C166PF_102|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "edff768fa58a9bb791a2ed32bb584c4c6bb97353409928f04fe660e43b01f863"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe102": "@IsTest private class C166Observe102{@IsTest static void observe(){String r;for(Decimal n:new List<Decimal>{1}){--n;r=String.valueOf(n);}System.assert(false,'C126_RESULT|C166PF_102|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe102"
+          ],
+          "sourceSha256": {
+            "class:C166Observe102": "c4a3ee319bb96880efd4f3e99b881c887408b6f51b39613a395674c3c250678c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    }
+  ]
+}

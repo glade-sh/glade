@@ -1,0 +1,262 @@
+{
+  "apiVersion": "65.0",
+  "runtimeAPIVersion": "68.0",
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 4,
+  "nativeObservationCount": 8,
+  "source": {
+    "id": "expanded-owner-rest-source",
+    "classes": {
+      "OwnedOwnerREST65": "public class OwnedOwnerREST65 {public static Map<String,Object> observe(String kind){String payload;\n  if(kind=='USER_ID_URL_REST68')payload='{\"attributes\":{\"type\":\"Case\"},\"Id\":\"500000000000017\",\"OwnerId\":\"005000000000017\",\"Subject\":\"Owned envelope\",\"Owner\":{\"FirstName\":\"Owned\",\"Id\":\"005000000000017\",\"attributes\":{\"type\":\"User\",\"url\":\"/services/data/v68.0/sobjects/User/005000000000017\"}}}';\n  else if(kind=='NAME_ID_URL_REST68')payload='{\"attributes\":{\"type\":\"Case\"},\"Id\":\"500000000000017\",\"OwnerId\":\"005000000000017\",\"Subject\":\"Owned envelope\",\"Owner\":{\"Id\":\"005000000000017\",\"FirstName\":\"Owned\",\"attributes\":{\"type\":\"Name\",\"url\":\"/services/data/v68.0/sobjects/User/005000000000017\"}}}';\n  else if(kind=='NAME_TYPE_ID_URL_REST68')payload='{\"attributes\":{\"type\":\"Case\"},\"Id\":\"500000000000017\",\"OwnerId\":\"005000000000017\",\"Subject\":\"Owned envelope\",\"Owner\":{\"Id\":\"005000000000017\",\"FirstName\":\"Owned\",\"Type\":\"User\",\"attributes\":{\"type\":\"Name\",\"url\":\"/services/data/v68.0/sobjects/User/005000000000017\"}}}';\n  else return new Map<String,Object>{'fixtureError'=>'unknown-row','row'=>kind};\n  Map<String,Object> o=new Map<String,Object>{'row'=>kind,'phase'=>'deserialize'};\n  try {\n   Case record=(Case)JSON.deserialize(payload,Case.class);\n   o.put('phase','deserialized');\n   o.put('caseIdMatches',record.Id==Id.valueOf('500000000000017'));\n   o.put('ownerReferenceMatches',record.OwnerId==Id.valueOf('005000000000017'));\n   SObject owner=record.getSObject('Owner');\n   o.put('ownerNull',owner==null);\n   if(owner!=null){\n    try{o.put('ownerSObjectType',String.valueOf(owner.getSObjectType()));}catch(Exception e){o.put('ownerSObjectTypeException',new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()});}\n    try{Object ownerKey=owner.get('Id');o.put('ownerIdNull',ownerKey==null);o.put('ownerIdMatches',ownerKey==Id.valueOf('005000000000017'));}catch(Exception e){o.put('ownerIdException',new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()});}\n    try{o.put('firstName',owner.get('FirstName'));}catch(Exception e){o.put('firstError',new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()});}\n    try{o.put('typeField',owner.get('Type'));}catch(Exception e){o.put('typeError',new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()});}\n   }\n   try{Map<String,Object> roundtrip=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(record));o.put('ownerJSON',roundtrip.get('Owner'));}catch(Exception e){o.put('serializedOwnerException',new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()});}\n   o.put('phase','complete');\n  }catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n  return o;\n }\n}",
+      "OwnedOwnerREST65Test": "@IsTest private class OwnedOwnerREST65Test{@IsTest static void observe1(){System.assert(false,'NATIVE_RESULT|USER_ID_URL_REST68|'+JSON.serialize(OwnedOwnerREST65.observe('USER_ID_URL_REST68')));}@IsTest static void observe2(){System.assert(false,'NATIVE_RESULT|NAME_ID_URL_REST68|'+JSON.serialize(OwnedOwnerREST65.observe('NAME_ID_URL_REST68')));}@IsTest static void observe3(){System.assert(false,'NATIVE_RESULT|NAME_TYPE_ID_URL_REST68|'+JSON.serialize(OwnedOwnerREST65.observe('NAME_TYPE_ID_URL_REST68')));}@IsTest static void observe4(){Map<String,Object> observed=new Map<String,Object>();Id key=Id.valueOf('005000000000017');JSONGenerator generator=JSON.createGenerator(false);generator.writeObject(key.getSObjectType().newSObject(key));observed.put('generated',JSON.deserializeUntyped(generator.getAsString()));System.assert(false,'NATIVE_RESULT|USER_ID_GENERATOR|'+JSON.serialize(observed));}}"
+    },
+    "tests": [
+      "OwnedOwnerREST65Test"
+    ],
+    "runtimeAPIVersion": "68.0",
+    "stage": "observed",
+    "sourceSha256": {
+      "class:OwnedOwnerREST65": "3e18910cf434fe90d2dfbdd368cec81427362958a751edea601891d1d271f9a1",
+      "class:OwnedOwnerREST65Test": "44defaa987b5bc2fff2a4aa40e7134d955522970b5481cb1707af609560cc569"
+    }
+  },
+  "nativeFilesSha256": {
+    "org.tsv": "844a83d3284ec0354694ba365c0ef13f72bcaf5512a1429a87dfc58b1372f2e2",
+    "ORG-RUN.txt": "c8644504a3bc159460d9c4ae0de25cf2d3beb5b50109563846123334756b51de",
+    "cases.json": "1280b162aac1f24e95bd96ffedb823b40cc38f467fc7765e5b9118f1cbf51249",
+    "deploy65.json": "5c004a3e297b04bca22586c70fa52a8d8d66175cdc526164ebae5a84e0b22f8c",
+    "isTest65.json": "142efcbfafe1088c68bd1b4cee6256776c7dcf3cb95550d18ac024efdb4c8174",
+    "api65/force-app/main/default/classes/OwnedOwnerREST65.cls-meta.xml": "0347267b36e4cd542616bb80997ae7c7634cf64ed063b5bd68dd2493c8fca3ea",
+    "api65/force-app/main/default/classes/OwnedOwnerREST65Test.cls-meta.xml": "0347267b36e4cd542616bb80997ae7c7634cf64ed063b5bd68dd2493c8fca3ea"
+  },
+  "rows": [
+    {
+      "id": "USER_ID_URL_REST68",
+      "testMethod": "observe1",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|USER_ID_URL_REST68|'+JSON.serialize(OwnedOwnerREST65.observe('USER_ID_URL_REST68')));",
+      "sourceSha256": "867c7d29edbdec48418710557048c7ddec477110be22b7e2bb0efd897993f804",
+      "expectedByRoute": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017",
+              "attributes": {
+                "type": "User",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "User",
+            "phase": "complete",
+            "row": "USER_ID_URL_REST68",
+            "typeError": {
+              "message": "Invalid field Type for User",
+              "type": "System.SObjectException"
+            }
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017",
+              "attributes": {
+                "type": "User",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "User",
+            "phase": "complete",
+            "row": "USER_ID_URL_REST68",
+            "typeError": {
+              "message": "Invalid field Type for User",
+              "type": "System.SObjectException"
+            }
+          }
+        }
+      },
+      "evidenceSha256ByRoute": {
+        "anonymous": "dd7e96a35466b19cf392f8befda9b10fed73b148b607afd189e05f2d93d53b87",
+        "isTest": "142efcbfafe1088c68bd1b4cee6256776c7dcf3cb95550d18ac024efdb4c8174"
+      }
+    },
+    {
+      "id": "NAME_ID_URL_REST68",
+      "testMethod": "observe2",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|NAME_ID_URL_REST68|'+JSON.serialize(OwnedOwnerREST65.observe('NAME_ID_URL_REST68')));",
+      "sourceSha256": "671602dc1ae9e51382cb5b406481456aae9e9fe4a90e878cca36479b1a16cf51",
+      "expectedByRoute": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017",
+              "attributes": {
+                "type": "Name",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "Name",
+            "phase": "complete",
+            "row": "NAME_ID_URL_REST68",
+            "typeField": null
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017",
+              "attributes": {
+                "type": "Name",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "Name",
+            "phase": "complete",
+            "row": "NAME_ID_URL_REST68",
+            "typeField": null
+          }
+        }
+      },
+      "evidenceSha256ByRoute": {
+        "anonymous": "dbca8f8d345a09895059c997f5dd052e4c2637a8842d8732d0b399ceec118b31",
+        "isTest": "142efcbfafe1088c68bd1b4cee6256776c7dcf3cb95550d18ac024efdb4c8174"
+      }
+    },
+    {
+      "id": "NAME_TYPE_ID_URL_REST68",
+      "testMethod": "observe3",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|NAME_TYPE_ID_URL_REST68|'+JSON.serialize(OwnedOwnerREST65.observe('NAME_TYPE_ID_URL_REST68')));",
+      "sourceSha256": "a39db2008179f739c07574282d75bed386aeda66e4a531f33374861abd3e50b7",
+      "expectedByRoute": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017",
+              "Type": "User",
+              "attributes": {
+                "type": "Name",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "Name",
+            "phase": "complete",
+            "row": "NAME_TYPE_ID_URL_REST68",
+            "typeField": "User"
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017",
+              "Type": "User",
+              "attributes": {
+                "type": "Name",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "Name",
+            "phase": "complete",
+            "row": "NAME_TYPE_ID_URL_REST68",
+            "typeField": "User"
+          }
+        }
+      },
+      "evidenceSha256ByRoute": {
+        "anonymous": "09872a32124301fb73f24ae32e226ef140072e562c9980501747f41c3bd46a25",
+        "isTest": "142efcbfafe1088c68bd1b4cee6256776c7dcf3cb95550d18ac024efdb4c8174"
+      }
+    },
+    {
+      "id": "USER_ID_GENERATOR",
+      "testMethod": "observe4",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>();Id key=Id.valueOf('005000000000017');JSONGenerator generator=JSON.createGenerator(false);generator.writeObject(key.getSObjectType().newSObject(key));observed.put('generated',JSON.deserializeUntyped(generator.getAsString()));System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|USER_ID_GENERATOR|'+JSON.serialize(observed));",
+      "sourceSha256": "80ccd500a852bfd42c25dedd50433dd1c9021fa84fa90a8533d48d13ecfb236c",
+      "expectedByRoute": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "generated": {
+              "Id": "005000000000017AAA",
+              "attributes": {
+                "type": "User",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017AAA"
+              }
+            }
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "generated": {
+              "Id": "005000000000017AAA",
+              "attributes": {
+                "type": "User",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017AAA"
+              }
+            }
+          }
+        }
+      },
+      "evidenceSha256ByRoute": {
+        "anonymous": "88f0e51b6720117c8e023e60421d953e326ec43e8033c61255c386fb14faa439",
+        "isTest": "142efcbfafe1088c68bd1b4cee6256776c7dcf3cb95550d18ac024efdb4c8174"
+      }
+    }
+  ],
+  "carries": [
+    {
+      "scope": "other source APIs, strict JSON and relationships",
+      "reason": "Only ordinary source API65 Case.Owner URL inputs and one API65 User ID generator producer were observed. Existing independent native controls remain unchanged.",
+      "nativeValue": null
+    }
+  ]
+}

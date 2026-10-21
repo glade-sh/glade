@@ -1,0 +1,1 @@
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>LifecycleObject</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>LifecycleParcel__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>

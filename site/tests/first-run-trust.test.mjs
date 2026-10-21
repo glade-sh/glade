@@ -19,6 +19,8 @@ const repoInstallation = await readFile(new URL("../../docs/INSTALL.md", import.
 const repoSecurityTrust = await readFile(new URL("../../docs/SECURITY_TRUST.md", import.meta.url), "utf8");
 const securityPolicy = await readFile(new URL("../../SECURITY.md", import.meta.url), "utf8");
 const releaseVerifier = await readFile(new URL("../../scripts/verify-release-download.sh", import.meta.url), "utf8");
+const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
+const cliOutputContract = await readFile(new URL("../../docs/CLI_OUTPUT_CONTRACT.md", import.meta.url), "utf8");
 
 test('homepage install copy preserves executable command line breaks', () => {
   assert.match(home, /INSTALL_COMMAND/);
@@ -75,23 +77,44 @@ test("installation docs disclose both destinations and the observed footprint", 
   }
 });
 
-test("first-run surfaces keep API axes and Salesforce proof separate", () => {
-	for (const doc of [quickstart, supportMap]) {
-		for (const version of ["60.0", "65.0", "66.0", "67.0"]) assert.match(doc, new RegExp(version.replace(".", "\\.")));
-		assert.match(doc, /historical versions are preserved|historical\s+source versions are preserved/i);
-		assert.match(doc, /Do not (?:raise|upgrade|change)[\s\S]*?metadata/i);
-	}
-	assert.match(lwcShell, /exact checked `<apiVersion>` of `65\.0`, `66\.0`,\s+or `67\.0`/);
+for (const [route, doc] of [["quickstart", quickstart], ["support-map", supportMap]]) {
+	test(`${route} keeps v0.3.0 API axes and Salesforce proof separate`, () => {
+		assert.match(doc, /Apex 62\.0-68\.0, LWC and Visualforce 59\.0-68\.0/);
+		assert.match(doc, /(?:Historical Apex source below 62\.0[^\n]*Unsupported[^\n]*preserved|Apex source API below 62\.0 is unsupported,[\s\S]*?loader preserves the\s+version)/);
+		assert.match(doc, /Do not (?:bump|raise|upgrade|change)[\s\S]*?metadata/i);
+		assert.match(doc, /65\.0, 66\.0, 67\.0, (?:and )?68\.0/);
+		assert.match(doc, /60\.0, 65\.0, 66\.0, 67\.0, (?:and )?68\.0[^\n]*default 65\.0/);
+		assert.match(doc, /Salesforce (?:validation|deployment)|Salesforce was not contacted|did not log in to Salesforce/);
+	});
+}
+
+test("lwc-local-shell keeps bundle versions separate from source, HTTP, and Salesforce proof", () => {
+	assert.match(lwcShell, /Explicit LWC bundle versions must be whole versions from 59\.0 through 68\.0/);
+	assert.match(lwcShell, /[Uu]nversioned bundles use compiler default 68\.0/);
+	assert.match(lwcShell, /bundle version is independent of the Apex project default and\s+local HTTP endpoint version/);
 	assert.match(lwcShell, /does not contact Salesforce/);
-	assert.match(localAPIRoutes, /accepts `60\.0`, `65\.0`, `66\.0`, and `67\.0`/);
+});
+
+test("local-api-routes keeps endpoint versions separate from source, bundles, and Salesforce proof", () => {
+	assert.match(localAPIRoutes, /checked endpoint set is 60\.0, 65\.0, 66\.0, 67\.0, and 68\.0 \(default 65\.0\)/);
+	assert.match(localAPIRoutes, /Endpoint versions are separate from Apex source and LWC API versions/);
 	assert.match(localAPIRoutes, /not evidence that Salesforce was contacted/);
 });
 
-test("public references separate Unreleased first-run contracts from the stable binary", () => {
-	assert.match(cliReference, /`--once` example materializer[\s\S]*Unreleased source/);
-	assert.match(cliReference, /v0\.2\.15 stable binary does not provide that behavior/);
-	assert.match(cliReference, /Unreleased doctor `1\.1` schema/);
-	assert.match(jsonSchema, /v0\.2\.15 stable binary emits schema `1\.0`/);
+test("cli, JSON schema, and release notes describe v0.3.0 first-run contracts", () => {
+	assert.match(cliReference, /v0\.3\.0[\s\S]{0,100}doctor `1\.1` schema/);
+	assert.match(cliReference, /`--once` example materializer[\s\S]{0,100}v0\.3\.0/);
+	assert.match(jsonSchema, /v0\.3\.0[\s\S]{0,100}flattened `1\.1`/);
+	assert.match(jsonSchema, /62\.0 through 68\.0 checked window/);
+	assert.match(jsonSchema, /does not mean Salesforce was queried/);
+	assert.match(cliOutputContract, /currently `1\.1`/);
+	const v030Notes = releaseNotes.split("## v0.3.0\n")[1]?.split(/\n## /)[0];
+	assert.ok(v030Notes, "release notes must include v0.3.0");
+	assert.match(v030Notes, /--example refinement-service --once/);
+	assert.match(v030Notes, /schema advances to `1\.1`/);
+	for (const reference of [quickstart, examplesGuide, cliReference, jsonSchema]) {
+		assert.doesNotMatch(reference, /v0\.2\.15 stable|Unreleased (?:source|doctor)|next Glade release adds/);
+	}
 	assert.doesNotMatch(quickstart, /--example refinement-service --once/);
 	assert.match(localTesting, /\[`SampleTest\.adds` in the quickstart\]/);
 	assert.match(cliReference, /self-contained `SampleTest\.adds` run/);

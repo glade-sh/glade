@@ -111,6 +111,41 @@ The same catalog tracks Salesforce accept and reject behavior for:
 These rows are a checked compatibility set, not a claim that every Apex
 language or hosted platform behavior is implemented.
 
+## Execution and conversion details
+
+The checked runtime cases also cover these distinctions:
+
+- A classic `for` initializer and an enhanced-for variable are scoped to the
+  loop; sibling loops may reuse their names.
+- User-defined `equals` and `hashCode` methods participate in the checked
+  method-dispatch and collection contracts. A method named `equals` is not
+  automatically a built-in collection operation.
+- A typed null keeps its declared type for overload selection. An untyped
+  `null` does not select an overload by an imagined runtime value.
+- A final collection reference can still have mutable elements. Incrementing
+  a supported numeric element does not reassign the final variable.
+- Generic-interface and List-to-SObject casts preserve the captured runtime
+  type checks. A cast does not turn every list into a compatible record list.
+- Static SOQL binds cover checked parenthesized expressions, indexed values,
+  and lexical bindings. Colons inside strings are not bind expressions.
+
+For non-query lists, assigning or explicitly casting a `List<SObject>` view
+of one concrete record list to an unrelated concrete record-list type raises
+`TypeException`, including for an empty list. The checked method-return path
+allows that conversion and preserves the original runtime list type. Query
+results use their own conversion rules; do not generalize this return rule to
+assignments, arguments, or every list cast.
+
+### Legacy queried-record reads
+
+For source API 43.0 and earlier, assigning to a queried root record enables
+captured legacy behavior where omitted scalar or parent fields can read as
+null. Even a same-value assignment counts; DML alone does not. Trigger records,
+parent/subquery projections, and child collections have separate rules.
+API 44.0 and later retain missing-field errors for these reads.
+This compatibility detail does not extend the release support window below
+Apex 62.0.
+
 ## Validation boundary
 
 Routine Glade CI runs product regression tests. The first-party maintenance CI

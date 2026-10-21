@@ -1,20 +1,111 @@
 package gladecli
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"io"
+	"net"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/typesys"
 )
+
+func TestStopTestDaemonPreservesEndpointOnDialError(t *testing.T) {
+	root := t.TempDir()
+	socket := testdaemon.ServeSocketPath(root)
+	pid := testdaemon.ServePIDPath(root)
+	if err := os.MkdirAll(filepath.Dir(socket), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = os.Remove(socket)
+		_ = os.Remove(pid)
+		_ = os.Remove(filepath.Dir(socket))
+	})
+	// A symlink loop makes dialing fail without establishing that the daemon
+	// is absent. Unlike permission failures, this also works when run as root.
+	if err := os.Symlink(filepath.Base(socket), socket); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(pid, []byte("12345\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var output bytes.Buffer
+	if err := stopTestDaemon(context.Background(), root, &output); err == nil {
+		t.Errorf("stop reported success after a dial error: %s", output.String())
+	}
+	if strings.Contains(output.String(), "test daemon: stopped") {
+		t.Error("stop falsely reported stopped")
+	}
+	for _, path := range []string{socket, pid} {
+		if _, err := os.Lstat(path); err != nil {
+			t.Errorf("daemon endpoint removed after dial error: %v", err)
+		}
+	}
+}
+
+func TestStopTestDaemonPreservesUnresponsiveEndpoint(t *testing.T) {
+	for _, response := range []string{
+		`{"version":2,"op":"pong","ok":true}` + "\n",
+		"invalid response\n",
+	} {
+		t.Run(strings.TrimSpace(response), func(t *testing.T) {
+			root := t.TempDir()
+			socket := testdaemon.ServeSocketPath(root)
+			pid := testdaemon.ServePIDPath(root)
+			if err := os.MkdirAll(filepath.Dir(socket), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			listener, err := net.Listen("unix", socket)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer listener.Close()
+			t.Cleanup(func() {
+				_ = os.Remove(pid)
+				_ = os.Remove(filepath.Dir(socket))
+			})
+			if err := os.WriteFile(pid, []byte("12345\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			go func() {
+				conn, err := listener.Accept()
+				if err != nil {
+					return
+				}
+				defer conn.Close()
+				_ = conn.SetDeadline(time.Now().Add(time.Second))
+				_, _ = testdaemon.DecodeRequestV1(bufio.NewReader(conn))
+				_, _ = io.WriteString(conn, response)
+			}()
+			var output bytes.Buffer
+			err = stopTestDaemon(context.Background(), root, &output)
+			if err == nil {
+				t.Errorf("stop reported success for an unresponsive daemon: %s", output.String())
+			}
+			if strings.Contains(output.String(), "test daemon: stopped") {
+				t.Error("stop falsely reported stopped")
+			}
+			for _, path := range []string{socket, pid} {
+				if _, err := os.Stat(path); err != nil {
+					t.Errorf("live daemon endpoint removed: %v", err)
+				}
+			}
+		})
+	}
+}
 
 func TestTestOneShotCacheStatusExplainsParallelMethodBypass(t *testing.T) {
 	restoreDiskCache := apextest.EnableDiskCacheForTesting()

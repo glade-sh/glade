@@ -128973,11 +128973,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 	},
 	{
-		Name:       "Site.UrlRewriter",
-		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
+		Name: "Site.UrlRewriter",
+		Kind: apexast.DeclarationInterface,
 		Methods: []StandardMethodSpec{
 			{Name: "generateUrlFor", ReturnType: "List<PageReference>", ParameterSpecs: []StandardParameterSpec{{Name: "param1", Type: "List<PageReference>"}}},
 			{Name: "mapRequestUrl", ReturnType: "PageReference", ParameterSpecs: []StandardParameterSpec{{Name: "param1", Type: "PageReference"}}},

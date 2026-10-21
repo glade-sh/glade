@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	invalidDate	{"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	omittedDate	{"status":"success","matches":true}
+62.0	suppliedDate	{"status":"success","matches":true}
+67.0	invalidDate	{"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	omittedDate	{"status":"success","matches":true}
+67.0	suppliedDate	{"status":"success","matches":true}

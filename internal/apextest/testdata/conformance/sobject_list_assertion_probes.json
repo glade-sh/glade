@@ -1,0 +1,70 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "helpers": {
+    "RecordShelf": "public class RecordShelf { public static List<SObject> read(Object stored){return (List<SObject>)stored;} }"
+  },
+  "rows": [
+    {
+      "id": "LA01",
+      "source": "List<Account> concrete=new List<Account>{new Account()}; List<SObject> view=concrete; Assert.isInstanceOfType(view,List<Account>.class);",
+      "observe": "compilation, assertion success or exact exception type/message; for LA09 instanceof and cast outcome",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "LA02",
+      "source": "List<Account> concrete=new List<Account>{new Account()}; Map<String,Object> shelf=new Map<String,Object>{'rows'=>concrete}; List<SObject> view=RecordShelf.read(shelf.get('rows')); Assert.isInstanceOfType(view,List<Account>.class);",
+      "observe": "compilation, assertion success or exact exception type/message; for LA09 instanceof and cast outcome",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "LA03",
+      "source": "Object saved=new List<Account>(); List<SObject> view=RecordShelf.read(saved); Assert.isInstanceOfType(view,List<Account>.class);",
+      "observe": "compilation, assertion success or exact exception type/message; for LA09 instanceof and cast outcome",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "LA04",
+      "source": "List<SObject> view=new List<SObject>(); Assert.isNotInstanceOfType(view,List<Account>.class);",
+      "observe": "compilation, assertion success or exact exception type/message; for LA09 instanceof and cast outcome",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "LA05",
+      "source": "List<SObject> view=new List<Contact>{new Contact()}; Assert.isInstanceOfType(view,List<Account>.class);",
+      "observe": "compilation, assertion success or exact exception type/message; for LA09 instanceof and cast outcome",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "LA06",
+      "source": "List<SObject> view=new List<Account>{new Account()}; Assert.isNotInstanceOfType(view,List<Account>.class);",
+      "observe": "compilation, assertion success or exact exception type/message; for LA09 instanceof and cast outcome",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "LA07",
+      "source": "List<SObject> view=new List<Account>{new Account()}; Assert.isNotInstanceOfType(view,List<Contact>.class);",
+      "observe": "compilation, assertion success or exact exception type/message; for LA09 instanceof and cast outcome",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "LA08",
+      "source": "Assert.isNotInstanceOfType(null,List<Account>.class);",
+      "observe": "compilation, assertion success or exact exception type/message; for LA09 instanceof and cast outcome",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "LA09",
+      "source": "Object saved=new List<Account>{new Account()}; List<SObject> view=RecordShelf.read(saved); Boolean typed=view instanceof List<Account>; List<Account> rows=(List<Account>)view;",
+      "observe": "compilation, assertion success or exact exception type/message; for LA09 instanceof and cast outcome",
+      "captureStatus": "PENDING-ROWS"
+    }
+  ]
+}

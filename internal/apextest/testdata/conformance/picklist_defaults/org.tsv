@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	insertValues	{"results":[{"success":true},{"success":true}]}
+62.0	typeValues	{"restricted":false,"technologyPartner":true,"customerDirect":true,"activeValues":["Channel Partner / Reseller","Customer - Channel","Customer - Direct","Installation Partner","Other","Prospect","Technology Partner"]}
+67.0	insertValues	{"results":[{"success":true},{"success":true}]}
+67.0	typeValues	{"restricted":false,"technologyPartner":true,"customerDirect":true,"activeValues":["Channel Partner / Reseller","Customer - Channel","Customer - Direct","Installation Partner","Other","Prospect","Technology Partner"]}

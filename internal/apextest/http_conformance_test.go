@@ -21,7 +21,9 @@ import (
 )
 
 // The HTTP oracle includes the owned REST handler and mock implementations.
-// Both API endpoints agree; CI uses only these exported sources and values.
+// The API 68 anonymous capture matches all 298 primary and 132 control answers
+// from API 62/67. Only SH001-SH022 have a native API 68 @IsTest capture;
+// the other API 68 named checks remain local route assertions.
 func TestHTTPOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected, Group string
@@ -45,18 +47,25 @@ func TestHTTPOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 298 || len(data.Controls) != 132 || len(data.Remaining) != 1 || strings.Join(data.APIVersions, ",") != "62.0,67.0" || len(data.Declarations) != 5 {
+	if len(data.Cases) != 298 || len(data.Controls) != 132 || len(data.Remaining) != 1 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" || len(data.Declarations) != 5 {
 		t.Fatalf("oracle shape: rows=%d controls=%d carried=%d versions=%v helpers=%d", len(data.Cases), len(data.Controls), len(data.Remaining), data.APIVersions, len(data.Declarations))
 	}
 	data.Cases = append(data.Cases, data.Controls...)
 	// SH001-SH022 preserve shadow capture S001-S022; the SH prefix keeps their
 	// matrix identities distinct from the original SOAP controls S001-S015.
 	seen := make(map[string]bool)
+	shadowNamed := 0
 	for _, row := range data.Cases {
 		if row.ID == "" || row.Code == "" || seen[row.ID] {
 			t.Fatalf("invalid oracle row: %#v", row)
 		}
 		seen[row.ID] = true
+		if strings.HasPrefix(row.ID, "SH") {
+			shadowNamed++
+		}
+	}
+	if shadowNamed != 22 {
+		t.Fatalf("API 68 native named shadow rows: %d, want 22", shadowNamed)
 	}
 	for _, row := range data.Remaining {
 		if row.ID == "" || seen[row.ID] || row.Owner == "" || row.Reason == "" || strings.Contains(row.Owner, "A40") {
@@ -143,6 +152,9 @@ func TestHTTPOrgConformance(t *testing.T) {
 	}
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
+			if api == "68.0" {
+				t.Log("A40 API 68 @IsTest native answers are captured only for SH001-SH022; other named checks retain legacy local assertions")
+			}
 			counts := newConformanceCountLog(t, "HTTP callouts", api)
 			root := t.TempDir()
 			writeSources := func(root string, sources map[string]string) []string {
@@ -267,6 +279,11 @@ func TestHTTPOrgConformance(t *testing.T) {
 					namedKind := "exact"
 					if tc.NamedOwner != "" {
 						namedKind = ""
+						if api == "68.0" {
+							namedKind = "carried"
+						}
+					} else if api == "68.0" && !strings.HasPrefix(tc.ID, "SH") {
+						namedKind = "legacy"
 					}
 					counts.run(t, "isTest", "@IsTest", namedKind, func(t *testing.T) {
 						if tc.NamedOwner != "" {

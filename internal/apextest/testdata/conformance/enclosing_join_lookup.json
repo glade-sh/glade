@@ -1,0 +1,448 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "packetRowsSha256": "d0a337d3a4a983d3d34d9aae3ac5cdeb3ff75e2808f5491e29e8b371f6d9bad8",
+  "rows": [
+    {
+      "id": "C125C09_001",
+      "expected": {
+        "outcome": "runtime",
+        "value": "a"
+      },
+      "question": "Enclosing three-argument List-return helper before String.join",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C125C09_001A",
+          "anonymous": "String obs; try {obs=new CAC125C09001.Worker().three();} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C09_001A|'+obs);",
+          "setupClasses": {
+            "CAC125C09001": "public class CAC125C09001 {public CAC125C09001 window(Integer first,Integer last){return this;} private static List<Object> window(Integer first,Integer last,List<Object> xs){return xs;} private static List<Object> window(Integer first,List<Object> xs){return xs;} public class Worker {public String three(){List<String> xs=new List<String>{'a'};return String.join(window(0,1,xs),'');} }}"
+          },
+          "sourceSha256": {
+            "anonymous": "1b72e50ddc1e27ffe080fb82875b8d68396248286c906223fc93c754800a5982",
+            "setupClass:CAC125C09001": "8606ce44ad330a689a6d6449b2731d1c3b8b0f5b16682c796288f4e6cdcfc8a8"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C09_001T",
+          "classes": {
+            "CAC125C09001Test": "@IsTest private class CAC125C09001Test {@IsTest static void observe(){String obs; try {obs=new CAC125C09001.Worker().three();} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C09_001T|'+obs);}}",
+            "CAC125C09001": "public class CAC125C09001 {public CAC125C09001 window(Integer first,Integer last){return this;} private static List<Object> window(Integer first,Integer last,List<Object> xs){return xs;} private static List<Object> window(Integer first,List<Object> xs){return xs;} public class Worker {public String three(){List<String> xs=new List<String>{'a'};return String.join(window(0,1,xs),'');} }}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C09001Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C09001Test": "c254e54942cf6d6a97ad38532868945f3b9a0e13d7bb55fddb9c5df30605431f",
+            "class:CAC125C09001": "8606ce44ad330a689a6d6449b2731d1c3b8b0f5b16682c796288f4e6cdcfc8a8"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C09_002",
+      "expected": {
+        "outcome": "runtime",
+        "value": "b"
+      },
+      "question": "Enclosing two-argument overload before String.join",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C125C09_002A",
+          "anonymous": "String obs; try {obs=new CAC125C09002.Worker().two();} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C09_002A|'+obs);",
+          "setupClasses": {
+            "CAC125C09002": "public class CAC125C09002 {public CAC125C09002 window(Integer first,Integer last){return this;} private static List<Object> window(Integer first,Integer last,List<Object> xs){return xs;} private static List<Object> window(Integer first,List<Object> xs){return xs;} public class Worker { public String two(){List<String> xs=new List<String>{'b'};return String.join(window(0,xs),'');}}}"
+          },
+          "sourceSha256": {
+            "anonymous": "6f791055bfb7f5ec1efee31250f83efdb06cb64b9a0c5e69792f3ece8b696a3f",
+            "setupClass:CAC125C09002": "e7b6aa5d51de82e99c84a5ef5cedf6384aa213f5e382a94ea1ca4bea2e8f0fdd"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C09_002T",
+          "classes": {
+            "CAC125C09002Test": "@IsTest private class CAC125C09002Test {@IsTest static void observe(){String obs; try {obs=new CAC125C09002.Worker().two();} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C09_002T|'+obs);}}",
+            "CAC125C09002": "public class CAC125C09002 {public CAC125C09002 window(Integer first,Integer last){return this;} private static List<Object> window(Integer first,Integer last,List<Object> xs){return xs;} private static List<Object> window(Integer first,List<Object> xs){return xs;} public class Worker { public String two(){List<String> xs=new List<String>{'b'};return String.join(window(0,xs),'');}}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C09002Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C09002Test": "8a98662f2b66a6fd64d1b615caa2bf42fb6845f6d860dc35b2e518782b7fff5b",
+            "class:CAC125C09002": "e7b6aa5d51de82e99c84a5ef5cedf6384aa213f5e382a94ea1ca4bea2e8f0fdd"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C09_003",
+      "expected": {
+        "outcome": "runtime",
+        "value": "a"
+      },
+      "question": "Explicit outer qualifier lookup control",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125C09_003A",
+          "anonymous": "String obs; try {obs=CAC125C09003.call();} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C09_003A|'+obs);",
+          "setupClasses": {
+            "CAC125C09003": "public class CAC125C09003 {private static List<Object> window(Integer n,List<Object> xs){return xs;} public static String call(){return String.join(CAC125C09003.window(0,new List<String>{'a'}),'');}}"
+          },
+          "sourceSha256": {
+            "anonymous": "63f2086d95be8e530ab84e099f746a7af573675a9e7e861e6fc981720fd25ec5",
+            "setupClass:CAC125C09003": "237ab8c3a9acfb7974cc81f16159cbc1d630d21218076b90a0323da39f6a5996"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C09_003T",
+          "classes": {
+            "CAC125C09003Test": "@IsTest private class CAC125C09003Test {@IsTest static void observe(){String obs; try {obs=CAC125C09003.call();} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C09_003T|'+obs);}}",
+            "CAC125C09003": "public class CAC125C09003 {private static List<Object> window(Integer n,List<Object> xs){return xs;} public static String call(){return String.join(CAC125C09003.window(0,new List<String>{'a'}),'');}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C09003Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C09003Test": "1b42fdc9f0d7b18fdde248ee31473351dff8a0a1c18f4c68d53e63756e16b78d",
+            "class:CAC125C09003": "237ab8c3a9acfb7974cc81f16159cbc1d630d21218076b90a0323da39f6a5996"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C09_004",
+      "expected": {
+        "outcome": "runtime",
+        "value": "a,b"
+      },
+      "question": "Direct List String.join control",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C125C09_004A",
+          "anonymous": "String obs; try {obs=String.join(new List<String>{'a','b'},',');} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C09_004A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "8f32e5641cbf1cae2f4b560eaf21e1fa62127410552d5cbb11ae053eb476b52c"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C09_004T",
+          "classes": {
+            "CAC125C09004Test": "@IsTest private class CAC125C09004Test {@IsTest static void observe(){String obs; try {obs=String.join(new List<String>{'a','b'},',');} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C09_004T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C09004Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C09004Test": "8f74828af7dc139d3f3903b3d51616fae39fbaa79afd7ff2a14bf354e0153e16"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C09_005",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Scalar-return helper remains a String.join rejection",
+      "role": "rejection",
+      "routes": {
+        "anonymous": {
+          "id": "C125C09_005A",
+          "anonymous": "String obs; try {obs=String.join(CAC125C09005.window(0),'');} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C09_005A|'+obs);",
+          "setupClasses": {
+            "CAC125C09005": "public class CAC125C09005 {public static String window(Integer n){return 'a';}}"
+          },
+          "sourceSha256": {
+            "anonymous": "42834efa5a8d3d652fc0a2032cfe5db59ea9682b6ea304d70086d007fb1505d4",
+            "setupClass:CAC125C09005": "d8abed79f7542ed15b9f2332758a5181d9443252a4d450c04f7d758d51eecd70"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "problem": "Method does not exist or incorrect signature: void join(String, String) from the type String"
+            }
+          ]
+        },
+        "isTest": {
+          "id": "C125C09_005T",
+          "classes": {
+            "CAC125C09005Test": "@IsTest private class CAC125C09005Test {@IsTest static void observe(){String obs; try {obs=String.join(CAC125C09005.window(0),'');} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C09_005T|'+obs);}}",
+            "CAC125C09005": "public class CAC125C09005 {public static String window(Integer n){return 'a';}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C09005Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C09005Test": "f8d6f2543f702b1508ac022b8dd4a90de51781e41b10870910268281ffd04ff2",
+            "class:CAC125C09005": "d8abed79f7542ed15b9f2332758a5181d9443252a4d450c04f7d758d51eecd70"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC125C09005Test",
+              "problem": "Method does not exist or incorrect signature: void join(String, String) from the type String",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C09_006",
+      "expected": {
+        "outcome": "runtime",
+        "value": "b"
+      },
+      "question": "Local scalar helper shadows enclosing List helper",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125C09_006A",
+          "anonymous": "String obs; try {obs=new CAC125C09006.Worker().value();} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C09_006A|'+obs);",
+          "setupClasses": {
+            "CAC125C09006": "public class CAC125C09006 {private static List<Object> window(Integer n){return new List<Object>{'a'};} public class Worker {private String window(Integer n){return 'b';} public String value(){return window(0);}}}"
+          },
+          "sourceSha256": {
+            "anonymous": "da60142103f02e9dc82f374162ceaea970e65d194ef6ed26b7e5cfcc2afdbe9c",
+            "setupClass:CAC125C09006": "f5d2386116c6d16cb4c1e40ac756323126e83aa72ea96cad2cc7c3502939cfed"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C09_006T",
+          "classes": {
+            "CAC125C09006Test": "@IsTest private class CAC125C09006Test {@IsTest static void observe(){String obs; try {obs=new CAC125C09006.Worker().value();} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C09_006T|'+obs);}}",
+            "CAC125C09006": "public class CAC125C09006 {private static List<Object> window(Integer n){return new List<Object>{'a'};} public class Worker {private String window(Integer n){return 'b';} public String value(){return window(0);}}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C09006Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C09006Test": "a0c540757eb21e4ff5b58f576f136ca9ace2a20a42a809f89e30adc91fdae3d9",
+            "class:CAC125C09006": "f5d2386116c6d16cb4c1e40ac756323126e83aa72ea96cad2cc7c3502939cfed"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "f7d01c692b0528eba8c8e4d0fe6a9ef27b52b756404b514090a750459a60fcc2"
+          }
+        }
+      }
+    }
+  ],
+  "diagnosticContract": "Exact primary native text asserted on each rejected route; full deployment diagnostic arrays preserved, cascades are evidence only",
+  "provenance": "Synthetic source; independent anonymous and check-only named observations. Named native.json artifact excluded; TSV and setup evidence authoritative.",
+  "staticAnalysis": {
+    "baseline": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+    "executed": false,
+    "predictionBasis": "Code reading only; semantic and diagnostic-only differences counted separately, both routes/all APIs",
+    "predictedSemanticMismatchShapes": [
+      "C125C09_001",
+      "C125C09_002"
+    ],
+    "predictedPrimaryDiagnosticMismatchShapes": [],
+    "predictedAssertedMismatches": 12,
+    "codeReferences": [
+      "internal/sema/body_ir.go:3866",
+      "internal/sema/body_ir.go:4197",
+      "internal/sema/body_ir.go:2610",
+      "internal/sema/api67_surface.go:293"
+    ],
+    "proposedChange": "Use existing enclosing implicit-method resolution for return inference, preserving applicable local helper precedence. Keep String.join collection rejection; row006 must remain b.",
+    "limits": "No native API gate or runtime fix indicated by this packet."
+  }
+}

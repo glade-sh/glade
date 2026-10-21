@@ -1,0 +1,1142 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "source": "Owned plain Developer scratch-org observations, 2026-10-14.",
+  "notes": [
+    "Synthetic fixture and marker names are renamed consistently; publication and delivery observations are unchanged.",
+    "The default event was first created at API 62.0; API 67.0/68.0 metadata cells are redeploy/retrieve observations on that same fixture, not independent first creation.",
+    "Metadata cells assert only the loader projection of the retrieved behavior, not a local Metadata API retrieval implementation.",
+    "Anonymous test-bus delivery has no native expression and remains an explicit exclusion."
+  ],
+  "files": {
+    "objects/SignalLegacy__e/SignalLegacy__e.object-meta.xml": "<CustomObject><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><fields><fullName>Payload__c</fullName><label>Payload</label><length>100</length><type>Text</type></fields><label>Legacy Signal</label><pluralLabel>Signals</pluralLabel></CustomObject>",
+    "triggers/LegacySignalSubscriber.trigger": "trigger LegacySignalSubscriber on SignalLegacy__e (after insert){List<SignalReceipt__c> receipts=new List<SignalReceipt__c>();for(SignalLegacy__e evt:Trigger.new){receipts.add(new SignalReceipt__c(Name=evt.Payload__c,TextValue__c='delivered'));}insert receipts;}",
+    "triggers/LegacySignalSubscriber.trigger-meta.xml": "<ApexTrigger><apiVersion>{{API}}</apiVersion><status>Active</status></ApexTrigger>",
+    "objects/SignalImmediate__e/SignalImmediate__e.object-meta.xml": "<CustomObject><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><publishBehavior>PublishImmediately</publishBehavior><fields><fullName>Payload__c</fullName><label>Payload</label><length>100</length><type>Text</type></fields><label>Immediate Signal</label><pluralLabel>Signals</pluralLabel></CustomObject>",
+    "triggers/ImmediateSignalSubscriber.trigger": "trigger ImmediateSignalSubscriber on SignalImmediate__e (after insert){List<SignalReceipt__c> receipts=new List<SignalReceipt__c>();for(SignalImmediate__e evt:Trigger.new){receipts.add(new SignalReceipt__c(Name=evt.Payload__c,TextValue__c='delivered'));}insert receipts;}",
+    "triggers/ImmediateSignalSubscriber.trigger-meta.xml": "<ApexTrigger><apiVersion>{{API}}</apiVersion><status>Active</status></ApexTrigger>",
+    "objects/SignalDeferred__e/SignalDeferred__e.object-meta.xml": "<CustomObject><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><publishBehavior>PublishAfterCommit</publishBehavior><fields><fullName>Payload__c</fullName><label>Payload</label><length>100</length><type>Text</type></fields><label>Deferred Signal</label><pluralLabel>Signals</pluralLabel></CustomObject>",
+    "triggers/DeferredSignalSubscriber.trigger": "trigger DeferredSignalSubscriber on SignalDeferred__e (after insert){List<SignalReceipt__c> receipts=new List<SignalReceipt__c>();for(SignalDeferred__e evt:Trigger.new){receipts.add(new SignalReceipt__c(Name=evt.Payload__c,TextValue__c='delivered'));}insert receipts;}",
+    "triggers/DeferredSignalSubscriber.trigger-meta.xml": "<ApexTrigger><apiVersion>{{API}}</apiVersion><status>Active</status></ApexTrigger>",
+    "objects/SignalReceipt__c/SignalReceipt__c.object-meta.xml": "<CustomObject><deploymentStatus>Deployed</deploymentStatus><label>Signal Receipt</label><pluralLabel>Signal Receipts</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel><fields><fullName>TextValue__c</fullName><label>Text Value</label><length>100</length><type>Text</type></fields><fields><fullName>EmailValue__c</fullName><label>Email Value</label><type>Email</type></fields></CustomObject>"
+  },
+  "counts": {
+    "runtime": 45,
+    "carried": 0,
+    "excluded": 9,
+    "metadata": 6
+  },
+  "rows": [
+    {
+      "id": "metadata-default",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "metadata",
+          "native": {
+            "publishBehavior": "PublishImmediately",
+            "retrieved": true,
+            "inputPublishBehaviorOmitted": true,
+            "metadataRoute": "retrieve"
+          },
+          "expected": {
+            "publishBehavior": "PublishImmediately"
+          }
+        },
+        "62.0/istest": {
+          "status": "metadata",
+          "native": {
+            "publishBehavior": "PublishImmediately",
+            "retrieved": true,
+            "inputPublishBehaviorOmitted": true,
+            "metadataRoute": "retrieve"
+          },
+          "expected": {
+            "publishBehavior": "PublishImmediately"
+          }
+        },
+        "67.0/anonymous": {
+          "status": "metadata",
+          "native": {
+            "publishBehavior": "PublishImmediately",
+            "retrieved": true,
+            "inputPublishBehaviorOmitted": true,
+            "metadataRoute": "retrieve"
+          },
+          "expected": {
+            "publishBehavior": "PublishImmediately"
+          }
+        },
+        "67.0/istest": {
+          "status": "metadata",
+          "native": {
+            "publishBehavior": "PublishImmediately",
+            "retrieved": true,
+            "inputPublishBehaviorOmitted": true,
+            "metadataRoute": "retrieve"
+          },
+          "expected": {
+            "publishBehavior": "PublishImmediately"
+          }
+        },
+        "68.0/anonymous": {
+          "status": "metadata",
+          "native": {
+            "publishBehavior": "PublishImmediately",
+            "retrieved": true,
+            "inputPublishBehaviorOmitted": true,
+            "metadataRoute": "retrieve"
+          },
+          "expected": {
+            "publishBehavior": "PublishImmediately"
+          }
+        },
+        "68.0/istest": {
+          "status": "metadata",
+          "native": {
+            "publishBehavior": "PublishImmediately",
+            "retrieved": true,
+            "inputPublishBehaviorOmitted": true,
+            "metadataRoute": "retrieve"
+          },
+          "expected": {
+            "publishBehavior": "PublishImmediately"
+          }
+        }
+      },
+      "metadataObject": "SignalLegacy__e"
+    },
+    {
+      "id": "publish-default_list",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        }
+      },
+      "code": "SObject evt=Schema.getGlobalDescribe().get('SignalLegacy__e').newSObject();evt.put('Payload__c','publish-value');Integer before=Limits.getDmlStatements();Integer rowsBefore=Limits.getDmlRows();List<Database.SaveResult> rs=EventBus.publish(new List<SObject>{evt});p.put('size',rs.size());Database.SaveResult r=rs[0];p.put('success',r.isSuccess());p.put('errors',r.getErrors().size());p.put('dmlBefore',before);p.put('dmlAfter',Limits.getDmlStatements());p.put('rowsBefore',rowsBefore);p.put('rowsAfter',Limits.getDmlRows());p.put('complete',true);"
+    },
+    {
+      "id": "publish-default_single",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        }
+      },
+      "code": "SObject evt=Schema.getGlobalDescribe().get('SignalLegacy__e').newSObject();evt.put('Payload__c','publish-value');Integer before=Limits.getDmlStatements();Integer rowsBefore=Limits.getDmlRows();Database.SaveResult r=EventBus.publish(evt);p.put('success',r.isSuccess());p.put('errors',r.getErrors().size());p.put('dmlBefore',before);p.put('dmlAfter',Limits.getDmlStatements());p.put('rowsBefore',rowsBefore);p.put('rowsAfter',Limits.getDmlRows());p.put('complete',true);"
+    },
+    {
+      "id": "deliver-default_deliver",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_EXPRESSIBLE",
+          "native": {
+            "reason": "Test.getEventBus().deliver requires test context"
+          },
+          "reason": "Test.getEventBus().deliver requires test context"
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_EXPRESSIBLE",
+          "native": {
+            "reason": "Test.getEventBus().deliver requires test context"
+          },
+          "reason": "Test.getEventBus().deliver requires test context"
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_EXPRESSIBLE",
+          "native": {
+            "reason": "Test.getEventBus().deliver requires test context"
+          },
+          "reason": "Test.getEventBus().deliver requires test context"
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          }
+        }
+      },
+      "code": "SignalLegacy__e evt=new SignalLegacy__e(Payload__c='deliver-DEFAULT');Test.startTest();Database.SaveResult r=EventBus.publish(evt);p.put('success',r.isSuccess());Test.getEventBus().deliver();p.put('delivered',[SELECT COUNT() FROM SignalReceipt__c WHERE Name='deliver-DEFAULT']);Test.stopTest();p.put('complete',true);"
+    },
+    {
+      "id": "publish-immediate_list",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        }
+      },
+      "code": "SObject evt=Schema.getGlobalDescribe().get('SignalImmediate__e').newSObject();evt.put('Payload__c','publish-value');Integer before=Limits.getDmlStatements();Integer rowsBefore=Limits.getDmlRows();List<Database.SaveResult> rs=EventBus.publish(new List<SObject>{evt});p.put('size',rs.size());Database.SaveResult r=rs[0];p.put('success',r.isSuccess());p.put('errors',r.getErrors().size());p.put('dmlBefore',before);p.put('dmlAfter',Limits.getDmlStatements());p.put('rowsBefore',rowsBefore);p.put('rowsAfter',Limits.getDmlRows());p.put('complete',true);"
+    },
+    {
+      "id": "publish-immediate_single",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 0,
+            "rowsBefore": 0,
+            "dmlAfter": 0,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        }
+      },
+      "code": "SObject evt=Schema.getGlobalDescribe().get('SignalImmediate__e').newSObject();evt.put('Payload__c','publish-value');Integer before=Limits.getDmlStatements();Integer rowsBefore=Limits.getDmlRows();Database.SaveResult r=EventBus.publish(evt);p.put('success',r.isSuccess());p.put('errors',r.getErrors().size());p.put('dmlBefore',before);p.put('dmlAfter',Limits.getDmlStatements());p.put('rowsBefore',rowsBefore);p.put('rowsAfter',Limits.getDmlRows());p.put('complete',true);"
+    },
+    {
+      "id": "deliver-immediate_deliver",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_EXPRESSIBLE",
+          "native": {
+            "reason": "Test.getEventBus().deliver requires test context"
+          },
+          "reason": "Test.getEventBus().deliver requires test context"
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_EXPRESSIBLE",
+          "native": {
+            "reason": "Test.getEventBus().deliver requires test context"
+          },
+          "reason": "Test.getEventBus().deliver requires test context"
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_EXPRESSIBLE",
+          "native": {
+            "reason": "Test.getEventBus().deliver requires test context"
+          },
+          "reason": "Test.getEventBus().deliver requires test context"
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          }
+        }
+      },
+      "code": "SignalImmediate__e evt=new SignalImmediate__e(Payload__c='deliver-IMMEDIATE');Test.startTest();Database.SaveResult r=EventBus.publish(evt);p.put('success',r.isSuccess());Test.getEventBus().deliver();p.put('delivered',[SELECT COUNT() FROM SignalReceipt__c WHERE Name='deliver-IMMEDIATE']);Test.stopTest();p.put('complete',true);"
+    },
+    {
+      "id": "publish-after_list",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true,
+            "size": 1
+          }
+        }
+      },
+      "code": "SObject evt=Schema.getGlobalDescribe().get('SignalDeferred__e').newSObject();evt.put('Payload__c','publish-value');Integer before=Limits.getDmlStatements();Integer rowsBefore=Limits.getDmlRows();List<Database.SaveResult> rs=EventBus.publish(new List<SObject>{evt});p.put('size',rs.size());Database.SaveResult r=rs[0];p.put('success',r.isSuccess());p.put('errors',r.getErrors().size());p.put('dmlBefore',before);p.put('dmlAfter',Limits.getDmlStatements());p.put('rowsBefore',rowsBefore);p.put('rowsAfter',Limits.getDmlRows());p.put('complete',true);"
+    },
+    {
+      "id": "publish-after_single",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "rowsAfter": 1,
+            "rowsBefore": 0,
+            "dmlAfter": 1,
+            "dmlBefore": 0,
+            "errors": 1,
+            "success": true
+          }
+        }
+      },
+      "code": "SObject evt=Schema.getGlobalDescribe().get('SignalDeferred__e').newSObject();evt.put('Payload__c','publish-value');Integer before=Limits.getDmlStatements();Integer rowsBefore=Limits.getDmlRows();Database.SaveResult r=EventBus.publish(evt);p.put('success',r.isSuccess());p.put('errors',r.getErrors().size());p.put('dmlBefore',before);p.put('dmlAfter',Limits.getDmlStatements());p.put('rowsBefore',rowsBefore);p.put('rowsAfter',Limits.getDmlRows());p.put('complete',true);"
+    },
+    {
+      "id": "deliver-after_deliver",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_EXPRESSIBLE",
+          "native": {
+            "reason": "Test.getEventBus().deliver requires test context"
+          },
+          "reason": "Test.getEventBus().deliver requires test context"
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_EXPRESSIBLE",
+          "native": {
+            "reason": "Test.getEventBus().deliver requires test context"
+          },
+          "reason": "Test.getEventBus().deliver requires test context"
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_EXPRESSIBLE",
+          "native": {
+            "reason": "Test.getEventBus().deliver requires test context"
+          },
+          "reason": "Test.getEventBus().deliver requires test context"
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          },
+          "expected": {
+            "complete": true,
+            "delivered": 1,
+            "success": true
+          }
+        }
+      },
+      "code": "SignalDeferred__e evt=new SignalDeferred__e(Payload__c='deliver-AFTER');Test.startTest();Database.SaveResult r=EventBus.publish(evt);p.put('success',r.isSuccess());Test.getEventBus().deliver();p.put('delivered',[SELECT COUNT() FROM SignalReceipt__c WHERE Name='deliver-AFTER']);Test.stopTest();p.put('complete',true);"
+    }
+  ]
+}

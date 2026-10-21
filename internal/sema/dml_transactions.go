@@ -111,6 +111,10 @@ func (a *Analyzer) semaDMLCallMessage(receiverType, method string, args []ir.Exp
 	switch normalizeName(receiverType) {
 	case "database":
 		switch normalizeName(method) {
+		case "update", "delete":
+			if len(argTypes) > 0 && semaGeneratedHistoryType(semaDMLObjectType(argTypes[0]), model) {
+				return "DML operation " + strings.ToUpper(method[:1]) + strings.ToLower(method[1:]) + " not allowed on " + argTypes[0]
+			}
 		case "insert", "insertasync", "insertimmediate":
 			// The native boundary depends on the
 			// static event type. Erased SObject inserts remain valid (W005/W006).
@@ -142,7 +146,11 @@ func (a *Analyzer) semaDMLCallMessage(receiverType, method string, args []ir.Exp
 			if strings.EqualFold(semaDMLObjectType(semaCanonicalAssignableType(argTypes[0])), "SObject") {
 				break
 			}
-			if _, _, qualified := strings.Cut(args[1].Name, "."); qualified && !a.semaUpsertSelectorAllowed(argTypes[0], args[1].Name) {
+			selector := args[1].Name
+			if parts := strings.Split(selector, "."); len(parts) == 3 && strings.EqualFold(parts[1], "Field") {
+				selector = parts[0] + "." + parts[2]
+			}
+			if _, _, qualified := strings.Cut(selector, "."); qualified && !a.semaUpsertSelectorAllowed(argTypes[0], selector) {
 				_, field, _ := strings.Cut(args[1].Name, ".")
 				return "Invalid field for upsert, must be an External Id custom or standard indexed field: " + field
 			}

@@ -1,0 +1,5 @@
+id	group	route	status	value
+R01	FLOW_PARENT_RECORD_ASSIGNMENT	anonymous	runtime	{"description":"Grove 'text' & value","exception":null}
+R02	FLOW_PARENT_RECORD_ASSIGNMENT	anonymous	runtime	{"description":null,"exception":null}
+R03	FLOW_PARENT_RECORD_ASSIGNMENT	anonymous	runtime	{"description":null,"exception":null}
+R04	FLOW_PARENT_RECORD_ASSIGNMENT	anonymous	runtime	{"description":"R04","exception":null}

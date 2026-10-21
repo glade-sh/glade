@@ -1,0 +1,7 @@
+id	api	route	status	observed
+ADD_ASSIGNMENT	62.0	anonymous	COMPILE_REJECTED	"{""column"":""46"",""line"":""1"",""message"":""Illegal assignment from Object to Integer""}"
+ADD_ASSIGNMENT	62.0	@IsTest	COMPILE_REJECTED	"{""column"":50,""line"":3,""message"":""Illegal assignment from Object to Integer""}"
+ADD_ASSIGNMENT	67.0	anonymous	COMPILE_REJECTED	"{""column"":""46"",""line"":""1"",""message"":""Illegal assignment from Object to Integer""}"
+ADD_ASSIGNMENT	67.0	@IsTest	COMPILE_REJECTED	"{""column"":50,""line"":3,""message"":""Illegal assignment from Object to Integer""}"
+ADD_ASSIGNMENT	68.0	anonymous	COMPILE_REJECTED	"{""column"":""46"",""line"":""1"",""message"":""Illegal assignment from Object to Integer""}"
+ADD_ASSIGNMENT	68.0	@IsTest	COMPILE_REJECTED	"{""column"":50,""line"":3,""message"":""Illegal assignment from Object to Integer""}"

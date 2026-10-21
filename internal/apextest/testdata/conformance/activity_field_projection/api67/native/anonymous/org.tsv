@@ -1,0 +1,7 @@
+id	group	route	status	value
+eventFieldType	activity_fields	anonymous	OBSERVED	"PICKLIST"
+eventPicklist	activity_fields	anonymous	OBSERVED	"Ready"
+eventText	activity_fields	anonymous	OBSERVED	"BETA"
+taskFieldType	activity_fields	anonymous	OBSERVED	"STRING"
+taskPicklist	activity_fields	anonymous	OBSERVED	"Ready"
+taskText	activity_fields	anonymous	OBSERVED	"ALPHA"

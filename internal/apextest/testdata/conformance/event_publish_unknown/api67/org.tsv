@@ -1,0 +1,4 @@
+id	outcome	value
+missing	compile-rejected	Invalid type: MeadowMissing__e
+account	compile-rejected	Argument must be a Platform Event sObject type.
+missingList	compile-rejected	Invalid type: MeadowMissing__e

@@ -21,7 +21,10 @@ import (
 )
 
 // The exported owned oracle needs no Salesforce connection or probe project.
-// Every asserted result is exact text or raw null, on both execution routes.
+// Every anonymous asserted result is exact text or raw null. API68 named
+// checks are local legacy assertions against captured anonymous answers.
+// R052 is same-release heap drift already implemented by the shared runtime;
+// these observations make no claim about the debug-log heap denominator.
 func TestGovernorOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected  string
@@ -29,7 +32,12 @@ func TestGovernorOrgConformance(t *testing.T) {
 		NativeLine          int
 	}
 	var data struct {
-		APIVersions  []string `json:"apiVersions"`
+		APIVersions   []string `json:"apiVersions"`
+		CeilingOracle struct {
+			APIVersion, Route  string
+			Rows, Observed     int
+			ControlsUnobserved []string
+		} `json:"ceilingOracle"`
 		Declarations map[string]string
 		Cases        []familyCase
 		Controls     []familyCase
@@ -45,8 +53,17 @@ func TestGovernorOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 291 || len(data.Controls) != 4 || len(data.Remaining) != 0 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 291 || len(data.Controls) != 4 || len(data.Remaining) != 0 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle: %d rows + %d controls + %d carries at %v", len(data.Cases), len(data.Controls), len(data.Remaining), data.APIVersions)
+	}
+	ceiling := data.CeilingOracle
+	if ceiling.APIVersion != "68.0" || ceiling.Route != "anonymous" || ceiling.Rows != len(data.Cases) || ceiling.Observed != 291 || len(ceiling.ControlsUnobserved) != len(data.Controls) {
+		t.Fatalf("incomplete API68 governor oracle: %+v", ceiling)
+	}
+	for i, control := range data.Controls {
+		if ceiling.ControlsUnobserved[i] != control.ID {
+			t.Fatalf("API68 control exclusion differs for %s", control.ID)
+		}
 	}
 	allRows := append(append([]familyCase{}, data.Cases...), data.Controls...)
 	seen := map[string]bool{}
@@ -152,6 +169,11 @@ func TestGovernorOrgConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "governor limits", api)
+			apiRows := allRows
+			if api == "68.0" {
+				apiRows = data.Cases
+				t.Log("API68: 291 anonymous native answers; 4 shadow controls unobserved; named checks are local legacy assertions")
+			}
 			carried := map[string]bool{}
 			for _, row := range data.Remaining {
 				for _, version := range row.APIVersions {
@@ -165,7 +187,7 @@ func TestGovernorOrgConformance(t *testing.T) {
 				}
 			}
 			var rows []familyCase
-			for _, tc := range allRows {
+			for _, tc := range apiRows {
 				if !carried[tc.ID] {
 					rows = append(rows, tc)
 				}
@@ -294,7 +316,11 @@ func TestGovernorOrgConformance(t *testing.T) {
 						}
 					})
 					t.Run("isTest", func(t *testing.T) {
-						counts.Track(t, "@IsTest", 1)
+						kind := "exact"
+						if api == "68.0" {
+							kind = "legacy"
+						}
+						counts.TrackKind(t, "@IsTest", kind, 1)
 						if tc.NativeLine > 0 {
 							path := filepath.Join(root, "GovernorCompile"+tc.ID+".cls")
 							source := rejectedSource(tc, true)

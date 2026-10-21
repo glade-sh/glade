@@ -36,12 +36,16 @@ inherit the historical runtime/parity evidence below.
 - You will keep a Salesforce validation gate for features Glade does not model.
 - You will use first-party plugins for capability reports and advisory scans instead of expecting those scanners in base `glade --help`.
 
-Checked Apex source versions are **65.0, 66.0, and 67.0**. Well-formed historical
-source versions are preserved without checked correctness/parity credit.
-Execute Anonymous remains limited to the checked source window; each LWC
-bundle declares an exact supported version. Local HTTP endpoints separately
-support 60.0, 65.0, 66.0, and 67.0 (default 65.0). Do not change project metadata
-merely to avoid a version error. See the [quickstart version box](/guide/quickstart#api-versions-are-separate-contracts).
+The v0.3.0 support window is **Apex 62.0-68.0, LWC and Visualforce 59.0-68.0**.
+Apex source API below 62.0 is unsupported, even when the loader preserves the
+version. Execute Anonymous accepts source API 65.0, 66.0, 67.0, and 68.0.
+Explicit LWC bundle versions must be whole versions from 59.0 through 68.0;
+unversioned bundles use compiler default 68.0. Local HTTP endpoints
+separately support 60.0, 65.0, 66.0, 67.0, and 68.0 (default 65.0).
+DataWeave, ConnectApi, and Slack are excluded and unsupported. Do not change
+project metadata merely to avoid a version error. See the
+[quickstart version box](/guide/quickstart#api-versions-are-separate-contracts)
+and [v0.3.0 known issues](https://github.com/glade-sh/glade/blob/main/docs/RELEASE_NOTES.md#v030).
 
 ## Status key
 
@@ -78,7 +82,7 @@ runtime-support credit and local test execution reports `UnsupportedFeature`.
 
 | Release / source | Evidence | Denominator and boundary | Receipt |
 | --- | --- | --- | --- |
-| v0.2.15 — `82b8495972715a27aec8f864bc4ab39e7fa03974` | Current stable distribution; clean embedded VCS metadata; exact Required CI and Salesforce correctness authority | 475/475 required checks; per-archive checksums, 128–129-component SBOMs, and attestations; not blanket parity | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.15) |
+| v0.2.15 — `82b8495972715a27aec8f864bc4ab39e7fa03974` | Historical distribution; clean embedded VCS metadata; exact Required CI and Salesforce correctness authority | 475/475 required checks; per-archive checksums, 128–129-component SBOMs, and attestations; not blanket parity | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.15) |
 | v0.2.14 — `b974901a3e0ad48d6c517cff894601fa5e242000` | Historical distribution; exact Required CI and Salesforce correctness authority for the product/Tools pair | Per-archive checksums, 128–129-component SBOMs, and attestations; not blanket parity or a new corpus result | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.14) |
 | v0.2.13 — `04c55539045d782ce56e2e5d92d4fb637ba03741` | Published distribution | Per-archive checksums and attestations; not a new corpus/parity result | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.13) |
 | v0.2.12 — `3a454dee3cb35c604cb1bf25e6a8972b63dd7c81` | Tagged local/corpus and Salesforce checks | 12,315 and 782 private tests; 86 public projects; 475 Salesforce checks, with their distinct accounting | [Tagged validation](https://github.com/glade-sh/glade/blob/v0.2.12/docs/PRIVATE_CORPUS_ASSURANCE.md#tagged-v0212-product-validation) |

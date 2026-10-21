@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>StringFormatSingle</fullName>
+        <categories>Format</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>String format single apostrophe</shortDescription>
+        <value>The ids parameter should contain id's for A or B records, not {0} records.</value>
+    </labels>
+    <labels>
+        <fullName>StringFormatDoubled</fullName>
+        <categories>Format</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>String format doubled apostrophe</shortDescription>
+        <value>The ids parameter should contain id''s for A or B records, not {0} records.</value>
+    </labels>
+</CustomLabels>

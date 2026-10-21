@@ -121,6 +121,9 @@ type semaIncrementTarget struct {
 // expression statement. A captured increment there gets its storage contract;
 // anything else, including an increment elsewhere, keeps the ordinary check.
 func (a *Analyzer) checkIRIncrementOrExprVariables(typ typesys.TypeSymbol, member typesys.MemberSymbol, inst ir.Instruction, scope *irSemaScope, bodyOffset int, source string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
+	if diagnostics, captured := a.semaFinalCollectionSkippedIncrement(typ, member, inst, scope, bodyOffset, source, model, constructability); captured {
+		return diagnostics
+	}
 	target, operand, ok := a.semaCapturedIncrement(typ, member, inst, *scope, bodyOffset, source, model)
 	if !ok {
 		if scope.uncapturedPrefix != nil && semaPrefixFallbackStatement(inst, bodyOffset, source) {
@@ -137,6 +140,9 @@ func (a *Analyzer) checkIRIncrementOrExprVariables(typ typesys.TypeSymbol, membe
 }
 
 func (a *Analyzer) semaCapturedIncrement(typ typesys.TypeSymbol, member typesys.MemberSymbol, inst ir.Instruction, scope irSemaScope, bodyOffset int, source string, model *semaTypeMemberView) (semaIncrementTarget, string, bool) {
+	if target, operand, captured := a.semaFinalCollectionIncrement(typ, member, inst, scope, bodyOffset+inst.Pos, source, model); captured {
+		return target, operand, true
+	}
 	expr := inst.Expr
 	if !semaIRIncrementCall(expr) || expr.Left == nil || scope.incrementHeader ||
 		typ.Kind != apexast.DeclarationClass || member.Kind != apexast.DeclarationMethod || hasModifier(typ.Modifiers, vm.AnonymousClassModifier) {
@@ -204,7 +210,9 @@ func semaPrefixCandidatesLowerBody(body string) bool {
 // typed against the captured rules: an execute-anonymous body or a class
 // method. Every other body keeps the name path, as the runtime does.
 func semaPrefixStatementCandidates(typ typesys.TypeSymbol, member typesys.MemberSymbol, anonymous bool) bool {
-	return anonymous || typ.Kind == apexast.DeclarationClass && member.Kind == apexast.DeclarationMethod && !hasModifier(typ.Modifiers, vm.AnonymousClassModifier)
+	// Transient class methods also contain captured parameter and final-field
+	// samples. Uncaptured candidates still keep their name-path result.
+	return anonymous || typ.Kind == apexast.DeclarationClass && member.Kind == apexast.DeclarationMethod
 }
 
 // semaPrefixFallbackStatement reports a statement ++x...; or --x...; that the
@@ -402,7 +410,7 @@ func semaIncrementSObjectFieldWritable(model *semaTypeMemberView, receiverType, 
 	if _, readOnly := semaFormulaReadOnlyField(model, receiverType, field); readOnly {
 		return false
 	}
-	if semaStandardFieldAssignmentReadOnly(model, receiverType, field) || semaPlatformEventWriteMessage(receiverType, field, model) != "" {
+	if semaStandardFieldAssignmentReadOnly(model, receiverType, field, false) || semaPlatformEventWriteMessage(receiverType, field, model) != "" {
 		return false
 	}
 	// A standard field described as neither createable nor updateable, such

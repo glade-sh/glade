@@ -1,0 +1,19 @@
+source_api	method	observation
+62.0	counter	{"default":"1","first":"3","output":"3.0"}
+62.0	deniedDML	{"message":"Update failed. First exception on row 0 with id <ID>; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: <ID>: []"}
+62.0	emptyPicklist	{"isNull":"false","length":"0"}
+62.0	person	{"contact":"true","phone":"5550101"}
+62.0	queriedRecordType	{"input":"true","retained":"true"}
+62.0	reentry	{"description":"flow-updated","updates":"1"}
+62.0	relationship	{"matches":"true"}
+62.0	sortedLookup	{"asc":"Alpha","desc":"Zulu"}
+62.0	userFields	{"Alias":"true","Email":"true","IsActive":"true","LastName":"true","ManagerId":"true","Name":"true","ObservationFlag__c":"true","Phone":"true","ProfileId":"false","UserRoleId":"false"}
+67.0	counter	{"default":"1","first":"3","output":"3.0"}
+67.0	deniedDML	{"message":"Update failed. First exception on row 0 with id <ID>; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: <ID>: []"}
+67.0	emptyPicklist	{"isNull":"false","length":"0"}
+67.0	person	{"contact":"true","phone":"5550101"}
+67.0	queriedRecordType	{"input":"true","retained":"true"}
+67.0	reentry	{"description":"flow-updated","updates":"1"}
+67.0	relationship	{"matches":"true"}
+67.0	sortedLookup	{"asc":"Alpha","desc":"Zulu"}
+67.0	userFields	{"Alias":"true","Email":"true","IsActive":"true","LastName":"true","ManagerId":"true","Name":"true","ObservationFlag__c":"true","Phone":"true","ProfileId":"false","UserRoleId":"false"}

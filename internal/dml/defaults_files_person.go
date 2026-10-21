@@ -30,24 +30,46 @@ func applyCustomSettingInsertDefaults(org *storage.OrgState, definition storage.
 	if !strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
 		return
 	}
+	record.HierarchyNameUsesRecordID = false
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)
 	}
 	orgID := strings.TrimSpace(org.OrgID)
 	if orgID == "" {
-		orgID = "00D000000000001"
+		orgID = storage.DefaultOrgID
 	}
-	if value, ok := record.Fields["Name"]; !ok || value.Kind == storage.ValueNull || (value.Kind == storage.ValueString && strings.TrimSpace(value.String) == "") {
-		record.Fields["Name"] = storage.StringValue(orgID)
-	}
+	_, ownerSupplied := record.GetField("SetupOwnerId")
+	_, ownerDeclared := definition.Fields["SetupOwnerId"]
 	if _, fieldOK := definition.Fields["SetupOwnerId"]; fieldOK {
 		if value, ok := record.Fields["SetupOwnerId"]; !ok || value.Kind == storage.ValueNull || (value.Kind == storage.ValueString && strings.TrimSpace(value.String) == "") {
 			record.Fields["SetupOwnerId"] = storage.StringValue(orgID)
 		}
 	}
+	if value, ok := record.Fields["Name"]; !ok || value.Kind == storage.ValueNull || (value.Kind == storage.ValueString && strings.TrimSpace(value.String) == "") {
+		name := orgID
+		owner, hasOwner := record.GetField("SetupOwnerId")
+		ownerID := owner.String
+		if owner.Kind == storage.ValueID {
+			ownerID = string(owner.ID)
+		}
+		// C02-09 and HNO02 establish the explicit organization-owner case.
+		// Retain existing null/empty-owner defaults; they remain unobserved.
+		if !ok && hasOwner && storage.IDsEqual(storage.ID(ownerID), storage.ID(orgID)) && strings.TrimSpace(definition.Label) != "" {
+			name = definition.Label + " (Organization)"
+		}
+		record.Fields["Name"] = storage.StringValue(name)
+		// HNO01 named 62/67/68 distinguishes omitted owner from explicit
+		// organization owner. Keep its provenance until the ID is allocated.
+		nameField, nameDeclared := definition.Fields["Name"]
+		record.HierarchyNameUsesRecordID = !ok && !record.HasExplicitNull("Name") && !ownerSupplied && !record.HasExplicitNull("SetupOwnerId") &&
+			ownerDeclared && nameDeclared && nameField.Type == storage.FieldString && !nameField.AutoNumber && strings.TrimSpace(definition.Label) != ""
+		if record.HierarchyNameUsesRecordID && definition.Fields["SetupOwnerId"].Type == storage.FieldReference {
+			record.Fields["SetupOwnerId"] = storage.IDValue(storage.ID(orgID))
+		}
+	}
 }
 
-func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefinition, record *storage.Record) {
+func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefinition, record *storage.Record, userID storage.ID) {
 	if record == nil {
 		return
 	}
@@ -57,7 +79,7 @@ func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefiniti
 	for name, field := range definition.Fields {
 		if existing, ok := formulaRecordField(*record, name); ok {
 			if shouldRefreshRecordTypeDerivedDefault(definition, *record, field, existing) {
-				if value, ok := defaultValueForRecordField(org, definition, *record, field); ok {
+				if value, ok := defaultValueForRecordFieldWithOptions(org, definition, *record, field, FormulaEvaluationOptions{UserID: userID}); ok {
 					record.Fields[name] = value
 				}
 			}
@@ -69,7 +91,7 @@ func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefiniti
 		if record.ExplicitNulls != nil && record.ExplicitNulls[name] {
 			continue
 		}
-		if value, ok := defaultValueForRecordField(org, definition, *record, field); ok {
+		if value, ok := defaultValueForRecordFieldWithOptions(org, definition, *record, field, FormulaEvaluationOptions{UserID: userID}); ok {
 			record.Fields[name] = value
 		}
 	}
@@ -105,7 +127,7 @@ func shouldRefreshRecordTypeDerivedDefault(definition storage.ObjectDefinition, 
 	return false
 }
 
-func applyDefaultRecordTypeID(objectName string, definition storage.ObjectDefinition, record *storage.Record) {
+func (e *Engine) applyDefaultRecordTypeID(objectName string, definition storage.ObjectDefinition, record *storage.Record) {
 	if record == nil || len(definition.RecordTypes) == 0 {
 		return
 	}
@@ -122,6 +144,9 @@ func applyDefaultRecordTypeID(objectName string, definition storage.ObjectDefini
 		return
 	}
 	if record.ExplicitNulls != nil && record.ExplicitNulls["RecordTypeId"] {
+		return
+	}
+	if e.Options.ApexRecordTypeInsertMode != "" && UsesImplicitMasterRecordType(definition) {
 		return
 	}
 	recordType, ok := defaultRecordTypeForRecord(objectName, definition.RecordTypes, *record)
@@ -178,14 +203,18 @@ func defaultRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordType
 }
 
 func defaultValueForRecordField(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field) (storage.Value, bool) {
+	return defaultValueForRecordFieldWithOptions(org, definition, record, field, FormulaEvaluationOptions{})
+}
+
+func defaultValueForRecordFieldWithOptions(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field, options FormulaEvaluationOptions) (storage.Value, bool) {
 	rawDefault := strings.TrimSpace(field.DefaultValue)
 	if strings.EqualFold(rawDefault, "$RecordType.Name") || strings.EqualFold(rawDefault, "$RecordType.DeveloperName") {
 		if value, _, ok := workflowLiteralValue(field, formulaRecordTypeValue(definition, record, rawDefault)); ok {
 			return value, true
 		}
 	}
-	if org != nil && (strings.Contains(rawDefault, "$RecordType") || formulaDefaultShouldEvaluate(field, rawDefault)) {
-		if value, _, ok := EvaluateRecordFormulaValueInOrg(rawDefault, field, org, definition, record); ok {
+	if org != nil && (strings.Contains(rawDefault, "$RecordType") || FormulaDefaultShouldEvaluate(field, rawDefault)) {
+		if value, _, ok := EvaluateRecordFormulaValueInOrgWithOptions(rawDefault, field, org, definition, record, options); ok {
 			return value, true
 		}
 	}
@@ -195,7 +224,7 @@ func defaultValueForRecordField(org *storage.OrgState, definition storage.Object
 	if org == nil || rawDefault == "" {
 		return storage.Value{}, false
 	}
-	value, _, ok := EvaluateRecordFormulaValueInOrg(rawDefault, field, org, definition, record)
+	value, _, ok := EvaluateRecordFormulaValueInOrgWithOptions(rawDefault, field, org, definition, record, options)
 	return value, ok
 }
 
@@ -219,7 +248,11 @@ func applyAutoNumberName(definition storage.ObjectDefinition, sequence uint64, r
 			record.Fields = make(map[string]storage.Value)
 		}
 		// R183 requires generated fields such as CaseNumber, not only Name.
-		record.Fields[name] = storage.StringValue(formatAutoNumber(field.DisplayFormat, sequence))
+		format := field.DisplayFormat
+		if format == "" && definition.APIName == "Order" && name == "OrderNumber" {
+			format = "{00000000}"
+		}
+		record.Fields[name] = storage.StringValue(formatAutoNumber(format, sequence))
 		// A caller's initial null must not hide the generated value on query.
 		delete(record.ExplicitNulls, name)
 	}
@@ -288,7 +321,7 @@ func (e *Engine) insertPlatformRecord(record storage.Record) (storage.ID, error)
 	if err != nil {
 		return "", err
 	}
-	applyFieldDefaults(e.Org, object.Definition, &record)
+	applyFieldDefaults(e.Org, object.Definition, &record, e.systemUserID())
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}
@@ -343,6 +376,7 @@ func (e *Engine) insertPlatformRecord(record storage.Record) (storage.ID, error)
 	}
 	object.Records[record.ID] = record.Clone()
 	e.Org.Objects[objectName] = object
+	e.RecordCreations.Record(record.ID)
 	return record.ID, nil
 }
 

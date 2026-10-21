@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	fresh_install	{"installer":true,"organization":true,"previous":null,"push":false,"upgrade":false}
+62.0	push_upgrade	{"installer":true,"organization":true,"previous":"1.2.3","push":true,"upgrade":true}
+67.0	fresh_install	{"installer":true,"organization":true,"previous":null,"push":false,"upgrade":false}
+67.0	push_upgrade	{"installer":true,"organization":true,"previous":"1.2.3","push":true,"upgrade":true}

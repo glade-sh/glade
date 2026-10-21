@@ -1,0 +1,130 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 1,
+  "nativeObservationCount": 6,
+  "rows": [
+    {
+      "id": "NM01",
+      "expected": {
+        "outcome": "runtime",
+        "value": "rows:1:2:sample:alias|sibling:1:sibling|untouched:0|generic:1:9|flat:1:flat|bounds:System.ListException"
+      },
+      "routes": {
+        "anonymous": {
+          "id": "NM01A",
+          "anonymous": "System.assert(false,'P|NM01A|' + GridMutationProbe.observe());\n",
+          "setupClasses": {
+            "GridMutationProbe": "public class GridMutationProbe {\n public static String observe() {\n  Object[][][] grid = new Object[][][]{};\n  grid.add(new Object[][]{});\n  grid[0].add(new Object[]{});\n  grid[0][0].add(null);\n  Integer before = grid[0][0].size();\n  grid[0][0][0] = 'sample';\n  grid[0].add(new Object[]{});\n  grid[0][1].add('sibling');\n  grid[0].add(new Object[]{});\n  Object[] alias = grid[0][0];\n  alias.add('alias');\n  List<List<List<Integer>>> genericGrid = new List<List<List<Integer>>>{new List<List<Integer>>{new List<Integer>()}};\n  genericGrid[0][0].add(9);\n  Object[][] flat = new Object[][]{new Object[]{}};\n  flat[0].add('flat');\n  String invalid = '';\n  try { grid[0][3].add('bad'); } catch (ListException e) { invalid = e.getTypeName(); }\n  return 'rows:' + before + ':' + grid[0][0].size() + ':' + grid[0][0][0] + ':' + grid[0][0][1]\n   + '|sibling:' + grid[0][1].size() + ':' + grid[0][1][0]\n   + '|untouched:' + grid[0][2].size()\n   + '|generic:' + genericGrid[0][0].size() + ':' + genericGrid[0][0][0]\n   + '|flat:' + flat[0].size() + ':' + flat[0][0] + '|bounds:' + invalid;\n }\n}"
+          },
+          "stage": "runtime",
+          "sourceSha256": {
+            "anonymous": "47c00bae8e74e84b67b19b1f0d2dc013a754c95c2adcc428f143c9f695222503",
+            "setupClass:GridMutationProbe": "f02854a8f6fea7d638715d12324f206710d8e745eb34d2bb35ac5810e04dfb7c"
+          }
+        },
+        "isTest": {
+          "observationMethod": "observeNative",
+          "id": "NM01T",
+          "classes": {
+            "GridMutationProbe": "public class GridMutationProbe {\n public static String observe() {\n  Object[][][] grid = new Object[][][]{};\n  grid.add(new Object[][]{});\n  grid[0].add(new Object[]{});\n  grid[0][0].add(null);\n  Integer before = grid[0][0].size();\n  grid[0][0][0] = 'sample';\n  grid[0].add(new Object[]{});\n  grid[0][1].add('sibling');\n  grid[0].add(new Object[]{});\n  Object[] alias = grid[0][0];\n  alias.add('alias');\n  List<List<List<Integer>>> genericGrid = new List<List<List<Integer>>>{new List<List<Integer>>{new List<Integer>()}};\n  genericGrid[0][0].add(9);\n  Object[][] flat = new Object[][]{new Object[]{}};\n  flat[0].add('flat');\n  String invalid = '';\n  try { grid[0][3].add('bad'); } catch (ListException e) { invalid = e.getTypeName(); }\n  return 'rows:' + before + ':' + grid[0][0].size() + ':' + grid[0][0][0] + ':' + grid[0][0][1]\n   + '|sibling:' + grid[0][1].size() + ':' + grid[0][1][0]\n   + '|untouched:' + grid[0][2].size()\n   + '|generic:' + genericGrid[0][0].size() + ':' + genericGrid[0][0][0]\n   + '|flat:' + flat[0].size() + ':' + flat[0][0] + '|bounds:' + invalid;\n }\n}",
+            "GridMutationSpec": "@IsTest private class GridMutationSpec {\n @IsTest static void observeNative() { System.assert(false,'P|NM01T|' + GridMutationProbe.observe()); }\n}\n"
+          },
+          "tests": [
+            "GridMutationSpec"
+          ],
+          "stage": "runtime",
+          "sourceSha256": {
+            "class:GridMutationProbe": "f02854a8f6fea7d638715d12324f206710d8e745eb34d2bb35ac5810e04dfb7c",
+            "class:GridMutationSpec": "dbd419d957bc07b2d99098ca6929bceba964dc8a7cd5038f5d42e4ad094d9525"
+          }
+        }
+      }
+    }
+  ],
+  "cells": [
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "NM01A",
+      "native": "rows:1:2:sample:alias|sibling:1:sibling|untouched:0|generic:1:9|flat:1:flat|bounds:System.ListException",
+      "nativeSHA256": "63e769e5332798c2a4db3ab02569e8a8fb23c81643ee22631529f7d69b4b0935",
+      "rawReceiptSHA256": "ae9fea99c15ae81bc92fda2d1c577460d6f283a4c6ac081388f3b9813c9f9feb"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "NM01T",
+      "native": "rows:1:2:sample:alias|sibling:1:sibling|untouched:0|generic:1:9|flat:1:flat|bounds:System.ListException",
+      "nativeSHA256": "63e769e5332798c2a4db3ab02569e8a8fb23c81643ee22631529f7d69b4b0935",
+      "rawReceiptSHA256": "18901ff31ad84eda0ea90a301f5024adf3979673516cb972254ddd8e11a877b0"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "NM01A",
+      "native": "rows:1:2:sample:alias|sibling:1:sibling|untouched:0|generic:1:9|flat:1:flat|bounds:System.ListException",
+      "nativeSHA256": "63e769e5332798c2a4db3ab02569e8a8fb23c81643ee22631529f7d69b4b0935",
+      "rawReceiptSHA256": "3d00df57a4d211eadc334d14519860828d10dea0e87239bb9ccc11a2cdf4dfde"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "NM01T",
+      "native": "rows:1:2:sample:alias|sibling:1:sibling|untouched:0|generic:1:9|flat:1:flat|bounds:System.ListException",
+      "nativeSHA256": "63e769e5332798c2a4db3ab02569e8a8fb23c81643ee22631529f7d69b4b0935",
+      "rawReceiptSHA256": "1a1b32da560126f2c7ea63cdc415b750edecd7f11f4d7ede2ac1032a879286ff"
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "id": "NM01A",
+      "native": "rows:1:2:sample:alias|sibling:1:sibling|untouched:0|generic:1:9|flat:1:flat|bounds:System.ListException",
+      "nativeSHA256": "63e769e5332798c2a4db3ab02569e8a8fb23c81643ee22631529f7d69b4b0935",
+      "rawReceiptSHA256": "7532863cac6adb68b845783708364cb783fbba9cc44b3b2dec819f900aa1d3d1"
+    },
+    {
+      "api": "68.0",
+      "route": "isTest",
+      "id": "NM01T",
+      "native": "rows:1:2:sample:alias|sibling:1:sibling|untouched:0|generic:1:9|flat:1:flat|bounds:System.ListException",
+      "nativeSHA256": "63e769e5332798c2a4db3ab02569e8a8fb23c81643ee22631529f7d69b4b0935",
+      "rawReceiptSHA256": "cd43c16a2426cd729efd870d349d0874813002ded490c2528a9d661431172cd1"
+    }
+  ],
+  "classMetadataByAPI": {
+    "62.0": {
+      "GridMutationProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "GridMutationSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "67.0": {
+      "GridMutationProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "GridMutationSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "68.0": {
+      "GridMutationProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "GridMutationSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+    }
+  },
+  "classMetadataSHA256": {
+    "62.0": {
+      "GridMutationProbe": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "GridMutationSpec": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+    },
+    "67.0": {
+      "GridMutationProbe": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "GridMutationSpec": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+    },
+    "68.0": {
+      "GridMutationProbe": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "GridMutationSpec": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+    }
+  }
+}

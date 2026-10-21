@@ -1,0 +1,97 @@
+[
+  {
+    "id": "direct_throw",
+    "name": "ReachabilitySlice0",
+    "source": "public class ReachabilitySlice0 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\nthrow new NullPointerException();\nInteger value = 1;\n}\n}\n"
+  },
+  {
+    "id": "direct_return",
+    "name": "ReachabilitySlice1",
+    "source": "public class ReachabilitySlice1 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\nreturn;\nInteger value = 1;\n}\n}\n"
+  },
+  {
+    "id": "both_throw",
+    "name": "ReachabilitySlice2",
+    "source": "public class ReachabilitySlice2 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\nif (flag) { throw new NullPointerException(); } else { throw new NullPointerException(); }\nInteger value = 1;\n}\n}\n"
+  },
+  {
+    "id": "both_return",
+    "name": "ReachabilitySlice3",
+    "source": "public class ReachabilitySlice3 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\nif (flag) { return; } else { return; }\nInteger value = 1;\n}\n}\n"
+  },
+  {
+    "id": "mixed_exit",
+    "name": "ReachabilitySlice4",
+    "source": "public class ReachabilitySlice4 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\nif (flag) { return; } else { throw new NullPointerException(); }\nInteger value = 1;\n}\n}\n"
+  },
+  {
+    "id": "while_throw",
+    "name": "ReachabilitySlice5",
+    "source": "public class ReachabilitySlice5 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\nwhile (flag) {\nthrow new NullPointerException();\nInteger value = 1;\n}\n}\n}\n"
+  },
+  {
+    "id": "for_throw",
+    "name": "ReachabilitySlice6",
+    "source": "public class ReachabilitySlice6 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\nfor (Integer i = 0; i < 1; i++) {\nthrow new NullPointerException();\nInteger value = 1;\n}\n}\n}\n"
+  },
+  {
+    "id": "foreach_throw",
+    "name": "ReachabilitySlice7",
+    "source": "public class ReachabilitySlice7 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\nfor (Integer i : new List<Integer>{1}) {\nthrow new NullPointerException();\nInteger value = 1;\n}\n}\n}\n"
+  },
+  {
+    "id": "do_throw",
+    "name": "ReachabilitySlice8",
+    "source": "public class ReachabilitySlice8 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\ndo {\nthrow new NullPointerException();\nInteger value = 1;\n} while(flag);\n}\n}\n"
+  },
+  {
+    "id": "catch_rethrow",
+    "name": "ReachabilitySlice9",
+    "source": "public class ReachabilitySlice9 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\ntry { throw new NullPointerException(); } catch (Exception error) { throw error; }\nInteger value = 1;\n}\n}\n"
+  },
+  {
+    "id": "catch_return",
+    "name": "ReachabilitySlice10",
+    "source": "public class ReachabilitySlice10 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\ntry { return; } catch (Exception error) { return; }\nInteger value = 1;\n}\n}\n"
+  },
+  {
+    "id": "inside_try",
+    "name": "ReachabilitySlice11",
+    "source": "public class ReachabilitySlice11 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\ntry {\nthrow new NullPointerException();\nInteger value = 1;\n} catch (Exception error) {}\n}\n}\n"
+  },
+  {
+    "id": "inside_catch",
+    "name": "ReachabilitySlice12",
+    "source": "public class ReachabilitySlice12 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\ntry { System.debug(flag); } catch (Exception error) {\nthrow error;\nInteger value = 1;\n}\n}\n}\n"
+  },
+  {
+    "id": "conditional_throw",
+    "name": "ReachabilitySlice13",
+    "source": "public class ReachabilitySlice13 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\nif (flag) { throw new NullPointerException(); }\nInteger value = 1;\n}\n}\n"
+  },
+  {
+    "id": "after_loop",
+    "name": "ReachabilitySlice14",
+    "source": "public class ReachabilitySlice14 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\nwhile (flag) { throw new NullPointerException(); }\nInteger value = 1;\n}\n}\n"
+  },
+  {
+    "id": "caught_throw",
+    "name": "ReachabilitySlice15",
+    "source": "public class ReachabilitySlice15 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\ntry { throw new NullPointerException(); } catch (Exception error) {}\nInteger value = 1;\n}\n}\n"
+  },
+  {
+    "id": "block_throw",
+    "name": "ReachabilitySlice16",
+    "source": "public class ReachabilitySlice16 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\n{ throw new NullPointerException(); }\nInteger value = 1;\n}\n}\n"
+  },
+  {
+    "id": "finally_throw",
+    "name": "ReachabilitySlice17",
+    "source": "public class ReachabilitySlice17 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\ntry { System.debug(flag); } finally { throw new NullPointerException(); }\nInteger value = 1;\n}\n}\n"
+  },
+  {
+    "id": "nested_exception",
+    "name": "ReachabilitySlice18",
+    "source": "public class ReachabilitySlice18 {\npublic class LocalException extends Exception {}\npublic static void observe(Boolean flag) {\ntry {\nthrow new LocalException();\nSystem.debug(flag);\n} catch (Exception error) {}\n}\n}\n"
+  }
+]

@@ -1,0 +1,3 @@
+method	observation
+directCreatedCursor	Default DML CreatedDate query bind and keyset predicate
+jsonCreatedCursor	Default DML timestamp through Long JSON base64 cursor roundtrip and keyset predicate

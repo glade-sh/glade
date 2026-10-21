@@ -11,10 +11,11 @@
     },
     "expected": {
       "59.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"}},\"id\":\"[OWNED_1]\"}}",
-      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"}},\"id\":\"[OWNED_1]\"}}"
+      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"}},\"id\":\"[OWNED_1]\"}}",
+      "68.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"}},\"id\":\"[OWNED_1]\"}}"
     },
     "pending": false,
-    "oracle": "Salesforce API 59/67 record data observation"
+    "oracle": "Salesforce API 59/67/68 record data observation"
   },
   {
     "id": "r_getRecord_optional",
@@ -31,10 +32,11 @@
     },
     "expected": {
       "59.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}",
-      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}"
+      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}",
+      "68.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}"
     },
     "pending": false,
-    "oracle": "Salesforce API 59/67 record data observation"
+    "oracle": "Salesforce API 59/67/68 record data observation"
   },
   {
     "id": "r_getRecord_empty_fields",
@@ -46,10 +48,11 @@
     },
     "expected": {
       "59.0": "JSON|{\"returned\":{\"noDataOrErrorWithinMs\":4000}}",
-      "67.0": "JSON|{\"returned\":{\"noDataOrErrorWithinMs\":4000}}"
+      "67.0": "JSON|{\"returned\":{\"noDataOrErrorWithinMs\":4000}}",
+      "68.0": "JSON|{\"returned\":{\"noDataOrErrorWithinMs\":4000}}"
     },
     "pending": true,
-    "oracle": "Salesforce API 59/67 record data observation"
+    "oracle": "Salesforce API 59/67/68 record data observation"
   },
   {
     "id": "r_getRecord_null_fields",
@@ -61,10 +64,11 @@
     },
     "expected": {
       "59.0": "JSON|{\"returned\":{\"noEmissionWithinMs\":4000}}",
-      "67.0": "JSON|{\"returned\":{\"noEmissionWithinMs\":4000}}"
+      "67.0": "JSON|{\"returned\":{\"noEmissionWithinMs\":4000}}",
+      "68.0": "JSON|{\"returned\":{\"noEmissionWithinMs\":4000}}"
     },
     "pending": true,
-    "oracle": "Salesforce API 59/67 record data observation"
+    "oracle": "Salesforce API 59/67/68 record data observation"
   },
   {
     "id": "r_getRecord_compact",
@@ -81,10 +85,11 @@
     },
     "expected": {
       "59.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"AnnualRevenue\":{\"displayValue\":\"$13\",\"value\":12.5},\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"ParentId\":{\"displayValue\":null,\"value\":null},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}",
-      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"AnnualRevenue\":{\"displayValue\":\"$13\",\"value\":12.5},\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"ParentId\":{\"displayValue\":null,\"value\":null},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}"
+      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"AnnualRevenue\":{\"displayValue\":\"$13\",\"value\":12.5},\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"ParentId\":{\"displayValue\":null,\"value\":null},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}",
+      "68.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"AnnualRevenue\":{\"displayValue\":\"$13\",\"value\":12.5},\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"ParentId\":{\"displayValue\":null,\"value\":null},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}"
     },
     "pending": false,
-    "oracle": "Salesforce API 59/67 record data observation"
+    "oracle": "Salesforce API 59/67/68 record data observation"
   },
   {
     "id": "r_getRecord_fields_and_layout",
@@ -101,10 +106,11 @@
     },
     "expected": {
       "59.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"AnnualRevenue\":{\"displayValue\":\"$13\",\"value\":12.5},\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"ParentId\":{\"displayValue\":null,\"value\":null},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}",
-      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"AnnualRevenue\":{\"displayValue\":\"$13\",\"value\":12.5},\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"ParentId\":{\"displayValue\":null,\"value\":null},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}"
+      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"AnnualRevenue\":{\"displayValue\":\"$13\",\"value\":12.5},\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"ParentId\":{\"displayValue\":null,\"value\":null},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}",
+      "68.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"AnnualRevenue\":{\"displayValue\":\"$13\",\"value\":12.5},\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"ParentId\":{\"displayValue\":null,\"value\":null},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}"
     },
     "pending": false,
-    "oracle": "Salesforce API 59/67 record data observation"
+    "oracle": "Salesforce API 59/67/68 record data observation"
   },
   {
     "id": "r_getRecord_id15",
@@ -118,10 +124,11 @@
     },
     "expected": {
       "59.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"}},\"id\":\"[OWNED_1]\"}}",
-      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"}},\"id\":\"[OWNED_1]\"}}"
+      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"}},\"id\":\"[OWNED_1]\"}}",
+      "68.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"}},\"id\":\"[OWNED_1]\"}}"
     },
     "pending": false,
-    "oracle": "Salesforce API 59/67 record data observation"
+    "oracle": "Salesforce API 59/67/68 record data observation"
   },
   {
     "id": "r_getRecord_empty",
@@ -135,10 +142,11 @@
     },
     "expected": {
       "59.0": "JSON|{\"returned\":{\"noEmissionWithinMs\":4000}}",
-      "67.0": "JSON|{\"returned\":{\"noEmissionWithinMs\":4000}}"
+      "67.0": "JSON|{\"returned\":{\"noEmissionWithinMs\":4000}}",
+      "68.0": "JSON|{\"returned\":{\"noEmissionWithinMs\":4000}}"
     },
     "pending": true,
-    "oracle": "Salesforce API 59/67 record data observation"
+    "oracle": "Salesforce API 59/67/68 record data observation"
   },
   {
     "id": "r_getRecord_malformed",
@@ -152,9 +160,10 @@
     },
     "expected": {
       "59.0": "JSON|{\"returned\":{\"noDataOrErrorWithinMs\":30000}}",
-      "67.0": "JSON|{\"returned\":{\"noDataOrErrorWithinMs\":30000}}"
+      "67.0": "JSON|{\"returned\":{\"noDataOrErrorWithinMs\":30000}}",
+      "68.0": "JSON|{\"returned\":{\"noDataOrErrorWithinMs\":30000}}"
     },
     "pending": true,
-    "oracle": "Salesforce API 59/67 record data observation"
+    "oracle": "Salesforce API 59/67/68 record data observation"
   }
 ]

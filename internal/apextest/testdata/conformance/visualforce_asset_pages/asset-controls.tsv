@@ -1,0 +1,5 @@
+source_api	case	accepted	diagnostics
+59.0	missing-asset	false	["Invalid target parameter for function URLFOR"]
+59.0	nested-asset	false	["Invalid target parameter for function URLFOR"]
+67.0	missing-asset	false	["Invalid target parameter for function URLFOR"]
+67.0	nested-asset	false	["Invalid target parameter for function URLFOR"]

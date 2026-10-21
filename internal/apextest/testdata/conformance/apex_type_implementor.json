@@ -1,0 +1,1281 @@
+{
+  "sourceApiVersions": [
+    "61.0",
+    "62.0",
+    "67.0"
+  ],
+  "helperApi": "67.0",
+  "routes": [
+    "isTest",
+    "anonymous"
+  ],
+  "namespaceContext": "none",
+  "knownRows": 6,
+  "marker": "IMPLEMENTOR_OBSERVATION|",
+  "orgIdSha256": "566431ea267e6dadbe2c2da0927633112b9ad8d0024a657ee92544c5b0eea4ef",
+  "devHubAlias": "scratch-org",
+  "receiptPathPolicy": "Only personal HOME/worktree paths in command, environment, ORG-RUN and the carried CLI stack are replaced with explicit placeholders. Source bytes, complete native payloads and original pre-call source manifests are unchanged. Original raw receipt SHA256 hashes are retained.",
+  "pendingCoverage": [
+    "Helper source versions other than API67 are unobserved.",
+    "API68 callers are unobserved.",
+    "Namespace and installed dependency contexts are unobserved.",
+    "Abstract implementors and inherited-interface paths are unobserved.",
+    "Anonymous-declared class enumeration is unobserved.",
+    "Standalone CLI/server org builders outside test-org construction are not covered by this delivery."
+  ],
+  "captures": [
+    {
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "force-app/main/default/classes/SlateFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/SlateFixtures.cls": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a",
+          "force-app/main/default/classes/AtlasPlain.cls": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc",
+          "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasContract.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasContract.cls": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56",
+          "force-app/main/default/classes/GlyphFixtures.cls": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6",
+          "force-app/main/default/classes/AtlasProvider.cls": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe",
+          "force-app/main/default/classes/AtlasProvider.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/ImplementorObservation.cls-meta.xml": "6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b",
+          "force-app/main/default/classes/AtlasPlain.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/ImplementorObservation.cls": "8fac99fe10332bf473cdf9bd9cef77874c1da29e67962dc78ff019a3c4d6727c"
+        }
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"force-app/main/default/classes/SlateFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/SlateFixtures.cls\": \"0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a\",\n    \"force-app/main/default/classes/AtlasPlain.cls\": \"c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc\",\n    \"force-app/main/default/classes/GlyphFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasContract.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasContract.cls\": \"32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56\",\n    \"force-app/main/default/classes/GlyphFixtures.cls\": \"56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6\",\n    \"force-app/main/default/classes/AtlasProvider.cls\": \"f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe\",\n    \"force-app/main/default/classes/AtlasProvider.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/ImplementorObservation.cls-meta.xml\": \"6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b\",\n    \"force-app/main/default/classes/AtlasPlain.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/ImplementorObservation.cls\": \"8fac99fe10332bf473cdf9bd9cef77874c1da29e67962dc78ff019a3c4d6727c\"\n  }\n}\n",
+      "sourceManifestSHA256": "0a153ce47959a943489ecd2ff69606966f01c3ddfb7c875d6278bfb3679ed38e",
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls": {
+          "source": "@IsTest\nprivate class SlateFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'private-test-inner';\n        }\n    }\n}\n",
+          "sha256": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls": {
+          "source": "public class AtlasPlain {\n    public String name() {\n        return 'unrelated';\n    }\n}\n",
+          "sha256": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasContract.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasContract.cls": {
+          "source": "public interface AtlasContract {\n    String name();\n}\n",
+          "sha256": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls": {
+          "source": "@IsTest\npublic class GlyphFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'public-test-inner';\n        }\n    }\n\n    private static List<Object> describeRows(List<ApexTypeImplementor> rows) {\n        List<Object> described = new List<Object>();\n        for (ApexTypeImplementor row : rows) {\n            described.add(new Map<String, Object>{\n                'ClassName' => row.ClassName,\n                'ClassNamespacePrefix' => row.ClassNamespacePrefix,\n                'InterfaceName' => row.InterfaceName,\n                'InterfaceNamespacePrefix' => row.InterfaceNamespacePrefix,\n                'IsConcrete' => row.IsConcrete\n            });\n        }\n        return described;\n    }\n\n    @IsTest\n    static void observe() {\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'named',\n            'sourceApi' => 67,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        payload.put('interfaceRows', describeRows(interfaceRows));\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n            WITH SYSTEM_MODE\n        ]);\n        System.assert(false, 'IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n    }\n}\n",
+          "sha256": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls": {
+          "source": "public class AtlasProvider implements AtlasContract {\n    public String name() {\n        return 'ordinary';\n    }\n}\n",
+          "sha256": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/ImplementorObservation.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/ImplementorObservation.cls": {
+          "source": "@IsTest\npublic class ImplementorObservation {\n    private static List<Object> describeRows(List<ApexTypeImplementor> rows) {\n        List<Object> described = new List<Object>();\n        for (ApexTypeImplementor row : rows) {\n            described.add(new Map<String, Object>{\n                'ClassName' => row.ClassName,\n                'ClassNamespacePrefix' => row.ClassNamespacePrefix,\n                'InterfaceName' => row.InterfaceName,\n                'InterfaceNamespacePrefix' => row.InterfaceNamespacePrefix,\n                'IsConcrete' => row.IsConcrete\n            });\n        }\n        return described;\n    }\n\n    @IsTest\n    static void observe() {\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'named',\n            'sourceApi' => 61,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        payload.put('interfaceRows', describeRows(interfaceRows));\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n            WITH SYSTEM_MODE\n        ]);\n        System.assert(false, 'IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n    }\n}\n",
+          "sha256": "8fac99fe10332bf473cdf9bd9cef77874c1da29e67962dc78ff019a3c4d6727c"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "649681b4e2b51380370e4558e4dc52de8b6246b7abd8e29f2cd42eb3334ba78b",
+        "deploy.command.json": "13d5712d3362218e74521cd3085fc1182df24536071d6cd0d90ebaefe6730ec2",
+        "deploy.json": "4272a37d28e51153207cc72509f77406c09795c6b54fd80ffadcc94af455dc59",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "digests.json": "1284235770e52be6de27b08724706448d90827e620c6d5213fa6bac86b29c395",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "e83c330ffdf43b3300b7e7c8316b777311a6adedd0d56000738602ff6354252b",
+        "source-digests.json": "0a153ce47959a943489ecd2ff69606966f01c3ddfb7c875d6278bfb3679ed38e"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=566431ea267e6dadbe2c2da0927633112b9ad8d0024a657ee92544c5b0eea4ef\nsourceApi=61.0\ncallerApi=61.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"ImplementorObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T20:40:13Z\nexitCode=1\ndeploymentId=0Af000000000veYCAQ\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T20:40:17Z\n",
+      "context": "named61",
+      "sourceAPI": "61.0",
+      "helperAPI": "67.0",
+      "route": "isTest",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "namespaceContext": "none",
+      "testClass": "ImplementorObservation",
+      "command": {
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        },
+        "command": [
+          "sf",
+          "project",
+          "deploy",
+          "start",
+          "--dry-run",
+          "--source-dir",
+          "force-app",
+          "--test-level",
+          "RunSpecifiedTests",
+          "--tests",
+          "ImplementorObservation",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "62.0",
+          "--wait",
+          "1",
+          "--json"
+        ]
+      },
+      "errors": {
+        "componentFailures": [],
+        "transportOrSetupErrors": []
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "unrelatedCount": 0,
+            "namespaceEmptyCount": 2,
+            "namespaceNullCount": 2,
+            "boundNames": [
+              "GlyphFixtures.Matching"
+            ],
+            "scalarNames": [
+              "GlyphFixtures.Matching"
+            ],
+            "interfaceRows": [
+              {
+                "IsConcrete": true,
+                "InterfaceNamespacePrefix": null,
+                "InterfaceName": "AtlasContract",
+                "ClassNamespacePrefix": null,
+                "ClassName": "AtlasProvider"
+              },
+              {
+                "IsConcrete": true,
+                "InterfaceNamespacePrefix": null,
+                "InterfaceName": "AtlasContract",
+                "ClassNamespacePrefix": null,
+                "ClassName": "GlyphFixtures.Matching"
+              }
+            ],
+            "matchingTypeText": "GlyphFixtures.Matching",
+            "matchingTypeExists": true,
+            "helperApi": 67,
+            "sourceApi": 61,
+            "route": "named"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: IMPLEMENTOR_OBSERVATION|{\"unrelatedCount\":0,\"namespaceEmptyCount\":2,\"namespaceNullCount\":2,\"boundNames\":[\"GlyphFixtures.Matching\"],\"scalarNames\":[\"GlyphFixtures.Matching\"],\"interfaceRows\":[{\"IsConcrete\":true,\"InterfaceNamespacePrefix\":null,\"InterfaceName\":\"AtlasContract\",\"ClassNamespacePrefix\":null,\"ClassName\":\"AtlasProvider\"},{\"IsConcrete\":true,\"InterfaceNamespacePrefix\":null,\"InterfaceName\":\"AtlasContract\",\"ClassNamespacePrefix\":null,\"ClassName\":\"GlyphFixtures.Matching\"}],\"matchingTypeText\":\"GlyphFixtures.Matching\",\"matchingTypeExists\":true,\"helperApi\":67,\"sourceApi\":61,\"route\":\"named\"}"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Af000000000veYCAQ",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 1,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 1
+      }
+    },
+    {
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "force-app/main/default/classes/AtlasContract.cls": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56",
+          "force-app/main/default/classes/AtlasContract.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasPlain.cls": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc",
+          "force-app/main/default/classes/AtlasPlain.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasProvider.cls": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe",
+          "force-app/main/default/classes/AtlasProvider.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/GlyphFixtures.cls": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6",
+          "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/SlateFixtures.cls": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a",
+          "force-app/main/default/classes/SlateFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "source.apex": "428b232b75d3174dc773cab7b5daf21708d24e31783ac6b8696c36b3258b07ed"
+        },
+        "helperSetupDeploymentId": "0Af000000000bAVCAY"
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"force-app/main/default/classes/AtlasContract.cls\": \"32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56\",\n    \"force-app/main/default/classes/AtlasContract.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasPlain.cls\": \"c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc\",\n    \"force-app/main/default/classes/AtlasPlain.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasProvider.cls\": \"f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe\",\n    \"force-app/main/default/classes/AtlasProvider.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/GlyphFixtures.cls\": \"56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6\",\n    \"force-app/main/default/classes/GlyphFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/SlateFixtures.cls\": \"0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a\",\n    \"force-app/main/default/classes/SlateFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"source.apex\": \"428b232b75d3174dc773cab7b5daf21708d24e31783ac6b8696c36b3258b07ed\"\n  },\n  \"helperSetupDeploymentId\": \"0Af000000000bAVCAY\"\n}\n",
+      "sourceManifestSHA256": "48dc8a054a282f0f98eed915fcb807fa32ed9ed15b96799ba7fd8e04ed53a41a",
+      "sources": {
+        "force-app/main/default/classes/AtlasContract.cls": {
+          "source": "public interface AtlasContract {\n    String name();\n}\n",
+          "sha256": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56"
+        },
+        "force-app/main/default/classes/AtlasContract.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls": {
+          "source": "public class AtlasPlain {\n    public String name() {\n        return 'unrelated';\n    }\n}\n",
+          "sha256": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls": {
+          "source": "public class AtlasProvider implements AtlasContract {\n    public String name() {\n        return 'ordinary';\n    }\n}\n",
+          "sha256": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls": {
+          "source": "@IsTest\npublic class GlyphFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'public-test-inner';\n        }\n    }\n\n    private static List<Object> describeRows(List<ApexTypeImplementor> rows) {\n        List<Object> described = new List<Object>();\n        for (ApexTypeImplementor row : rows) {\n            described.add(new Map<String, Object>{\n                'ClassName' => row.ClassName,\n                'ClassNamespacePrefix' => row.ClassNamespacePrefix,\n                'InterfaceName' => row.InterfaceName,\n                'InterfaceNamespacePrefix' => row.InterfaceNamespacePrefix,\n                'IsConcrete' => row.IsConcrete\n            });\n        }\n        return described;\n    }\n\n    @IsTest\n    static void observe() {\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'named',\n            'sourceApi' => 67,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        payload.put('interfaceRows', describeRows(interfaceRows));\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n            WITH SYSTEM_MODE\n        ]);\n        System.assert(false, 'IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n    }\n}\n",
+          "sha256": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls": {
+          "source": "@IsTest\nprivate class SlateFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'private-test-inner';\n        }\n    }\n}\n",
+          "sha256": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "source.apex": {
+          "source": "\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'anonymous',\n            'sourceApi' => 61,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<Object> described = new List<Object>();\nfor (ApexTypeImplementor row : interfaceRows) { described.add(new Map<String,Object>{'ClassName'=>row.ClassName,'ClassNamespacePrefix'=>row.ClassNamespacePrefix,'InterfaceName'=>row.InterfaceName,'InterfaceNamespacePrefix'=>row.InterfaceNamespacePrefix,'IsConcrete'=>row.IsConcrete}); }\npayload.put('interfaceRows',described);\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n        ]);\n        System.debug('IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n",
+          "sha256": "428b232b75d3174dc773cab7b5daf21708d24e31783ac6b8696c36b3258b07ed"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "92a32d68bdeeb42dc321f1093d04c65b358c242f8a2cbc960a8f648b3cc8040a",
+        "digests.json": "2d3d3c218e75c5a795f1c75108168965a33fc04807a4e989098cb763c5ff12dc",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "org.tsv": "52d95b41cb35e2416919db93aabfcdd924eb6cea7488498896304e7219dd5945",
+        "run.command.json": "88a2c9c1d2377b53a90103472b0cb6680bed9bf8ce5909aad0ef492ab0bd4f8f",
+        "run.json": "1831782c5647ded700f93bca0c912aacca42d73cbb1af5499f8314313c2ecc18",
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "48dc8a054a282f0f98eed915fcb807fa32ed9ed15b96799ba7fd8e04ed53a41a"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=566431ea267e6dadbe2c2da0927633112b9ad8d0024a657ee92544c5b0eea4ef\ncontext=anonymous\nsourceApi=61.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=61.0\nnamespace=none\nmutation=none; pure synthetic metadata queries\nhelperSetupDeploymentId=0Af000000000bAVCAY\ncleanupOwner=k6\nstart=2026-10-15T20:43:20.117883+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/apex_type_implementor/api61/anonymous-unqualified/source.apex\", \"--target-org\", \"scratch-org\", \"--api-version\", \"61.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T20:43:21.358133+00:00\n",
+      "context": "anonymous61",
+      "sourceAPI": "61.0",
+      "helperAPI": "67.0",
+      "route": "anonymous",
+      "projectAPI": "62.0",
+      "transportAPI": "61.0",
+      "namespaceContext": "none",
+      "testClass": "",
+      "command": {
+        "command": [
+          "sf",
+          "apex",
+          "run",
+          "--file",
+          "<worktree>/probe/apex_type_implementor/api61/anonymous-unqualified/source.apex",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "61.0",
+          "--json"
+        ],
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        }
+      },
+      "errors": {
+        "exitCode": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "unrelatedCount": 0,
+            "namespaceEmptyCount": 2,
+            "namespaceNullCount": 2,
+            "boundNames": [
+              "GlyphFixtures.Matching"
+            ],
+            "scalarNames": [
+              "GlyphFixtures.Matching"
+            ],
+            "interfaceRows": [
+              {
+                "IsConcrete": true,
+                "InterfaceNamespacePrefix": null,
+                "InterfaceName": "AtlasContract",
+                "ClassNamespacePrefix": null,
+                "ClassName": "AtlasProvider"
+              },
+              {
+                "IsConcrete": true,
+                "InterfaceNamespacePrefix": null,
+                "InterfaceName": "AtlasContract",
+                "ClassNamespacePrefix": null,
+                "ClassName": "GlyphFixtures.Matching"
+              }
+            ],
+            "matchingTypeText": "GlyphFixtures.Matching",
+            "matchingTypeExists": true,
+            "helperApi": 67,
+            "sourceApi": 61,
+            "route": "anonymous"
+          }
+        }
+      ],
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      }
+    },
+    {
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "force-app/main/default/classes/SlateFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/SlateFixtures.cls": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a",
+          "force-app/main/default/classes/AtlasPlain.cls": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc",
+          "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasContract.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasContract.cls": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56",
+          "force-app/main/default/classes/GlyphFixtures.cls": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6",
+          "force-app/main/default/classes/AtlasProvider.cls": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe",
+          "force-app/main/default/classes/AtlasProvider.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/ImplementorObservation.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+          "force-app/main/default/classes/AtlasPlain.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/ImplementorObservation.cls": "7418b49589eeb179f18936d4a74e43cfd1905412ef45a8354a53f1aca357353f"
+        }
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"force-app/main/default/classes/SlateFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/SlateFixtures.cls\": \"0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a\",\n    \"force-app/main/default/classes/AtlasPlain.cls\": \"c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc\",\n    \"force-app/main/default/classes/GlyphFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasContract.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasContract.cls\": \"32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56\",\n    \"force-app/main/default/classes/GlyphFixtures.cls\": \"56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6\",\n    \"force-app/main/default/classes/AtlasProvider.cls\": \"f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe\",\n    \"force-app/main/default/classes/AtlasProvider.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/ImplementorObservation.cls-meta.xml\": \"5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86\",\n    \"force-app/main/default/classes/AtlasPlain.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/ImplementorObservation.cls\": \"7418b49589eeb179f18936d4a74e43cfd1905412ef45a8354a53f1aca357353f\"\n  }\n}\n",
+      "sourceManifestSHA256": "c6c56ff291beb8d314e0704c4e8242d83495b08cb6bd862757a7c4eec3f219e5",
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls": {
+          "source": "@IsTest\nprivate class SlateFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'private-test-inner';\n        }\n    }\n}\n",
+          "sha256": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls": {
+          "source": "public class AtlasPlain {\n    public String name() {\n        return 'unrelated';\n    }\n}\n",
+          "sha256": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasContract.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasContract.cls": {
+          "source": "public interface AtlasContract {\n    String name();\n}\n",
+          "sha256": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls": {
+          "source": "@IsTest\npublic class GlyphFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'public-test-inner';\n        }\n    }\n\n    private static List<Object> describeRows(List<ApexTypeImplementor> rows) {\n        List<Object> described = new List<Object>();\n        for (ApexTypeImplementor row : rows) {\n            described.add(new Map<String, Object>{\n                'ClassName' => row.ClassName,\n                'ClassNamespacePrefix' => row.ClassNamespacePrefix,\n                'InterfaceName' => row.InterfaceName,\n                'InterfaceNamespacePrefix' => row.InterfaceNamespacePrefix,\n                'IsConcrete' => row.IsConcrete\n            });\n        }\n        return described;\n    }\n\n    @IsTest\n    static void observe() {\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'named',\n            'sourceApi' => 67,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        payload.put('interfaceRows', describeRows(interfaceRows));\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n            WITH SYSTEM_MODE\n        ]);\n        System.assert(false, 'IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n    }\n}\n",
+          "sha256": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls": {
+          "source": "public class AtlasProvider implements AtlasContract {\n    public String name() {\n        return 'ordinary';\n    }\n}\n",
+          "sha256": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/ImplementorObservation.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/ImplementorObservation.cls": {
+          "source": "@IsTest\npublic class ImplementorObservation {\n    private static List<Object> describeRows(List<ApexTypeImplementor> rows) {\n        List<Object> described = new List<Object>();\n        for (ApexTypeImplementor row : rows) {\n            described.add(new Map<String, Object>{\n                'ClassName' => row.ClassName,\n                'ClassNamespacePrefix' => row.ClassNamespacePrefix,\n                'InterfaceName' => row.InterfaceName,\n                'InterfaceNamespacePrefix' => row.InterfaceNamespacePrefix,\n                'IsConcrete' => row.IsConcrete\n            });\n        }\n        return described;\n    }\n\n    @IsTest\n    static void observe() {\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'named',\n            'sourceApi' => 62,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        payload.put('interfaceRows', describeRows(interfaceRows));\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n            WITH SYSTEM_MODE\n        ]);\n        System.assert(false, 'IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n    }\n}\n",
+          "sha256": "7418b49589eeb179f18936d4a74e43cfd1905412ef45a8354a53f1aca357353f"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "57a65a5f93e339f91cc438be364ee90baa37194f6097b4be7b9bc68b8595071e",
+        "deploy.command.json": "13d5712d3362218e74521cd3085fc1182df24536071d6cd0d90ebaefe6730ec2",
+        "deploy.json": "03ccf490dacba8421f1211a48fef7db0b6d63c34737dbf50a2229fe6067c83e0",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "digests.json": "9e8ac5a663f4605611c3eeaa8404b8fe174bb72a7213133938f6424ce922d2a3",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "863c8174dd044c64bcac67c2817e3ac1de936a95ec31a5c3e6e2e8aa0deff77a",
+        "source-digests.json": "c6c56ff291beb8d314e0704c4e8242d83495b08cb6bd862757a7c4eec3f219e5"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=566431ea267e6dadbe2c2da0927633112b9ad8d0024a657ee92544c5b0eea4ef\nsourceApi=62.0\ncallerApi=62.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"ImplementorObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T20:40:43Z\nexitCode=1\ndeploymentId=0Af000000000zPnCAI\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T20:40:46Z\n",
+      "context": "named62",
+      "sourceAPI": "62.0",
+      "helperAPI": "67.0",
+      "route": "isTest",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "namespaceContext": "none",
+      "testClass": "ImplementorObservation",
+      "command": {
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        },
+        "command": [
+          "sf",
+          "project",
+          "deploy",
+          "start",
+          "--dry-run",
+          "--source-dir",
+          "force-app",
+          "--test-level",
+          "RunSpecifiedTests",
+          "--tests",
+          "ImplementorObservation",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "62.0",
+          "--wait",
+          "1",
+          "--json"
+        ]
+      },
+      "errors": {
+        "componentFailures": [],
+        "transportOrSetupErrors": []
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "unrelatedCount": 0,
+            "namespaceEmptyCount": 2,
+            "namespaceNullCount": 2,
+            "boundNames": [
+              "GlyphFixtures.Matching"
+            ],
+            "scalarNames": [
+              "GlyphFixtures.Matching"
+            ],
+            "interfaceRows": [
+              {
+                "IsConcrete": true,
+                "InterfaceNamespacePrefix": null,
+                "InterfaceName": "AtlasContract",
+                "ClassNamespacePrefix": null,
+                "ClassName": "AtlasProvider"
+              },
+              {
+                "IsConcrete": true,
+                "InterfaceNamespacePrefix": null,
+                "InterfaceName": "AtlasContract",
+                "ClassNamespacePrefix": null,
+                "ClassName": "GlyphFixtures.Matching"
+              }
+            ],
+            "matchingTypeText": "GlyphFixtures.Matching",
+            "matchingTypeExists": true,
+            "helperApi": 67,
+            "sourceApi": 62,
+            "route": "named"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: IMPLEMENTOR_OBSERVATION|{\"unrelatedCount\":0,\"namespaceEmptyCount\":2,\"namespaceNullCount\":2,\"boundNames\":[\"GlyphFixtures.Matching\"],\"scalarNames\":[\"GlyphFixtures.Matching\"],\"interfaceRows\":[{\"IsConcrete\":true,\"InterfaceNamespacePrefix\":null,\"InterfaceName\":\"AtlasContract\",\"ClassNamespacePrefix\":null,\"ClassName\":\"AtlasProvider\"},{\"IsConcrete\":true,\"InterfaceNamespacePrefix\":null,\"InterfaceName\":\"AtlasContract\",\"ClassNamespacePrefix\":null,\"ClassName\":\"GlyphFixtures.Matching\"}],\"matchingTypeText\":\"GlyphFixtures.Matching\",\"matchingTypeExists\":true,\"helperApi\":67,\"sourceApi\":62,\"route\":\"named\"}"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Af000000000zPnCAI",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 1,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 1
+      }
+    },
+    {
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "force-app/main/default/classes/AtlasContract.cls": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56",
+          "force-app/main/default/classes/AtlasContract.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasPlain.cls": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc",
+          "force-app/main/default/classes/AtlasPlain.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasProvider.cls": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe",
+          "force-app/main/default/classes/AtlasProvider.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/GlyphFixtures.cls": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6",
+          "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/SlateFixtures.cls": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a",
+          "force-app/main/default/classes/SlateFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "source.apex": "3223b1ff8a69e1e342c93cc14da88d0826ae7c8f894f93d57a2937dd317afd9d"
+        },
+        "helperSetupDeploymentId": "0Af000000000bAVCAY"
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"force-app/main/default/classes/AtlasContract.cls\": \"32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56\",\n    \"force-app/main/default/classes/AtlasContract.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasPlain.cls\": \"c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc\",\n    \"force-app/main/default/classes/AtlasPlain.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasProvider.cls\": \"f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe\",\n    \"force-app/main/default/classes/AtlasProvider.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/GlyphFixtures.cls\": \"56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6\",\n    \"force-app/main/default/classes/GlyphFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/SlateFixtures.cls\": \"0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a\",\n    \"force-app/main/default/classes/SlateFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"source.apex\": \"3223b1ff8a69e1e342c93cc14da88d0826ae7c8f894f93d57a2937dd317afd9d\"\n  },\n  \"helperSetupDeploymentId\": \"0Af000000000bAVCAY\"\n}\n",
+      "sourceManifestSHA256": "c41f806d5096e5adb1a3fcad937691f85993a03f25bd443b09c67945e349fedc",
+      "sources": {
+        "force-app/main/default/classes/AtlasContract.cls": {
+          "source": "public interface AtlasContract {\n    String name();\n}\n",
+          "sha256": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56"
+        },
+        "force-app/main/default/classes/AtlasContract.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls": {
+          "source": "public class AtlasPlain {\n    public String name() {\n        return 'unrelated';\n    }\n}\n",
+          "sha256": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls": {
+          "source": "public class AtlasProvider implements AtlasContract {\n    public String name() {\n        return 'ordinary';\n    }\n}\n",
+          "sha256": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls": {
+          "source": "@IsTest\npublic class GlyphFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'public-test-inner';\n        }\n    }\n\n    private static List<Object> describeRows(List<ApexTypeImplementor> rows) {\n        List<Object> described = new List<Object>();\n        for (ApexTypeImplementor row : rows) {\n            described.add(new Map<String, Object>{\n                'ClassName' => row.ClassName,\n                'ClassNamespacePrefix' => row.ClassNamespacePrefix,\n                'InterfaceName' => row.InterfaceName,\n                'InterfaceNamespacePrefix' => row.InterfaceNamespacePrefix,\n                'IsConcrete' => row.IsConcrete\n            });\n        }\n        return described;\n    }\n\n    @IsTest\n    static void observe() {\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'named',\n            'sourceApi' => 67,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        payload.put('interfaceRows', describeRows(interfaceRows));\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n            WITH SYSTEM_MODE\n        ]);\n        System.assert(false, 'IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n    }\n}\n",
+          "sha256": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls": {
+          "source": "@IsTest\nprivate class SlateFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'private-test-inner';\n        }\n    }\n}\n",
+          "sha256": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "source.apex": {
+          "source": "\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'anonymous',\n            'sourceApi' => 62,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<Object> described = new List<Object>();\nfor (ApexTypeImplementor row : interfaceRows) { described.add(new Map<String,Object>{'ClassName'=>row.ClassName,'ClassNamespacePrefix'=>row.ClassNamespacePrefix,'InterfaceName'=>row.InterfaceName,'InterfaceNamespacePrefix'=>row.InterfaceNamespacePrefix,'IsConcrete'=>row.IsConcrete}); }\npayload.put('interfaceRows',described);\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n        ]);\n        System.debug('IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n",
+          "sha256": "3223b1ff8a69e1e342c93cc14da88d0826ae7c8f894f93d57a2937dd317afd9d"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "566f9a4b82d457e8bdbbcc6dba70f30382c72e99fb5def793abb80ea5372ce24",
+        "digests.json": "867e47d5dff1af247ea92cb52bdc88d9c41e9aefe1b4898b07f8c29f0dd75d7f",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "org.tsv": "f1bde128d2a8518e330b4ab650cfd9391064980b8bdbf144f89af1cd0716786c",
+        "run.command.json": "e52f70b72da44786c446df65647704ddbb256a566bf0c66948b2cb95959b54ad",
+        "run.json": "bf2aca873045a6730def6fd5dee15ea21c2e72e7da8dc58ce4cfafdfe2214b8a",
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "c41f806d5096e5adb1a3fcad937691f85993a03f25bd443b09c67945e349fedc"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=566431ea267e6dadbe2c2da0927633112b9ad8d0024a657ee92544c5b0eea4ef\ncontext=anonymous\nsourceApi=62.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=62.0\nnamespace=none\nmutation=none; pure synthetic metadata queries\nhelperSetupDeploymentId=0Af000000000bAVCAY\ncleanupOwner=k6\nstart=2026-10-15T20:43:21.359741+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/apex_type_implementor/api62/anonymous-unqualified/source.apex\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T20:43:22.602657+00:00\n",
+      "context": "anonymous62",
+      "sourceAPI": "62.0",
+      "helperAPI": "67.0",
+      "route": "anonymous",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "namespaceContext": "none",
+      "testClass": "",
+      "command": {
+        "command": [
+          "sf",
+          "apex",
+          "run",
+          "--file",
+          "<worktree>/probe/apex_type_implementor/api62/anonymous-unqualified/source.apex",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "62.0",
+          "--json"
+        ],
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        }
+      },
+      "errors": {
+        "exitCode": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "unrelatedCount": 0,
+            "namespaceEmptyCount": 2,
+            "namespaceNullCount": 2,
+            "boundNames": [
+              "GlyphFixtures.Matching"
+            ],
+            "scalarNames": [
+              "GlyphFixtures.Matching"
+            ],
+            "interfaceRows": [
+              {
+                "IsConcrete": true,
+                "InterfaceNamespacePrefix": null,
+                "InterfaceName": "AtlasContract",
+                "ClassNamespacePrefix": null,
+                "ClassName": "AtlasProvider"
+              },
+              {
+                "IsConcrete": true,
+                "InterfaceNamespacePrefix": null,
+                "InterfaceName": "AtlasContract",
+                "ClassNamespacePrefix": null,
+                "ClassName": "GlyphFixtures.Matching"
+              }
+            ],
+            "matchingTypeText": "GlyphFixtures.Matching",
+            "matchingTypeExists": true,
+            "helperApi": 67,
+            "sourceApi": 62,
+            "route": "anonymous"
+          }
+        }
+      ],
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      }
+    },
+    {
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "force-app/main/default/classes/SlateFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/SlateFixtures.cls": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a",
+          "force-app/main/default/classes/AtlasPlain.cls": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc",
+          "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasContract.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasContract.cls": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56",
+          "force-app/main/default/classes/GlyphFixtures.cls": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6",
+          "force-app/main/default/classes/AtlasProvider.cls": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe",
+          "force-app/main/default/classes/AtlasProvider.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasPlain.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        }
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"force-app/main/default/classes/SlateFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/SlateFixtures.cls\": \"0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a\",\n    \"force-app/main/default/classes/AtlasPlain.cls\": \"c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc\",\n    \"force-app/main/default/classes/GlyphFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasContract.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasContract.cls\": \"32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56\",\n    \"force-app/main/default/classes/GlyphFixtures.cls\": \"56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6\",\n    \"force-app/main/default/classes/AtlasProvider.cls\": \"f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe\",\n    \"force-app/main/default/classes/AtlasProvider.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasPlain.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\"\n  }\n}\n",
+      "sourceManifestSHA256": "1304933f378940b83ffbbab3aa717fb314385d12ae3e625c22b0ba99d8196d7a",
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls": {
+          "source": "@IsTest\nprivate class SlateFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'private-test-inner';\n        }\n    }\n}\n",
+          "sha256": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls": {
+          "source": "public class AtlasPlain {\n    public String name() {\n        return 'unrelated';\n    }\n}\n",
+          "sha256": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasContract.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasContract.cls": {
+          "source": "public interface AtlasContract {\n    String name();\n}\n",
+          "sha256": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls": {
+          "source": "@IsTest\npublic class GlyphFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'public-test-inner';\n        }\n    }\n\n    private static List<Object> describeRows(List<ApexTypeImplementor> rows) {\n        List<Object> described = new List<Object>();\n        for (ApexTypeImplementor row : rows) {\n            described.add(new Map<String, Object>{\n                'ClassName' => row.ClassName,\n                'ClassNamespacePrefix' => row.ClassNamespacePrefix,\n                'InterfaceName' => row.InterfaceName,\n                'InterfaceNamespacePrefix' => row.InterfaceNamespacePrefix,\n                'IsConcrete' => row.IsConcrete\n            });\n        }\n        return described;\n    }\n\n    @IsTest\n    static void observe() {\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'named',\n            'sourceApi' => 67,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        payload.put('interfaceRows', describeRows(interfaceRows));\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n            WITH SYSTEM_MODE\n        ]);\n        System.assert(false, 'IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n    }\n}\n",
+          "sha256": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls": {
+          "source": "public class AtlasProvider implements AtlasContract {\n    public String name() {\n        return 'ordinary';\n    }\n}\n",
+          "sha256": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "b9aeded7a06b0d5138b9fb4a19ca6eee6bb094ec3e7403672228e41a9d2c0255",
+        "deploy.command.json": "7de473cebe8d6845478ac9c2a56eca43b77015a48396eff20a7624812fa9e926",
+        "deploy.json": "342b0751d975969751d871cb385a08d3bb85acf1929c11f1928dc6e4667cfa2d",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "digests.json": "78e4fec2f0518d2b28cd42fd5891606de223b711f75de791f7f4e3bb4e9b3c52",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "573fbaf271dc5c9638e759e47b4de42c9748daaad08382b2037ab1499755bd65",
+        "source-digests.json": "1304933f378940b83ffbbab3aa717fb314385d12ae3e625c22b0ba99d8196d7a"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=566431ea267e6dadbe2c2da0927633112b9ad8d0024a657ee92544c5b0eea4ef\nsourceApi=67.0\ncallerApi=67.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"GlyphFixtures\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T20:38:59Z\nexitCode=1\ndeploymentId=0Af000000000mAMCAY\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T20:39:03Z\n",
+      "context": "named67",
+      "sourceAPI": "67.0",
+      "helperAPI": "67.0",
+      "route": "isTest",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "namespaceContext": "none",
+      "testClass": "GlyphFixtures",
+      "command": {
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        },
+        "command": [
+          "sf",
+          "project",
+          "deploy",
+          "start",
+          "--dry-run",
+          "--source-dir",
+          "force-app",
+          "--test-level",
+          "RunSpecifiedTests",
+          "--tests",
+          "GlyphFixtures",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "62.0",
+          "--wait",
+          "1",
+          "--json"
+        ]
+      },
+      "errors": {
+        "componentFailures": [],
+        "transportOrSetupErrors": []
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "unrelatedCount": 0,
+            "namespaceEmptyCount": 2,
+            "namespaceNullCount": 2,
+            "boundNames": [
+              "GlyphFixtures.Matching"
+            ],
+            "scalarNames": [
+              "GlyphFixtures.Matching"
+            ],
+            "interfaceRows": [
+              {
+                "IsConcrete": true,
+                "InterfaceNamespacePrefix": null,
+                "InterfaceName": "AtlasContract",
+                "ClassNamespacePrefix": null,
+                "ClassName": "AtlasProvider"
+              },
+              {
+                "IsConcrete": true,
+                "InterfaceNamespacePrefix": null,
+                "InterfaceName": "AtlasContract",
+                "ClassNamespacePrefix": null,
+                "ClassName": "GlyphFixtures.Matching"
+              }
+            ],
+            "matchingTypeText": "GlyphFixtures.Matching",
+            "matchingTypeExists": true,
+            "helperApi": 67,
+            "sourceApi": 67,
+            "route": "named"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: IMPLEMENTOR_OBSERVATION|{\"unrelatedCount\":0,\"namespaceEmptyCount\":2,\"namespaceNullCount\":2,\"boundNames\":[\"GlyphFixtures.Matching\"],\"scalarNames\":[\"GlyphFixtures.Matching\"],\"interfaceRows\":[{\"IsConcrete\":true,\"InterfaceNamespacePrefix\":null,\"InterfaceName\":\"AtlasContract\",\"ClassNamespacePrefix\":null,\"ClassName\":\"AtlasProvider\"},{\"IsConcrete\":true,\"InterfaceNamespacePrefix\":null,\"InterfaceName\":\"AtlasContract\",\"ClassNamespacePrefix\":null,\"ClassName\":\"GlyphFixtures.Matching\"}],\"matchingTypeText\":\"GlyphFixtures.Matching\",\"matchingTypeExists\":true,\"helperApi\":67,\"sourceApi\":67,\"route\":\"named\"}"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Af000000000mAMCAY",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 1,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 1
+      }
+    },
+    {
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "force-app/main/default/classes/AtlasContract.cls": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56",
+          "force-app/main/default/classes/AtlasContract.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasPlain.cls": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc",
+          "force-app/main/default/classes/AtlasPlain.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasProvider.cls": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe",
+          "force-app/main/default/classes/AtlasProvider.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/GlyphFixtures.cls": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6",
+          "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/SlateFixtures.cls": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a",
+          "force-app/main/default/classes/SlateFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "source.apex": "172d272beade9f2b991d5f2f67ac7bfe60974f2dd439b36294aa7e53b33e0c3a"
+        },
+        "helperSetupDeploymentId": "0Af000000000bAVCAY"
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"force-app/main/default/classes/AtlasContract.cls\": \"32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56\",\n    \"force-app/main/default/classes/AtlasContract.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasPlain.cls\": \"c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc\",\n    \"force-app/main/default/classes/AtlasPlain.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasProvider.cls\": \"f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe\",\n    \"force-app/main/default/classes/AtlasProvider.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/GlyphFixtures.cls\": \"56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6\",\n    \"force-app/main/default/classes/GlyphFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/SlateFixtures.cls\": \"0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a\",\n    \"force-app/main/default/classes/SlateFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"source.apex\": \"172d272beade9f2b991d5f2f67ac7bfe60974f2dd439b36294aa7e53b33e0c3a\"\n  },\n  \"helperSetupDeploymentId\": \"0Af000000000bAVCAY\"\n}\n",
+      "sourceManifestSHA256": "e44413df9a5587ee1777170ded77a3ae73e4c92d013c32977c9acae3ff1384a6",
+      "sources": {
+        "force-app/main/default/classes/AtlasContract.cls": {
+          "source": "public interface AtlasContract {\n    String name();\n}\n",
+          "sha256": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56"
+        },
+        "force-app/main/default/classes/AtlasContract.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls": {
+          "source": "public class AtlasPlain {\n    public String name() {\n        return 'unrelated';\n    }\n}\n",
+          "sha256": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls": {
+          "source": "public class AtlasProvider implements AtlasContract {\n    public String name() {\n        return 'ordinary';\n    }\n}\n",
+          "sha256": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls": {
+          "source": "@IsTest\npublic class GlyphFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'public-test-inner';\n        }\n    }\n\n    private static List<Object> describeRows(List<ApexTypeImplementor> rows) {\n        List<Object> described = new List<Object>();\n        for (ApexTypeImplementor row : rows) {\n            described.add(new Map<String, Object>{\n                'ClassName' => row.ClassName,\n                'ClassNamespacePrefix' => row.ClassNamespacePrefix,\n                'InterfaceName' => row.InterfaceName,\n                'InterfaceNamespacePrefix' => row.InterfaceNamespacePrefix,\n                'IsConcrete' => row.IsConcrete\n            });\n        }\n        return described;\n    }\n\n    @IsTest\n    static void observe() {\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'named',\n            'sourceApi' => 67,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        payload.put('interfaceRows', describeRows(interfaceRows));\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n            WITH SYSTEM_MODE\n        ]);\n        System.assert(false, 'IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n    }\n}\n",
+          "sha256": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls": {
+          "source": "@IsTest\nprivate class SlateFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'private-test-inner';\n        }\n    }\n}\n",
+          "sha256": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "source.apex": {
+          "source": "\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'anonymous',\n            'sourceApi' => 67,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<Object> described = new List<Object>();\nfor (ApexTypeImplementor row : interfaceRows) { described.add(new Map<String,Object>{'ClassName'=>row.ClassName,'ClassNamespacePrefix'=>row.ClassNamespacePrefix,'InterfaceName'=>row.InterfaceName,'InterfaceNamespacePrefix'=>row.InterfaceNamespacePrefix,'IsConcrete'=>row.IsConcrete}); }\npayload.put('interfaceRows',described);\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n        ]);\n        System.debug('IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n",
+          "sha256": "172d272beade9f2b991d5f2f67ac7bfe60974f2dd439b36294aa7e53b33e0c3a"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "0f66f38a4ceced41ae61756fb765e44a9ba66f4b03f9f7fe54c6f765488e581a",
+        "digests.json": "e0b8730a7601221c6909d143a7cc0561234a04fe58aa2d5b3424bb69967abf45",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "org.tsv": "511fd6117a1bc2326cf4ca12f4dba27583fe67a9549531acd36edc154a3ed068",
+        "run.command.json": "e4c69984a6afc991a09a1331770838d273bd6c2ec9dafd7038a662eddd2c3bee",
+        "run.json": "e69fe599b0d2c260c963fee5909f9e19d6a89c5c7e3774ec28340d9920c1cf91",
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "e44413df9a5587ee1777170ded77a3ae73e4c92d013c32977c9acae3ff1384a6"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=566431ea267e6dadbe2c2da0927633112b9ad8d0024a657ee92544c5b0eea4ef\ncontext=anonymous\nsourceApi=67.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=67.0\nnamespace=none\nmutation=none; pure synthetic metadata queries\nhelperSetupDeploymentId=0Af000000000bAVCAY\ncleanupOwner=k6\nstart=2026-10-15T20:43:18.664060+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/apex_type_implementor/api67/anonymous-unqualified/source.apex\", \"--target-org\", \"scratch-org\", \"--api-version\", \"67.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T20:43:20.116493+00:00\n",
+      "context": "anonymous67",
+      "sourceAPI": "67.0",
+      "helperAPI": "67.0",
+      "route": "anonymous",
+      "projectAPI": "62.0",
+      "transportAPI": "67.0",
+      "namespaceContext": "none",
+      "testClass": "",
+      "command": {
+        "command": [
+          "sf",
+          "apex",
+          "run",
+          "--file",
+          "<worktree>/probe/apex_type_implementor/api67/anonymous-unqualified/source.apex",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "67.0",
+          "--json"
+        ],
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        }
+      },
+      "errors": {
+        "exitCode": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "unrelatedCount": 0,
+            "namespaceEmptyCount": 2,
+            "namespaceNullCount": 2,
+            "boundNames": [
+              "GlyphFixtures.Matching"
+            ],
+            "scalarNames": [
+              "GlyphFixtures.Matching"
+            ],
+            "interfaceRows": [
+              {
+                "IsConcrete": true,
+                "InterfaceNamespacePrefix": null,
+                "InterfaceName": "AtlasContract",
+                "ClassNamespacePrefix": null,
+                "ClassName": "AtlasProvider"
+              },
+              {
+                "IsConcrete": true,
+                "InterfaceNamespacePrefix": null,
+                "InterfaceName": "AtlasContract",
+                "ClassNamespacePrefix": null,
+                "ClassName": "GlyphFixtures.Matching"
+              }
+            ],
+            "matchingTypeText": "GlyphFixtures.Matching",
+            "matchingTypeExists": true,
+            "helperApi": 67,
+            "sourceApi": 67,
+            "route": "anonymous"
+          }
+        }
+      ],
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      }
+    }
+  ],
+  "carriedObservations": [
+    {
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "force-app/main/default/classes/AtlasContract.cls": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56",
+          "force-app/main/default/classes/AtlasContract.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasPlain.cls": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc",
+          "force-app/main/default/classes/AtlasPlain.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/AtlasProvider.cls": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe",
+          "force-app/main/default/classes/AtlasProvider.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/GlyphFixtures.cls": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6",
+          "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "force-app/main/default/classes/SlateFixtures.cls": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a",
+          "force-app/main/default/classes/SlateFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "source.apex": "2d524dc50f6cef3d51d3f877a352838121b1e8bfa22782735eec0293d18a09a5"
+        },
+        "helperSetupDeploymentId": "0Af000000000bAVCAY"
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"force-app/main/default/classes/AtlasContract.cls\": \"32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56\",\n    \"force-app/main/default/classes/AtlasContract.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasPlain.cls\": \"c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc\",\n    \"force-app/main/default/classes/AtlasPlain.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasProvider.cls\": \"f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe\",\n    \"force-app/main/default/classes/AtlasProvider.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/GlyphFixtures.cls\": \"56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6\",\n    \"force-app/main/default/classes/GlyphFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/SlateFixtures.cls\": \"0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a\",\n    \"force-app/main/default/classes/SlateFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"source.apex\": \"2d524dc50f6cef3d51d3f877a352838121b1e8bfa22782735eec0293d18a09a5\"\n  },\n  \"helperSetupDeploymentId\": \"0Af000000000bAVCAY\"\n}\n",
+      "sourceManifestSHA256": "2500e3f05882281d506cc392f51f9b9e2f6d447af21389b36219c05f55fd2d53",
+      "sources": {
+        "force-app/main/default/classes/AtlasContract.cls": {
+          "source": "public interface AtlasContract {\n    String name();\n}\n",
+          "sha256": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56"
+        },
+        "force-app/main/default/classes/AtlasContract.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls": {
+          "source": "public class AtlasPlain {\n    public String name() {\n        return 'unrelated';\n    }\n}\n",
+          "sha256": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc"
+        },
+        "force-app/main/default/classes/AtlasPlain.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls": {
+          "source": "public class AtlasProvider implements AtlasContract {\n    public String name() {\n        return 'ordinary';\n    }\n}\n",
+          "sha256": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe"
+        },
+        "force-app/main/default/classes/AtlasProvider.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls": {
+          "source": "@IsTest\npublic class GlyphFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'public-test-inner';\n        }\n    }\n\n    private static List<Object> describeRows(List<ApexTypeImplementor> rows) {\n        List<Object> described = new List<Object>();\n        for (ApexTypeImplementor row : rows) {\n            described.add(new Map<String, Object>{\n                'ClassName' => row.ClassName,\n                'ClassNamespacePrefix' => row.ClassNamespacePrefix,\n                'InterfaceName' => row.InterfaceName,\n                'InterfaceNamespacePrefix' => row.InterfaceNamespacePrefix,\n                'IsConcrete' => row.IsConcrete\n            });\n        }\n        return described;\n    }\n\n    @IsTest\n    static void observe() {\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'named',\n            'sourceApi' => 67,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        payload.put('interfaceRows', describeRows(interfaceRows));\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n            WITH SYSTEM_MODE\n        ]);\n        System.assert(false, 'IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n    }\n}\n",
+          "sha256": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6"
+        },
+        "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls": {
+          "source": "@IsTest\nprivate class SlateFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'private-test-inner';\n        }\n    }\n}\n",
+          "sha256": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a"
+        },
+        "force-app/main/default/classes/SlateFixtures.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "source.apex": {
+          "source": "\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'anonymous',\n            'sourceApi' => 67,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<Object> described = new List<Object>();\nfor (ApexTypeImplementor row : interfaceRows) { described.add(new Map<String,Object>{'ClassName'=>row.ClassName,'ClassNamespacePrefix'=>row.ClassNamespacePrefix,'InterfaceName'=>row.InterfaceName,'InterfaceNamespacePrefix'=>row.InterfaceNamespacePrefix,'IsConcrete'=>row.IsConcrete}); }\npayload.put('interfaceRows',described);\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n            WITH SYSTEM_MODE\n        ]);\n        System.debug('IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n",
+          "sha256": "2d524dc50f6cef3d51d3f877a352838121b1e8bfa22782735eec0293d18a09a5"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "b79fe2d7ead4df7907faafd59ddc93d5d94def861500060983d9cf1c8bb3dab5",
+        "digests.json": "8bfb05210165f8211ff90b0c003d5c2c2d87b9cf01289390bbfb4f1883a442f2",
+        "errors.json": "8ff5bc0d36bebb0a1546b678847e6cbb3c4034baf59290862684982948e10065",
+        "org.tsv": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "545af4471be8012c877197ee8218b9abaf2bbe58e563b113c727460711fe096b",
+        "run.json": "e423b8a6a7d02494eb19864083bd19262a6173a25396b87dff639d31f790d82d",
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "2500e3f05882281d506cc392f51f9b9e2f6d447af21389b36219c05f55fd2d53"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=566431ea267e6dadbe2c2da0927633112b9ad8d0024a657ee92544c5b0eea4ef\ncontext=anonymous\nsourceApi=67.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=67.0\nnamespace=none\nmutation=none; pure synthetic metadata queries\nhelperSetupDeploymentId=0Af000000000bAVCAY\ncleanupOwner=k6\nstart=2026-10-15T20:42:00.513937+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/apex_type_implementor/api67/anonymous/source.apex\", \"--target-org\", \"scratch-org\", \"--api-version\", \"67.0\", \"--json\"]\nexitCode=1\ncompiled=None\nsuccess=None\nrows=0\nend=2026-10-15T20:42:02.012447+00:00\n",
+      "context": "anonymous67_system_mode_rejected",
+      "sourceAPI": "67.0",
+      "helperAPI": "67.0",
+      "route": "anonymous",
+      "projectAPI": "62.0",
+      "transportAPI": "67.0",
+      "namespaceContext": "none",
+      "testClass": "",
+      "command": {
+        "command": [
+          "sf",
+          "apex",
+          "run",
+          "--file",
+          "<worktree>/probe/apex_type_implementor/api67/anonymous/source.apex",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "67.0",
+          "--json"
+        ],
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        }
+      },
+      "errors": {
+        "exitCode": 1,
+        "compiled": null,
+        "success": null,
+        "compileProblem": null,
+        "exceptionMessage": null
+      },
+      "rows": [],
+      "response": {
+        "name": "executeCompileFailure",
+        "message": "Compilation failed at Line 22 column 48 with the error:\n\nCannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+        "exitCode": 1,
+        "context": "Run",
+        "data": {
+          "success": false,
+          "compiled": false,
+          "compileProblem": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+          "exceptionMessage": "",
+          "exceptionStackTrace": "",
+          "line": "22",
+          "column": "48",
+          "logs": ""
+        },
+        "stack": "executeCompileFailure: Compilation failed at Line 22 column 48 with the error:\n\nCannot use SYSTEM_MODE access level in anonymous execution of Apex.\n    at SfCommandError.from (file://<capture-home>/.local/share/sf/client/2.153.5-577d18f/node_modules/@salesforce/sf-plugins-core/lib/SfCommandError.js:48:16)\n    at Run.catch (file://<capture-home>/.local/share/sf/client/2.153.5-577d18f/node_modules/@salesforce/sf-plugins-core/lib/sfCommand.js:333:47)\n    at Run._run (<capture-home>/.local/share/sf/client/2.153.5-577d18f/node_modules/@oclif/core/lib/command.js:187:29)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async Config.runCommand (<capture-home>/.local/share/sf/client/2.153.5-577d18f/node_modules/@oclif/core/lib/config/config.js:392:25)\n    at async run (<capture-home>/.local/share/sf/client/2.153.5-577d18f/node_modules/@oclif/core/lib/main.js:95:16)\n    at async file://<capture-home>/.local/share/sf/client/2.153.5-577d18f/bin/run.js:15:1",
+        "cause": "undefined",
+        "warnings": [],
+        "code": "executeCompileFailure",
+        "status": 1,
+        "commandName": "Run"
+      },
+      "reason": "Native API67 anonymous Apex rejects explicit SYSTEM_MODE. This access-level compile boundary is outside the metadata-row generator fix; no Glade rejection or provider behavior is asserted."
+    }
+  ],
+  "helperSetup": {
+    "sourceManifest": {
+      "phase": "before-native-call",
+      "files": {
+        "force-app/main/default/classes/AtlasContract.cls": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56",
+        "force-app/main/default/classes/AtlasContract.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "force-app/main/default/classes/AtlasPlain.cls": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc",
+        "force-app/main/default/classes/AtlasPlain.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "force-app/main/default/classes/AtlasProvider.cls": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe",
+        "force-app/main/default/classes/AtlasProvider.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "force-app/main/default/classes/GlyphFixtures.cls": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6",
+        "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "force-app/main/default/classes/SlateFixtures.cls": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a",
+        "force-app/main/default/classes/SlateFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+      }
+    },
+    "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"force-app/main/default/classes/AtlasContract.cls\": \"32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56\",\n    \"force-app/main/default/classes/AtlasContract.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasPlain.cls\": \"c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc\",\n    \"force-app/main/default/classes/AtlasPlain.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/AtlasProvider.cls\": \"f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe\",\n    \"force-app/main/default/classes/AtlasProvider.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/GlyphFixtures.cls\": \"56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6\",\n    \"force-app/main/default/classes/GlyphFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"force-app/main/default/classes/SlateFixtures.cls\": \"0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a\",\n    \"force-app/main/default/classes/SlateFixtures.cls-meta.xml\": \"a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32\",\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\"\n  }\n}\n",
+    "sourceManifestSHA256": "9075d7aa34e11edf0d0404c485d3fc36659b9361513df1bd4954d654ed9d4454",
+    "sources": {
+      "force-app/main/default/classes/AtlasContract.cls": {
+        "source": "public interface AtlasContract {\n    String name();\n}\n",
+        "sha256": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56"
+      },
+      "force-app/main/default/classes/AtlasContract.cls-meta.xml": {
+        "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+      },
+      "force-app/main/default/classes/AtlasPlain.cls": {
+        "source": "public class AtlasPlain {\n    public String name() {\n        return 'unrelated';\n    }\n}\n",
+        "sha256": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc"
+      },
+      "force-app/main/default/classes/AtlasPlain.cls-meta.xml": {
+        "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+      },
+      "force-app/main/default/classes/AtlasProvider.cls": {
+        "source": "public class AtlasProvider implements AtlasContract {\n    public String name() {\n        return 'ordinary';\n    }\n}\n",
+        "sha256": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe"
+      },
+      "force-app/main/default/classes/AtlasProvider.cls-meta.xml": {
+        "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+      },
+      "force-app/main/default/classes/GlyphFixtures.cls": {
+        "source": "@IsTest\npublic class GlyphFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'public-test-inner';\n        }\n    }\n\n    private static List<Object> describeRows(List<ApexTypeImplementor> rows) {\n        List<Object> described = new List<Object>();\n        for (ApexTypeImplementor row : rows) {\n            described.add(new Map<String, Object>{\n                'ClassName' => row.ClassName,\n                'ClassNamespacePrefix' => row.ClassNamespacePrefix,\n                'InterfaceName' => row.InterfaceName,\n                'InterfaceNamespacePrefix' => row.InterfaceNamespacePrefix,\n                'IsConcrete' => row.IsConcrete\n            });\n        }\n        return described;\n    }\n\n    @IsTest\n    static void observe() {\n        Map<String, Object> payload = new Map<String, Object>{\n            'route' => 'named',\n            'sourceApi' => 67,\n            'helperApi' => 67\n        };\n        Type matchingType = Type.forName('GlyphFixtures.Matching');\n        payload.put('matchingTypeExists', matchingType != null);\n        payload.put('matchingTypeText', matchingType == null ? null : String.valueOf(matchingType));\n\n        List<ApexTypeImplementor> interfaceRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract'\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        payload.put('interfaceRows', describeRows(interfaceRows));\n\n        List<ApexTypeImplementor> scalarRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN ('Matching', 'GlyphFixtures.Matching')\n              AND ClassNamespacePrefix IN ('GlyphFixtures', '')\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> scalarNames = new List<String>();\n        for (ApexTypeImplementor row : scalarRows) { scalarNames.add(row.ClassName); }\n        payload.put('scalarNames', scalarNames);\n\n        Set<String> classNames = new Set<String>{'Matching', 'GlyphFixtures.Matching'};\n        Set<String> namespacePrefixes = new Set<String>{'GlyphFixtures', ''};\n        List<ApexTypeImplementor> boundRows = [\n            SELECT ClassName, ClassNamespacePrefix, InterfaceName,\n                   InterfaceNamespacePrefix, IsConcrete\n            FROM ApexTypeImplementor\n            WHERE ClassName IN :classNames\n              AND ClassNamespacePrefix IN :namespacePrefixes\n              AND InterfaceName = 'AtlasContract'\n            WITH SYSTEM_MODE\n            ORDER BY ClassName, ClassNamespacePrefix\n        ];\n        List<String> boundNames = new List<String>();\n        for (ApexTypeImplementor row : boundRows) { boundNames.add(row.ClassName); }\n        payload.put('boundNames', boundNames);\n        payload.put('namespaceNullCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = null\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('namespaceEmptyCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassNamespacePrefix = ''\n            WITH SYSTEM_MODE\n        ]);\n        payload.put('unrelatedCount', [\n            SELECT COUNT()\n            FROM ApexTypeImplementor\n            WHERE InterfaceName = 'AtlasContract' AND ClassName = 'AtlasPlain'\n            WITH SYSTEM_MODE\n        ]);\n        System.assert(false, 'IMPLEMENTOR_OBSERVATION|' + JSON.serialize(payload));\n    }\n}\n",
+        "sha256": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6"
+      },
+      "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": {
+        "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+      },
+      "force-app/main/default/classes/SlateFixtures.cls": {
+        "source": "@IsTest\nprivate class SlateFixtures {\n    public class Matching implements AtlasContract {\n        public String name() {\n            return 'private-test-inner';\n        }\n    }\n}\n",
+        "sha256": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a"
+      },
+      "force-app/main/default/classes/SlateFixtures.cls-meta.xml": {
+        "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+      },
+      "sfdx-project.json": {
+        "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+        "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+      }
+    },
+    "rawSHA256": {
+      "ORG-RUN.txt": "8761f9bd40ca3cac9d87845c74fd09f67ae3df3af2f2c61595e211d8fe229c85",
+      "deploy.command.json": "2efcd605b1fbcc7436356828a8f75c0aa07356852011add85d8180b700775ae6",
+      "deploy.json": "fdbfb114d4fb34c3c4caefde535003292add8d4707519d9aee1c13ac94583e9e",
+      "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source-digests.json": "9075d7aa34e11edf0d0404c485d3fc36659b9361513df1bd4954d654ed9d4454"
+    },
+    "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=566431ea267e6dadbe2c2da0927633112b9ad8d0024a657ee92544c5b0eea4ef\ncontext=synthetic-helper-setup\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=62.0\ncleanupOwner=k6\nstart=2026-10-15T20:38:25.838833+00:00\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--source-dir\", \"force-app\", \"--test-level\", \"NoTestRun\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\ndeploymentId=0Af000000000bAVCAY\nexitCode=0\nend=2026-10-15T20:38:30.110284+00:00\n",
+    "deploymentID": "0Af000000000bAVCAY",
+    "status": "Succeeded",
+    "done": true,
+    "checkOnly": false,
+    "numberComponentErrors": 0,
+    "numberTestErrors": 0,
+    "sourceDigests": {
+      "force-app/main/default/classes/AtlasContract.cls": "32c49bcff9c34cf679c2cf53305970bf84772e43f0bfbc1a65999b15488fae56",
+      "force-app/main/default/classes/AtlasContract.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+      "force-app/main/default/classes/AtlasPlain.cls": "c5b88e3ab642f294519957c0dcf7ee67001d35593ccefa3ee39c5fa427850ecc",
+      "force-app/main/default/classes/AtlasPlain.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+      "force-app/main/default/classes/AtlasProvider.cls": "f4c5a77c6ca5ee0b9d493469c67e06dfc96c6d83b4ba971b59630488b93d7abe",
+      "force-app/main/default/classes/AtlasProvider.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+      "force-app/main/default/classes/GlyphFixtures.cls": "56b4ded3d2f939a5d6ca1d9f32b005e0dd89f26450f5536e6cafb4df3dfb06e6",
+      "force-app/main/default/classes/GlyphFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+      "force-app/main/default/classes/SlateFixtures.cls": "0c0dcb26e157dffe466748ab2a405e74eaa11e69b6cafda49bcc206049529e2a",
+      "force-app/main/default/classes/SlateFixtures.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+      "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+    },
+    "command": {
+      "command": [
+        "sf",
+        "project",
+        "deploy",
+        "start",
+        "--source-dir",
+        "force-app",
+        "--test-level",
+        "NoTestRun",
+        "--target-org",
+        "scratch-org",
+        "--api-version",
+        "62.0",
+        "--wait",
+        "1",
+        "--json"
+      ],
+      "environment": {
+        "HOME": "<capture-home>",
+        "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+      }
+    }
+  }
+}

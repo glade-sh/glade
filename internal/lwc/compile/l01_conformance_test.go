@@ -29,7 +29,7 @@ type l01Case struct {
 func TestL01SalesforceConformance(t *testing.T) {
 	capture := os.Getenv("GLADE_L01_CAPTURE") != ""
 	table := "testdata/l01_salesforce.json"
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
 	kind := ""
 	if capture {
 		if override := os.Getenv("GLADE_L01_TABLE"); override != "" {

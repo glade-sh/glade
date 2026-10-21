@@ -1,0 +1,39 @@
+id	api	route	message	line
+direct_throw	62.0	class	Unreachable statement	5
+direct_return	62.0	class	Unreachable statement	5
+both_throw	62.0	class	Unreachable statement	5
+both_return	62.0	class	Unreachable statement	5
+mixed_exit	62.0	class	Unreachable statement	5
+while_throw	62.0	class	Unreachable statement	6
+for_throw	62.0	class	Unreachable statement	6
+foreach_throw	62.0	class	Unreachable statement	6
+do_throw	62.0	class	Unreachable statement	6
+catch_rethrow	62.0	class	Unreachable statement	5
+catch_return	62.0	class	Unreachable statement	5
+inside_try	62.0	class	Unreachable statement	6
+inside_catch	62.0	class	Unreachable statement	6
+conditional_throw	62.0	class	compiled	0
+after_loop	62.0	class	compiled	0
+caught_throw	62.0	class	compiled	0
+block_throw	62.0	class	Unreachable statement	5
+finally_throw	62.0	class	compiled	0
+nested_exception	62.0	class	Unreachable statement	6
+direct_throw	67.0	class	Unreachable statement	5
+direct_return	67.0	class	Unreachable statement	5
+both_throw	67.0	class	Unreachable statement	5
+both_return	67.0	class	Unreachable statement	5
+mixed_exit	67.0	class	Unreachable statement	5
+while_throw	67.0	class	Unreachable statement	6
+for_throw	67.0	class	Unreachable statement	6
+foreach_throw	67.0	class	Unreachable statement	6
+do_throw	67.0	class	Unreachable statement	6
+catch_rethrow	67.0	class	Unreachable statement	5
+catch_return	67.0	class	Unreachable statement	5
+inside_try	67.0	class	Unreachable statement	6
+inside_catch	67.0	class	Unreachable statement	6
+conditional_throw	67.0	class	compiled	0
+after_loop	67.0	class	compiled	0
+caught_throw	67.0	class	compiled	0
+block_throw	67.0	class	Unreachable statement	5
+finally_throw	67.0	class	compiled	0
+nested_exception	67.0	class	Unreachable statement	6

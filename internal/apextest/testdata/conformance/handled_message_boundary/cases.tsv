@@ -1,0 +1,4 @@
+shape	question
+handled_message	Does throwing or wrapping an AuraHandledException expose its constructor message in a test?
+explicit_message	Does setMessage preserve an explicit caught message?
+mock_key	Does a response mapped under one string key apply to another key?

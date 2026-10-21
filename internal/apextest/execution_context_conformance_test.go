@@ -19,6 +19,12 @@ import (
 )
 
 // Owned observations and fixtures run without Salesforce or external tooling.
+// API 68.0 binds the anonymous capture recorded in ceilingOracle. R089 is
+// missing from that capture; its native uncaught recapture returns a generated
+// Salesforce System Error, so it stays carried. The two review controls were
+// not captured. No native @IsTest named-route capture exists at API 68.0:
+// named-route rows are skipped there, and the remaining @IsTest checks run
+// locally against anonymous answers and count as legacy.
 func TestExecutionContextOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected       string
@@ -33,8 +39,20 @@ func TestExecutionContextOrgConformance(t *testing.T) {
 		MetadataFiles          map[string]string
 		Declarations           map[string]string
 		NamedObservations      map[string]map[string]string
-		Cases                  []familyCase
-		Controls               []familyCase
+		CeilingOracle          struct {
+			APIVersion        string
+			Rows, Observed    int
+			OrgTSVMissing     []string `json:"orgTSVMissing"`
+			UncaughtRecapture struct {
+				Source, SHA256 string
+				Rows           []string
+			}
+			LineNormalized     []string
+			NamedUnobserved    []string
+			ControlsUnobserved []string
+		}
+		Cases    []familyCase
+		Controls []familyCase
 	}
 	raw, err := os.ReadFile("testdata/conformance/execution_context.json")
 	if err != nil {
@@ -43,8 +61,48 @@ func TestExecutionContextOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 267 || len(data.Controls) != 2 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 267 || len(data.Controls) != 2 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("incomplete oracle: %d rows, APIs %v", len(data.Cases), data.APIVersions)
+	}
+	ceiling := data.CeilingOracle
+	if ceiling.APIVersion != "68.0" || ceiling.Rows != len(data.Cases) || ceiling.Observed != 266 ||
+		strings.Join(ceiling.OrgTSVMissing, ",") != "R089" || len(ceiling.LineNormalized) != 7 ||
+		strings.Join(ceiling.ControlsUnobserved, ",") != "SC001,N001" {
+		t.Fatalf("incomplete API68 oracle: %+v", ceiling)
+	}
+	recapture := ceiling.UncaughtRecapture
+	if recapture.Source == "" || len(recapture.SHA256) != 64 || strings.Join(recapture.Rows, ",") != "R089" {
+		t.Fatalf("API68 uncaught recapture: %+v", recapture)
+	}
+	recaptured68 := map[string]bool{}
+	for _, id := range recapture.Rows {
+		recaptured68[id] = true
+	}
+	unobserved68 := map[string]bool{}
+	for _, id := range ceiling.OrgTSVMissing {
+		if !recaptured68[id] {
+			unobserved68[id] = true
+		}
+	}
+	for _, id := range ceiling.ControlsUnobserved {
+		unobserved68[id] = true
+	}
+	namedUnobserved68 := map[string]bool{}
+	for _, id := range ceiling.NamedUnobserved {
+		namedUnobserved68[id] = true
+	}
+	for _, api := range data.APIVersions {
+		if api == ceiling.APIVersion {
+			if len(data.NamedObservations[api]) != 0 {
+				t.Fatalf("unexpected native named observations at API %s", api)
+			}
+			continue
+		}
+		for id := range data.NamedObservations[api] {
+			if !namedUnobserved68[id] {
+				t.Fatalf("named observation %s missing from the API68 named-route exclusions", id)
+			}
+		}
 	}
 	rows := make([]familyCase, 0, len(data.Cases))
 	anonymousCases := 0
@@ -62,6 +120,9 @@ func TestExecutionContextOrgConformance(t *testing.T) {
 			anonymousCases++
 		} else {
 			for _, api := range data.APIVersions {
+				if api == ceiling.APIVersion {
+					continue
+				}
 				if _, ok := data.NamedObservations[api][tc.ID]; !ok {
 					t.Fatalf("missing native named observation for %s at API %s", tc.ID, api)
 				}
@@ -95,7 +156,11 @@ func TestExecutionContextOrgConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "execution context", api)
-			if len(data.NamedObservations[api]) != 7 {
+			ceilingAPI := api == ceiling.APIVersion
+			if ceilingAPI {
+				t.Log("API 68: anonymous capture; R089 recaptured and carried; @IsTest checks retain anonymous-backed local assertions without native named-route capture")
+			}
+			if !ceilingAPI && len(data.NamedObservations[api]) != 7 {
 				t.Fatalf("missing native named-route controls at API %s", api)
 			}
 			root := t.TempDir()
@@ -143,7 +208,7 @@ func TestExecutionContextOrgConformance(t *testing.T) {
 			}
 			org := orgFromIndex(index)
 			users := org.Objects["User"]
-			user := users.Records["005000000000001"]
+			user := users.Records[storage.DefaultUserID]
 			user.Fields["LocaleSidKey"] = storage.StringValue("en_US")
 			user.Fields["LanguageLocaleKey"] = storage.StringValue("en_US")
 			user.Fields["TimeZoneSidKey"] = storage.StringValue("America/Los_Angeles")
@@ -163,6 +228,9 @@ func TestExecutionContextOrgConformance(t *testing.T) {
 			accepted := 0
 			for _, tc := range rows {
 				if strings.HasPrefix(tc.Expected, "COMPILE_ERROR") {
+					continue
+				}
+				if ceilingAPI && (unobserved68[tc.ID] || namedUnobserved68[tc.ID]) {
 					continue
 				}
 				expected := tc.Expected
@@ -198,6 +266,10 @@ func TestExecutionContextOrgConformance(t *testing.T) {
 				t.Fatalf("named results: %#v, unique %d expected %d: %s", run.Summary(), len(namedResults), accepted, firstRunProblem(run))
 			}
 			for _, tc := range rows {
+				if ceilingAPI && unobserved68[tc.ID] {
+					t.Logf("%s API %s native coverage unobserved; excluded from conformance counts", tc.ID, api)
+					continue
+				}
 				t.Run(tc.ID, func(t *testing.T) {
 					source := body(tc, tc.Expected)
 					rejected := strings.HasPrefix(tc.Expected, "COMPILE_ERROR")
@@ -229,8 +301,16 @@ func TestExecutionContextOrgConformance(t *testing.T) {
 							}
 						})
 					}
+					if ceilingAPI && namedUnobserved68[tc.ID] {
+						t.Logf("remaining %s/isTest at API %s: no native named-route capture", tc.ID, api)
+						return
+					}
 					t.Run("isTest", func(t *testing.T) {
-						counts.TrackKind(t, "@IsTest", kind, 1)
+						namedKind := kind
+						if ceilingAPI {
+							namedKind = "legacy"
+						}
+						counts.TrackKind(t, "@IsTest", namedKind, 1)
 						if !rejected {
 							result := namedResults[tc.ID]
 							if result.Status != testreport.StatusPass {

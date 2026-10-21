@@ -1,0 +1,6 @@
+id	case
+PERMISSION	Built-in profile-owned set visibility and optional standard set presence
+EMPTY	Queried metadata Fields relationship with no matching calculated fields
+POPULATED	Queried metadata Fields relationship with one matching calculated field
+ORDINARY	Ordinary empty child relationship string and token controls
+SCAN	Bounded formula catalog iteration and assigned/explicit null controls

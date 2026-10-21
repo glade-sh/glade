@@ -1,0 +1,5 @@
+I001-I006: enforced on anonymous and @IsTest routes at API 62.0 and 67.0.
+I007: native runAs with a fabricated User Id fails with an uncaught session error.
+I008: native runAs insertion with a fabricated Profile Id rejects the reference.
+I007-I008 are observations of separate runAs validation boundaries. They are
+preserved as carried rows, not assertions of parity from changing seeded Ids.

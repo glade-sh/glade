@@ -38,6 +38,9 @@ func parseLiteral(raw string) (Value, error) {
 		if err != nil {
 			return Null, fmt.Errorf("invalid decimal literal %q", original)
 		}
+		if suffix == 'D' || suffix == 'd' {
+			return decimalAsDouble(value), nil
+		}
 		return value, nil
 	}
 	numberRaw := raw
@@ -144,7 +147,7 @@ func evalBinary(op string, left, right Value) (Value, error) {
 			return value, err
 		}
 		if isStringConcatOperand(left) || isStringConcatOperand(right) {
-			return String(concatStringText(left, left.String()) + concatStringText(right, right.String())), nil
+			return concatApexStrings(concatStringText(left, left.String()), concatStringText(right, right.String()))
 		}
 		if left.Kind == ValueDecimal || right.Kind == ValueDecimal {
 			return decimalBinary(op, left, right, func(a, b float64) float64 { return a + b })
@@ -212,18 +215,29 @@ func evalBinary(op string, left, right Value) (Value, error) {
 		return Bool(!left.Equal(right)), nil
 	case "<", "<=", ">", ">=":
 		if left.Kind == ValueNull || right.Kind == ValueNull {
+			// String and Id values sort after null; numeric null comparisons are false.
+			if left.Kind != right.Kind && (relationalTextValue(left) || relationalTextValue(right)) {
+				if op == ">" || op == ">=" {
+					return Bool(left.Kind != ValueNull), nil
+				}
+				return Bool(right.Kind != ValueNull), nil
+			}
 			return Bool(false), nil
 		}
 		if left.Kind == ValueString && right.Kind == ValueString {
+			comparison := compareApexStrings(left.Text, right.Text)
+			if !strings.EqualFold(left.Type, "Id") && !strings.EqualFold(right.Type, "Id") {
+				comparison = compareApexStrings(strings.ToLower(left.Text), strings.ToLower(right.Text))
+			}
 			switch op {
 			case "<":
-				return Bool(left.Text < right.Text), nil
+				return Bool(comparison < 0), nil
 			case "<=":
-				return Bool(left.Text <= right.Text), nil
+				return Bool(comparison <= 0), nil
 			case ">":
-				return Bool(left.Text > right.Text), nil
+				return Bool(comparison > 0), nil
 			default:
-				return Bool(left.Text >= right.Text), nil
+				return Bool(comparison >= 0), nil
 			}
 		}
 		if comparable, ok := comparablePlatformTemporal(left, right); ok {

@@ -70,15 +70,18 @@ func NormalizeOrgDomainURL(raw string) (string, error) {
 }
 
 type OrgState struct {
-	OrgID        string                 `json:"orgId,omitempty"`
-	APIVersion   string                 `json:"apiVersion,omitempty"`
-	Namespace    string                 `json:"namespace,omitempty"`
-	DomainURL    string                 `json:"domainUrl,omitempty"`
-	Metadata     MetadataRegistry       `json:"metadata,omitempty"`
-	Objects      map[string]ObjectState `json:"objects"`
-	IDSequences  map[string]uint64      `json:"idSequences,omitempty"`
-	Transactions []TransactionFrame     `json:"transactions,omitempty"`
-	Now          func() time.Time       `json:"-"`
+	OrgID                  string                 `json:"orgId,omitempty"`
+	APIVersion             string                 `json:"apiVersion,omitempty"`
+	Namespace              string                 `json:"namespace,omitempty"`
+	DomainURL              string                 `json:"domainUrl,omitempty"`
+	Features               []string               `json:"features,omitempty"`
+	Metadata               MetadataRegistry       `json:"metadata,omitempty"`
+	Objects                map[string]ObjectState `json:"objects"`
+	IDSequences            map[string]uint64      `json:"idSequences,omitempty"`
+	Transactions           []TransactionFrame     `json:"transactions,omitempty"`
+	Now                    func() time.Time       `json:"-"`
+	PlatformCache          *PlatformCacheState    `json:"-"`
+	PlatformCacheTestSetup *PlatformCacheState    `json:"-"`
 
 	SystemTimestampBase     string `json:"-"`
 	SystemTimestampSequence int64  `json:"-"`
@@ -113,7 +116,9 @@ func (o *OrgState) ClearRuntimeSchemaStamp() {
 }
 
 type MetadataRegistry struct {
-	Flows                  []FlowRule                  `json:"flows,omitempty"`
+	Flows []FlowRule `json:"flows,omitempty"`
+	// FlowDeclarations expose metadata without registering executable automation.
+	FlowDeclarations       []FlowRule                  `json:"flowDeclarations,omitempty"`
 	DataWeaveResources     []DataWeaveResourceMetadata `json:"dataWeaveResources,omitempty"`
 	Labels                 []LabelMetadata             `json:"labels,omitempty"`
 	ManagedLabelNamespaces []string                    `json:"managedLabelNamespaces,omitempty"`
@@ -127,6 +132,7 @@ type MetadataRegistry struct {
 	Endpoints              []EndpointMetadata          `json:"endpoints,omitempty"`
 	EmailTemplates         []EmailTemplateMetadata     `json:"emailTemplates,omitempty"`
 	MessageChannels        []MessageChannelMetadata    `json:"messageChannels,omitempty"`
+	Layouts                []LayoutMetadata            `json:"layouts,omitempty"`
 }
 
 type LabelMetadata struct {
@@ -147,6 +153,8 @@ type TabMetadata struct {
 	Name               string `json:"name"`
 	Label              string `json:"label,omitempty"`
 	SObjectName        string `json:"sObjectName,omitempty"`
+	Page               string `json:"page,omitempty"`
+	URL                string `json:"url,omitempty"`
 	Custom             bool   `json:"custom,omitempty"`
 	Motif              string `json:"motif,omitempty"`
 	Description        string `json:"description,omitempty"`
@@ -276,75 +284,91 @@ type ObjectState struct {
 	IndexesShared bool                `json:"-"`
 }
 
+// OwnerSharingRule is a supported declared owner-based Read rule between public groups.
+type OwnerSharingRule struct {
+	Name        string `json:"name"`
+	SourceGroup string `json:"sourceGroup"`
+	TargetGroup string `json:"targetGroup"`
+	AccessLevel string `json:"accessLevel"`
+}
+
 type ObjectDefinition struct {
-	APIName         string            `json:"apiName"`
-	Label           string            `json:"label,omitempty"`
-	PluralLabel     string            `json:"pluralLabel,omitempty"`
-	KeyPrefix       string            `json:"keyPrefix,omitempty"`
-	SharingModel    string            `json:"sharingModel,omitempty"`
-	EnableSearch    bool              `json:"enableSearch,omitempty"`
-	Fields          map[string]Field  `json:"fields,omitempty"`
-	Relations       []Relationship    `json:"relationships,omitempty"`
-	RecordTypes     []RecordTypeInfo  `json:"recordTypes,omitempty"`
-	ValidationRules []ValidationRule  `json:"validationRules,omitempty"`
-	WorkflowRules   []WorkflowRule    `json:"workflowRules,omitempty"`
-	FlowRules       []FlowRule        `json:"flowRules,omitempty"`
-	Indexes         []IndexDefinition `json:"indexes,omitempty"`
-	Metadata        map[string]string `json:"metadata,omitempty"`
+	APIName           string             `json:"apiName"`
+	Label             string             `json:"label,omitempty"`
+	PluralLabel       string             `json:"pluralLabel,omitempty"`
+	KeyPrefix         string             `json:"keyPrefix,omitempty"`
+	OwnerSharingRules []OwnerSharingRule `json:"ownerSharingRules,omitempty"`
+	SharingModel      string             `json:"sharingModel,omitempty"`
+	EnableSearch      bool               `json:"enableSearch,omitempty"`
+	Fields            map[string]Field   `json:"fields,omitempty"`
+	Relations         []Relationship     `json:"relationships,omitempty"`
+	RecordTypes       []RecordTypeInfo   `json:"recordTypes,omitempty"`
+	ValidationRules   []ValidationRule   `json:"validationRules,omitempty"`
+	WorkflowRules     []WorkflowRule     `json:"workflowRules,omitempty"`
+	FlowRules         []FlowRule         `json:"flowRules,omitempty"`
+	Indexes           []IndexDefinition  `json:"indexes,omitempty"`
+	Metadata          map[string]string  `json:"metadata,omitempty"`
 }
 
 type Field struct {
-	APIName                  string              `json:"apiName"`
-	Label                    string              `json:"label,omitempty"`
-	InlineHelpText           string              `json:"inlineHelpText,omitempty"`
-	Type                     FieldType           `json:"type"`
-	MasterDetail             bool                `json:"masterDetail,omitempty"`
-	DisplayType              string              `json:"displayType,omitempty"`
-	Length                   int                 `json:"length,omitempty"`
-	Precision                int                 `json:"precision,omitempty"`
-	Scale                    int                 `json:"scale,omitempty"`
-	ScaleSpecified           bool                `json:"scaleSpecified,omitempty"`
-	Formula                  string              `json:"formula,omitempty"`
-	FormulaTreatBlanksAs     string              `json:"formulaTreatBlanksAs,omitempty"`
-	DefaultValue             string              `json:"defaultValue,omitempty"`
-	CompoundFieldName        string              `json:"compoundFieldName,omitempty"`
-	AutoNumber               bool                `json:"autoNumber,omitempty"`
-	DisplayFormat            string              `json:"displayFormat,omitempty"`
-	SummarizedField          string              `json:"summarizedField,omitempty"`
-	SummaryForeignKey        string              `json:"summaryForeignKey,omitempty"`
-	SummaryOperation         string              `json:"summaryOperation,omitempty"`
-	SummaryFilterItems       []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
-	FilteredLookupInfo       FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
-	Required                 bool                `json:"required,omitempty"`
-	Nillable                 *bool               `json:"nillable,omitempty"`
-	DefaultedOnCreate        *bool               `json:"defaultedOnCreate,omitempty"`
-	Accessible               *bool               `json:"accessible,omitempty"`
-	Createable               *bool               `json:"createable,omitempty"`
-	Updateable               *bool               `json:"updateable,omitempty"`
-	Filterable               *bool               `json:"filterable,omitempty"`
-	Groupable                *bool               `json:"groupable,omitempty"`
-	Sortable                 *bool               `json:"sortable,omitempty"`
-	Aggregatable             *bool               `json:"aggregatable,omitempty"`
-	Permissionable           *bool               `json:"permissionable,omitempty"`
-	DeprecatedAndHidden      *bool               `json:"deprecatedAndHidden,omitempty"`
-	ExternalID               bool                `json:"externalId,omitempty"`
-	Unique                   bool                `json:"unique,omitempty"`
-	Encrypted                bool                `json:"encrypted,omitempty"`
-	CaseSensitive            bool                `json:"caseSensitive,omitempty"`
-	RestrictedPicklist       bool                `json:"restrictedPicklist,omitempty"`
-	IDLookup                 bool                `json:"idLookup,omitempty"`
-	NamePointing             bool                `json:"namePointing,omitempty"`
-	ReferenceTo              []string            `json:"referenceTo,omitempty"`
-	RelationshipName         string              `json:"relationshipName,omitempty"`
-	RelationshipOrder        *int                `json:"relationshipOrder,omitempty"`
-	ReparentableMasterDetail bool                `json:"reparentableMasterDetail,omitempty"`
-	ChildRelationshipName    string              `json:"childRelationshipName,omitempty"`
-	PicklistController       string              `json:"picklistController,omitempty"`
-	PicklistValueSettings    []PicklistSetting   `json:"picklistValueSettings,omitempty"`
-	PicklistValues           []PicklistValue     `json:"picklistValues,omitempty"`
+	APIName        string    `json:"apiName"`
+	Label          string    `json:"label,omitempty"`
+	InlineHelpText string    `json:"inlineHelpText,omitempty"`
+	Type           FieldType `json:"type"`
+	MasterDetail   bool      `json:"masterDetail,omitempty"`
+	DisplayType    string    `json:"displayType,omitempty"`
+	// LongTextArea retains the declared metadata kind behind describe TEXTAREA.
+	LongTextArea         bool                `json:"longTextArea,omitempty"`
+	Length               int                 `json:"length,omitempty"`
+	Precision            int                 `json:"precision,omitempty"`
+	Digits               int                 `json:"digits,omitempty"`
+	Scale                int                 `json:"scale,omitempty"`
+	ScaleSpecified       bool                `json:"scaleSpecified,omitempty"`
+	Formula              string              `json:"formula,omitempty"`
+	FormulaTreatBlanksAs string              `json:"formulaTreatBlanksAs,omitempty"`
+	DefaultValue         string              `json:"defaultValue,omitempty"`
+	CompoundFieldName    string              `json:"compoundFieldName,omitempty"`
+	AutoNumber           bool                `json:"autoNumber,omitempty"`
+	DisplayFormat        string              `json:"displayFormat,omitempty"`
+	SummarizedField      string              `json:"summarizedField,omitempty"`
+	SummaryForeignKey    string              `json:"summaryForeignKey,omitempty"`
+	SummaryOperation     string              `json:"summaryOperation,omitempty"`
+	SummaryFilterItems   []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
+	FilteredLookupInfo   FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
+	Required             bool                `json:"required,omitempty"`
+	Nillable             *bool               `json:"nillable,omitempty"`
+	DefaultedOnCreate    *bool               `json:"defaultedOnCreate,omitempty"`
+	Accessible           *bool               `json:"accessible,omitempty"`
+	Createable           *bool               `json:"createable,omitempty"`
+	Updateable           *bool               `json:"updateable,omitempty"`
+	Filterable           *bool               `json:"filterable,omitempty"`
+	Groupable            *bool               `json:"groupable,omitempty"`
+	Sortable             *bool               `json:"sortable,omitempty"`
+	Aggregatable         *bool               `json:"aggregatable,omitempty"`
+	Permissionable       *bool               `json:"permissionable,omitempty"`
+	DeprecatedAndHidden  *bool               `json:"deprecatedAndHidden,omitempty"`
+	ExternalID           bool                `json:"externalId,omitempty"`
+	Unique               bool                `json:"unique,omitempty"`
+	Encrypted            bool                `json:"encrypted,omitempty"`
+	CaseSensitive        bool                `json:"caseSensitive,omitempty"`
+	// Describe-only observation; storage comparison semantics stay independent.
+	DescribeCaseSensitive    *bool             `json:"describeCaseSensitive,omitempty"`
+	RestrictedPicklist       bool              `json:"restrictedPicklist,omitempty"`
+	IDLookup                 bool              `json:"idLookup,omitempty"`
+	NamePointing             bool              `json:"namePointing,omitempty"`
+	ReferenceTo              []string          `json:"referenceTo,omitempty"`
+	RelationshipName         string            `json:"relationshipName,omitempty"`
+	RelationshipOrder        *int              `json:"relationshipOrder,omitempty"`
+	ReparentableMasterDetail bool              `json:"reparentableMasterDetail,omitempty"`
+	ChildRelationshipName    string            `json:"childRelationshipName,omitempty"`
+	PicklistController       string            `json:"picklistController,omitempty"`
+	PicklistValueSettings    []PicklistSetting `json:"picklistValueSettings,omitempty"`
+	PicklistValues           []PicklistValue   `json:"picklistValues,omitempty"`
 	// Explicit org configuration can make a standard value set empty. It must
 	// not be filled back in by a catalog overlay when the object is described.
 	PicklistValuesConfigured bool `json:"picklistValuesConfigured,omitempty"`
+
+	MetadataRelationshipControllingField string `json:"metadataRelationshipControllingField,omitempty"`
 }
 
 type FilteredLookupInfo struct {
@@ -489,26 +513,36 @@ type WorkflowEmailRecipient struct {
 }
 
 type FlowRule struct {
-	Name          string                 `json:"name"`
-	File          string                 `json:"file,omitempty"`
-	Active        bool                   `json:"active,omitempty"`
-	ProcessType   string                 `json:"processType,omitempty"`
-	TriggerType   string                 `json:"triggerType,omitempty"`
-	TriggerOrder  int                    `json:"triggerOrder,omitempty"`
-	RunInMode     string                 `json:"runInMode,omitempty"`
-	Formula       string                 `json:"formula,omitempty"`
-	TextTemplates map[string]string      `json:"textTemplates,omitempty"`
-	Criteria      []WorkflowCriteriaItem `json:"criteria,omitempty"`
-	Branches      []FlowBranch           `json:"branches,omitempty"`
-	Steps         []FlowStep             `json:"steps,omitempty"`
-	FieldUpdates  []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
-	Actions       []FlowAction           `json:"actions,omitempty"`
-	RecordLookups []FlowRecordLookup     `json:"recordLookups,omitempty"`
-	RecordCreates []FlowRecordCreate     `json:"recordCreates,omitempty"`
-	RecordDeletes []FlowRecordDelete     `json:"recordDeletes,omitempty"`
-	CustomErrors  []FlowCustomError      `json:"customErrors,omitempty"`
-	ApexPlugins   []FlowApexPluginCall   `json:"apexPlugins,omitempty"`
-	Variables     []FlowVariable         `json:"variables,omitempty"`
+	APIVersion                             string `json:"apiVersion,omitempty"`
+	SourceStatus                           string `json:"sourceStatus,omitempty"`
+	Label                                  string `json:"label,omitempty"`
+	Name                                   string `json:"name"`
+	File                                   string `json:"file,omitempty"`
+	Active                                 bool   `json:"active,omitempty"`
+	ProcessType                            string `json:"processType,omitempty"`
+	TriggerType                            string `json:"triggerType,omitempty"`
+	DoesRequireRecordChangedToMeetCriteria bool   `json:"doesRequireRecordChangedToMeetCriteria,omitempty"`
+	RecordTriggerType                      string `json:"recordTriggerType,omitempty"`
+	TriggerOrder                           int    `json:"triggerOrder,omitempty"`
+	RunInMode                              string `json:"runInMode,omitempty"`
+	Formula                                string `json:"formula,omitempty"`
+	// CoreEntryFilterLogic distinguishes a generated start-filter formula from an arbitrary formula.
+	CoreEntryFilterLogic bool                   `json:"coreEntryFilterLogic,omitempty"`
+	TextTemplates        map[string]string      `json:"textTemplates,omitempty"`
+	Criteria             []WorkflowCriteriaItem `json:"criteria,omitempty"`
+	Branches             []FlowBranch           `json:"branches,omitempty"`
+	Steps                []FlowStep             `json:"steps,omitempty"`
+	FieldUpdates         []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
+	Actions              []FlowAction           `json:"actions,omitempty"`
+	RecordLookups        []FlowRecordLookup     `json:"recordLookups,omitempty"`
+	RecordCreates        []FlowRecordCreate     `json:"recordCreates,omitempty"`
+	RecordDeletes        []FlowRecordDelete     `json:"recordDeletes,omitempty"`
+	CustomErrors         []FlowCustomError      `json:"customErrors,omitempty"`
+	ApexPlugins          []FlowApexPluginCall   `json:"apexPlugins,omitempty"`
+	Variables            []FlowVariable         `json:"variables,omitempty"`
+	// StepTargets stores shared connector targets once. Reference steps name a
+	// target instead of recursively embedding its continuation.
+	StepTargets map[string][]FlowStep `json:"stepTargets,omitempty"`
 }
 
 // FlowVariable describes an autolaunched Flow interview variable. Keeping
@@ -523,6 +557,7 @@ type FlowVariable struct {
 	IsCollection bool   `json:"isCollection,omitempty"`
 	IsInput      bool   `json:"isInput,omitempty"`
 	IsOutput     bool   `json:"isOutput,omitempty"`
+	DefaultValue *Value `json:"defaultValue,omitempty"`
 }
 
 type FlowBranch struct {
@@ -540,6 +575,8 @@ type FlowBranch struct {
 
 type FlowStep struct {
 	Kind                string                  `json:"kind"`
+	Target              string                  `json:"target,omitempty"`
+	VisitKey            string                  `json:"visitKey,omitempty"`
 	FaultTarget         string                  `json:"faultTarget,omitempty"`
 	FaultBranch         []FlowStep              `json:"faultBranch,omitempty"`
 	FieldUpdates        []WorkflowFieldUpdate   `json:"fieldUpdates,omitempty"`
@@ -570,6 +607,7 @@ type FlowLoop struct {
 	Name                 string     `json:"name"`
 	CollectionReference  string     `json:"collectionReference"`
 	CurrentItemReference string     `json:"currentItemReference,omitempty"`
+	IterationOrder       string     `json:"iterationOrder,omitempty"`
 	Steps                []FlowStep `json:"steps,omitempty"`
 }
 
@@ -583,19 +621,27 @@ type FlowAction struct {
 }
 
 type FlowRecordLookup struct {
-	Name                     string                 `json:"name"`
-	ObjectName               string                 `json:"objectName"`
-	Criteria                 []WorkflowCriteriaItem `json:"criteria,omitempty"`
-	GetFirstRecordOnly       bool                   `json:"getFirstRecordOnly,omitempty"`
-	StoreOutputAutomatically bool                   `json:"storeOutputAutomatically,omitempty"`
+	Name                             string                 `json:"name"`
+	ObjectName                       string                 `json:"objectName"`
+	SortField                        string                 `json:"sortField,omitempty"`
+	SortOrder                        string                 `json:"sortOrder,omitempty"`
+	CriteriaLogic                    string                 `json:"criteriaLogic,omitempty"`
+	Criteria                         []WorkflowCriteriaItem `json:"criteria,omitempty"`
+	GetFirstRecordOnly               bool                   `json:"getFirstRecordOnly,omitempty"`
+	StoreOutputAutomatically         bool                   `json:"storeOutputAutomatically,omitempty"`
+	AssignNullValuesIfNoRecordsFound bool                   `json:"assignNullValuesIfNoRecordsFound,omitempty"`
+	OutputReference                  string                 `json:"outputReference,omitempty"`
+	QueriedFields                    []string               `json:"queriedFields,omitempty"`
+	OutputAssignments                []FlowAssignment       `json:"outputAssignments,omitempty"`
 }
 
 type FlowRecordCreate struct {
-	Name                     string                `json:"name"`
-	ObjectName               string                `json:"objectName"`
-	InputReference           string                `json:"inputReference,omitempty"`
-	InputAssignments         []WorkflowFieldUpdate `json:"inputAssignments,omitempty"`
-	StoreOutputAutomatically bool                  `json:"storeOutputAutomatically,omitempty"`
+	Name                      string                `json:"name"`
+	ObjectName                string                `json:"objectName"`
+	InputReference            string                `json:"inputReference,omitempty"`
+	AssignRecordIDToReference string                `json:"assignRecordIdToReference,omitempty"`
+	InputAssignments          []WorkflowFieldUpdate `json:"inputAssignments,omitempty"`
+	StoreOutputAutomatically  bool                  `json:"storeOutputAutomatically,omitempty"`
 }
 
 type FlowRecordUpdate struct {
@@ -695,17 +741,40 @@ type Relationship struct {
 	DeferredIntegrity   bool     `json:"deferredIntegrity,omitempty"`
 }
 
+// LookupHistoryScope identifies one transaction without exposing its identity
+// to serialized records or Apex values.
+type LookupHistoryScope struct{ identity byte }
+
+func NewLookupHistoryScope() *LookupHistoryScope { return &LookupHistoryScope{} }
+
 type Record struct {
+	// MetadataSourceUnit binds source-backed metadata collisions to their producing project.
+	MetadataSourceUnit string `json:"metadataSourceUnit,omitempty"`
+	// HierarchyNameUsesRecordID retains omitted Name/owner insert provenance.
+	// Explicit-null Name can produce the same text through a different default.
+	HierarchyNameUsesRecordID bool `json:"hierarchyNameUsesRecordId,omitempty"`
 	// LoadedReferences is transient DML input provenance, never persisted.
 	// Each canonical field retains the reference ID from an unchanged SOQL view.
-	LoadedReferences    map[string]ID       `json:"-"`
-	ID                  ID                  `json:"id"`
-	Object              string              `json:"object"`
-	Fields              map[string]Value    `json:"fields,omitempty"`
-	Children            map[string][]Record `json:"children,omitempty"`
-	ParentRelationships map[string]Record   `json:"-"`
-	ExplicitNulls       map[string]bool     `json:"explicitNulls,omitempty"`
-	System              SystemFields        `json:"system,omitempty"`
+	LoadedReferences map[string]ID `json:"-"`
+	// Cleared lookup history is transaction-local and remains unexported so
+	// runtime snapshots and Gob payloads cannot persist a transaction marker.
+	clearedLookupReferences map[string]ID       `json:"-"`
+	clearedLookupScope      *LookupHistoryScope `json:"-"`
+	ID                      ID                  `json:"id"`
+	Object                  string              `json:"object"`
+	Fields                  map[string]Value    `json:"fields,omitempty"`
+	Children                map[string][]Record `json:"children,omitempty"`
+	ParentRelationships     map[string]Record   `json:"-"`
+	ExplicitNulls           map[string]bool     `json:"explicitNulls,omitempty"`
+	System                  SystemFields        `json:"system,omitempty"`
+
+	// ClearedReferences retains optional lookups cleared by parent deletion.
+	ClearedReferences map[string]ClearedReference `json:"clearedReferences,omitempty"`
+}
+
+type ClearedReference struct {
+	ParentObject string `json:"parentObject"`
+	ParentID     ID     `json:"parentId"`
 }
 
 func (r Record) GetField(name string) (Value, bool) {
@@ -1566,10 +1635,22 @@ func IsCustomSettingObject(org OrgState, name string) bool {
 
 func (r Record) Clone() Record {
 	out := r
+	if r.clearedLookupReferences != nil {
+		out.clearedLookupReferences = make(map[string]ID, len(r.clearedLookupReferences))
+		for field, id := range r.clearedLookupReferences {
+			out.clearedLookupReferences[field] = id
+		}
+	}
 	if r.LoadedReferences != nil {
 		out.LoadedReferences = make(map[string]ID, len(r.LoadedReferences))
 		for field, id := range r.LoadedReferences {
 			out.LoadedReferences[field] = id
+		}
+	}
+	if r.ClearedReferences != nil {
+		out.ClearedReferences = make(map[string]ClearedReference, len(r.ClearedReferences))
+		for field, reference := range r.ClearedReferences {
+			out.ClearedReferences[field] = reference
 		}
 	}
 	if r.Fields != nil {
@@ -1668,6 +1749,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 	if d.Fields != nil {
 		out.Fields = make(map[string]Field, len(d.Fields))
 		for name, field := range d.Fields {
+			field.DescribeCaseSensitive = cloneBoolFlag(field.DescribeCaseSensitive)
 			field.ReferenceTo = append([]string(nil), field.ReferenceTo...)
 			field.PicklistValueSettings = clonePicklistSettings(field.PicklistValueSettings)
 			out.Fields[name] = field
@@ -1679,6 +1761,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.Relations[i].JunctionIDListNames = append([]string(nil), d.Relations[i].JunctionIDListNames...)
 		out.Relations[i].JunctionReferenceTo = append([]string(nil), d.Relations[i].JunctionReferenceTo...)
 	}
+	out.OwnerSharingRules = append([]OwnerSharingRule(nil), d.OwnerSharingRules...)
 	out.RecordTypes = append([]RecordTypeInfo(nil), d.RecordTypes...)
 	for i := range out.RecordTypes {
 		if d.RecordTypes[i].PicklistDefaults == nil {
@@ -1705,6 +1788,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.FlowRules[i].TextTemplates = cloneStringMap(d.FlowRules[i].TextTemplates)
 		out.FlowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].Criteria...)
 		out.FlowRules[i].Steps = cloneFlowSteps(d.FlowRules[i].Steps)
+		out.FlowRules[i].StepTargets = cloneFlowStepTargets(d.FlowRules[i].StepTargets)
 		out.FlowRules[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].FieldUpdates...)
 		out.FlowRules[i].Actions = cloneFlowActions(d.FlowRules[i].Actions)
 		out.FlowRules[i].Branches = cloneFlowBranches(d.FlowRules[i].Branches)
@@ -1734,6 +1818,8 @@ func cloneFlowSteps(steps []FlowStep) []FlowStep {
 		out[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), steps[i].FieldUpdates...)
 		out[i].Action.Inputs = append([]WorkflowFieldUpdate(nil), steps[i].Action.Inputs...)
 		out[i].RecordLookup.Criteria = append([]WorkflowCriteriaItem(nil), steps[i].RecordLookup.Criteria...)
+		out[i].RecordLookup.QueriedFields = append([]string(nil), steps[i].RecordLookup.QueriedFields...)
+		out[i].RecordLookup.OutputAssignments = append([]FlowAssignment(nil), steps[i].RecordLookup.OutputAssignments...)
 		out[i].RecordCreate.InputAssignments = append([]WorkflowFieldUpdate(nil), steps[i].RecordCreate.InputAssignments...)
 		out[i].RecordUpdate.Criteria = append([]WorkflowCriteriaItem(nil), steps[i].RecordUpdate.Criteria...)
 		out[i].RecordUpdate.InputAssignments = append([]WorkflowFieldUpdate(nil), steps[i].RecordUpdate.InputAssignments...)
@@ -1757,6 +1843,7 @@ func cloneFlowRules(rules []FlowRule) []FlowRule {
 		out[i].TextTemplates = cloneStringMap(rules[i].TextTemplates)
 		out[i].Criteria = append([]WorkflowCriteriaItem(nil), rules[i].Criteria...)
 		out[i].Steps = cloneFlowSteps(rules[i].Steps)
+		out[i].StepTargets = cloneFlowStepTargets(rules[i].StepTargets)
 		out[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), rules[i].FieldUpdates...)
 		out[i].Actions = cloneFlowActions(rules[i].Actions)
 		out[i].Branches = cloneFlowBranches(rules[i].Branches)
@@ -1766,6 +1853,17 @@ func cloneFlowRules(rules []FlowRule) []FlowRule {
 		out[i].CustomErrors = cloneFlowCustomErrors(rules[i].CustomErrors)
 		out[i].ApexPlugins = cloneFlowApexPlugins(rules[i].ApexPlugins)
 		out[i].Variables = append([]FlowVariable(nil), rules[i].Variables...)
+	}
+	return out
+}
+
+func cloneFlowStepTargets(targets map[string][]FlowStep) map[string][]FlowStep {
+	if targets == nil {
+		return nil
+	}
+	out := make(map[string][]FlowStep, len(targets))
+	for name, steps := range targets {
+		out[name] = cloneFlowSteps(steps)
 	}
 	return out
 }
@@ -1807,6 +1905,8 @@ func cloneFlowRecordLookups(lookups []FlowRecordLookup) []FlowRecordLookup {
 	out := append([]FlowRecordLookup(nil), lookups...)
 	for i := range out {
 		out[i].Criteria = append([]WorkflowCriteriaItem(nil), lookups[i].Criteria...)
+		out[i].QueriedFields = append([]string(nil), lookups[i].QueriedFields...)
+		out[i].OutputAssignments = append([]FlowAssignment(nil), lookups[i].OutputAssignments...)
 	}
 	return out
 }
@@ -1865,7 +1965,9 @@ func (i IndexSet) Clone() IndexSet {
 
 func (o OrgState) Clone() OrgState {
 	out := o
+	out.Features = append([]string(nil), o.Features...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
+	out.Metadata.FlowDeclarations = cloneFlowRules(o.Metadata.FlowDeclarations)
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {
@@ -1895,7 +1997,9 @@ func (o OrgState) Clone() OrgState {
 func (o OrgState) CloneRuntime() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
+	out.Features = append([]string(nil), o.Features...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
+	out.Metadata.FlowDeclarations = cloneFlowRules(o.Metadata.FlowDeclarations)
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {
@@ -1927,7 +2031,9 @@ func (o OrgState) CloneRuntime() OrgState {
 func (o OrgState) CloneRuntimeFrozenDefinition() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
+	out.Features = append([]string(nil), o.Features...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
+	out.Metadata.FlowDeclarations = cloneFlowRules(o.Metadata.FlowDeclarations)
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {
@@ -1985,6 +2091,7 @@ func IsImmutableMetadataObject(objectName string) bool {
 func (o OrgState) CloneRuntimeFrozenShared() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
+	out.Features = append([]string(nil), o.Features...)
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {

@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "declarations": {
     "A25FormulaContext": "global class A25FormulaContext {\n global Decimal amount;\n global String label;\n global Boolean flag;\n global Date day;\n global Account account;\n}\n"

@@ -1,0 +1,842 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "nativeObservationCount": 24,
+  "sources": {
+    "constructor/62.0": {
+      "sfdx-project.json": {
+        "source": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}\n",
+        "sha256": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb"
+      },
+      "force-app/main/default/classes/Schema.cls": {
+        "source": "public class Schema {\n public class DescribeSObjectResult {\n  public String name;\n  public String sObjectDescribeOption;\n  public DescribeSObjectResult(String objectName){name=objectName;sObjectDescribeOption='DEFERRED';}\n  public String sourceMarker(){return 'owned-source';}\n }\n}",
+        "sha256": "b27753b8a195b9c94cc783059dc0f873bb8fa8e8b00ace8fd86c9d56c6312f8a"
+      },
+      "force-app/main/default/classes/Schema.cls-meta.xml": {
+        "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+      }
+    },
+    "constructor/67.0": {
+      "sfdx-project.json": {
+        "source": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"67.0\"}\n",
+        "sha256": "5b7b79fe9ddb6530eeadb5d1bbb09f96b0737b4785616bf2fd317262bcd69554"
+      },
+      "force-app/main/default/classes/Schema.cls": {
+        "source": "public class Schema {\n public class DescribeSObjectResult {\n  public String name;\n  public String sObjectDescribeOption;\n  public DescribeSObjectResult(String objectName){name=objectName;sObjectDescribeOption='DEFERRED';}\n  public String sourceMarker(){return 'owned-source';}\n }\n}",
+        "sha256": "b27753b8a195b9c94cc783059dc0f873bb8fa8e8b00ace8fd86c9d56c6312f8a"
+      },
+      "force-app/main/default/classes/Schema.cls-meta.xml": {
+        "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+      }
+    },
+    "constructor/68.0": {
+      "sfdx-project.json": {
+        "source": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"68.0\"}\n",
+        "sha256": "2d5e26f4dbb230674309e87aed0a65b1f013d20ba6abee212a29fafc47b3cd95"
+      },
+      "force-app/main/default/classes/Schema.cls": {
+        "source": "public class Schema {\n public class DescribeSObjectResult {\n  public String name;\n  public String sObjectDescribeOption;\n  public DescribeSObjectResult(String objectName){name=objectName;sObjectDescribeOption='DEFERRED';}\n  public String sourceMarker(){return 'owned-source';}\n }\n}",
+        "sha256": "b27753b8a195b9c94cc783059dc0f873bb8fa8e8b00ace8fd86c9d56c6312f8a"
+      },
+      "force-app/main/default/classes/Schema.cls-meta.xml": {
+        "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "sha256": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7"
+      }
+    },
+    "json/62.0": {
+      "sfdx-project.json": {
+        "source": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}\n",
+        "sha256": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb"
+      },
+      "force-app/main/default/classes/Schema.cls": {
+        "source": "public class Schema {\n public class DescribeSObjectResult {\n  public String name;\n  public String sObjectDescribeOption;\n  public DescribeSObjectResult(String objectName){name=objectName;sObjectDescribeOption='DEFERRED';}\n  public String sourceMarker(){return 'owned-source';}\n }\n}",
+        "sha256": "b27753b8a195b9c94cc783059dc0f873bb8fa8e8b00ace8fd86c9d56c6312f8a"
+      },
+      "force-app/main/default/classes/Schema.cls-meta.xml": {
+        "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+      }
+    },
+    "json/67.0": {
+      "sfdx-project.json": {
+        "source": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"67.0\"}\n",
+        "sha256": "5b7b79fe9ddb6530eeadb5d1bbb09f96b0737b4785616bf2fd317262bcd69554"
+      },
+      "force-app/main/default/classes/Schema.cls": {
+        "source": "public class Schema {\n public class DescribeSObjectResult {\n  public String name;\n  public String sObjectDescribeOption;\n  public DescribeSObjectResult(String objectName){name=objectName;sObjectDescribeOption='DEFERRED';}\n  public String sourceMarker(){return 'owned-source';}\n }\n}",
+        "sha256": "b27753b8a195b9c94cc783059dc0f873bb8fa8e8b00ace8fd86c9d56c6312f8a"
+      },
+      "force-app/main/default/classes/Schema.cls-meta.xml": {
+        "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+      }
+    },
+    "json/68.0": {
+      "sfdx-project.json": {
+        "source": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"68.0\"}\n",
+        "sha256": "2d5e26f4dbb230674309e87aed0a65b1f013d20ba6abee212a29fafc47b3cd95"
+      },
+      "force-app/main/default/classes/Schema.cls": {
+        "source": "public class Schema {\n public class DescribeSObjectResult {\n  public String name;\n  public String sObjectDescribeOption;\n  public DescribeSObjectResult(String objectName){name=objectName;sObjectDescribeOption='DEFERRED';}\n  public String sourceMarker(){return 'owned-source';}\n }\n}",
+        "sha256": "b27753b8a195b9c94cc783059dc0f873bb8fa8e8b00ace8fd86c9d56c6312f8a"
+      },
+      "force-app/main/default/classes/Schema.cls-meta.xml": {
+        "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "sha256": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7"
+      }
+    }
+  },
+  "nativeFilesSha256": {
+    "native-capture": "23f46c72c2b30d6eebe37392a40d3e64d78df0cf689e51894cc2fd242ce34a4f",
+    "native-capture #2": "21fb132fdbfd4226609946725413e67e13ce81f4ea6b6a8eca69ac93b782ddf9",
+    "native-capture #3": "1023f417e143cf28861a91ee871854b44c4fcac17a3935c4bc18e92a9926693c",
+    "native-capture #4": "1a047f5218cd4249e697796203eed346f97c5a713c17fe0b9428a962f69f8cb4",
+    "native-capture #5": "e1136edd9bc763396e679e917f81238b575140565bd5e31b659e8afc1d05fa22",
+    "native-capture #6": "21fb132fdbfd4226609946725413e67e13ce81f4ea6b6a8eca69ac93b782ddf9",
+    "native-capture #7": "ad7e1d1345d33aa9ef0a786d8eae46d6facc09ed22de7d7779c51fccb4b9b486",
+    "native-capture #8": "1a047f5218cd4249e697796203eed346f97c5a713c17fe0b9428a962f69f8cb4",
+    "native-capture #9": "c0773f36fe848bc3e00a915610cfc8a695f4e674fdb152afe0d5f83008b603b7",
+    "native-capture #10": "21fb132fdbfd4226609946725413e67e13ce81f4ea6b6a8eca69ac93b782ddf9",
+    "native-capture #11": "b7edc496229fd3471f7cf1a9049277a061cbd0dc9a61a46f83f6ff275edb9d40",
+    "native-capture #12": "1a047f5218cd4249e697796203eed346f97c5a713c17fe0b9428a962f69f8cb4",
+    "native-capture #13": "1f0bd6d1a8411aad2a42d7edb77c8edc0fdef85950dc220083ec8ece31f2814a",
+    "native-capture #14": "b27753b8a195b9c94cc783059dc0f873bb8fa8e8b00ace8fd86c9d56c6312f8a",
+    "native-capture #15": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "native-capture #16": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb",
+    "native-capture #17": "05092549c32995c8c947a8e24cb483d6062c7eb5ef6225b7681a78c94b52ca99",
+    "native-capture #18": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "native-capture #19": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb",
+    "native-capture #20": "b5529afd137c70dfb41fd97e6c2dd83f60a3181c798c08227b788f494cec8258",
+    "native-capture #21": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "native-capture #22": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb",
+    "native-capture #23": "b27753b8a195b9c94cc783059dc0f873bb8fa8e8b00ace8fd86c9d56c6312f8a",
+    "native-capture #24": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "native-capture #25": "5b7b79fe9ddb6530eeadb5d1bbb09f96b0737b4785616bf2fd317262bcd69554",
+    "native-capture #26": "ae952affeea591f94aad071e85cb9854d95245a74dfe2975c68f662059f1e82e",
+    "native-capture #27": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "native-capture #28": "5b7b79fe9ddb6530eeadb5d1bbb09f96b0737b4785616bf2fd317262bcd69554",
+    "native-capture #29": "c7be1feb3643a4c06404e4e3f1f3bdc612f46d515f5e4297dbad8f59c92200a3",
+    "native-capture #30": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "native-capture #31": "5b7b79fe9ddb6530eeadb5d1bbb09f96b0737b4785616bf2fd317262bcd69554",
+    "native-capture #32": "b27753b8a195b9c94cc783059dc0f873bb8fa8e8b00ace8fd86c9d56c6312f8a",
+    "native-capture #33": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+    "native-capture #34": "2d5e26f4dbb230674309e87aed0a65b1f013d20ba6abee212a29fafc47b3cd95",
+    "native-capture #35": "39328c4f575bc318f43d30367df5d0148832e853d688e1ae81f8fe7506b68c1f",
+    "native-capture #36": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+    "native-capture #37": "2d5e26f4dbb230674309e87aed0a65b1f013d20ba6abee212a29fafc47b3cd95",
+    "native-capture #38": "75667022ff8e8dc489834b81614d54774d943e7e4f44736bd22d4a7aecbedab2",
+    "native-capture #39": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+    "native-capture #40": "2d5e26f4dbb230674309e87aed0a65b1f013d20ba6abee212a29fafc47b3cd95",
+    "native-capture #41": "76adc6d986108ffa3d5b55f8320bd58b3011cebdc57f72fbae21954971a34fa7",
+    "native-capture #42": "00bf3447dada74d32e7cad1814fed5a33cc71305a1d28b9cfe60d2cadc8eca76",
+    "native-capture #43": "5aa9914fcb63e1d5c03e7b6f8d2c948c550ba4ddc66a97ac8daa4174e87ed7eb",
+    "native-capture #44": "655be5db97db398c66d9231ea0bb0fbb6741506931200efd833e26b0c621bb43",
+    "native-capture #45": "790895fb6ef4b3c9a53ad9c8c1d63c5105293ec875c98a75808d3d6dca023cce",
+    "native-capture #46": "24e6089fa4af57e998cdd7b9d2f08f63e41bc2ee4b6b60b094f7c80782665515",
+    "native-capture #47": "98cc21db24ce233dbb937bf33c403ad9cfe6739b0015b0e1b669e44a2ee52efa",
+    "native-capture #48": "dfe4dc67bba8d2be0bd3c9696928e99a909c20ff2cecd24e923c685d0290b3ec",
+    "native-capture #49": "a0de18af7d35e1983e12977e456e9a185c85eb9f07c42c80a21aeb58c664a000",
+    "native-capture #50": "2df2d17bdbbc1c95f312bc5612c07c7c900fa9bc2d8d051772d44bff20e94bdf",
+    "native-capture #51": "b0242b57c999034919ea34c36d8d272451076b3e246f5c9b4bc6ced8ea0e3003",
+    "native-capture #52": "0b8d97b9095e222a5994630dfe138d09ff02466940691561e162ca2aa668628e",
+    "native-capture #53": "f3295746afebf22db2b6353363a1d61f89f720401f805cbbc118865139a04b2c",
+    "native-capture #54": "6a801522762a7653c2e85c32be65fa3eb6ef7ad1257bdcec5e6eb2441f0e7b2f",
+    "native-capture #55": "c31747861bdaca4f151ad9f87c951a531443878e862c3102c569785ac509463f",
+    "native-capture #56": "2bf42cebc152e18c31b6bbeaff9eaa53fd2f74d80053c3f192ff2cb62e82fa9b",
+    "native-capture #57": "7db100f6dc2d43f7826705ec620b18d576d2216d30f910922b39a0ef9646354c",
+    "native-capture #58": "07359e53fa3cd3cee45b0a449287ee9ac89b8c80b81090c753375ccd63e7d3b9",
+    "native-capture #59": "693064f98cfa7fdcb1a2f884cff8993a6efc8ea5759af799632f7f13fcd3af62",
+    "native-capture #60": "2c836ccb359c15e1eda675072ec96ae60ffece01404136f862d66ccd04a5154c",
+    "native-capture #61": "dd6a4442b889be4edc73688560bfc672dd8ac76cf21711dcc076180176e924e3",
+    "native-capture #62": "bef934fa973cda0d3d4bb180d7f2a5e541db3627147dc6df33c5b4f4fea0f12d",
+    "native-capture #63": "ffe54953ccf463178316976889bd80971975b2e98a83972db0b0103c45b05a15",
+    "native-capture #64": "51aab4fae02abd13290276d36b5c95ba17b54373ae4ca10143951b0f676cdfae",
+    "native-capture #65": "2b92bec4c20b68c7465ccd685470978f45d76972f8db0b64f3c34bbbb175ed0e",
+    "native-capture #66": "bef934fa973cda0d3d4bb180d7f2a5e541db3627147dc6df33c5b4f4fea0f12d",
+    "native-capture #67": "277353da56fc44907b8b1ba609e900e4ed48fb4fc13a88220cfcf5005ab2f405",
+    "native-capture #68": "51aab4fae02abd13290276d36b5c95ba17b54373ae4ca10143951b0f676cdfae",
+    "native-capture #69": "e02dfa9f68eda0b2e670241b3063931329d9200b10d3f75ff072ea02b2a1f36a",
+    "native-capture #70": "bef934fa973cda0d3d4bb180d7f2a5e541db3627147dc6df33c5b4f4fea0f12d",
+    "native-capture #71": "51d96ddf0912edccb2173e5c6a11cc6c91f887d2cd90d34b725b1674637d4fef",
+    "native-capture #72": "51aab4fae02abd13290276d36b5c95ba17b54373ae4ca10143951b0f676cdfae",
+    "native-capture #73": "ee04f2f90d599f959f83df012aded924f7122c52b586b314e32048ddf5deff7e",
+    "native-capture #74": "b27753b8a195b9c94cc783059dc0f873bb8fa8e8b00ace8fd86c9d56c6312f8a",
+    "native-capture #75": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "native-capture #76": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb",
+    "native-capture #77": "1fedc2f25bd5ffba7cff8a0094425eafbed44ff22c47569e4021c7482718e17a",
+    "native-capture #78": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "native-capture #79": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb",
+    "native-capture #80": "a3c62a4ab0969ed2ff0d94f25605dcbd68598d58ba13cd2cc0b62d5824213564",
+    "native-capture #81": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "native-capture #82": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb",
+    "native-capture #83": "b27753b8a195b9c94cc783059dc0f873bb8fa8e8b00ace8fd86c9d56c6312f8a",
+    "native-capture #84": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "native-capture #85": "5b7b79fe9ddb6530eeadb5d1bbb09f96b0737b4785616bf2fd317262bcd69554",
+    "native-capture #86": "ad7a50b1505510d73803f0510fa8240a3f3ee4134543aee4e202311efcfa3229",
+    "native-capture #87": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "native-capture #88": "5b7b79fe9ddb6530eeadb5d1bbb09f96b0737b4785616bf2fd317262bcd69554",
+    "native-capture #89": "ae5a4afd0ac0a3772b95cd7d969b7c2d90aa465419cf3fc9458235509e260717",
+    "native-capture #90": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "native-capture #91": "5b7b79fe9ddb6530eeadb5d1bbb09f96b0737b4785616bf2fd317262bcd69554",
+    "native-capture #92": "b27753b8a195b9c94cc783059dc0f873bb8fa8e8b00ace8fd86c9d56c6312f8a",
+    "native-capture #93": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+    "native-capture #94": "2d5e26f4dbb230674309e87aed0a65b1f013d20ba6abee212a29fafc47b3cd95",
+    "native-capture #95": "3a1c99d71cad3d3c705a97fe738354d64f65afc97c9e73d920b657c7d18f453d",
+    "native-capture #96": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+    "native-capture #97": "2d5e26f4dbb230674309e87aed0a65b1f013d20ba6abee212a29fafc47b3cd95",
+    "native-capture #98": "f1fd1432a63cef7ee5cb7bd64ade3cc249d882e92b172713d2e44586b94b7ab3",
+    "native-capture #99": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+    "native-capture #100": "2d5e26f4dbb230674309e87aed0a65b1f013d20ba6abee212a29fafc47b3cd95",
+    "native-capture #101": "fae4473d7d2f41e28e93e6846f64d927b510156ccf1698be3b6a5ce0fc268955",
+    "native-capture #102": "8ff499010e2819eb0ae0ed5982f752b8bcad5607c70c239c1856626b1338b0a9",
+    "native-capture #103": "f68e4c09c63f467e697f8a35ed81214412e0963aac0ab5c0b8f3e9b23beda65c",
+    "native-capture #104": "33fb9454b4d437c547aa0723d6ab3e4fa3350b1171ad29728dc0bde2af4319d4",
+    "native-capture #105": "d2e1796aff7c2ffc975de218c8b931fb53d91fa5b2430ee058b52d6dbebce98e",
+    "native-capture #106": "6b59a857111d9c1f6c030eb13b9e0ecfdaf35e6d93e6653d0b877ebd013b3f74",
+    "native-capture #107": "f9e33339965500433099cdece95c34abcbb50a594494245d708ff85d42d4df1f",
+    "native-capture #108": "58c39650a83631bd01bbe74fc553abc4db7b7628091fc7d9110ac33eceb50692",
+    "native-capture #109": "0562e0180e88ec35c870ccef7a10ac2d852b8b676befce2be5a849f35c991c69",
+    "native-capture #110": "fc3a0246b316eaebce59749e516132b29cbd9c5fb3d9f894512a16a653d941f8",
+    "native-capture #111": "a8efc3264d3828d9694da6b60ddc23991e70eef6753ca27bcf5fe2eb42112144",
+    "native-capture #112": "6d67c76b6ca6ec599d1bb3a0e81f82a64610529f262c47febc152409e8aad729",
+    "native-capture #113": "3fe21a9fcce245b7451627dd2d54f726e09d1c0486fdb8ad3d6be641d298410d",
+    "native-capture #114": "f694a1247d4862adfb40d8dfef880f2cdbaf26bcfbdab2cd785f8f232a5e7eec",
+    "native-capture #115": "8c3e90b3817bd948f80acaec4b1b37c28b427133712f704cca0c79b9b57f2a92",
+    "native-capture #116": "7b297991a8fefad0104df84f7384766c8c5a4ac152f1d8e6a3caba88deaf14a6",
+    "native-capture #117": "0cde1a228708f8ab6fdee12f3c87e77c031f36a46938dd909c72387663ba9771"
+  },
+  "rows": [
+    {
+      "phase": "constructor",
+      "api": "62.0",
+      "route": "anonymous",
+      "object": "User",
+      "id": "SHADOW_USER",
+      "sourceGroup": "constructor/62.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "literalName": "Schema.DescribeSObjectResult",
+        "name": "User",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "anonymous": "Map<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('User');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SHADOW_USER|'+JSON.serialize(observation));\n",
+      "anonymousSha256": "1a047f5218cd4249e697796203eed346f97c5a713c17fe0b9428a962f69f8cb4",
+      "evidenceSha256": "e1136edd9bc763396e679e917f81238b575140565bd5e31b659e8afc1d05fa22"
+    },
+    {
+      "phase": "constructor",
+      "api": "62.0",
+      "route": "isTest",
+      "object": "User",
+      "id": "SHADOW_USER",
+      "sourceGroup": "constructor/62.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "literalName": "Schema.DescribeSObjectResult",
+        "name": "User",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "className": "OwnedDescribeShadowUser62",
+      "namedSource": "@IsTest private class OwnedDescribeShadowUser62 {@IsTest static void observe(){\nMap<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('User');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'NATIVE_RESULT|SHADOW_USER|'+JSON.serialize(observation));\n}}\n",
+      "namedSourceSha256": "b5529afd137c70dfb41fd97e6c2dd83f60a3181c798c08227b788f494cec8258",
+      "namedMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "namedMetadataSha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+      "evidenceSha256": "b0242b57c999034919ea34c36d8d272451076b3e246f5c9b4bc6ced8ea0e3003"
+    },
+    {
+      "phase": "constructor",
+      "api": "62.0",
+      "route": "anonymous",
+      "object": "Account",
+      "id": "SHADOW_ACCOUNT",
+      "sourceGroup": "constructor/62.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "literalName": "Schema.DescribeSObjectResult",
+        "name": "Account",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "anonymous": "Map<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('Account');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SHADOW_ACCOUNT|'+JSON.serialize(observation));\n",
+      "anonymousSha256": "21fb132fdbfd4226609946725413e67e13ce81f4ea6b6a8eca69ac93b782ddf9",
+      "evidenceSha256": "1023f417e143cf28861a91ee871854b44c4fcac17a3935c4bc18e92a9926693c"
+    },
+    {
+      "phase": "constructor",
+      "api": "62.0",
+      "route": "isTest",
+      "object": "Account",
+      "id": "SHADOW_ACCOUNT",
+      "sourceGroup": "constructor/62.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "literalName": "Schema.DescribeSObjectResult",
+        "name": "Account",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "className": "OwnedDescribeShadowAccount62",
+      "namedSource": "@IsTest private class OwnedDescribeShadowAccount62 {@IsTest static void observe(){\nMap<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('Account');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'NATIVE_RESULT|SHADOW_ACCOUNT|'+JSON.serialize(observation));\n}}\n",
+      "namedSourceSha256": "05092549c32995c8c947a8e24cb483d6062c7eb5ef6225b7681a78c94b52ca99",
+      "namedMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "namedMetadataSha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+      "evidenceSha256": "a0de18af7d35e1983e12977e456e9a185c85eb9f07c42c80a21aeb58c664a000"
+    },
+    {
+      "phase": "constructor",
+      "api": "67.0",
+      "route": "anonymous",
+      "object": "User",
+      "id": "SHADOW_USER",
+      "sourceGroup": "constructor/67.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "literalName": "Schema.DescribeSObjectResult",
+        "name": "User",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "anonymous": "Map<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('User');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SHADOW_USER|'+JSON.serialize(observation));\n",
+      "anonymousSha256": "1a047f5218cd4249e697796203eed346f97c5a713c17fe0b9428a962f69f8cb4",
+      "evidenceSha256": "c0773f36fe848bc3e00a915610cfc8a695f4e674fdb152afe0d5f83008b603b7"
+    },
+    {
+      "phase": "constructor",
+      "api": "67.0",
+      "route": "isTest",
+      "object": "User",
+      "id": "SHADOW_USER",
+      "sourceGroup": "constructor/67.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "literalName": "Schema.DescribeSObjectResult",
+        "name": "User",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "className": "OwnedDescribeShadowUser67",
+      "namedSource": "@IsTest private class OwnedDescribeShadowUser67 {@IsTest static void observe(){\nMap<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('User');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'NATIVE_RESULT|SHADOW_USER|'+JSON.serialize(observation));\n}}\n",
+      "namedSourceSha256": "c7be1feb3643a4c06404e4e3f1f3bdc612f46d515f5e4297dbad8f59c92200a3",
+      "namedMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "namedMetadataSha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+      "evidenceSha256": "c31747861bdaca4f151ad9f87c951a531443878e862c3102c569785ac509463f"
+    },
+    {
+      "phase": "constructor",
+      "api": "67.0",
+      "route": "anonymous",
+      "object": "Account",
+      "id": "SHADOW_ACCOUNT",
+      "sourceGroup": "constructor/67.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "literalName": "Schema.DescribeSObjectResult",
+        "name": "Account",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "anonymous": "Map<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('Account');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SHADOW_ACCOUNT|'+JSON.serialize(observation));\n",
+      "anonymousSha256": "21fb132fdbfd4226609946725413e67e13ce81f4ea6b6a8eca69ac93b782ddf9",
+      "evidenceSha256": "ad7e1d1345d33aa9ef0a786d8eae46d6facc09ed22de7d7779c51fccb4b9b486"
+    },
+    {
+      "phase": "constructor",
+      "api": "67.0",
+      "route": "isTest",
+      "object": "Account",
+      "id": "SHADOW_ACCOUNT",
+      "sourceGroup": "constructor/67.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "literalName": "Schema.DescribeSObjectResult",
+        "name": "Account",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "className": "OwnedDescribeShadowAccount67",
+      "namedSource": "@IsTest private class OwnedDescribeShadowAccount67 {@IsTest static void observe(){\nMap<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('Account');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'NATIVE_RESULT|SHADOW_ACCOUNT|'+JSON.serialize(observation));\n}}\n",
+      "namedSourceSha256": "ae952affeea591f94aad071e85cb9854d95245a74dfe2975c68f662059f1e82e",
+      "namedMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "namedMetadataSha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+      "evidenceSha256": "f3295746afebf22db2b6353363a1d61f89f720401f805cbbc118865139a04b2c"
+    },
+    {
+      "phase": "constructor",
+      "api": "68.0",
+      "route": "anonymous",
+      "object": "User",
+      "id": "SHADOW_USER",
+      "sourceGroup": "constructor/68.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "literalName": "Schema.DescribeSObjectResult",
+        "name": "User",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "anonymous": "Map<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('User');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SHADOW_USER|'+JSON.serialize(observation));\n",
+      "anonymousSha256": "1a047f5218cd4249e697796203eed346f97c5a713c17fe0b9428a962f69f8cb4",
+      "evidenceSha256": "1f0bd6d1a8411aad2a42d7edb77c8edc0fdef85950dc220083ec8ece31f2814a"
+    },
+    {
+      "phase": "constructor",
+      "api": "68.0",
+      "route": "isTest",
+      "object": "User",
+      "id": "SHADOW_USER",
+      "sourceGroup": "constructor/68.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "literalName": "Schema.DescribeSObjectResult",
+        "name": "User",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "className": "OwnedDescribeShadowUser68",
+      "namedSource": "@IsTest private class OwnedDescribeShadowUser68 {@IsTest static void observe(){\nMap<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('User');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'NATIVE_RESULT|SHADOW_USER|'+JSON.serialize(observation));\n}}\n",
+      "namedSourceSha256": "75667022ff8e8dc489834b81614d54774d943e7e4f44736bd22d4a7aecbedab2",
+      "namedMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "namedMetadataSha256": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+      "evidenceSha256": "693064f98cfa7fdcb1a2f884cff8993a6efc8ea5759af799632f7f13fcd3af62"
+    },
+    {
+      "phase": "constructor",
+      "api": "68.0",
+      "route": "anonymous",
+      "object": "Account",
+      "id": "SHADOW_ACCOUNT",
+      "sourceGroup": "constructor/68.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "literalName": "Schema.DescribeSObjectResult",
+        "name": "Account",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "anonymous": "Map<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('Account');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SHADOW_ACCOUNT|'+JSON.serialize(observation));\n",
+      "anonymousSha256": "21fb132fdbfd4226609946725413e67e13ce81f4ea6b6a8eca69ac93b782ddf9",
+      "evidenceSha256": "b7edc496229fd3471f7cf1a9049277a061cbd0dc9a61a46f83f6ff275edb9d40"
+    },
+    {
+      "phase": "constructor",
+      "api": "68.0",
+      "route": "isTest",
+      "object": "Account",
+      "id": "SHADOW_ACCOUNT",
+      "sourceGroup": "constructor/68.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "literalName": "Schema.DescribeSObjectResult",
+        "name": "Account",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "className": "OwnedDescribeShadowAccount68",
+      "namedSource": "@IsTest private class OwnedDescribeShadowAccount68 {@IsTest static void observe(){\nMap<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('Account');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'NATIVE_RESULT|SHADOW_ACCOUNT|'+JSON.serialize(observation));\n}}\n",
+      "namedSourceSha256": "39328c4f575bc318f43d30367df5d0148832e853d688e1ae81f8fe7506b68c1f",
+      "namedMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "namedMetadataSha256": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+      "evidenceSha256": "7db100f6dc2d43f7826705ec620b18d576d2216d30f910922b39a0ef9646354c"
+    },
+    {
+      "phase": "json",
+      "api": "62.0",
+      "route": "anonymous",
+      "object": "User",
+      "id": "SHADOW_JSON_USER",
+      "sourceGroup": "json/62.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "jsonDefault": {
+          "name": "User",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "jsonSuppress": {
+          "name": "User",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "literalName": "Schema.DescribeSObjectResult",
+        "markerAfterJSON": "owned-source",
+        "name": "User",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "anonymous": "Map<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('User');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('jsonDefault',JSON.deserializeUntyped(JSON.serialize(descriptor)));\n observation.put('jsonSuppress',JSON.deserializeUntyped(JSON.serialize(descriptor,true)));\n observation.put('markerAfterJSON',descriptor.sourceMarker());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SHADOW_JSON_USER|'+JSON.serialize(observation));\n",
+      "anonymousSha256": "51aab4fae02abd13290276d36b5c95ba17b54373ae4ca10143951b0f676cdfae",
+      "evidenceSha256": "2b92bec4c20b68c7465ccd685470978f45d76972f8db0b64f3c34bbbb175ed0e"
+    },
+    {
+      "phase": "json",
+      "api": "62.0",
+      "route": "isTest",
+      "object": "User",
+      "id": "SHADOW_JSON_USER",
+      "sourceGroup": "json/62.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "jsonDefault": {
+          "name": "User",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "jsonSuppress": {
+          "name": "User",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "literalName": "Schema.DescribeSObjectResult",
+        "markerAfterJSON": "owned-source",
+        "name": "User",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "className": "OwnedDescribeShadowJSONUser62",
+      "namedSource": "@IsTest private class OwnedDescribeShadowJSONUser62 {@IsTest static void observe(){\nMap<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('User');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('jsonDefault',JSON.deserializeUntyped(JSON.serialize(descriptor)));\n observation.put('jsonSuppress',JSON.deserializeUntyped(JSON.serialize(descriptor,true)));\n observation.put('markerAfterJSON',descriptor.sourceMarker());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'NATIVE_RESULT|SHADOW_JSON_USER|'+JSON.serialize(observation));\n}}\n",
+      "namedSourceSha256": "a3c62a4ab0969ed2ff0d94f25605dcbd68598d58ba13cd2cc0b62d5824213564",
+      "namedMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "namedMetadataSha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+      "evidenceSha256": "58c39650a83631bd01bbe74fc553abc4db7b7628091fc7d9110ac33eceb50692"
+    },
+    {
+      "phase": "json",
+      "api": "62.0",
+      "route": "anonymous",
+      "object": "Account",
+      "id": "SHADOW_JSON_ACCOUNT",
+      "sourceGroup": "json/62.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "jsonDefault": {
+          "name": "Account",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "jsonSuppress": {
+          "name": "Account",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "literalName": "Schema.DescribeSObjectResult",
+        "markerAfterJSON": "owned-source",
+        "name": "Account",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "anonymous": "Map<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('Account');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('jsonDefault',JSON.deserializeUntyped(JSON.serialize(descriptor)));\n observation.put('jsonSuppress',JSON.deserializeUntyped(JSON.serialize(descriptor,true)));\n observation.put('markerAfterJSON',descriptor.sourceMarker());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SHADOW_JSON_ACCOUNT|'+JSON.serialize(observation));\n",
+      "anonymousSha256": "bef934fa973cda0d3d4bb180d7f2a5e541db3627147dc6df33c5b4f4fea0f12d",
+      "evidenceSha256": "ffe54953ccf463178316976889bd80971975b2e98a83972db0b0103c45b05a15"
+    },
+    {
+      "phase": "json",
+      "api": "62.0",
+      "route": "isTest",
+      "object": "Account",
+      "id": "SHADOW_JSON_ACCOUNT",
+      "sourceGroup": "json/62.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "jsonDefault": {
+          "name": "Account",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "jsonSuppress": {
+          "name": "Account",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "literalName": "Schema.DescribeSObjectResult",
+        "markerAfterJSON": "owned-source",
+        "name": "Account",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "className": "OwnedDescribeShadowJSONAccount62",
+      "namedSource": "@IsTest private class OwnedDescribeShadowJSONAccount62 {@IsTest static void observe(){\nMap<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('Account');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('jsonDefault',JSON.deserializeUntyped(JSON.serialize(descriptor)));\n observation.put('jsonSuppress',JSON.deserializeUntyped(JSON.serialize(descriptor,true)));\n observation.put('markerAfterJSON',descriptor.sourceMarker());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'NATIVE_RESULT|SHADOW_JSON_ACCOUNT|'+JSON.serialize(observation));\n}}\n",
+      "namedSourceSha256": "1fedc2f25bd5ffba7cff8a0094425eafbed44ff22c47569e4021c7482718e17a",
+      "namedMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "namedMetadataSha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+      "evidenceSha256": "6b59a857111d9c1f6c030eb13b9e0ecfdaf35e6d93e6653d0b877ebd013b3f74"
+    },
+    {
+      "phase": "json",
+      "api": "67.0",
+      "route": "anonymous",
+      "object": "User",
+      "id": "SHADOW_JSON_USER",
+      "sourceGroup": "json/67.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "jsonDefault": {
+          "name": "User",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "jsonSuppress": {
+          "name": "User",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "literalName": "Schema.DescribeSObjectResult",
+        "markerAfterJSON": "owned-source",
+        "name": "User",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "anonymous": "Map<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('User');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('jsonDefault',JSON.deserializeUntyped(JSON.serialize(descriptor)));\n observation.put('jsonSuppress',JSON.deserializeUntyped(JSON.serialize(descriptor,true)));\n observation.put('markerAfterJSON',descriptor.sourceMarker());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SHADOW_JSON_USER|'+JSON.serialize(observation));\n",
+      "anonymousSha256": "51aab4fae02abd13290276d36b5c95ba17b54373ae4ca10143951b0f676cdfae",
+      "evidenceSha256": "e02dfa9f68eda0b2e670241b3063931329d9200b10d3f75ff072ea02b2a1f36a"
+    },
+    {
+      "phase": "json",
+      "api": "67.0",
+      "route": "isTest",
+      "object": "User",
+      "id": "SHADOW_JSON_USER",
+      "sourceGroup": "json/67.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "jsonDefault": {
+          "name": "User",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "jsonSuppress": {
+          "name": "User",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "literalName": "Schema.DescribeSObjectResult",
+        "markerAfterJSON": "owned-source",
+        "name": "User",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "className": "OwnedDescribeShadowJSONUser67",
+      "namedSource": "@IsTest private class OwnedDescribeShadowJSONUser67 {@IsTest static void observe(){\nMap<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('User');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('jsonDefault',JSON.deserializeUntyped(JSON.serialize(descriptor)));\n observation.put('jsonSuppress',JSON.deserializeUntyped(JSON.serialize(descriptor,true)));\n observation.put('markerAfterJSON',descriptor.sourceMarker());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'NATIVE_RESULT|SHADOW_JSON_USER|'+JSON.serialize(observation));\n}}\n",
+      "namedSourceSha256": "ae5a4afd0ac0a3772b95cd7d969b7c2d90aa465419cf3fc9458235509e260717",
+      "namedMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "namedMetadataSha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+      "evidenceSha256": "6d67c76b6ca6ec599d1bb3a0e81f82a64610529f262c47febc152409e8aad729"
+    },
+    {
+      "phase": "json",
+      "api": "67.0",
+      "route": "anonymous",
+      "object": "Account",
+      "id": "SHADOW_JSON_ACCOUNT",
+      "sourceGroup": "json/67.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "jsonDefault": {
+          "name": "Account",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "jsonSuppress": {
+          "name": "Account",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "literalName": "Schema.DescribeSObjectResult",
+        "markerAfterJSON": "owned-source",
+        "name": "Account",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "anonymous": "Map<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('Account');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('jsonDefault',JSON.deserializeUntyped(JSON.serialize(descriptor)));\n observation.put('jsonSuppress',JSON.deserializeUntyped(JSON.serialize(descriptor,true)));\n observation.put('markerAfterJSON',descriptor.sourceMarker());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SHADOW_JSON_ACCOUNT|'+JSON.serialize(observation));\n",
+      "anonymousSha256": "bef934fa973cda0d3d4bb180d7f2a5e541db3627147dc6df33c5b4f4fea0f12d",
+      "evidenceSha256": "277353da56fc44907b8b1ba609e900e4ed48fb4fc13a88220cfcf5005ab2f405"
+    },
+    {
+      "phase": "json",
+      "api": "67.0",
+      "route": "isTest",
+      "object": "Account",
+      "id": "SHADOW_JSON_ACCOUNT",
+      "sourceGroup": "json/67.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "jsonDefault": {
+          "name": "Account",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "jsonSuppress": {
+          "name": "Account",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "literalName": "Schema.DescribeSObjectResult",
+        "markerAfterJSON": "owned-source",
+        "name": "Account",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "className": "OwnedDescribeShadowJSONAccount67",
+      "namedSource": "@IsTest private class OwnedDescribeShadowJSONAccount67 {@IsTest static void observe(){\nMap<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('Account');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('jsonDefault',JSON.deserializeUntyped(JSON.serialize(descriptor)));\n observation.put('jsonSuppress',JSON.deserializeUntyped(JSON.serialize(descriptor,true)));\n observation.put('markerAfterJSON',descriptor.sourceMarker());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'NATIVE_RESULT|SHADOW_JSON_ACCOUNT|'+JSON.serialize(observation));\n}}\n",
+      "namedSourceSha256": "ad7a50b1505510d73803f0510fa8240a3f3ee4134543aee4e202311efcfa3229",
+      "namedMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "namedMetadataSha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+      "evidenceSha256": "fc3a0246b316eaebce59749e516132b29cbd9c5fb3d9f894512a16a653d941f8"
+    },
+    {
+      "phase": "json",
+      "api": "68.0",
+      "route": "anonymous",
+      "object": "User",
+      "id": "SHADOW_JSON_USER",
+      "sourceGroup": "json/68.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "jsonDefault": {
+          "name": "User",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "jsonSuppress": {
+          "name": "User",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "literalName": "Schema.DescribeSObjectResult",
+        "markerAfterJSON": "owned-source",
+        "name": "User",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "anonymous": "Map<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('User');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('jsonDefault',JSON.deserializeUntyped(JSON.serialize(descriptor)));\n observation.put('jsonSuppress',JSON.deserializeUntyped(JSON.serialize(descriptor,true)));\n observation.put('markerAfterJSON',descriptor.sourceMarker());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SHADOW_JSON_USER|'+JSON.serialize(observation));\n",
+      "anonymousSha256": "51aab4fae02abd13290276d36b5c95ba17b54373ae4ca10143951b0f676cdfae",
+      "evidenceSha256": "ee04f2f90d599f959f83df012aded924f7122c52b586b314e32048ddf5deff7e"
+    },
+    {
+      "phase": "json",
+      "api": "68.0",
+      "route": "isTest",
+      "object": "User",
+      "id": "SHADOW_JSON_USER",
+      "sourceGroup": "json/68.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "jsonDefault": {
+          "name": "User",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "jsonSuppress": {
+          "name": "User",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "literalName": "Schema.DescribeSObjectResult",
+        "markerAfterJSON": "owned-source",
+        "name": "User",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "className": "OwnedDescribeShadowJSONUser68",
+      "namedSource": "@IsTest private class OwnedDescribeShadowJSONUser68 {@IsTest static void observe(){\nMap<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('User');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('jsonDefault',JSON.deserializeUntyped(JSON.serialize(descriptor)));\n observation.put('jsonSuppress',JSON.deserializeUntyped(JSON.serialize(descriptor,true)));\n observation.put('markerAfterJSON',descriptor.sourceMarker());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'NATIVE_RESULT|SHADOW_JSON_USER|'+JSON.serialize(observation));\n}}\n",
+      "namedSourceSha256": "f1fd1432a63cef7ee5cb7bd64ade3cc249d882e92b172713d2e44586b94b7ab3",
+      "namedMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "namedMetadataSha256": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+      "evidenceSha256": "7b297991a8fefad0104df84f7384766c8c5a4ac152f1d8e6a3caba88deaf14a6"
+    },
+    {
+      "phase": "json",
+      "api": "68.0",
+      "route": "anonymous",
+      "object": "Account",
+      "id": "SHADOW_JSON_ACCOUNT",
+      "sourceGroup": "json/68.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "jsonDefault": {
+          "name": "Account",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "jsonSuppress": {
+          "name": "Account",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "literalName": "Schema.DescribeSObjectResult",
+        "markerAfterJSON": "owned-source",
+        "name": "Account",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "anonymous": "Map<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('Account');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('jsonDefault',JSON.deserializeUntyped(JSON.serialize(descriptor)));\n observation.put('jsonSuppress',JSON.deserializeUntyped(JSON.serialize(descriptor,true)));\n observation.put('markerAfterJSON',descriptor.sourceMarker());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SHADOW_JSON_ACCOUNT|'+JSON.serialize(observation));\n",
+      "anonymousSha256": "bef934fa973cda0d3d4bb180d7f2a5e541db3627147dc6df33c5b4f4fea0f12d",
+      "evidenceSha256": "51d96ddf0912edccb2173e5c6a11cc6c91f887d2cd90d34b725b1674637d4fef"
+    },
+    {
+      "phase": "json",
+      "api": "68.0",
+      "route": "isTest",
+      "object": "Account",
+      "id": "SHADOW_JSON_ACCOUNT",
+      "sourceGroup": "json/68.0",
+      "native": {
+        "instanceOfLiteral": true,
+        "jsonDefault": {
+          "name": "Account",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "jsonSuppress": {
+          "name": "Account",
+          "sObjectDescribeOption": "DEFERRED"
+        },
+        "literalName": "Schema.DescribeSObjectResult",
+        "markerAfterJSON": "owned-source",
+        "name": "Account",
+        "option": "DEFERRED",
+        "sourceMarker": "owned-source",
+        "stage": "complete"
+      },
+      "className": "OwnedDescribeShadowJSONAccount68",
+      "namedSource": "@IsTest private class OwnedDescribeShadowJSONAccount68 {@IsTest static void observe(){\nMap<String,Object> observation=new Map<String,Object>{'stage'=>'construct'};\ntry {\n Schema.DescribeSObjectResult descriptor=new Schema.DescribeSObjectResult('Account');\n observation.put('stage','constructed');\n observation.put('sourceMarker',descriptor.sourceMarker());\n observation.put('name',descriptor.name);\n observation.put('option',descriptor.sObjectDescribeOption);\n Object erased=descriptor;\n observation.put('instanceOfLiteral',erased instanceof Schema.DescribeSObjectResult);\n observation.put('literalName',Schema.DescribeSObjectResult.class.getName());\n observation.put('jsonDefault',JSON.deserializeUntyped(JSON.serialize(descriptor)));\n observation.put('jsonSuppress',JSON.deserializeUntyped(JSON.serialize(descriptor,true)));\n observation.put('markerAfterJSON',descriptor.sourceMarker());\n observation.put('stage','complete');\n}catch(Exception e){observation.put('exceptionType',e.getTypeName());observation.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'NATIVE_RESULT|SHADOW_JSON_ACCOUNT|'+JSON.serialize(observation));\n}}\n",
+      "namedSourceSha256": "3a1c99d71cad3d3c705a97fe738354d64f65afc97c9e73d920b657c7d18f453d",
+      "namedMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "namedMetadataSha256": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+      "evidenceSha256": "f694a1247d4862adfb40d8dfef880f2cdbaf26bcfbdab2cd785f8f232a5e7eec"
+    }
+  ],
+  "carries": [
+    {
+      "scope": "Initial source synchronization at APIs67/68",
+      "reason": "SF CLI SourceConflictError blocked the initial declaration deployments before native compilation. Metadata synchronization retries succeeded and their runtime answers are asserted. These infrastructure errors are not native Apex compile rejections.",
+      "nativeValue": [
+        {
+          "api": "67.0",
+          "name": "SourceConflictError",
+          "message": "2 conflicts detected",
+          "evidenceSha256": "790895fb6ef4b3c9a53ad9c8c1d63c5105293ec875c98a75808d3d6dca023cce",
+          "acceptedRetryEvidenceSha256": "655be5db97db398c66d9231ea0bb0fbb6741506931200efd833e26b0c621bb43"
+        },
+        {
+          "api": "68.0",
+          "name": "SourceConflictError",
+          "message": "2 conflicts detected",
+          "evidenceSha256": "98cc21db24ce233dbb937bf33c403ad9cfe6739b0015b0e1b669e44a2ee52efa",
+          "acceptedRetryEvidenceSha256": "24e6089fa4af57e998cdd7b9d2f08f63e41bc2ee4b6b60b094f7c80782665515"
+        }
+      ]
+    },
+    {
+      "scope": "Other source declarations, constructor signatures, payloads and namespace contexts",
+      "reason": "Only this plain source Schema class and nested DescribeSObjectResult with two String fields, one String constructor and sourceMarker method were observed, constructing User/Account labels. Other source shadows and payload shapes remain unmeasured.",
+      "nativeValue": null
+    }
+  ]
+}

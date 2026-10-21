@@ -397,6 +397,8 @@ func TestInvokeVisualforceActionOnControllerRejectsPrivateAction(t *testing.T) {
 }
 
 func TestInvokeVisualforceActionTracesStandardControllerActions(t *testing.T) {
+	// Owned native cancel/view observations use the short record ID; this
+	// test preserves the separate save URL and action-tracing controls.
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'VF Trace');
 ApexPages.StandardController controller = new ApexPages.StandardController(account);
@@ -404,8 +406,8 @@ PageReference saved = controller.SAVE();
 PageReference viewed = controller.VIEW();
 PageReference cancelled = controller.CANCEL();
 System.assertEquals('/' + account.Id, saved.getUrl());
-System.assertEquals('/' + account.Id, viewed.getUrl());
-System.assertEquals('/' + account.Id, cancelled.getUrl());
+System.assertEquals('/' + String.valueOf(account.Id).substring(0,15), viewed.getUrl());
+System.assertEquals('/' + String.valueOf(account.Id).substring(0,15), cancelled.getUrl());
 return controller.delete();
 `)
 	if err != nil {
@@ -461,14 +463,16 @@ return controller.delete();
 }
 
 func TestExecStandardControllerActionsUseCanonicalInsertedID(t *testing.T) {
+	// Owned native cancel/view observations use short record IDs. Edit retains
+	// its previous local canonical-ID control.
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'VF Canonical ID');
 insert account;
 ApexPages.StandardController controller = new ApexPages.StandardController(account);
 String expected = '/' + String.valueOf(account.Id);
-System.assertEquals(expected, controller.view().getUrl());
+System.assertEquals(expected.substring(0,16), controller.view().getUrl());
 System.assertEquals(expected, controller.edit().getUrl());
-System.assertEquals(expected, controller.cancel().getUrl());
+System.assertEquals(expected.substring(0,16), controller.cancel().getUrl());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -498,8 +502,13 @@ func TestInvokeVisualforceActionOnControllerDispatchesStandardControllerMember(t
 	if !result.Success || result.Error != nil {
 		t.Fatalf("result = %#v", result)
 	}
-	if value.Kind != ValueObject || value.Type != "PageReference" || value.Fields["url"].Text != "/001000000000001AAA" {
+	// controller_navigation_observations.json/manual_long_cancel records this
+	// 18-character input returning a 15-character path at both captured routes.
+	if value.Kind != ValueObject || value.Type != "PageReference" || value.Fields["url"].Text != "/001000000000001" {
 		t.Fatalf("value = %#v", value)
+	}
+	if redirect := value.Fields["redirect"]; redirect.Kind != ValueBool || !redirect.Bool {
+		t.Fatalf("redirect = %#v", redirect)
 	}
 }
 

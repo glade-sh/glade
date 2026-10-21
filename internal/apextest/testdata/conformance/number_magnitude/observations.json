@@ -1,0 +1,1215 @@
+{
+  "contexts": [
+    {
+      "callerApi": "67.0",
+      "id": "source67-istest-transport62",
+      "route": "istest",
+      "rows": {
+        "boundaryFraction": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 99.9999999,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 99.9999999 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "extraFraction": {
+          "native": {
+            "input": 12.3456789,
+            "stored": 12.3456789,
+            "success": true
+          }
+        },
+        "mediumBoundary": {
+          "native": {
+            "input": 999999,
+            "stored": 999999,
+            "success": true
+          }
+        },
+        "mediumNegativeOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": -1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: the number -1000000 is too large; please enter a value with no more than 6 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "mediumOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": 1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: the number 1000000 is too large; please enter a value with no more than 6 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "nullControl": {
+          "native": {
+            "input": null,
+            "stored": null,
+            "success": true
+          }
+        },
+        "partial": {
+          "native": {
+            "invalidCode": "NUMBER_OUTSIDE_VALID_RANGE",
+            "invalidSuccess": false,
+            "validSuccess": true
+          }
+        },
+        "smallBoundary": {
+          "native": {
+            "input": 99,
+            "stored": 99,
+            "success": true
+          }
+        },
+        "smallBoundaryOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 100,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 100 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "smallNegativeOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": -1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number -1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "smallOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "statement": {
+          "native": {
+            "caught": true,
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "type": "System.DmlException"
+          }
+        },
+        "update": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "stored": 12.3456789,
+            "success": false
+          }
+        },
+        "zeroControl": {
+          "native": {
+            "input": 0,
+            "stored": 0,
+            "success": true
+          }
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "source67-anonymous-transport62",
+      "route": "anonymous",
+      "rows": {
+        "boundaryFraction": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 99.9999999,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 99.9999999 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "extraFraction": {
+          "native": {
+            "input": 12.3456789,
+            "stored": 12.3456789,
+            "success": true
+          }
+        },
+        "mediumBoundary": {
+          "native": {
+            "input": 999999,
+            "stored": 999999,
+            "success": true
+          }
+        },
+        "mediumNegativeOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": -1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: the number -1000000 is too large; please enter a value with no more than 6 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "mediumOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": 1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: the number 1000000 is too large; please enter a value with no more than 6 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "nullControl": {
+          "native": {
+            "input": null,
+            "stored": null,
+            "success": true
+          }
+        },
+        "partial": {
+          "native": {
+            "invalidCode": "NUMBER_OUTSIDE_VALID_RANGE",
+            "invalidSuccess": false,
+            "validSuccess": true
+          }
+        },
+        "smallBoundary": {
+          "native": {
+            "input": 99,
+            "stored": 99,
+            "success": true
+          }
+        },
+        "smallBoundaryOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 100,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 100 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "smallNegativeOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": -1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number -1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "smallOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "statement": {
+          "native": {
+            "caught": true,
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "type": "System.DmlException"
+          }
+        },
+        "update": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "stored": 12.3456789,
+            "success": false
+          }
+        },
+        "zeroControl": {
+          "native": {
+            "input": 0,
+            "stored": 0,
+            "success": true
+          }
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "source62-istest-transport62",
+      "route": "istest",
+      "rows": {
+        "boundaryFraction": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 99.9999999,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: 99.9999999",
+            "success": false
+          }
+        },
+        "extraFraction": {
+          "native": {
+            "input": 12.3456789,
+            "stored": 12.3456789,
+            "success": true
+          }
+        },
+        "mediumBoundary": {
+          "native": {
+            "input": 999999,
+            "stored": 999999,
+            "success": true
+          }
+        },
+        "mediumNegativeOverflow": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": -1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: -1000000",
+            "success": false
+          }
+        },
+        "mediumOverflow": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": 1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: 1000000",
+            "success": false
+          }
+        },
+        "nullControl": {
+          "native": {
+            "input": null,
+            "stored": null,
+            "success": true
+          }
+        },
+        "partial": {
+          "native": {
+            "invalidCode": "NUMBER_OUTSIDE_VALID_RANGE",
+            "invalidSuccess": false,
+            "validSuccess": true
+          }
+        },
+        "smallBoundary": {
+          "native": {
+            "input": 99,
+            "stored": 99,
+            "success": true
+          }
+        },
+        "smallBoundaryOverflow": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 100,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: 100",
+            "success": false
+          }
+        },
+        "smallNegativeOverflow": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": -1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: -1000",
+            "success": false
+          }
+        },
+        "smallOverflow": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: 1000",
+            "success": false
+          }
+        },
+        "statement": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "caught": true,
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: 1000",
+            "type": "System.DmlException"
+          }
+        },
+        "update": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "stored": 12.3456789,
+            "success": false
+          }
+        },
+        "zeroControl": {
+          "native": {
+            "input": 0,
+            "stored": 0,
+            "success": true
+          }
+        }
+      },
+      "sourceApi": "62.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "source62-anonymous-transport62",
+      "route": "anonymous",
+      "rows": {
+        "boundaryFraction": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 99.9999999,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: 99.9999999",
+            "success": false
+          }
+        },
+        "extraFraction": {
+          "native": {
+            "input": 12.3456789,
+            "stored": 12.3456789,
+            "success": true
+          }
+        },
+        "mediumBoundary": {
+          "native": {
+            "input": 999999,
+            "stored": 999999,
+            "success": true
+          }
+        },
+        "mediumNegativeOverflow": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": -1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: -1000000",
+            "success": false
+          }
+        },
+        "mediumOverflow": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": 1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: 1000000",
+            "success": false
+          }
+        },
+        "nullControl": {
+          "native": {
+            "input": null,
+            "stored": null,
+            "success": true
+          }
+        },
+        "partial": {
+          "native": {
+            "invalidCode": "NUMBER_OUTSIDE_VALID_RANGE",
+            "invalidSuccess": false,
+            "validSuccess": true
+          }
+        },
+        "smallBoundary": {
+          "native": {
+            "input": 99,
+            "stored": 99,
+            "success": true
+          }
+        },
+        "smallBoundaryOverflow": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 100,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: 100",
+            "success": false
+          }
+        },
+        "smallNegativeOverflow": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": -1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: -1000",
+            "success": false
+          }
+        },
+        "smallOverflow": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: 1000",
+            "success": false
+          }
+        },
+        "statement": {
+          "carriedFields": {
+            "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+          },
+          "native": {
+            "caught": true,
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: 1000",
+            "type": "System.DmlException"
+          }
+        },
+        "update": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "stored": 12.3456789,
+            "success": false
+          }
+        },
+        "zeroControl": {
+          "native": {
+            "input": 0,
+            "stored": 0,
+            "success": true
+          }
+        }
+      },
+      "sourceApi": "62.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "67.0",
+      "id": "source67-istest-transport67",
+      "route": "istest",
+      "rows": {
+        "boundaryFraction": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 99.9999999,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 99.9999999 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "extraFraction": {
+          "native": {
+            "input": 12.3456789,
+            "stored": 12.3456789,
+            "success": true
+          }
+        },
+        "mediumBoundary": {
+          "native": {
+            "input": 999999,
+            "stored": 999999,
+            "success": true
+          }
+        },
+        "mediumNegativeOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": -1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: the number -1000000 is too large; please enter a value with no more than 6 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "mediumOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": 1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: the number 1000000 is too large; please enter a value with no more than 6 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "nullControl": {
+          "native": {
+            "input": null,
+            "stored": null,
+            "success": true
+          }
+        },
+        "partial": {
+          "native": {
+            "invalidCode": "NUMBER_OUTSIDE_VALID_RANGE",
+            "invalidSuccess": false,
+            "validSuccess": true
+          }
+        },
+        "smallBoundary": {
+          "native": {
+            "input": 99,
+            "stored": 99,
+            "success": true
+          }
+        },
+        "smallBoundaryOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 100,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 100 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "smallNegativeOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": -1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number -1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "smallOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "statement": {
+          "native": {
+            "caught": true,
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "type": "System.DmlException"
+          }
+        },
+        "update": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "stored": 12.3456789,
+            "success": false
+          }
+        },
+        "zeroControl": {
+          "native": {
+            "input": 0,
+            "stored": 0,
+            "success": true
+          }
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "67.0"
+    },
+    {
+      "callerApi": "67.0",
+      "id": "source67-anonymous-transport67",
+      "route": "anonymous",
+      "rows": {
+        "boundaryFraction": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 99.9999999,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 99.9999999 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "extraFraction": {
+          "native": {
+            "input": 12.3456789,
+            "stored": 12.3456789,
+            "success": true
+          }
+        },
+        "mediumBoundary": {
+          "native": {
+            "input": 999999,
+            "stored": 999999,
+            "success": true
+          }
+        },
+        "mediumNegativeOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": -1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: the number -1000000 is too large; please enter a value with no more than 6 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "mediumOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": 1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: the number 1000000 is too large; please enter a value with no more than 6 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "nullControl": {
+          "native": {
+            "input": null,
+            "stored": null,
+            "success": true
+          }
+        },
+        "partial": {
+          "native": {
+            "invalidCode": "NUMBER_OUTSIDE_VALID_RANGE",
+            "invalidSuccess": false,
+            "validSuccess": true
+          }
+        },
+        "smallBoundary": {
+          "native": {
+            "input": 99,
+            "stored": 99,
+            "success": true
+          }
+        },
+        "smallBoundaryOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 100,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 100 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "smallNegativeOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": -1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number -1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "smallOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "statement": {
+          "native": {
+            "caught": true,
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "type": "System.DmlException"
+          }
+        },
+        "update": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "stored": 12.3456789,
+            "success": false
+          }
+        },
+        "zeroControl": {
+          "native": {
+            "input": 0,
+            "stored": 0,
+            "success": true
+          }
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "67.0"
+    },
+    {
+      "callerApi": "68.0",
+      "id": "source68-istest-transport68",
+      "route": "istest",
+      "rows": {
+        "boundaryFraction": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 99.9999999,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 99.9999999 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "extraFraction": {
+          "native": {
+            "input": 12.3456789,
+            "stored": 12.3456789,
+            "success": true
+          }
+        },
+        "mediumBoundary": {
+          "native": {
+            "input": 999999,
+            "stored": 999999,
+            "success": true
+          }
+        },
+        "mediumNegativeOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": -1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: the number -1000000 is too large; please enter a value with no more than 6 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "mediumOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": 1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: the number 1000000 is too large; please enter a value with no more than 6 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "nullControl": {
+          "native": {
+            "input": null,
+            "stored": null,
+            "success": true
+          }
+        },
+        "partial": {
+          "native": {
+            "invalidCode": "NUMBER_OUTSIDE_VALID_RANGE",
+            "invalidSuccess": false,
+            "validSuccess": true
+          }
+        },
+        "smallBoundary": {
+          "native": {
+            "input": 99,
+            "stored": 99,
+            "success": true
+          }
+        },
+        "smallBoundaryOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 100,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 100 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "smallNegativeOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": -1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number -1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "smallOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "statement": {
+          "native": {
+            "caught": true,
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "type": "System.DmlException"
+          }
+        },
+        "update": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "stored": 12.3456789,
+            "success": false
+          }
+        },
+        "zeroControl": {
+          "native": {
+            "input": 0,
+            "stored": 0,
+            "success": true
+          }
+        }
+      },
+      "sourceApi": "68.0",
+      "transportApi": "68.0"
+    },
+    {
+      "callerApi": "68.0",
+      "id": "source68-anonymous-transport68",
+      "route": "anonymous",
+      "rows": {
+        "boundaryFraction": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 99.9999999,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 99.9999999 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "extraFraction": {
+          "native": {
+            "input": 12.3456789,
+            "stored": 12.3456789,
+            "success": true
+          }
+        },
+        "mediumBoundary": {
+          "native": {
+            "input": 999999,
+            "stored": 999999,
+            "success": true
+          }
+        },
+        "mediumNegativeOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": -1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: the number -1000000 is too large; please enter a value with no more than 6 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "mediumOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeMedium__c"
+            ],
+            "input": 1000000,
+            "message": "Owned magnitude 6: value outside of valid range on numeric field: the number 1000000 is too large; please enter a value with no more than 6 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "nullControl": {
+          "native": {
+            "input": null,
+            "stored": null,
+            "success": true
+          }
+        },
+        "partial": {
+          "native": {
+            "invalidCode": "NUMBER_OUTSIDE_VALID_RANGE",
+            "invalidSuccess": false,
+            "validSuccess": true
+          }
+        },
+        "smallBoundary": {
+          "native": {
+            "input": 99,
+            "stored": 99,
+            "success": true
+          }
+        },
+        "smallBoundaryOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 100,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 100 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "smallNegativeOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": -1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number -1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "smallOverflow": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "input": 1000,
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "success": false
+          }
+        },
+        "statement": {
+          "native": {
+            "caught": true,
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "fields": [
+              "MagnitudeSmall__c"
+            ],
+            "message": "Owned magnitude 2: value outside of valid range on numeric field: the number 1000 is too large; please enter a value with no more than 2 digits and 0 decimal places",
+            "type": "System.DmlException"
+          }
+        },
+        "update": {
+          "native": {
+            "code": "NUMBER_OUTSIDE_VALID_RANGE",
+            "stored": 12.3456789,
+            "success": false
+          }
+        },
+        "zeroControl": {
+          "native": {
+            "input": 0,
+            "stored": 0,
+            "success": true
+          }
+        }
+      },
+      "sourceApi": "68.0",
+      "transportApi": "68.0"
+    }
+  ],
+  "files": [
+    {
+      "path": "setup/CustomMagnitudeObservation.cls",
+      "sha256": "3106f2a3df839cd46bc0c5f5767626f91e44d2053f998abff0bdfc466a5f03bb"
+    },
+    {
+      "path": "setup/CustomMagnitudeObservationTest.cls",
+      "sha256": "05d6d5a9de3d27a1822223960377b919bbbf87df8fcc39271e48bc60e655a658"
+    },
+    {
+      "path": "setup/BoundaryMagnitudeObservation.cls",
+      "sha256": "ae42334c191b9d27cc55c302c4234186af304fb11a59a837e43a57cf5429b478"
+    },
+    {
+      "path": "setup/Account/fields/MagnitudeSmall__c.field-meta.xml",
+      "sha256": "954a0f3405df12e7ecb4573a7cf58d10da2863dd1d9a0e734e38e2e3f4742648"
+    },
+    {
+      "path": "setup/Account/fields/MagnitudeMedium__c.field-meta.xml",
+      "sha256": "b8d09aba5f05116287768c072cca240a084f7a811ce308121e1d066372823a31"
+    }
+  ],
+  "nativeObservationCount": 112,
+  "shapeCount": 14,
+  "supplemental": {
+    "callerApi": "62.0",
+    "id": "fractional-boundary-controls",
+    "route": "anonymous",
+    "rows": {
+      "boundary1": {
+        "native": {
+          "input": 99.1,
+          "stored": 99.1,
+          "success": true
+        }
+      },
+      "boundary2": {
+        "native": {
+          "input": 99.49,
+          "stored": 99.49,
+          "success": true
+        }
+      },
+      "boundary3": {
+        "carriedFields": {
+          "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+        },
+        "native": {
+          "code": "NUMBER_OUTSIDE_VALID_RANGE",
+          "fields": [
+            "MagnitudeSmall__c"
+          ],
+          "input": 99.5,
+          "message": "Owned magnitude 2: value outside of valid range on numeric field: 99.5",
+          "success": false
+        }
+      },
+      "boundary4": {
+        "native": {
+          "input": -99.1,
+          "stored": -99.1,
+          "success": true
+        }
+      },
+      "boundary5": {
+        "native": {
+          "input": -99.49,
+          "stored": -99.49,
+          "success": true
+        }
+      },
+      "boundary6": {
+        "carriedFields": {
+          "message": "Native API 62 uses shorter error text. The source-version formatter change point was not captured, and the shared DML engine has no execution-version input; retain the exact native message while asserting every other observed member."
+        },
+        "native": {
+          "code": "NUMBER_OUTSIDE_VALID_RANGE",
+          "fields": [
+            "MagnitudeSmall__c"
+          ],
+          "input": -99.5,
+          "message": "Owned magnitude 2: value outside of valid range on numeric field: -99.5",
+          "success": false
+        }
+      }
+    },
+    "sourceApi": "62.0",
+    "transportApi": "62.0"
+  }
+}

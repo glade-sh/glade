@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -302,7 +303,12 @@ public class Child extends Base {
 	}
 }
 
-func TestInheritanceContractsAllowAbstractImplementationWithoutOverrideAtAPIVersions64And65(t *testing.T) {
+// Native AO rows reject an abstract implementation without override at API
+// 62.0 (R001-R003, R007, R012) and 65.0 (R007, R012) on both routes. No named
+// explicit-access row exists at 63.0 or 64.0; the anonymous default-access
+// R006/R010 rows reject there. No row exists below 62.0, so 61.0 keeps the
+// exemption.
+func TestInheritanceContractsRequireAbstractImplementationOverrideFromAPIVersion62(t *testing.T) {
 	files := map[string]string{
 		"Base.cls": `
 public abstract class Base {
@@ -315,11 +321,32 @@ public class Child extends Base {
 }
 `,
 	}
-	for _, apiVersion := range []string{"64.0", "65.0"} {
-		t.Run(apiVersion, func(t *testing.T) {
-			result := analyzeDeclarationProjectWithAPIVersion(t, files, apiVersion)
-			if hasErrorOtherThan(result.Diagnostics, "GLADESEMA_VERSION") {
-				t.Fatalf("API %s abstract implementation without override was rejected: %#v", apiVersion, result.Diagnostics)
+	for _, test := range []struct {
+		apiVersion string
+		wantReject bool
+	}{
+		{apiVersion: "61.0", wantReject: false},
+		{apiVersion: "62.0", wantReject: true},
+		{apiVersion: "64.0", wantReject: true},
+		{apiVersion: "65.0", wantReject: true},
+	} {
+		t.Run(test.apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, files, test.apiVersion)
+			if !test.wantReject {
+				if hasErrorOtherThan(result.Diagnostics, "GLADESEMA_VERSION") {
+					t.Fatalf("API %s abstract implementation without override was rejected: %#v", test.apiVersion, result.Diagnostics)
+				}
+				return
+			}
+			var native []string
+			for _, diag := range result.Diagnostics {
+				if diag.Severity == diagnostic.Error && diag.Code != "GLADESEMA_VERSION" {
+					native = append(native, diag.Code+": "+diag.NativeMessage)
+				}
+			}
+			want := "GLADESEMA016: Method must use the override keyword: void Child.run()\nGLADESEMA017: Class Child must implement the abstract method: void Base.run()"
+			if got := strings.Join(native, "\n"); got != want {
+				t.Fatalf("API %s abstract implementation without override:\n%s\nwant\n%s", test.apiVersion, got, want)
 			}
 		})
 	}
@@ -418,7 +445,7 @@ public class Child extends Base {
 }
 `,
 	}
-	for _, apiVersion := range []string{"66.0", "67.0"} {
+	for _, apiVersion := range []string{"62.0", "66.0", "67.0"} {
 		t.Run("reject_"+apiVersion, func(t *testing.T) {
 			result := analyzeDeclarationProjectWithAPIVersion(t, files, apiVersion)
 			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA016") {
@@ -439,9 +466,11 @@ public class Child extends Base {
 }
 `,
 		}
-		result := analyzeDeclarationProjectWithAPIVersion(t, filesWithOverride, "66.0")
-		if result.HasErrors() {
-			t.Fatalf("abstract implementation with override was rejected: %#v", result.Diagnostics)
+		for _, apiVersion := range []string{"62.0", "66.0"} {
+			result := analyzeDeclarationProjectWithAPIVersion(t, filesWithOverride, apiVersion)
+			if result.HasErrors() {
+				t.Fatalf("API %s abstract implementation with override was rejected: %#v", apiVersion, result.Diagnostics)
+			}
 		}
 	})
 }
@@ -534,14 +563,14 @@ func TestInheritanceContractsAllowBatchableScopeVariance(t *testing.T) {
 	for name, source := range map[string]string{
 		"sobject scope": `
 public class Probe implements Database.Batchable<Account> {
-  public Database.QueryLocator start(Database.BatchableContext context) { return null; }
+  public Iterable<Account> start(Database.BatchableContext context) { return null; }
   public void execute(Database.BatchableContext context, List<SObject> scope) {}
   public void finish(Database.BatchableContext context) {}
 }
 `,
 		"concrete scope": `
 public class Probe implements Database.Batchable<Account> {
-  public Database.QueryLocator start(Database.BatchableContext context) { return null; }
+  public Iterable<Account> start(Database.BatchableContext context) { return null; }
   public void execute(Database.BatchableContext context, List<Account> scope) {}
   public void finish(Database.BatchableContext context) {}
 }

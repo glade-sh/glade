@@ -148,7 +148,7 @@ func (vm *VM) insertConnectAPIChatterFeedItem(input Value) (storage.Record, bool
 	if strings.EqualFold(strings.TrimSpace(parentID), "me") {
 		parentID = vm.currentUserID()
 		if parentID == "" {
-			parentID = "005000000000001"
+			parentID = storage.DefaultUserID
 		}
 	}
 	if strings.TrimSpace(parentID) == "" {

@@ -1,0 +1,8 @@
+shape	boundary
+describe_names	Account name fields from describe iteration
+direct_name	Account.Name direct token flag
+Name	Name field map flag
+FirstName	FirstName component flag
+LastName	LastName component flag
+selected_name	First name-field token from map iteration
+selected_value	Queried business name read via selected token

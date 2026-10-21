@@ -1,0 +1,9 @@
+source_api	method	observation
+62.0	loopBelow	"{""count"":200}"
+62.0	loopAbove	"{""count"":1000001}"
+62.0	timeAdvance	"{""advanced"":true,""bounded"":true}"
+62.0	dateRejected	"{""message"":""Use Test.setCreatedDate() within tests."",""rejected"":true,""type"":""System.NoAccessException""}"
+67.0	loopBelow	"{""count"":200}"
+67.0	loopAbove	"{""count"":1000001}"
+67.0	timeAdvance	"{""advanced"":true,""bounded"":true}"
+67.0	dateRejected	"{""message"":""Use Test.setCreatedDate() within tests."",""rejected"":true,""type"":""System.NoAccessException""}"

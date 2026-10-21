@@ -3,7 +3,6 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import test from "node:test";
-import { pathToFileURL } from "node:url";
 import { repoRoot } from "./helpers.mjs";
 
 const args = process.argv.slice(2);
@@ -12,10 +11,9 @@ if (!serveOnly && args.length !== 0) {
   throw new Error("expected no arguments or exactly --serve-only --port=8942; host is fixed at 127.0.0.1");
 }
 
+const chromium = serveOnly ? undefined : (await import("./shared-playwright.mjs")).chromium;
+
 async function launchBrowser() {
-  const playwrightDir = process.env.GLADE_LWC_PLAYWRIGHT_MODULE;
-  const entry = playwrightDir ? pathToFileURL(path.join(playwrightDir, "index.mjs")).href : "playwright";
-  const { chromium } = await import(entry);
   const executablePath = process.env.GLADE_LWC_BROWSER_EXECUTABLE;
   return chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
 }

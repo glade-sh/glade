@@ -1,0 +1,137 @@
+{
+  "group": "execution",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "shapeCount": 1,
+  "nativeObservationCount": 6,
+  "recoveredObservationCount": 0,
+  "notes": [
+    "Synthetic source-only project metadata, helper classes and triggers use the ordinary project loader.",
+    "Both independently captured routes compare complete reassembled payloads; named chunk envelopes are transport only.",
+    "Same-release APIs62/67/68; API59 has no rows.",
+    "API67/68 SOAP guide anchors compare by stable message parts; no org URL is produced or compared.",
+    "Rejected global-null metadata compares loader rejection plus the accepted modern runtime twin."
+  ],
+  "rows": [
+    {
+      "id": "C187FLOW_CONTROL_001",
+      "label": "trivial active autolaunched Flow",
+      "config": {
+        "flow": "Control"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Invocable.Action action=Invocable.Action.createCustomAction('flow','E32BA62Control');List<Invocable.Action.Result> results=action.invoke();Map<String,Object> payload=new Map<String,Object>{'resultCount'=>results.size()};if(results.size()==1){payload.put('isSuccess',results[0].isSuccess());payload.put('flowFired',results[0].getOutputParameters().get('fired'));}String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187FLOW_CONTROL_001|'+encoded);",
+              "operationSHA256": "19d9ce38db764a6a7ba21aae287c4019b19509def00bc1230dc5ae80f83b1480",
+              "captureSourceSHA256": {
+                "anonymous": "19d9ce38db764a6a7ba21aae287c4019b19509def00bc1230dc5ae80f83b1480"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "isSuccess": true,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Invocable.Action action=Invocable.Action.createCustomAction('flow','E32BA62Control');List<Invocable.Action.Result> results=action.invoke();Map<String,Object> payload=new Map<String,Object>{'resultCount'=>results.size()};if(results.size()==1){payload.put('isSuccess',results[0].isSuccess());payload.put('flowFired',results[0].getOutputParameters().get('fired'));}String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187FLOW_CONTROL_001|'+encoded);",
+              "operationSHA256": "19d9ce38db764a6a7ba21aae287c4019b19509def00bc1230dc5ae80f83b1480",
+              "captureSourceSHA256": {
+                "E32BA62C187FLOWCONTROL001": "2b05709ae06ad4cda6ca0139d0ffc8d46d1c257113ec11724c5c250d67388106"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "isSuccess": true,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Invocable.Action action=Invocable.Action.createCustomAction('flow','E32BA67Control');List<Invocable.Action.Result> results=action.invoke();Map<String,Object> payload=new Map<String,Object>{'resultCount'=>results.size()};if(results.size()==1){payload.put('isSuccess',results[0].isSuccess());payload.put('flowFired',results[0].getOutputParameters().get('fired'));}String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187FLOW_CONTROL_001|'+encoded);",
+              "operationSHA256": "aa26e87cb6c7cc285ff130104ed8df24706d2c663f01f6886a17c5725a21e5a5",
+              "captureSourceSHA256": {
+                "anonymous": "aa26e87cb6c7cc285ff130104ed8df24706d2c663f01f6886a17c5725a21e5a5"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "isSuccess": true,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Invocable.Action action=Invocable.Action.createCustomAction('flow','E32BA67Control');List<Invocable.Action.Result> results=action.invoke();Map<String,Object> payload=new Map<String,Object>{'resultCount'=>results.size()};if(results.size()==1){payload.put('isSuccess',results[0].isSuccess());payload.put('flowFired',results[0].getOutputParameters().get('fired'));}String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187FLOW_CONTROL_001|'+encoded);",
+              "operationSHA256": "aa26e87cb6c7cc285ff130104ed8df24706d2c663f01f6886a17c5725a21e5a5",
+              "captureSourceSHA256": {
+                "E32BA67C187FLOWCONTROL001": "199ef7a1c4d3f1a751361086cc17001f0afb21e55c70ef25c3e2334f2fc960f4"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "isSuccess": true,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Invocable.Action action=Invocable.Action.createCustomAction('flow','E32BA68Control');List<Invocable.Action.Result> results=action.invoke();Map<String,Object> payload=new Map<String,Object>{'resultCount'=>results.size()};if(results.size()==1){payload.put('isSuccess',results[0].isSuccess());payload.put('flowFired',results[0].getOutputParameters().get('fired'));}String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187FLOW_CONTROL_001|'+encoded);",
+              "operationSHA256": "789ee51d21509c55622bbd9a6d07ecd23a1dc212b699b56b13f41cf934125ed8",
+              "captureSourceSHA256": {
+                "anonymous": "789ee51d21509c55622bbd9a6d07ecd23a1dc212b699b56b13f41cf934125ed8"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "isSuccess": true,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Invocable.Action action=Invocable.Action.createCustomAction('flow','E32BA68Control');List<Invocable.Action.Result> results=action.invoke();Map<String,Object> payload=new Map<String,Object>{'resultCount'=>results.size()};if(results.size()==1){payload.put('isSuccess',results[0].isSuccess());payload.put('flowFired',results[0].getOutputParameters().get('fired'));}String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187FLOW_CONTROL_001|'+encoded);",
+              "operationSHA256": "789ee51d21509c55622bbd9a6d07ecd23a1dc212b699b56b13f41cf934125ed8",
+              "captureSourceSHA256": {
+                "E32BA68C187FLOWCONTROL001": "92f5d92725b918a3c3d976e1500077c1917a085544b3deebf20cf16d3ece8aac"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "isSuccess": true,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

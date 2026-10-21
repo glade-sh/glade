@@ -1,0 +1,62 @@
+[
+  {
+    "className": "StringLengthProbe0",
+    "Outcome": "Pass",
+    "Message": "",
+    "StackTrace": ""
+  },
+  {
+    "className": "StringLengthProbe1",
+    "Outcome": "Fail",
+    "Message": "System.LimitException: String is too long.",
+    "StackTrace": "Class.StringLengthProbe1.observe: line 5, column 1"
+  },
+  {
+    "className": "StringLengthProbe2",
+    "Outcome": "Pass",
+    "Message": "",
+    "StackTrace": ""
+  },
+  {
+    "className": "StringLengthProbe3",
+    "Outcome": "Fail",
+    "Message": "System.LimitException: String is too long.",
+    "StackTrace": "Class.StringLengthProbe3.observe: line 5, column 1"
+  },
+  {
+    "className": "StringLengthProbe4",
+    "Outcome": "Pass",
+    "Message": "",
+    "StackTrace": ""
+  },
+  {
+    "className": "StringLengthProbe5",
+    "Outcome": "Fail",
+    "Message": "System.LimitException: String is too long.",
+    "StackTrace": "Class.StringLengthProbe5.observe: line 5, column 1"
+  },
+  {
+    "className": "StringLengthProbe6",
+    "Outcome": "Pass",
+    "Message": "",
+    "StackTrace": ""
+  },
+  {
+    "className": "StringLengthProbe7",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: CAUGHT|System.StringException|String length exceeds maximum: 10000000",
+    "StackTrace": "Class.StringLengthProbe7.observe: line 7, column 1"
+  },
+  {
+    "className": "StringLengthProbe8",
+    "Outcome": "Pass",
+    "Message": "",
+    "StackTrace": ""
+  },
+  {
+    "className": "StringLengthProbe9",
+    "Outcome": "Pass",
+    "Message": "",
+    "StackTrace": ""
+  }
+]

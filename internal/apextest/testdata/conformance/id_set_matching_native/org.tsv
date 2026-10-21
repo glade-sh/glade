@@ -1,0 +1,11 @@
+source_api	method	observation
+62.0	directAndErased	{"stringOperator":false,"fullLength":18,"shortLength":15,"rightSize":1,"leftSize":1,"reverseContains":true,"contains":true,"nestedList":true,"erasedMethod":true,"erasedOperator":true,"method":true,"operator":true}
+62.0	membershipControls	{"shortStringsShort":true,"fullStringsFull":true,"shortStringsFull":false,"fullStringsShort":false,"shortStringsId":false,"fullStringsId":true,"wrongLength":"System.StringException:Invalid id: 00100000000007","invalid":"System.StringException:Invalid id: invalid","null":false,"id":true,"fullString":true,"shortString":true}
+62.0	stubDecimalArgument	{"signature":"Decimal","literalEqualsInteger":false,"typedEqualsOrdinary":true,"literalEqualsOrdinary":true,"literalEqualsTyped":true}
+62.0	stubReferenceArgument	{"signature":"IdMatchToken","nestedList":true,"factoryIdentity":true,"identity":true,"operator":true}
+62.0	stubSetArgument	{"signature":"Set<Id>","contains":true,"nestedList":true,"erasedMethod":true,"erasedOperator":true,"operator":true}
+67.0	directAndErased	{"stringOperator":false,"fullLength":18,"shortLength":15,"rightSize":1,"leftSize":1,"reverseContains":true,"contains":true,"nestedList":true,"erasedMethod":true,"erasedOperator":true,"method":true,"operator":true}
+67.0	membershipControls	{"shortStringsShort":true,"fullStringsFull":true,"shortStringsFull":false,"fullStringsShort":false,"shortStringsId":false,"fullStringsId":true,"wrongLength":"System.StringException:Invalid id: 00100000000007","invalid":"System.StringException:Invalid id: invalid","null":false,"id":true,"fullString":true,"shortString":true}
+67.0	stubDecimalArgument	{"signature":"Decimal","literalEqualsInteger":false,"typedEqualsOrdinary":true,"literalEqualsOrdinary":true,"literalEqualsTyped":true}
+67.0	stubReferenceArgument	{"signature":"IdMatchToken","nestedList":true,"factoryIdentity":true,"identity":true,"operator":true}
+67.0	stubSetArgument	{"signature":"Set<Id>","contains":true,"nestedList":true,"erasedMethod":true,"erasedOperator":true,"operator":true}

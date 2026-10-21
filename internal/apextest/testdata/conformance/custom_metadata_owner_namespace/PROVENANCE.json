@@ -1,0 +1,68 @@
+{
+  "SourceFiles": [
+    {
+      "Source": "rows62.json",
+      "SHA256": "5f71339d8f0dc6ca7c67bf475b99f88a84273a054cea5b40e4799a1693a7e498"
+    },
+    {
+      "Source": "answers/api62/istest/org.tsv",
+      "SHA256": "b99725e8970f2b79a66faa1baea10e59a22a75c4145e06e1d9659bb5f70c9c07",
+      "Export": "native-capture"
+    },
+    {
+      "Source": "answers/api62/istest/ORG-RUN.txt",
+      "SHA256": "799c841829ac87b4f7a6a8adbba4a1f4ba03f77f82c828e7128d6065ae609388",
+      "Export": "native-capture"
+    },
+    {
+      "Source": "rows67.json",
+      "SHA256": "16a647186311554293e7a9da6d25e1b2670cf82e31d78e8b5dbdcb618d494f7c"
+    },
+    {
+      "Source": "answers/api67/istest/org.tsv",
+      "SHA256": "6c1a7fb082d5db8285f375998df5ebd9e4d3664553deef9c7f9ab762a2574771",
+      "Export": "native-capture"
+    },
+    {
+      "Source": "answers/api67/istest/ORG-RUN.txt",
+      "SHA256": "e35db921c7df60b39acc0e759ba1aeef89d1c0dfa07638a6b83c058289a3ffd7",
+      "Export": "native-capture"
+    },
+    {
+      "Source": "rows68.json",
+      "SHA256": "aee54e20122f3cd0e9a9e06a4a5dd8f8f1bcdf1fddd6829c0abf3df938193e37"
+    },
+    {
+      "Source": "answers/api68/istest/org.tsv",
+      "SHA256": "6c2f623e856c1d4ffdbcd223b7a0d4d2608f9636afb34d3c53f22db5b910c928",
+      "Export": "native-capture"
+    },
+    {
+      "Source": "answers/api68/istest/ORG-RUN.txt",
+      "SHA256": "b60c0594d78b0fcce4ec4042f063a421c59cce94080c8e798735e8b5bbaccc13",
+      "Export": "native-capture"
+    },
+    {
+      "Source": "setup/provider/sfdx-project.json",
+      "SHA256": "08553b620b32227fb421a59fe9e870685f31a049bb8fa2136bcca712d0e6e824",
+      "Export": "fixture/provider/sfdx-project.json"
+    },
+    {
+      "Source": "setup/provider/force-app/main/default/objects/OwnerFlag__mdt.object",
+      "SHA256": "95651b13dcbb80f4d821d17509d8f24f0c893de0457f4c2aac597844b9d7ef02",
+      "Export": "fixture/provider/force-app/main/default/objects/OwnerFlag__mdt.object"
+    },
+    {
+      "Source": "setup/provider/force-app/main/default/customMetadata/OwnerFlag.ProviderSeed.md",
+      "SHA256": "9fb8d6f9e9f40cd5df8e606977b61e9a7b9fd53908743111fce0bfea68f1c536",
+      "Export": "fixture/provider/force-app/main/default/customMetadata/OwnerFlag.ProviderSeed.md"
+    }
+  ],
+  "Replacements": {
+    "C4OchreD7f3b9a2": "MetadataOwner",
+    "C4_OWNER": "METADATA_OWNER",
+    "c4 synthetic mismatch": "synthetic mismatch"
+  },
+  "NamespaceMapping": "First namespace -> gladens001; second namespace -> gladens002; type -> OwnerFlag; org alias -> synthetic-owner-org. Synthetic source dependency represents the installed managed beta.",
+  "Comparison": "SOQL R008 compares projected identity fields; native record IDs and REST attributes are retained in the evidence, excluded from comparison. Namespace tokens normalized consistently; no new native runs."
+}

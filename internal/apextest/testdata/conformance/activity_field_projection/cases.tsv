@@ -1,0 +1,7 @@
+id	shape
+taskText	Task text field constructor, DML, query, String method
+eventText	Event text field constructor, DML, query, String method
+taskPicklist	Task picklist field constructor, DML, query
+eventPicklist	Event picklist field constructor, DML, query
+taskFieldType	Task projected text field describe
+eventFieldType	Event projected picklist field describe

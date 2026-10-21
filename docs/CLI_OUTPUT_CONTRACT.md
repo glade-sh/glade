@@ -67,6 +67,23 @@ package-level JSON structs remain available inside the `data` field where needed
 during migration; some commands still return their own JSON shape. Consumers
 must use the schema for the specific command and mode.
 
+## Test exclusions and automation diagnostics
+
+`glade test --json` includes an `excludedClasses` array for invalid classes,
+their dependents, and excluded triggers. Entries carry `className`, `file`,
+`line`, `dependsOn`, `root`, and `message`; roots with multiple errors may also
+carry `problems`. `summary.excludedClasses` is the count. Any exclusion makes
+the command exit `1`, even when every executed test passes.
+
+`glade check` includes automation diagnostics: `GLADEAUTO001` for unsupported
+workflow behavior, `GLADEAUTO002` for unsupported Flow behavior, `GLADEAUTO003`
+for skipped unreadable or malformed automation files, and `GLADEAUTO004` for
+invalid supported Flow definitions. The first three are warnings; the last is
+an error. A skipped file does not disable other automation files.
+
+`glade doctor --json` uses its own schema, currently `1.1`, including
+`parserOK`; do not infer its shape from the priority-command envelope.
+
 ## Diagnostics
 
 Human diagnostics use:

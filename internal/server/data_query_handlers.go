@@ -482,7 +482,7 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 	_ = json.NewEncoder(w).Encode(value)
 }
 
-const defaultLocalUserID = storage.ID("005000000000001")
+const defaultLocalUserID = storage.ID(storage.DefaultUserID)
 
 func (s *Server) currentUserID() storage.ID {
 	if user := s.currentUser(nil, ""); user.ID != "" {
@@ -576,7 +576,7 @@ func (s *Server) identityPayload(r *http.Request, pathUserID storage.ID) (map[st
 		active = value.Boolean
 	}
 	base := "http://" + r.Host
-	orgID := nonEmpty(s.Org.OrgID, "00D000000000001")
+	orgID := nonEmpty(s.Org.OrgID, storage.DefaultOrgID)
 	userID := string(user.ID)
 	identityURL := base + "/id/" + orgID + "/" + userID
 	return map[string]any{

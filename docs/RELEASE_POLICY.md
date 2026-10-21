@@ -18,6 +18,11 @@ A release can be promoted when:
 - Public support docs describe the current command surface and unsupported
   boundaries.
 
+For v0.3.0, the repository gate covers four private repositories and 18 selected
+public repositories. It requires zero failures except the known issues listed
+in the release notes. The broader 93-repository scan is post-release work and
+is not part of this release gate.
+
 The local gate runs site verification, unit tests, and the production build
 exactly once, then validates the checked Go package inventory through
 memory-safe release lanes. Raw lane events and each validated
@@ -44,20 +49,26 @@ source tree, not broad promises that every Salesforce behavior is implemented.
 
 ## Salesforce API Versions
 
-Glade uses moving correctness. The checked source window is exactly 65.0,
-66.0, and 67.0; the checked endpoint window is 60.0, 65.0, 66.0, and 67.0.
-The default for both axes remains 65.0. Well-formed positive whole historical
-Apex source versions are preserved for compatibility but remain outside the
-checked window and receive no parity or official-correctness credit. Malformed
-and future source versions fail explicitly. Glade does not silently choose the
-nearest version and does not promise exact behavior for every historical source
-version.
+The v0.3.0 support window is Apex 62.0-68.0, LWC and Visualforce 59.0-68.0.
+Apex source API below 62.0, including legacy 24.0, 29.0, 36.0, 39.0, and 40.0
+behavior, is unsupported. The loader preserves well-formed positive whole
+historical Apex versions for compatibility; loading or passing a local test
+does not bring them into the supported window. Malformed and future source
+versions fail explicitly. Glade does not silently choose the nearest version
+or promise exact behavior for every historical source version.
+
+The checked HTTP endpoint versions remain the discrete set 60.0, 65.0, 66.0,
+67.0, and 68.0. The project source and HTTP endpoint defaults remain 65.0.
+Execute Anonymous has a narrower eligibility set: 65.0, 66.0, 67.0, and 68.0.
 
 Source version, HTTP endpoint version, org profile, and LWC bundle metadata are
-independent. An endpoint version never changes source semantics. Each LWC
-bundle must declare an exact supported `apiVersion`; module availability follows
-that bundle value. Execute Anonymous also remains limited to the checked source
-window.
+independent. An endpoint version never changes source semantics. Explicit LWC
+bundle `apiVersion` values must be whole versions from 59.0 through 68.0.
+Unversioned bundles use the compiler default, 68.0; module availability follows
+the effective bundle version.
+
+DataWeave, ConnectApi, and Slack are excluded and unsupported. Hosted services
+remain outside the local runtime contract even when a local DTO or mock exists.
 
 Salesforce release support is generated from the checked Glade Tools release
 contract. Each release snapshot carries a checked source receipt for the exact

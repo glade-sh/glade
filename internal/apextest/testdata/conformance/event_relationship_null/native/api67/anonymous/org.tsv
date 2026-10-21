@@ -1,0 +1,13 @@
+id	group	route	status	value
+EN01	PREDICATE	anonymous	runtime	{"outcome":"runtime","value":1}
+EN02	PREDICATE	anonymous	runtime	{"outcome":"runtime","value":1}
+EN03	PREDICATE	anonymous	runtime	{"outcome":"runtime","value":1}
+EN04	PREDICATE	anonymous	runtime	{"outcome":"runtime","value":0}
+EN05	PREDICATE	anonymous	runtime	{"outcome":"runtime","value":1}
+EN06	PREDICATE	anonymous	runtime	{"outcome":"runtime","value":1}
+EN07	PREDICATE	anonymous	runtime	{"outcome":"runtime","value":0}
+EN08	PREDICATE	anonymous	runtime	{"outcome":"runtime","value":1}
+EN09	PREDICATE	anonymous	runtime	{"outcome":"runtime","value":1}
+EC01	CONTROL	anonymous	runtime	{"outcome":"runtime","value":3}
+EC02	CONTROL	anonymous	runtime	{"outcome":"runtime","value":true}
+EC03	CONTROL	anonymous	runtime	{"outcome":"runtime","value":1}

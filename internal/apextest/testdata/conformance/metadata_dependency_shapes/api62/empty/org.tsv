@@ -1,0 +1,6 @@
+id	outcome	value
+split	compile-rejected	Field does not exist: Words__c on MeadowWords__mdt
+upperA	compile-rejected	 SELECT Code__c FROM MeadowNorth__mdt WHERE        ^ ERROR at Row:1:Column:8 No such column 'Code__c' on entity 'MeadowNorth__mdt'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+upperB	compile-rejected	 SELECT Code__c FROM MeadowSouth__mdt WHERE        ^ ERROR at Row:1:Column:8 No such column 'Code__c' on entity 'MeadowSouth__mdt'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+lower	compile-rejected	 SELECT NameText__c FROM MeadowClient__mdt        ^ ERROR at Row:1:Column:8 No such column 'NameText__c' on entity 'MeadowClient__mdt'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+event	compile-rejected	Field does not exist: Note__c on MeadowPulse__e

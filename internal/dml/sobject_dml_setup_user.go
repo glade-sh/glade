@@ -12,7 +12,7 @@ func applySetupInsertDefaults(objectName string, definition storage.ObjectDefini
 	}
 	defaultRequiredBoolean := func(fieldName string) bool {
 		switch {
-		case (strings.EqualFold(objectName, "PermissionSet") || strings.EqualFold(objectName, "Profile")) && strings.HasPrefix(fieldName, "Permissions"):
+		case strings.EqualFold(objectName, "Profile") && strings.HasPrefix(fieldName, "Permissions"):
 			return true
 		case strings.EqualFold(objectName, "User"):
 			return true
@@ -20,14 +20,31 @@ func applySetupInsertDefaults(objectName string, definition storage.ObjectDefini
 			return false
 		}
 	}
-	if !strings.EqualFold(objectName, "PermissionSet") && !strings.EqualFold(objectName, "Profile") && !strings.EqualFold(objectName, "User") {
+	permissionCheckboxes := strings.EqualFold(objectName, "PermissionSet") || strings.EqualFold(objectName, "ObjectPermissions")
+	if !permissionCheckboxes && !strings.EqualFold(objectName, "Profile") && !strings.EqualFold(objectName, "User") {
 		return
 	}
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)
 	}
+	// DML-created permission sets are custom; the catalog default also covers
+	// system-owned permission sets that are not created through this path.
+	if strings.EqualFold(objectName, "PermissionSet") {
+		if field, present := storage.ResolveFieldName(definition, "", "IsCustom"); present && definition.Fields[field].Type == storage.FieldBoolean {
+			record.Fields[field] = storage.BooleanValue(true)
+		}
+	}
 	for name, field := range definition.Fields {
-		if field.Type != storage.FieldBoolean || !field.Required || !defaultRequiredBoolean(name) {
+		defaultBoolean := false
+		if permissionCheckboxes {
+			defaultBoolean = storage.FieldFlagValue(field.Createable, false) && !storage.FieldFlagValue(field.Nillable, true)
+			if strings.EqualFold(objectName, "PermissionSet") {
+				defaultBoolean = defaultBoolean && strings.HasPrefix(field.APIName, "Permissions")
+			}
+		} else {
+			defaultBoolean = field.Required && defaultRequiredBoolean(name)
+		}
+		if field.Type != storage.FieldBoolean || !defaultBoolean {
 			continue
 		}
 		if _, ok := record.GetField(name); ok {
@@ -140,6 +157,7 @@ func (e *Engine) afterInsertUser(record storage.Record) {
 		},
 	}
 	e.Org.Objects["UserLogin"] = state
+	e.RecordCreations.Record(id)
 }
 
 func (e *Engine) ensureUserProfilePermissionSetAssignment(record storage.Record) {
@@ -182,6 +200,7 @@ func (e *Engine) ensureUserProfilePermissionSetAssignment(record storage.Record)
 		},
 	}
 	e.Org.Objects["PermissionSetAssignment"] = state
+	e.RecordCreations.Record(id)
 }
 
 func profileOwnedPermissionSetID(org storage.OrgState, profileID storage.ID) storage.ID {

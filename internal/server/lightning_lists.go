@@ -22,16 +22,21 @@ import (
 
 // List reads share the same transport, but preserve their distinct native
 // resource errors and batch envelopes. No fixture identities enter this path.
-// Captured resource URLs use the latest platform API, including floor callers.
+//
+// orgReleaseListRESTAPIVersion is an org-release version: the API at which
+// Lightning Data Service calls the UI API, whatever the component's version.
+// Direct UI API calls echo the request version in body URLs (rows
+// ui_related_list_info_account and ui_list_info_collection_account in
+// testdata/rest_api_version_routes.json). List wire requests carry no
+// version, and the captured related lists list views and app APIs rows for API 59.0 components
+// (r_relatedInfos_normal, r_objectLists_normal and others in
+// internal/lwc/compile/testdata/l11_salesforce.json) carry v67.0 URLs, the
+// capture org's release. It is not the newest endpoint version: move it only
+// with list rows recaptured on a newer release.
+const orgReleaseListRESTAPIVersion = "67.0"
+
 func latestListRESTAPIVersion() string {
-	latest, major := storage.DefaultRESTAPIVersion, 0
-	for _, version := range storage.SupportedRESTAPIVersions {
-		candidate, err := strconv.Atoi(strings.SplitN(version, ".", 2)[0])
-		if err == nil && candidate > major {
-			latest, major = version, candidate
-		}
-	}
-	return latest
+	return orgReleaseListRESTAPIVersion
 }
 
 func (s *Server) handleLightningListRead(w http.ResponseWriter, r *http.Request, operation string) {

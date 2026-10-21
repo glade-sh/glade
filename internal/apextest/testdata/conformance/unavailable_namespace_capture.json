@@ -1,0 +1,483 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "packetRowsSha256": "ebaccc8ae0fa7025ad3854c9b2f0491466dee11a884e4ed5f90e475bf3461f6e",
+  "rows": [
+    {
+      "id": "C115W3_001",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Absent synthetic namespace and simple type",
+      "role": "rejection",
+      "routes": {
+        "anonymous": {
+          "id": "C115W3_001A",
+          "anonymous": "String obs; try {AbsentVendor.Widget x; obs='compiled';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W3_001A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "1d44247aa986d4003a0e50e8340a49ad93a961389368975c640508284fbbdafd"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "problem": "Invalid type: AbsentVendor.Widget"
+            }
+          ]
+        },
+        "isTest": {
+          "id": "C115W3_001T",
+          "classes": {
+            "CAC115W3001Test": "@IsTest private class CAC115W3001Test {@IsTest static void observe(){String obs; try {AbsentVendor.Widget x; obs='compiled';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W3_001T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC115W3001Test"
+          ],
+          "sourceSha256": {
+            "class:CAC115W3001Test": "8c8e0e91f543f3005bc8e2feb3e6ba093f8a3678f86ee6cba4e0540c080f0ece"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC115W3001Test",
+              "problem": "Invalid type: AbsentVendor.Widget",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        }
+      }
+    },
+    {
+      "id": "C115W3_002",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Absent namespace with nested type",
+      "role": "rejection",
+      "routes": {
+        "anonymous": {
+          "id": "C115W3_002A",
+          "anonymous": "String obs; try {AbsentVendor.Widget.Inner x; obs='compiled';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W3_002A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "ebd34431044bc1a02630a1a63c89e3d6cb9377b3d9b6329862a8508a5aa19893"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "problem": "Invalid type: AbsentVendor.Widget.Inner"
+            }
+          ]
+        },
+        "isTest": {
+          "id": "C115W3_002T",
+          "classes": {
+            "CAC115W3002Test": "@IsTest private class CAC115W3002Test {@IsTest static void observe(){String obs; try {AbsentVendor.Widget.Inner x; obs='compiled';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W3_002T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC115W3002Test"
+          ],
+          "sourceSha256": {
+            "class:CAC115W3002Test": "54a60e4068a11606d556d9fad17a700f947f8c28e72462fe58494433ade9e84a"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC115W3002Test",
+              "problem": "Invalid type: AbsentVendor.Widget.Inner",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        }
+      }
+    },
+    {
+      "id": "C115W3_003",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Loaded local Widget with nested Inner",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C115W3_003A",
+          "anonymous": "String obs; try { CAC115W3003.Inner x=new CAC115W3003.Inner(); obs=String.valueOf(x.n);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W3_003A|'+obs);",
+          "setupClasses": {
+            "CAC115W3003": "public class CAC115W3003 {public class Inner {public Integer n=1;}}"
+          },
+          "sourceSha256": {
+            "anonymous": "616cd7194d0f8559f4e71823b60a10d1bab6f624d632be7d7be07c9c7aba9350",
+            "setupClass:CAC115W3003": "7d690fb270f98285dd0ee5db46ba4b2c09cd59ac094e04a097f867d080995b7d"
+          },
+          "stage": "setup-rejected",
+          "nativeDiagnostics": [
+            {
+              "name": "CAC115W3003",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Identifier name is reserved: Inner"
+            }
+          ],
+          "nativeSetupRejection": "native rejects the setup class with Identifier name is reserved: Inner"
+        },
+        "isTest": {
+          "id": "C115W3_003T",
+          "classes": {
+            "CAC115W3003Test": "@IsTest private class CAC115W3003Test {@IsTest static void observe(){String obs; try { CAC115W3003.Inner x=new CAC115W3003.Inner(); obs=String.valueOf(x.n);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W3_003T|'+obs);}}",
+            "CAC115W3003": "public class CAC115W3003 {public class Inner {public Integer n=1;}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC115W3003Test"
+          ],
+          "sourceSha256": {
+            "class:CAC115W3003Test": "831b49f209b4b6294c339804ce761808087c78987b2a9b18fa786ba27474a301",
+            "class:CAC115W3003": "7d690fb270f98285dd0ee5db46ba4b2c09cd59ac094e04a097f867d080995b7d"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC115W3003",
+              "problem": "Identifier name is reserved: Inner",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "CAC115W3003Test",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class CAC115W3003 : Identifier name is reserved: Inner",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc",
+            "setupSha256": "b36705a7ac78011939fb74fbbae8aa58718540c2eb8348b23275e031a7f28c36"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc",
+            "setupSha256": "b36705a7ac78011939fb74fbbae8aa58718540c2eb8348b23275e031a7f28c36"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc",
+            "setupSha256": "b36705a7ac78011939fb74fbbae8aa58718540c2eb8348b23275e031a7f28c36"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        }
+      }
+    },
+    {
+      "id": "C115W3_004",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Platform-qualified String boundary from the candidate test",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C115W3_004A",
+          "anonymous": "String obs; try {System.String x; obs='compiled';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W3_004A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "ce55d3b13448f67f527a9d0b0c5b6d92a713444d44c66ee526fed4a960717752"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "problem": "Invalid type: System.String"
+            }
+          ]
+        },
+        "isTest": {
+          "id": "C115W3_004T",
+          "classes": {
+            "CAC115W3004Test": "@IsTest private class CAC115W3004Test {@IsTest static void observe(){String obs; try {System.String x; obs='compiled';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W3_004T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC115W3004Test"
+          ],
+          "sourceSha256": {
+            "class:CAC115W3004Test": "12b7f8b35c4cd1408ebe84963e1a1009c81f99cf881291ed64fcb9d21c720dc0"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC115W3004Test",
+              "problem": "Invalid type: System.String",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        }
+      }
+    },
+    {
+      "id": "C115W3_005",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Loaded class, absent nested member",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C115W3_005A",
+          "anonymous": "String obs; try {CAC115W3005.AbsentInner x; obs='compiled';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W3_005A|'+obs);",
+          "setupClasses": {
+            "CAC115W3005": "public class CAC115W3005 {public class Inner {}}"
+          },
+          "sourceSha256": {
+            "anonymous": "05e794ecf4aa71592fc80e7225089aa1425e16859445e61d82b231032261517f",
+            "setupClass:CAC115W3005": "7374749ea5fa302828d8208da4e008e6986f88b9bd3e8c0ee2f4116158feae87"
+          },
+          "stage": "setup-rejected",
+          "nativeDiagnostics": [
+            {
+              "name": "CAC115W3005",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Identifier name is reserved: Inner"
+            }
+          ],
+          "nativeSetupRejection": "native rejects the setup class with Identifier name is reserved: Inner"
+        },
+        "isTest": {
+          "id": "C115W3_005T",
+          "classes": {
+            "CAC115W3005Test": "@IsTest private class CAC115W3005Test {@IsTest static void observe(){String obs; try {CAC115W3005.AbsentInner x; obs='compiled';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W3_005T|'+obs);}}",
+            "CAC115W3005": "public class CAC115W3005 {public class Inner {}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC115W3005Test"
+          ],
+          "sourceSha256": {
+            "class:CAC115W3005Test": "679320d44e39901706fedde805c5e43d5f9a9e54119e468f8331a58132bfdfca",
+            "class:CAC115W3005": "7374749ea5fa302828d8208da4e008e6986f88b9bd3e8c0ee2f4116158feae87"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC115W3005",
+              "problem": "Identifier name is reserved: Inner",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "CAC115W3005Test",
+              "problem": "Invalid type: CAC115W3005.AbsentInner",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc",
+            "setupSha256": "8ff3346be2e98f0b4f80b43005badefbc558be93fcb0d450fa6f0465ae864df3"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc",
+            "setupSha256": "8ff3346be2e98f0b4f80b43005badefbc558be93fcb0d450fa6f0465ae864df3"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc",
+            "setupSha256": "8ff3346be2e98f0b4f80b43005badefbc558be93fcb0d450fa6f0465ae864df3"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        }
+      }
+    },
+    {
+      "id": "C115W3_006",
+      "expected": {
+        "outcome": "runtime",
+        "value": "one"
+      },
+      "question": "Unqualified String type control",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C115W3_006A",
+          "anonymous": "String obs; try {String x='one'; obs=x;} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W3_006A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "18cac08341becbb3efce265bd9f968adfc2661f269c0a8f7d43ca44971a9c74a"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C115W3_006T",
+          "classes": {
+            "CAC115W3006Test": "@IsTest private class CAC115W3006Test {@IsTest static void observe(){String obs; try {String x='one'; obs=x;} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W3_006T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC115W3006Test"
+          ],
+          "sourceSha256": {
+            "class:CAC115W3006Test": "babfd5294b3bc5e7af25fdc17c4d76ec774b5e343386caa859c5d639c9df9c92"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          },
+          "isTest": {
+            "tsvSha256": "6f4049ebe342eb6d612a55592452db85f8f74f882f58656c5c9deba45555abcc"
+          }
+        }
+      }
+    }
+  ],
+  "diagnosticContract": "Exact primary native text asserted on each rejected route; full deployment diagnostic arrays preserved, cascades are evidence only",
+  "provenance": "Synthetic source; independent anonymous and check-only named observations. Named native.json artifact excluded; TSV and setup evidence authoritative.",
+  "assertionPolicy": "DATA ONLY: no Glade dependency_missing assertions",
+  "carryReason": "Native compilation observes unavailable qualified types, not local dependency/source availability diagnostic policy. Rows003/005 helper deployment is confounded by reserved Inner. Neutral-name recapture needed to isolate those controls.",
+  "staticAnalysis": {
+    "baseline": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+    "executed": false,
+    "predictionBasis": "Code reading only; semantic and diagnostic-only differences counted separately, both routes/all APIs",
+    "predictedSemanticMismatchShapes": [],
+    "predictedPrimaryDiagnosticMismatchShapes": [],
+    "predictedAssertedMismatches": 0,
+    "codeReferences": [],
+    "proposedChange": "No product-policy proposal from native compilation alone. Keep data-only until local source-availability/dependency policy is independently decided.",
+    "limits": "Rows001/002 reject absent qualified types; row004 rejects System.String; row006 returns one. Rows003/005 setup rejects reserved Inner and does not isolate intended nested/missing-type controls. Native compilation cannot establish dependency_missing reporting severity."
+  }
+}

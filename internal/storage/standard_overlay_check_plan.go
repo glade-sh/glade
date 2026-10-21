@@ -21,9 +21,10 @@ type standardOverlayCheckPlan struct {
 	// catalog time fields, which a stale stub overlay may still model as
 	// references to Time, decode lazily on the first definition that holds
 	// a Time reference, as the unmemoized check did.
-	hasStubFields  bool
-	stubTimeOnce   sync.Once
-	stubTimeFields []string
+	hasStubFields       bool
+	stubTimeOnce        sync.Once
+	stubTimeFields      []string
+	stubReferenceFields []Field
 	// shallowFields are catalog fields with a concrete type. A definition
 	// field that lacks a type, or lacks display metadata the catalog has,
 	// needs a refresh.
@@ -83,6 +84,9 @@ func buildStandardOverlayCheckPlan(objectName string) *standardOverlayCheckPlan 
 	}
 	_, plan.hasStubFields = standardSObjectStubFieldsFor(objectName)
 	plan.readOnlyFields, plan.readOnlyFieldsOK = standardSObjectStubReadOnlyFieldsFor(objectName)
+	if plan.hasStubFields {
+		plan.stubReferenceFields = standardStubReferenceFieldsFromV2Describe(objectName)
+	}
 	entry, ok := standardObjectCatalogEntryForName(objectName)
 	if !ok {
 		return plan
@@ -155,6 +159,13 @@ func standardStubTimeCatalogFields(objectName string) []string {
 }
 
 func (plan *standardOverlayCheckPlan) needsRefresh(definition ObjectDefinition, featureSignature string) bool {
+	// Source-inferred or persisted fields still need compatibility overlays.
+	// Event describe has no Name field, even when an overlay marker is current.
+	if stringsEqualFold(plan.objectName, "Event") {
+		if _, exists := ResolveFieldName(definition, "", "Name"); exists {
+			return true
+		}
+	}
 	if name := plan.generatedNumberField; name != "" {
 		if field, exists := definition.Fields[name]; exists && !field.AutoNumber {
 			return true
@@ -166,6 +177,9 @@ func (plan *standardOverlayCheckPlan) needsRefresh(definition ObjectDefinition, 
 		}
 	}
 	if plan.stubTimeFieldsNeedRepair(definition) {
+		return true
+	}
+	if plan.stubReferenceFieldsNeedRepair(definition, featureSignature) {
 		return true
 	}
 	if !plan.catalogOK {
@@ -194,6 +208,43 @@ func (plan *standardOverlayCheckPlan) needsRefresh(definition ObjectDefinition, 
 		feature, rest, _ := strings.Cut(featureSignature, ",")
 		featureSignature = rest
 		if feature != "" && standardOverlayPicklistsMissing(definition, plan.featurePicklistFields[feature]) {
+			return true
+		}
+	}
+	return false
+}
+
+func (plan *standardOverlayCheckPlan) stubReferenceFieldsNeedRepair(definition ObjectDefinition, featureSignature string) bool {
+	for _, described := range plan.stubReferenceFields {
+		if !standardStubReferenceFieldEnabledForSignature(definition.APIName, described.APIName, featureSignature) {
+			continue
+		}
+		name, exists := ResolveFieldName(definition, "", described.APIName)
+		if !exists {
+			return true
+		}
+		field := definition.Fields[name]
+		if field.Type == FieldLocation || field.Type == "" || field.Type == FieldAny {
+			return true
+		}
+		if field.Type != FieldReference {
+			continue
+		}
+		for _, target := range described.ReferenceTo {
+			if !standardReferenceTargetContains(field.ReferenceTo, target) {
+				return true
+			}
+		}
+		if described.RelationshipName != "" && field.RelationshipName == "" {
+			return true
+		}
+	}
+	return false
+}
+
+func standardReferenceTargetContains(targets []string, wanted string) bool {
+	for _, target := range targets {
+		if strings.EqualFold(target, wanted) {
 			return true
 		}
 	}

@@ -1,0 +1,490 @@
+{
+  "apiVersions": [
+    "63.0",
+    "64.0",
+    "65.0",
+    "66.0"
+  ],
+  "cluster": "event_source_version",
+  "shapeCount": 3,
+  "nativeObservationCount": 24,
+  "assertedObservationCount": 24,
+  "carriedObservationCount": 0,
+  "normalization": "Captured operations and sharing modifiers are unchanged. Assertion transport adapts exception map keys to the shared normalizer. Fixture-name message text and length bind to the local alias. Redacted event IDs assert nullness only. UUIDs assert shape and equality between the record and operation message.",
+  "rows": [
+    {
+      "id": "C168RP_069",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(Text__c='text');Database.SaveResult sr=Database.update(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "5cb5a0bd68d8dfc8d48a1bdd4820b0b12ecdc96e1ad28f6052c998fad323a754",
+          "sourceSha256": {
+            "anonymous": "32d897dcc30c0cbca3f1757883028baa13053281b4d040b1daff6d6328ddc6ce"
+          },
+          "expectedByAPI": {
+            "63.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\",\"length\":59,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation UPDATE not allowed on C138Rc83c160eEvent__e",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "64.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\",\"length\":59,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation UPDATE not allowed on C138Rc83c160eEvent__e",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "65.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\",\"length\":59,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation UPDATE not allowed on C138Rc83c160eEvent__e",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "66.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\",\"length\":59,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation UPDATE not allowed on C138Rc83c160eEvent__e",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            }
+          },
+          "anonymous": "Object v=new Map<String,Object>();try{SObject s=new RpEvent__e(Text__c='text');Database.SaveResult sr=Database.update(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}if(v instanceof Map<String,Object>){Map<String,Object> observation=(Map<String,Object>)v;if(observation.containsKey('record')){Map<String,Object> record=(Map<String,Object>)observation.get('record');if(record.containsKey('EventUuid')){List<Object> errors=(List<Object>)observation.get('errors');observation.put('uuidMatchesOperation',record.get('EventUuid')==((Map<String,Object>)errors[0]).get('message'));}}}new C168CaptureValues().emit(v,'C168RP_069');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(Text__c='text');Database.SaveResult sr=Database.update(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "5cb5a0bd68d8dfc8d48a1bdd4820b0b12ecdc96e1ad28f6052c998fad323a754",
+          "sourceSha256": {
+            "class:BracketC168RP069Test": "681f333a0955a8fc0e1441e9b9d4ac4df43de0cdcf369cce1cbd54f780bc8017"
+          },
+          "expectedByAPI": {
+            "63.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\",\"length\":59,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation UPDATE not allowed on C138Rc83c160eEvent__e",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "64.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\",\"length\":59,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation UPDATE not allowed on C138Rc83c160eEvent__e",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "65.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\",\"length\":59,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation UPDATE not allowed on C138Rc83c160eEvent__e",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "66.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\",\"length\":59,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation UPDATE not allowed on C138Rc83c160eEvent__e",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            }
+          },
+          "tests": [
+            "BracketC168RP069Test"
+          ],
+          "classes": {
+            "BracketC168RP069Test": "@IsTest private without sharing class BracketC168RP069Test{@IsTest static void observe(){Object v=new Map<String,Object>();try{SObject s=new RpEvent__e(Text__c='text');Database.SaveResult sr=Database.update(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}if(v instanceof Map<String,Object>){Map<String,Object> observation=(Map<String,Object>)v;if(observation.containsKey('record')){Map<String,Object> record=(Map<String,Object>)observation.get('record');if(record.containsKey('EventUuid')){List<Object> errors=(List<Object>)observation.get('errors');observation.put('uuidMatchesOperation',record.get('EventUuid')==((Map<String,Object>)errors[0]).get('message'));}}}new C168CaptureValues().emit(v,'C168RP_069');}}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C168RP_098",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "ccc0dc2c9fecc16a51e10cfadeb04e0a288fb0b28bf48d59e237140aaf6b6efe",
+          "sourceSha256": {
+            "anonymous": "1ee9c000433c41a0fdfb78841100b2ad137e3a2d717f559b08a4fa14f4eac4e4"
+          },
+          "expectedByAPI": {
+            "63.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\",\"length\":55,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation INSERT not allowed on BatchApexErrorEvent",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "64.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\",\"length\":55,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation INSERT not allowed on BatchApexErrorEvent",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "65.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\",\"length\":55,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation INSERT not allowed on BatchApexErrorEvent",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "66.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\",\"length\":55,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation INSERT not allowed on BatchApexErrorEvent",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            }
+          },
+          "anonymous": "Object v=new Map<String,Object>();try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}if(v instanceof Map<String,Object>){Map<String,Object> observation=(Map<String,Object>)v;if(observation.containsKey('record')){Map<String,Object> record=(Map<String,Object>)observation.get('record');if(record.containsKey('EventUuid')){List<Object> errors=(List<Object>)observation.get('errors');observation.put('uuidMatchesOperation',record.get('EventUuid')==((Map<String,Object>)errors[0]).get('message'));}}}new C168CaptureValues().emit(v,'C168RP_098');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "ccc0dc2c9fecc16a51e10cfadeb04e0a288fb0b28bf48d59e237140aaf6b6efe",
+          "sourceSha256": {
+            "class:BracketC168RP098Test": "50538a780d2061096b23bc391d279aaa06a61ae72b6abacc704460934c1b591f"
+          },
+          "expectedByAPI": {
+            "63.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"isNull\":false},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"fields\":[],\"message\":{\"length\":36,\"uuidShaped\":true}}],\"record\":{}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "record": {},
+                  "errors": [
+                    {
+                      "fields": [],
+                      "message": "2f697374-b15b-4e4e-a095-e639ae8cf032",
+                      "status": "OPERATION_ENQUEUED"
+                    }
+                  ],
+                  "id": "[ID]",
+                  "success": true
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "64.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"isNull\":false},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"fields\":[],\"message\":{\"length\":36,\"uuidShaped\":true}}],\"record\":{}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "record": {},
+                  "errors": [
+                    {
+                      "fields": [],
+                      "message": "c90ed6c5-5180-44f7-920a-02f30219b093",
+                      "status": "OPERATION_ENQUEUED"
+                    }
+                  ],
+                  "id": "[ID]",
+                  "success": true
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "65.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"isNull\":false},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"fields\":[],\"message\":{\"length\":36,\"uuidShaped\":true}}],\"record\":{}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "record": {},
+                  "errors": [
+                    {
+                      "fields": [],
+                      "message": "a9f63413-af6e-45c9-aaf6-3a78a64d41dc",
+                      "status": "OPERATION_ENQUEUED"
+                    }
+                  ],
+                  "id": "[ID]",
+                  "success": true
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "66.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"isNull\":false},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"fields\":[],\"message\":{\"length\":36,\"uuidShaped\":true}}],\"record\":{}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "record": {},
+                  "errors": [
+                    {
+                      "fields": [],
+                      "message": "47108bf8-4c0e-40ca-98a1-6d1ff1db17f6",
+                      "status": "OPERATION_ENQUEUED"
+                    }
+                  ],
+                  "id": "[ID]",
+                  "success": true
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            }
+          },
+          "tests": [
+            "BracketC168RP098Test"
+          ],
+          "classes": {
+            "BracketC168RP098Test": "@IsTest private without sharing class BracketC168RP098Test{@IsTest static void observe(){Object v=new Map<String,Object>();try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}if(v instanceof Map<String,Object>){Map<String,Object> observation=(Map<String,Object>)v;if(observation.containsKey('record')){Map<String,Object> record=(Map<String,Object>)observation.get('record');if(record.containsKey('EventUuid')){List<Object> errors=(List<Object>)observation.get('errors');observation.put('uuidMatchesOperation',record.get('EventUuid')==((Map<String,Object>)errors[0]).get('message'));}}}new C168CaptureValues().emit(v,'C168RP_098');}}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C168RP_099",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "bb3f376e4802acea06865af2cee2c648bb3ad0ed71aac514ae1a78b0a3d3ed15",
+          "sourceSha256": {
+            "anonymous": "f1cbaaed0bc52153e6bdc5706dd40677aa9788a482baca717e4b7fd748e5efaf"
+          },
+          "expectedByAPI": {
+            "63.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\",\"length\":55,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation INSERT not allowed on BatchApexErrorEvent",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "64.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\",\"length\":55,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation INSERT not allowed on BatchApexErrorEvent",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "65.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\",\"length\":55,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation INSERT not allowed on BatchApexErrorEvent",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "66.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\",\"length\":55,\"truncated\":false}}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "message": "DML operation INSERT not allowed on BatchApexErrorEvent",
+                  "type": "System.TypeException"
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            }
+          },
+          "anonymous": "Object v=new Map<String,Object>();try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}if(v instanceof Map<String,Object>){Map<String,Object> observation=(Map<String,Object>)v;if(observation.containsKey('record')){Map<String,Object> record=(Map<String,Object>)observation.get('record');if(record.containsKey('EventUuid')){List<Object> errors=(List<Object>)observation.get('errors');observation.put('uuidMatchesOperation',record.get('EventUuid')==((Map<String,Object>)errors[0]).get('message'));}}}new C168CaptureValues().emit(v,'C168RP_099');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "bb3f376e4802acea06865af2cee2c648bb3ad0ed71aac514ae1a78b0a3d3ed15",
+          "sourceSha256": {
+            "class:BracketC168RP099Test": "76788782d9cdeb11e636080576cee46da0a48e035c69272bb646f5717c24eee9"
+          },
+          "expectedByAPI": {
+            "63.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"isNull\":false},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"fields\":[],\"message\":{\"length\":36,\"uuidShaped\":true}}],\"record\":{\"EventUuid\":{\"isNull\":false,\"length\":36,\"uuidShaped\":true}},\"uuidMatchesOperation\":true}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "record": {
+                    "EventUuid": "bbda0515-b1d6-453b-bb9d-b65362f98fbb"
+                  },
+                  "errors": [
+                    {
+                      "fields": [],
+                      "message": "bbda0515-b1d6-453b-bb9d-b65362f98fbb",
+                      "status": "OPERATION_ENQUEUED"
+                    }
+                  ],
+                  "id": "[ID]",
+                  "success": true
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "64.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"isNull\":false},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"fields\":[],\"message\":{\"length\":36,\"uuidShaped\":true}}],\"record\":{\"EventUuid\":{\"isNull\":false,\"length\":36,\"uuidShaped\":true}},\"uuidMatchesOperation\":true}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "record": {
+                    "EventUuid": "0597f647-86fc-4792-aea8-79b0252272b5"
+                  },
+                  "errors": [
+                    {
+                      "fields": [],
+                      "message": "0597f647-86fc-4792-aea8-79b0252272b5",
+                      "status": "OPERATION_ENQUEUED"
+                    }
+                  ],
+                  "id": "[ID]",
+                  "success": true
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "65.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"isNull\":false},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"fields\":[],\"message\":{\"length\":36,\"uuidShaped\":true}}],\"record\":{\"EventUuid\":{\"isNull\":false,\"length\":36,\"uuidShaped\":true}},\"uuidMatchesOperation\":true}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "record": {
+                    "EventUuid": "7f0520d1-dac2-4ef7-988f-7c074b8786e3"
+                  },
+                  "errors": [
+                    {
+                      "fields": [],
+                      "message": "7f0520d1-dac2-4ef7-988f-7c074b8786e3",
+                      "status": "OPERATION_ENQUEUED"
+                    }
+                  ],
+                  "id": "[ID]",
+                  "success": true
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            },
+            "66.0": {
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"isNull\":false},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"fields\":[],\"message\":{\"length\":36,\"uuidShaped\":true}}],\"record\":{\"EventUuid\":{\"isNull\":false,\"length\":36,\"uuidShaped\":true}},\"uuidMatchesOperation\":true}}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "record": {
+                    "EventUuid": "647984a2-b562-406c-9954-33775d9aab24"
+                  },
+                  "errors": [
+                    {
+                      "fields": [],
+                      "message": "647984a2-b562-406c-9954-33775d9aab24",
+                      "status": "OPERATION_ENQUEUED"
+                    }
+                  ],
+                  "id": "[ID]",
+                  "success": true
+                },
+                "raw_sha256_verified": true
+              },
+              "eventIDNullnessOnly": true
+            }
+          },
+          "tests": [
+            "BracketC168RP099Test"
+          ],
+          "classes": {
+            "BracketC168RP099Test": "@IsTest private without sharing class BracketC168RP099Test{@IsTest static void observe(){Object v=new Map<String,Object>();try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}if(v instanceof Map<String,Object>){Map<String,Object> observation=(Map<String,Object>)v;if(observation.containsKey('record')){Map<String,Object> record=(Map<String,Object>)observation.get('record');if(record.containsKey('EventUuid')){List<Object> errors=(List<Object>)observation.get('errors');observation.put('uuidMatchesOperation',record.get('EventUuid')==((Map<String,Object>)errors[0]).get('message'));}}}new C168CaptureValues().emit(v,'C168RP_099');}}"
+          }
+        }
+      }
+    }
+  ]
+}

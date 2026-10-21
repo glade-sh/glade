@@ -1,0 +1,9 @@
+case	shape
+assignmentCount	foreach scalar field assignment updates all three source-list records
+assignmentDirect	foreach assignment updates a direct alias
+assignmentDuplicate0	foreach assignment updates the first duplicate alias
+assignmentDuplicate1	foreach assignment updates the second duplicate alias
+putCount	foreach dynamic field put updates all three source-list records
+putDirect	foreach put updates a direct alias
+putDuplicate0	foreach put updates the first duplicate alias
+putDuplicate1	foreach put updates the second duplicate alias

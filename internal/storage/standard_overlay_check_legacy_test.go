@@ -1,11 +1,14 @@
 package storage
 
-// The unmemoized standard overlay write check, as it stood before the catalog
-// plan cache. It is the oracle for TestStandardOverlayCheckPlan*.
+// The unmemoized standard overlay write check, with the shared field
+// availability policy. It is the oracle for TestStandardOverlayCheckPlan*.
 
 import "strings"
 
 func legacyStandardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featureSignature string) bool {
+	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) {
+		return true
+	}
 	if name := standardGeneratedNumberField(definition.APIName); name != "" {
 		if field, exists := definition.Fields[name]; exists && !field.AutoNumber {
 			return true
@@ -17,6 +20,9 @@ func legacyStandardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featur
 		}
 	}
 	if legacyStandardStubTimeFieldsNeedRepair(definition) {
+		return true
+	}
+	if legacyStandardStubReferenceFieldsNeedRepair(definition, strings.Split(featureSignature, ",")) {
 		return true
 	}
 	entry, ok := standardObjectCatalogEntryForName(definition.APIName)
@@ -63,6 +69,54 @@ func legacyStandardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featur
 	}
 	for _, feature := range strings.Split(featureSignature, ",") {
 		if feature != "" && missing(entry.FeatureFields[feature]) {
+			return true
+		}
+	}
+	return false
+}
+
+func legacyStandardStubReferenceFieldsNeedRepair(definition ObjectDefinition, features []string) bool {
+	if _, hasStub := standardSObjectStubFieldsFor(definition.APIName); !hasStub {
+		return false
+	}
+	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	if err != nil || !ok {
+		return false
+	}
+	for _, captured := range describe.Fields {
+		if !strings.EqualFold(captured.Type, "reference") || (captured.DeprecatedAndHidden != nil && *captured.DeprecatedAndHidden) {
+			continue
+		}
+		if !standardStubReferenceTargetsAvailable(captured.ReferenceTo) {
+			continue
+		}
+		if !standardStubReferenceFieldEnabled(definition.APIName, captured.Name, features) {
+			continue
+		}
+		name, exists := ResolveFieldName(definition, "", captured.Name)
+		if !exists {
+			return true
+		}
+		field := definition.Fields[name]
+		if field.Type == FieldLocation || field.Type == "" || field.Type == FieldAny {
+			return true
+		}
+		if field.Type != FieldReference {
+			continue
+		}
+		for _, target := range captured.ReferenceTo {
+			found := false
+			for _, existingTarget := range field.ReferenceTo {
+				if strings.EqualFold(existingTarget, target) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return true
+			}
+		}
+		if captured.RelationshipName != "" && field.RelationshipName == "" {
 			return true
 		}
 	}

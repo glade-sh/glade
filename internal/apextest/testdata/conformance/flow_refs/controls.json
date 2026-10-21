@@ -1,0 +1,449 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "controls",
+  "shapeCount": 2,
+  "nativeObservationCount": 12,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C182CONTROL_001",
+      "group": "CONTROL",
+      "role": "control",
+      "label": "row-bound marker control",
+      "byAPI": {
+        "62.0": {
+          "files": {
+            "force-app/main/default/objects/C182624d2e06e2Fr__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>Text__c</fullName><label>C182624d2e06e2 Text</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Type__c</fullName><label>C182624d2e06e2 Type</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Flag__c</fullName><defaultValue>false</defaultValue><label>C182624d2e06e2 Flag</label><type>Checkbox</type></fields><fields><fullName>Parent__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>C182624d2e06e2 Parent</label><referenceTo>C182624d2e06e2Fr__c</referenceTo><relationshipLabel>C182624d2e06e2 Children</relationshipLabel><relationshipName>C182624d2e06e2Children</relationshipName><required>false</required><type>Lookup</type></fields><fields><fullName>Result__c</fullName><label>C182624d2e06e2 Result</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Field__c</fullName><label>C182624d2e06e2 Field</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Pick__c</fullName><label>C182624d2e06e2 Pick</label><required>false</required><type>Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition><sorted>false</sorted><value><fullName>Alpha</fullName><default>false</default><label>Alpha</label></value><value><fullName>Beta</fullName><default>false</default><label>Beta</label></value></valueSetDefinition></valueSet></fields><fields><fullName>Formula__c</fullName><formula>Text__c</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><label>C182624d2e06e2 Formula</label><type>Text</type></fields><label>C182624d2e06e2 Flow Record</label><nameField><label>C182624d2e06e2 Name</label><type>Text</type></nameField><pluralLabel>C182624d2e06e2 Flow Records</pluralLabel><recordTypes><fullName>Rt1</fullName><active>true</active><label>C182624d2e06e2 Rt1</label><picklistValues><picklist>Pick__c</picklist><values><fullName>Alpha</fullName><default>false</default></values><values><fullName>Beta</fullName><default>false</default></values></picklistValues></recordTypes><recordTypes><fullName>Rt2</fullName><active>true</active><label>C182624d2e06e2 Rt2</label><picklistValues><picklist>Pick__c</picklist><values><fullName>Alpha</fullName><default>false</default></values><values><fullName>Beta</fullName><default>false</default></values></picklistValues></recordTypes><sharingModel>ReadWrite</sharingModel></CustomObject>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/C182624d2e06e2Fr__c.object": "a94e0cb7b6fcc83059497d7f14221659f4c335fe413890668ae69abfa71c3f23"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'C126_RESULT|C182CONTROL_001|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "869639c16e2916cb66f52233b738668ba4477b0ab6dd45628cc34d79fbd146d5"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "value": {
+                  "value": 7
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "C182Observe001Control": "@IsTest private class C182Observe001Control{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'C126_RESULT|C182CONTROL_001|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "C182Observe001Control"
+              ],
+              "sourceSha256": {
+                "C182Observe001Control": "b8b9b66d1f961265e488e243b6c0b744e832377ad95bcec3df2b792aa2cf8959"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "value": {
+                  "value": 7
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "files": {
+            "force-app/main/default/objects/C18267d9421f20Fr__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>Text__c</fullName><label>C18267d9421f20 Text</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Type__c</fullName><label>C18267d9421f20 Type</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Flag__c</fullName><defaultValue>false</defaultValue><label>C18267d9421f20 Flag</label><type>Checkbox</type></fields><fields><fullName>Parent__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>C18267d9421f20 Parent</label><referenceTo>C18267d9421f20Fr__c</referenceTo><relationshipLabel>C18267d9421f20 Children</relationshipLabel><relationshipName>C18267d9421f20Children</relationshipName><required>false</required><type>Lookup</type></fields><fields><fullName>Result__c</fullName><label>C18267d9421f20 Result</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Field__c</fullName><label>C18267d9421f20 Field</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Pick__c</fullName><label>C18267d9421f20 Pick</label><required>false</required><type>Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition><sorted>false</sorted><value><fullName>Alpha</fullName><default>false</default><label>Alpha</label></value><value><fullName>Beta</fullName><default>false</default><label>Beta</label></value></valueSetDefinition></valueSet></fields><fields><fullName>Formula__c</fullName><formula>Text__c</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><label>C18267d9421f20 Formula</label><type>Text</type></fields><label>C18267d9421f20 Flow Record</label><nameField><label>C18267d9421f20 Name</label><type>Text</type></nameField><pluralLabel>C18267d9421f20 Flow Records</pluralLabel><recordTypes><fullName>Rt1</fullName><active>true</active><label>C18267d9421f20 Rt1</label><picklistValues><picklist>Pick__c</picklist><values><fullName>Alpha</fullName><default>false</default></values><values><fullName>Beta</fullName><default>false</default></values></picklistValues></recordTypes><recordTypes><fullName>Rt2</fullName><active>true</active><label>C18267d9421f20 Rt2</label><picklistValues><picklist>Pick__c</picklist><values><fullName>Alpha</fullName><default>false</default></values><values><fullName>Beta</fullName><default>false</default></values></picklistValues></recordTypes><sharingModel>ReadWrite</sharingModel></CustomObject>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/C18267d9421f20Fr__c.object": "0ff786bd8d7aaad03940dc64921173f9cfdb3ad7d0340e4e8573eb9d891a198a"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'C126_RESULT|C182CONTROL_001|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "869639c16e2916cb66f52233b738668ba4477b0ab6dd45628cc34d79fbd146d5"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "value": {
+                  "value": 7
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "C182Observe001Control": "@IsTest private class C182Observe001Control{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'C126_RESULT|C182CONTROL_001|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "C182Observe001Control"
+              ],
+              "sourceSha256": {
+                "C182Observe001Control": "b8b9b66d1f961265e488e243b6c0b744e832377ad95bcec3df2b792aa2cf8959"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "value": {
+                  "value": 7
+                }
+              }
+            }
+          }
+        },
+        "68.0": {
+          "files": {
+            "force-app/main/default/objects/C182687b273a8dFr__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>Text__c</fullName><label>C182687b273a8d Text</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Type__c</fullName><label>C182687b273a8d Type</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Flag__c</fullName><defaultValue>false</defaultValue><label>C182687b273a8d Flag</label><type>Checkbox</type></fields><fields><fullName>Parent__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>C182687b273a8d Parent</label><referenceTo>C182687b273a8dFr__c</referenceTo><relationshipLabel>C182687b273a8d Children</relationshipLabel><relationshipName>C182687b273a8dChildren</relationshipName><required>false</required><type>Lookup</type></fields><fields><fullName>Result__c</fullName><label>C182687b273a8d Result</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Field__c</fullName><label>C182687b273a8d Field</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Pick__c</fullName><label>C182687b273a8d Pick</label><required>false</required><type>Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition><sorted>false</sorted><value><fullName>Alpha</fullName><default>false</default><label>Alpha</label></value><value><fullName>Beta</fullName><default>false</default><label>Beta</label></value></valueSetDefinition></valueSet></fields><fields><fullName>Formula__c</fullName><formula>Text__c</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><label>C182687b273a8d Formula</label><type>Text</type></fields><label>C182687b273a8d Flow Record</label><nameField><label>C182687b273a8d Name</label><type>Text</type></nameField><pluralLabel>C182687b273a8d Flow Records</pluralLabel><recordTypes><fullName>Rt1</fullName><active>true</active><label>C182687b273a8d Rt1</label><picklistValues><picklist>Pick__c</picklist><values><fullName>Alpha</fullName><default>false</default></values><values><fullName>Beta</fullName><default>false</default></values></picklistValues></recordTypes><recordTypes><fullName>Rt2</fullName><active>true</active><label>C182687b273a8d Rt2</label><picklistValues><picklist>Pick__c</picklist><values><fullName>Alpha</fullName><default>false</default></values><values><fullName>Beta</fullName><default>false</default></values></picklistValues></recordTypes><sharingModel>ReadWrite</sharingModel></CustomObject>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/C182687b273a8dFr__c.object": "19bb2be1e4084bc3dd7aabdd65a7d58cc01d5a56f8dde5523681e31e4c3b977c"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'C126_RESULT|C182CONTROL_001|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "869639c16e2916cb66f52233b738668ba4477b0ab6dd45628cc34d79fbd146d5"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "value": {
+                  "value": 7
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "C182Observe001Control": "@IsTest private class C182Observe001Control{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'C126_RESULT|C182CONTROL_001|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "C182Observe001Control"
+              ],
+              "sourceSha256": {
+                "C182Observe001Control": "b8b9b66d1f961265e488e243b6c0b744e832377ad95bcec3df2b792aa2cf8959"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "value": {
+                  "value": 7
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C182FLOWCONTROL_001",
+      "group": "FLOW_CONTROL",
+      "role": "flow_control",
+      "label": "positive active Flow branch control",
+      "byAPI": {
+        "62.0": {
+          "files": {
+            "force-app/main/default/objects/C182624d2e06e2Fr__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>Text__c</fullName><label>C182624d2e06e2 Text</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Type__c</fullName><label>C182624d2e06e2 Type</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Flag__c</fullName><defaultValue>false</defaultValue><label>C182624d2e06e2 Flag</label><type>Checkbox</type></fields><fields><fullName>Parent__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>C182624d2e06e2 Parent</label><referenceTo>C182624d2e06e2Fr__c</referenceTo><relationshipLabel>C182624d2e06e2 Children</relationshipLabel><relationshipName>C182624d2e06e2Children</relationshipName><required>false</required><type>Lookup</type></fields><fields><fullName>Result__c</fullName><label>C182624d2e06e2 Result</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Field__c</fullName><label>C182624d2e06e2 Field</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Pick__c</fullName><label>C182624d2e06e2 Pick</label><required>false</required><type>Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition><sorted>false</sorted><value><fullName>Alpha</fullName><default>false</default><label>Alpha</label></value><value><fullName>Beta</fullName><default>false</default><label>Beta</label></value></valueSetDefinition></valueSet></fields><fields><fullName>Formula__c</fullName><formula>Text__c</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><label>C182624d2e06e2 Formula</label><type>Text</type></fields><label>C182624d2e06e2 Flow Record</label><nameField><label>C182624d2e06e2 Name</label><type>Text</type></nameField><pluralLabel>C182624d2e06e2 Flow Records</pluralLabel><recordTypes><fullName>Rt1</fullName><active>true</active><label>C182624d2e06e2 Rt1</label><picklistValues><picklist>Pick__c</picklist><values><fullName>Alpha</fullName><default>false</default></values><values><fullName>Beta</fullName><default>false</default></values></picklistValues></recordTypes><recordTypes><fullName>Rt2</fullName><active>true</active><label>C182624d2e06e2 Rt2</label><picklistValues><picklist>Pick__c</picklist><values><fullName>Alpha</fullName><default>false</default></values><values><fullName>Beta</fullName><default>false</default></values></picklistValues></recordTypes><sharingModel>ReadWrite</sharingModel></CustomObject>",
+            "force-app/main/default/flows/C182624d2e06e2C182FLOWCONTROL001_62.flow-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><assignments><name>WriteTaken</name><label>WriteTaken</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Result__c</assignToReference><operator>Assign</operator><value><stringValue>Taken</stringValue></value></assignmentItems></assignments><assignments><name>WriteDefault</name><label>WriteDefault</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Result__c</assignToReference><operator>Assign</operator><value><stringValue>Default</stringValue></value></assignmentItems></assignments><decisions><name>Decide</name><label>Decide</label><locationX>0</locationX><locationY>0</locationY><defaultConnector><targetReference>WriteDefault</targetReference></defaultConnector><defaultConnectorLabel>Default</defaultConnectorLabel><rules><name>Taken</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>$Record.Flag__c</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><connector><targetReference>WriteTaken</targetReference></connector><label>Taken</label></rules></decisions><interviewLabel>C182624d2e06e2C182FLOWCONTROL001_62 {!$Flow.CurrentDateTime}</interviewLabel><label>C182624d2e06e2C182FLOWCONTROL001_62</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Decide</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><filters><field>Result__c</field><operator>IsNull</operator><value><booleanValue>true</booleanValue></value></filters><object>C182624d2e06e2Fr__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/C182624d2e06e2Fr__c.object": "a94e0cb7b6fcc83059497d7f14221659f4c335fe413890668ae69abfa71c3f23",
+            "force-app/main/default/flows/C182624d2e06e2C182FLOWCONTROL001_62.flow-meta.xml": "4ab1642377daea3d847947aac2a109c49dd391ee1a27059bcde41dfa7d0b2da2"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{List<Object> snapshots=new List<Object>();payload.put('snapshots',snapshots);C182624d2e06e2Fr__c subject=new C182624d2e06e2Fr__c(Name='subject',Flag__c=true);insert subject;subject=[SELECT Result__c FROM C182624d2e06e2Fr__c WHERE Id=:subject.Id];snapshots.add(new Map<String,Object>{'phase'=>'insert','result'=>subject.Result__c});subject.Result__c=null;subject.Flag__c=true;update subject;subject=[SELECT Result__c FROM C182624d2e06e2Fr__c WHERE Id=:subject.Id];snapshots.add(new Map<String,Object>{'phase'=>'update','result'=>subject.Result__c});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'C126_RESULT|C182FLOWCONTROL_001|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "ec3e78fee504f3870e7f83dca01d31700d3cb01a435817cb6ee0b7437b3d22e0"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "snapshots": [
+                      {
+                        "result": "Taken",
+                        "phase": "insert"
+                      },
+                      {
+                        "result": "Taken",
+                        "phase": "update"
+                      }
+                    ]
+                  }
+                },
+                "value": {
+                  "snapshots": [
+                    {
+                      "result": "Taken",
+                      "phase": "insert"
+                    },
+                    {
+                      "result": "Taken",
+                      "phase": "update"
+                    }
+                  ]
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "C182Observe001FlowControl": "@IsTest private class C182Observe001FlowControl{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> snapshots=new List<Object>();payload.put('snapshots',snapshots);C182624d2e06e2Fr__c subject=new C182624d2e06e2Fr__c(Name='subject',Flag__c=true);insert subject;subject=[SELECT Result__c FROM C182624d2e06e2Fr__c WHERE Id=:subject.Id];snapshots.add(new Map<String,Object>{'phase'=>'insert','result'=>subject.Result__c});subject.Result__c=null;subject.Flag__c=true;update subject;subject=[SELECT Result__c FROM C182624d2e06e2Fr__c WHERE Id=:subject.Id];snapshots.add(new Map<String,Object>{'phase'=>'update','result'=>subject.Result__c});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'C126_RESULT|C182FLOWCONTROL_001|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "C182Observe001FlowControl"
+              ],
+              "sourceSha256": {
+                "C182Observe001FlowControl": "dcfca42f836e4fd942c9fa0b77b75540b17768ea6f280ed6d1995c2cd5fce78b"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "snapshots": [
+                      {
+                        "result": "Taken",
+                        "phase": "insert"
+                      },
+                      {
+                        "result": "Taken",
+                        "phase": "update"
+                      }
+                    ]
+                  }
+                },
+                "value": {
+                  "snapshots": [
+                    {
+                      "result": "Taken",
+                      "phase": "insert"
+                    },
+                    {
+                      "result": "Taken",
+                      "phase": "update"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "files": {
+            "force-app/main/default/objects/C18267d9421f20Fr__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>Text__c</fullName><label>C18267d9421f20 Text</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Type__c</fullName><label>C18267d9421f20 Type</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Flag__c</fullName><defaultValue>false</defaultValue><label>C18267d9421f20 Flag</label><type>Checkbox</type></fields><fields><fullName>Parent__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>C18267d9421f20 Parent</label><referenceTo>C18267d9421f20Fr__c</referenceTo><relationshipLabel>C18267d9421f20 Children</relationshipLabel><relationshipName>C18267d9421f20Children</relationshipName><required>false</required><type>Lookup</type></fields><fields><fullName>Result__c</fullName><label>C18267d9421f20 Result</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Field__c</fullName><label>C18267d9421f20 Field</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Pick__c</fullName><label>C18267d9421f20 Pick</label><required>false</required><type>Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition><sorted>false</sorted><value><fullName>Alpha</fullName><default>false</default><label>Alpha</label></value><value><fullName>Beta</fullName><default>false</default><label>Beta</label></value></valueSetDefinition></valueSet></fields><fields><fullName>Formula__c</fullName><formula>Text__c</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><label>C18267d9421f20 Formula</label><type>Text</type></fields><label>C18267d9421f20 Flow Record</label><nameField><label>C18267d9421f20 Name</label><type>Text</type></nameField><pluralLabel>C18267d9421f20 Flow Records</pluralLabel><recordTypes><fullName>Rt1</fullName><active>true</active><label>C18267d9421f20 Rt1</label><picklistValues><picklist>Pick__c</picklist><values><fullName>Alpha</fullName><default>false</default></values><values><fullName>Beta</fullName><default>false</default></values></picklistValues></recordTypes><recordTypes><fullName>Rt2</fullName><active>true</active><label>C18267d9421f20 Rt2</label><picklistValues><picklist>Pick__c</picklist><values><fullName>Alpha</fullName><default>false</default></values><values><fullName>Beta</fullName><default>false</default></values></picklistValues></recordTypes><sharingModel>ReadWrite</sharingModel></CustomObject>",
+            "force-app/main/default/flows/C18267d9421f20C182FLOWCONTROL001_67.flow-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><assignments><name>WriteTaken</name><label>WriteTaken</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Result__c</assignToReference><operator>Assign</operator><value><stringValue>Taken</stringValue></value></assignmentItems></assignments><assignments><name>WriteDefault</name><label>WriteDefault</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Result__c</assignToReference><operator>Assign</operator><value><stringValue>Default</stringValue></value></assignmentItems></assignments><decisions><name>Decide</name><label>Decide</label><locationX>0</locationX><locationY>0</locationY><defaultConnector><targetReference>WriteDefault</targetReference></defaultConnector><defaultConnectorLabel>Default</defaultConnectorLabel><rules><name>Taken</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>$Record.Flag__c</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><connector><targetReference>WriteTaken</targetReference></connector><label>Taken</label></rules></decisions><interviewLabel>C18267d9421f20C182FLOWCONTROL001_67 {!$Flow.CurrentDateTime}</interviewLabel><label>C18267d9421f20C182FLOWCONTROL001_67</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Decide</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><filters><field>Result__c</field><operator>IsNull</operator><value><booleanValue>true</booleanValue></value></filters><object>C18267d9421f20Fr__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/C18267d9421f20Fr__c.object": "0ff786bd8d7aaad03940dc64921173f9cfdb3ad7d0340e4e8573eb9d891a198a",
+            "force-app/main/default/flows/C18267d9421f20C182FLOWCONTROL001_67.flow-meta.xml": "09850ca449a128d586bb7736df0cc57722db655125fd02f98da7a52d400407ea"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{List<Object> snapshots=new List<Object>();payload.put('snapshots',snapshots);C18267d9421f20Fr__c subject=new C18267d9421f20Fr__c(Name='subject',Flag__c=true);insert subject;subject=[SELECT Result__c FROM C18267d9421f20Fr__c WHERE Id=:subject.Id];snapshots.add(new Map<String,Object>{'phase'=>'insert','result'=>subject.Result__c});subject.Result__c=null;subject.Flag__c=true;update subject;subject=[SELECT Result__c FROM C18267d9421f20Fr__c WHERE Id=:subject.Id];snapshots.add(new Map<String,Object>{'phase'=>'update','result'=>subject.Result__c});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'C126_RESULT|C182FLOWCONTROL_001|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "ed42d39ce8cca4ccc1d3421f182b2ee9fa46a8bf1ed2dc74411003b95928fb91"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "snapshots": [
+                      {
+                        "result": "Taken",
+                        "phase": "insert"
+                      },
+                      {
+                        "result": "Taken",
+                        "phase": "update"
+                      }
+                    ]
+                  }
+                },
+                "value": {
+                  "snapshots": [
+                    {
+                      "result": "Taken",
+                      "phase": "insert"
+                    },
+                    {
+                      "result": "Taken",
+                      "phase": "update"
+                    }
+                  ]
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "C182Observe001FlowControl": "@IsTest private class C182Observe001FlowControl{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> snapshots=new List<Object>();payload.put('snapshots',snapshots);C18267d9421f20Fr__c subject=new C18267d9421f20Fr__c(Name='subject',Flag__c=true);insert subject;subject=[SELECT Result__c FROM C18267d9421f20Fr__c WHERE Id=:subject.Id];snapshots.add(new Map<String,Object>{'phase'=>'insert','result'=>subject.Result__c});subject.Result__c=null;subject.Flag__c=true;update subject;subject=[SELECT Result__c FROM C18267d9421f20Fr__c WHERE Id=:subject.Id];snapshots.add(new Map<String,Object>{'phase'=>'update','result'=>subject.Result__c});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'C126_RESULT|C182FLOWCONTROL_001|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "C182Observe001FlowControl"
+              ],
+              "sourceSha256": {
+                "C182Observe001FlowControl": "795542cd8aec548dc22d186e2f426b5f0b728b72673fe57391f07f8488949f2b"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "snapshots": [
+                      {
+                        "result": "Taken",
+                        "phase": "insert"
+                      },
+                      {
+                        "result": "Taken",
+                        "phase": "update"
+                      }
+                    ]
+                  }
+                },
+                "value": {
+                  "snapshots": [
+                    {
+                      "result": "Taken",
+                      "phase": "insert"
+                    },
+                    {
+                      "result": "Taken",
+                      "phase": "update"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "68.0": {
+          "files": {
+            "force-app/main/default/objects/C182687b273a8dFr__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>Text__c</fullName><label>C182687b273a8d Text</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Type__c</fullName><label>C182687b273a8d Type</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Flag__c</fullName><defaultValue>false</defaultValue><label>C182687b273a8d Flag</label><type>Checkbox</type></fields><fields><fullName>Parent__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>C182687b273a8d Parent</label><referenceTo>C182687b273a8dFr__c</referenceTo><relationshipLabel>C182687b273a8d Children</relationshipLabel><relationshipName>C182687b273a8dChildren</relationshipName><required>false</required><type>Lookup</type></fields><fields><fullName>Result__c</fullName><label>C182687b273a8d Result</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Field__c</fullName><label>C182687b273a8d Field</label><length>80</length><required>false</required><type>Text</type></fields><fields><fullName>Pick__c</fullName><label>C182687b273a8d Pick</label><required>false</required><type>Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition><sorted>false</sorted><value><fullName>Alpha</fullName><default>false</default><label>Alpha</label></value><value><fullName>Beta</fullName><default>false</default><label>Beta</label></value></valueSetDefinition></valueSet></fields><fields><fullName>Formula__c</fullName><formula>Text__c</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><label>C182687b273a8d Formula</label><type>Text</type></fields><label>C182687b273a8d Flow Record</label><nameField><label>C182687b273a8d Name</label><type>Text</type></nameField><pluralLabel>C182687b273a8d Flow Records</pluralLabel><recordTypes><fullName>Rt1</fullName><active>true</active><label>C182687b273a8d Rt1</label><picklistValues><picklist>Pick__c</picklist><values><fullName>Alpha</fullName><default>false</default></values><values><fullName>Beta</fullName><default>false</default></values></picklistValues></recordTypes><recordTypes><fullName>Rt2</fullName><active>true</active><label>C182687b273a8d Rt2</label><picklistValues><picklist>Pick__c</picklist><values><fullName>Alpha</fullName><default>false</default></values><values><fullName>Beta</fullName><default>false</default></values></picklistValues></recordTypes><sharingModel>ReadWrite</sharingModel></CustomObject>",
+            "force-app/main/default/flows/C182687b273a8dC182FLOWCONTROL001_68.flow-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><assignments><name>WriteTaken</name><label>WriteTaken</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Result__c</assignToReference><operator>Assign</operator><value><stringValue>Taken</stringValue></value></assignmentItems></assignments><assignments><name>WriteDefault</name><label>WriteDefault</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Result__c</assignToReference><operator>Assign</operator><value><stringValue>Default</stringValue></value></assignmentItems></assignments><decisions><name>Decide</name><label>Decide</label><locationX>0</locationX><locationY>0</locationY><defaultConnector><targetReference>WriteDefault</targetReference></defaultConnector><defaultConnectorLabel>Default</defaultConnectorLabel><rules><name>Taken</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>$Record.Flag__c</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><connector><targetReference>WriteTaken</targetReference></connector><label>Taken</label></rules></decisions><interviewLabel>C182687b273a8dC182FLOWCONTROL001_68 {!$Flow.CurrentDateTime}</interviewLabel><label>C182687b273a8dC182FLOWCONTROL001_68</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Decide</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><filters><field>Result__c</field><operator>IsNull</operator><value><booleanValue>true</booleanValue></value></filters><object>C182687b273a8dFr__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/C182687b273a8dFr__c.object": "19bb2be1e4084bc3dd7aabdd65a7d58cc01d5a56f8dde5523681e31e4c3b977c",
+            "force-app/main/default/flows/C182687b273a8dC182FLOWCONTROL001_68.flow-meta.xml": "b536c2acb32958e48e34e46f1c68ceaec5c1223dabf60e2a0e74018127c847ca"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{List<Object> snapshots=new List<Object>();payload.put('snapshots',snapshots);C182687b273a8dFr__c subject=new C182687b273a8dFr__c(Name='subject',Flag__c=true);insert subject;subject=[SELECT Result__c FROM C182687b273a8dFr__c WHERE Id=:subject.Id];snapshots.add(new Map<String,Object>{'phase'=>'insert','result'=>subject.Result__c});subject.Result__c=null;subject.Flag__c=true;update subject;subject=[SELECT Result__c FROM C182687b273a8dFr__c WHERE Id=:subject.Id];snapshots.add(new Map<String,Object>{'phase'=>'update','result'=>subject.Result__c});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'C126_RESULT|C182FLOWCONTROL_001|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "0a8328a42982e35c94fa1686f87f8f638c07d1587762d97ca1dd57d660408337"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "snapshots": [
+                      {
+                        "result": "Taken",
+                        "phase": "insert"
+                      },
+                      {
+                        "result": "Taken",
+                        "phase": "update"
+                      }
+                    ]
+                  }
+                },
+                "value": {
+                  "snapshots": [
+                    {
+                      "result": "Taken",
+                      "phase": "insert"
+                    },
+                    {
+                      "result": "Taken",
+                      "phase": "update"
+                    }
+                  ]
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "C182Observe001FlowControl": "@IsTest private class C182Observe001FlowControl{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> snapshots=new List<Object>();payload.put('snapshots',snapshots);C182687b273a8dFr__c subject=new C182687b273a8dFr__c(Name='subject',Flag__c=true);insert subject;subject=[SELECT Result__c FROM C182687b273a8dFr__c WHERE Id=:subject.Id];snapshots.add(new Map<String,Object>{'phase'=>'insert','result'=>subject.Result__c});subject.Result__c=null;subject.Flag__c=true;update subject;subject=[SELECT Result__c FROM C182687b273a8dFr__c WHERE Id=:subject.Id];snapshots.add(new Map<String,Object>{'phase'=>'update','result'=>subject.Result__c});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'C126_RESULT|C182FLOWCONTROL_001|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "C182Observe001FlowControl"
+              ],
+              "sourceSha256": {
+                "C182Observe001FlowControl": "a87ba5404f60a382345142521890aaa504fdb132a3a14ddc26fbd4ba1031d9a6"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "snapshots": [
+                      {
+                        "result": "Taken",
+                        "phase": "insert"
+                      },
+                      {
+                        "result": "Taken",
+                        "phase": "update"
+                      }
+                    ]
+                  }
+                },
+                "value": {
+                  "snapshots": [
+                    {
+                      "result": "Taken",
+                      "phase": "insert"
+                    },
+                    {
+                      "result": "Taken",
+                      "phase": "update"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

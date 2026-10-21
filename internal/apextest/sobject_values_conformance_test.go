@@ -16,7 +16,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Both source APIs consume the same independently captured Salesforce answers.
+// Source APIs 62, 67, and 68 consume independently captured Salesforce answers.
 // Anonymous and @IsTest execution use the runner's ordinary standard-object org.
 func TestSObjectValuesOrgConformance(t *testing.T) {
 	type row struct {
@@ -37,7 +37,7 @@ func TestSObjectValuesOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 299 || len(data.APIVersions) != 2 {
+	if len(data.Cases) != 299 || len(data.APIVersions) != 3 {
 		t.Fatalf("incomplete conformance export: %d rows, APIs %v", len(data.Cases), data.APIVersions)
 	}
 	quote := func(s string) string {
@@ -76,7 +76,7 @@ func TestSObjectValuesOrgConformance(t *testing.T) {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "SObject values", api)
 			emptyRoot := t.TempDir()
-			emptyIndex := typesys.Build(project.Project{Root: emptyRoot}, gladeschema.Schema{})
+			emptyIndex := typesys.Build(project.Project{Root: emptyRoot, SourceAPIVersion: api}, gladeschema.Schema{})
 			org := orgFromIndex(emptyIndex)
 			anonymousRunner := newConformanceRunner(t, emptyIndex, conformanceRunnerOptions{Org: &org})
 			var class strings.Builder
@@ -121,7 +121,7 @@ func TestSObjectValuesOrgConformance(t *testing.T) {
 						path := filepath.Join(root, "InvalidSObjectValues.cls")
 						writeFile(t, path, "@IsTest private class InvalidSObjectValues { @IsTest static void run() {"+body+"} }")
 						writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
-						idx := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+						idx := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{path}}, gladeschema.Schema{})
 						if !idx.HasErrors() && !sema.Analyze(idx).HasErrors() {
 							t.Fatal("Salesforce rejects compilation; @IsTest source accepted")
 						}
@@ -136,7 +136,7 @@ func TestSObjectValuesOrgConformance(t *testing.T) {
 			path := filepath.Join(root, "SObjectValuesConformance.cls")
 			writeFile(t, path, class.String())
 			writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
-			idx := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+			idx := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{path}}, gladeschema.Schema{})
 			if idx.HasErrors() {
 				t.Fatal(idx.Diagnostics)
 			}

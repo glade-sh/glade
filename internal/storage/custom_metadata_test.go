@@ -245,3 +245,64 @@ func onlyRecordID(t *testing.T, records map[ID]Record) ID {
 	}
 	return ""
 }
+
+// Explicit record ownership is independent of the packaged type namespace.
+// Missing provenance retains the legacy type-based fallback.
+func TestCustomMetadataFieldsUsesCapturedRecordOwnerProvenance(t *testing.T) {
+	empty, provider, other := "", "provider", "other"
+	for _, tc := range []struct {
+		name          string
+		owner         *string
+		wantNamespace Value
+		wantQualified string
+	}{
+		{"subscriber", &empty, NullValue(), "Seed"},
+		{"provider", &provider, StringValue("provider"), "provider__Seed"},
+		{"legacy", nil, StringValue("provider"), "provider__Seed"},
+		{"other owner", &other, StringValue("other"), "other__Seed"},
+	} {
+		for _, namespace := range []string{"", "other"} {
+			t.Run(tc.name+"/org="+namespace, func(t *testing.T) {
+				org := NewOrgState()
+				org.Namespace = namespace
+				fields, _, err := customMetadataFields(org, ObjectDefinition{APIName: "provider__Flag__mdt"}, schema.CustomMetadataRecord{DeveloperName: "Seed", OwnerNamespace: tc.owner})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got := fields["NamespacePrefix"]; got.Kind != tc.wantNamespace.Kind || got.String != tc.wantNamespace.String {
+					t.Fatalf("owner = %#v, want %#v", got, tc.wantNamespace)
+				}
+				if got := fields["QualifiedApiName"]; got.Kind != ValueString || got.String != tc.wantQualified {
+					t.Fatalf("qualified name = %#v, want %q", got, tc.wantQualified)
+				}
+			})
+		}
+	}
+}
+
+// Native rows (scratch org, API 62.0, 67.0, 68.0): a deployed custom metadata
+// record queried and read back Language = en_US, and describe reported Language
+// as a PICKLIST of length 40 on the type.
+func TestApplyCustomMetadataRecordsSetsLanguageToOrgDefault(t *testing.T) {
+	org := NewOrgState()
+	definition := ObjectDefinition{
+		APIName:  "Feature__mdt",
+		Metadata: map[string]string{"kind": "customMetadata"},
+		Fields:   map[string]Field{},
+	}
+	EnsureStandardObjectFields(&definition)
+	if got := definition.Fields["Language"].Type; got != FieldPicklist {
+		t.Fatalf("Language field type = %q, want picklist", got)
+	}
+	org.Objects["Feature__mdt"] = ObjectState{Definition: definition, Records: map[ID]Record{}}
+	err := ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{
+		{FullName: "Feature.Default", ObjectName: "Feature__mdt", DeveloperName: "Default"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	record := onlyRecord(t, org.Objects["Feature__mdt"].Records)
+	if got := record.Fields["Language"]; got.Kind != ValueString || got.String != "en_US" {
+		t.Fatalf("Language = %#v, want en_US", got)
+	}
+}

@@ -1,0 +1,1769 @@
+{
+  "cluster": "json",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "nativeObservationCount": 120,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C187IA_021",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "a3dc6656198d5a15db12dc856b9ce4c6fcd12bde27739c84cca2f5622b688d66",
+          "captureSourceSHA256": {
+            "anonymous": "84c0046f51690c835dd7e96c39045943e56b406d41fafc03d02d9d9acbaf0042"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "a3dc6656198d5a15db12dc856b9ce4c6fcd12bde27739c84cca2f5622b688d66",
+          "captureSourceSHA256": {
+            "C187Observe021": "0c058ac03634c61ac290efc00720d6eb00ab3f4b5b80b7a0f7d49c6ca25f6844"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_022",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"success\":true}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "c256b5a368c53744120e30066c4181e67e5e256f1f8223cf677aa21d77eb8e6a",
+          "captureSourceSHA256": {
+            "anonymous": "6eefb801d7aabbd402c65b1e9f6683b8d3ce95f95f7decbdf56fc898c0cd0111"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"success\":true}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"success\":true}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"success\":true}"
+              }
+            }
+          },
+          "carriedByAPI": {},
+          "retryCaptureSourceSHA256": {
+            "anonymous": "6eefb801d7aabbd402c65b1e9f6683b8d3ce95f95f7decbdf56fc898c0cd0111"
+          }
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"success\":true}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "c256b5a368c53744120e30066c4181e67e5e256f1f8223cf677aa21d77eb8e6a",
+          "captureSourceSHA256": {
+            "C187Observe022": "4f5c9dde973ba90e2400e5b2160aaaec22ad088762d488f9dbfd93f6f5b3e2a5"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"success\":true}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"success\":true}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"success\":true}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_023",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":false,\"errors\":[{\"code\":\"SYNTHETIC\",\"message\":\"synthetic error\"}],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "4de866a1af931976d456960b6bc5cc721a7a2b6848eb20c08ab0f83c504ad329",
+          "captureSourceSHA256": {
+            "anonymous": "9911ac9196ed749614483039e7ec1c7cec422f478cbcf12cf1b76a9f0eed3948"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":false,\"errors\":[{\"code\":\"SYNTHETIC\",\"message\":\"synthetic error\"}],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":false,\"errors\":[{\"code\":\"SYNTHETIC\",\"message\":\"synthetic error\"}],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":false,\"errors\":[{\"code\":\"SYNTHETIC\",\"message\":\"synthetic error\"}],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":false,\"errors\":[{\"code\":\"SYNTHETIC\",\"message\":\"synthetic error\"}],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "4de866a1af931976d456960b6bc5cc721a7a2b6848eb20c08ab0f83c504ad329",
+          "captureSourceSHA256": {
+            "C187Observe023": "8ad1d334b4688ac8894d5b818b84b3d75477c07a4728aa8181493d2c0d242e39"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":false,\"errors\":[{\"code\":\"SYNTHETIC\",\"message\":\"synthetic error\"}],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":false,\"errors\":[{\"code\":\"SYNTHETIC\",\"message\":\"synthetic error\"}],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":false,\"errors\":[{\"code\":\"SYNTHETIC\",\"message\":\"synthetic error\"}],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_024",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":null,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "eaa9c33601021e1d2b7858850b0898179a0f2370ce32d2f0ce6eecb3cf52f648",
+          "captureSourceSHA256": {
+            "anonymous": "cc9d80cb8e8b5dde6b06caf9685d436e330cec48312e679d5e90ec226503c936"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":null,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":null,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":null,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":null,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "eaa9c33601021e1d2b7858850b0898179a0f2370ce32d2f0ce6eecb3cf52f648",
+          "captureSourceSHA256": {
+            "C187Observe024": "5465a59ce798ef5053b7c8a4b5b28204b057653eef6ecdc0b4b6d53003e79653"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":null,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":null,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":null,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_025",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "a3dc6656198d5a15db12dc856b9ce4c6fcd12bde27739c84cca2f5622b688d66",
+          "captureSourceSHA256": {
+            "anonymous": "049959676f8c39ea3905eccb705ed058a2c534877d6857421d22589b1401b93d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "a3dc6656198d5a15db12dc856b9ce4c6fcd12bde27739c84cca2f5622b688d66",
+          "captureSourceSHA256": {
+            "C187Observe025": "45dd1c0aaa56242bc7ef64bdb5519028fb85b609f7700962fc94acdb0f39ee98"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_026",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "29a3d41e50ce5ffdef096f094c1863cde0bdf120404aed59a50fd76683493db8",
+          "captureSourceSHA256": {
+            "anonymous": "d9081e91e8fa339a4925ab6ead54e9662ce0cb82cb0b5758e2ada8933bb747e6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "29a3d41e50ce5ffdef096f094c1863cde0bdf120404aed59a50fd76683493db8",
+          "captureSourceSHA256": {
+            "C187Observe026": "235d35fa7336c65b3736f9e1d018dfb62f73ccd74dec5a857ad1e82174b16667"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_027",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":null,\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "a81248e1c066f057a99b509f2dd8062936fa91baf30f59b94fec4d3f82802cad",
+          "captureSourceSHA256": {
+            "anonymous": "a8e9894963be55ac4809df6dea60e4a5fbf15f8ad2ee4011ef29be758ca62123"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":null,\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":null,\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":null,\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":null,\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "a81248e1c066f057a99b509f2dd8062936fa91baf30f59b94fec4d3f82802cad",
+          "captureSourceSHA256": {
+            "C187Observe027": "caa0afed5e5b07f5e2fd8e5fafb36074395e7af2f0a127fd47da2781430da884"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":null,\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":null,\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":null,\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_028",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "6af329d5e6fdb577e0b8159d26c40e9f7c50c1096b321bed153cab8eeb358c65",
+          "captureSourceSHA256": {
+            "anonymous": "b9881c9cc76c3f75f0f4d3c0c2f322355071eb6a00f6b53123ee7f40499d8f57"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "6af329d5e6fdb577e0b8159d26c40e9f7c50c1096b321bed153cab8eeb358c65",
+          "captureSourceSHA256": {
+            "C187Observe028": "2e1fb56973b6618fd16e1fbcff86def415a874accfdfc88fe552524863d291db"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_029",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "f02e8eabdc74688886996116e020d8d3231744a04a79af1447087bc07562553e",
+          "captureSourceSHA256": {
+            "anonymous": "cee24f00fa690a4919027c3906d3a7c4bd1aa43ded039e8ea10f8b0b64a56508"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "f02e8eabdc74688886996116e020d8d3231744a04a79af1447087bc07562553e",
+          "captureSourceSHA256": {
+            "C187Observe029": "6edb22cda8b7bdb547d9644a6a3c59c9426743f8baab22da0fc9d65d22b65c12"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_030",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null}},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "35f0012577a5f1390748b2d5ae4e7502cb525997ca1c9efff624fda30512ae16",
+          "captureSourceSHA256": {
+            "anonymous": "2c0d93ea11fdeb7262efcecf55f02fe0d259056d9f429d8ff131b3ee1ea7c6ec"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null}},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null}},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null}},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null}},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "35f0012577a5f1390748b2d5ae4e7502cb525997ca1c9efff624fda30512ae16",
+          "captureSourceSHA256": {
+            "C187Observe030": "366b66ba430d25bbccc8dfc00a8469ec92c8a67879371ce322c159b313af481c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null}},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null}},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null}},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_031",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":null},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "815e924140fc0bd9a418e68834f5f36dc16899eb8c5333e61f216382fb895ea0",
+          "captureSourceSHA256": {
+            "anonymous": "b23c0ba8d98310cc15d8e23f08ee26a068b6c6a30ca63824ff5c5414050a77f6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":null},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":null},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":null},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":null},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "815e924140fc0bd9a418e68834f5f36dc16899eb8c5333e61f216382fb895ea0",
+          "captureSourceSHA256": {
+            "C187Observe031": "62b9128a2475cc0754e9f94cd24717b1735422a5ba9fd8e7d7b40194a0f4eddf"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":null},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":null},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":null},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_032",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "94b93b6376909f3d5217644f713960b9f611e48d33c01b34a14c8e1b01029b2d",
+          "captureSourceSHA256": {
+            "anonymous": "69bd0fcc889c2a9c0f09bff07a639e3e6c1a85003e507ca06df6e04df320ff13"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [
+                  {
+                    "serialized": "{\"success\":null,\"outputParameters\":null,\"invocationParameters\":null,\"errors\":null,\"action\":null}",
+                    "errorsJson": "null",
+                    "invocation": null,
+                    "outputs": null,
+                    "success": null,
+                    "null": false
+                  }
+                ],
+                "resultsNull": false,
+                "sourceJson": "{}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [
+                  {
+                    "serialized": "{\"success\":null,\"outputParameters\":null,\"invocationParameters\":null,\"errors\":null,\"action\":null}",
+                    "errorsJson": "null",
+                    "invocation": null,
+                    "outputs": null,
+                    "success": null,
+                    "null": false
+                  }
+                ],
+                "resultsNull": false,
+                "sourceJson": "{}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [
+                  {
+                    "serialized": "{\"success\":null,\"outputParameters\":null,\"invocationParameters\":null,\"errors\":null,\"action\":null}",
+                    "errorsJson": "null",
+                    "invocation": null,
+                    "outputs": null,
+                    "success": null,
+                    "null": false
+                  }
+                ],
+                "resultsNull": false,
+                "sourceJson": "{}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "94b93b6376909f3d5217644f713960b9f611e48d33c01b34a14c8e1b01029b2d",
+          "captureSourceSHA256": {
+            "C187Observe032": "44b81e54cd05b1ef11a4aef9750ab7b857dc7281f46cebac90386f5a2fe237d0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [
+                  {
+                    "serialized": "{\"success\":null,\"outputParameters\":null,\"invocationParameters\":null,\"errors\":null,\"action\":null}",
+                    "errorsJson": "null",
+                    "invocation": null,
+                    "outputs": null,
+                    "success": null,
+                    "null": false
+                  }
+                ],
+                "resultsNull": false,
+                "sourceJson": "{}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [
+                  {
+                    "serialized": "{\"success\":null,\"outputParameters\":null,\"invocationParameters\":null,\"errors\":null,\"action\":null}",
+                    "errorsJson": "null",
+                    "invocation": null,
+                    "outputs": null,
+                    "success": null,
+                    "null": false
+                  }
+                ],
+                "resultsNull": false,
+                "sourceJson": "{}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [
+                  {
+                    "serialized": "{\"success\":null,\"outputParameters\":null,\"invocationParameters\":null,\"errors\":null,\"action\":null}",
+                    "errorsJson": "null",
+                    "invocation": null,
+                    "outputs": null,
+                    "success": null,
+                    "null": false
+                  }
+                ],
+                "resultsNull": false,
+                "sourceJson": "{}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_033",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='null';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "17d0419c4c527604580b7934ffea78a90b6b94cd6ed203737d021122c8fdca49",
+          "captureSourceSHA256": {
+            "anonymous": "a48fc91f3030d2d389025d34f6d738a4550b6496a34d4e921c5f9a5f93a99d17"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [
+                  {
+                    "null": true
+                  }
+                ],
+                "resultsNull": false,
+                "sourceJson": "null"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [
+                  {
+                    "null": true
+                  }
+                ],
+                "resultsNull": false,
+                "sourceJson": "null"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [
+                  {
+                    "null": true
+                  }
+                ],
+                "resultsNull": false,
+                "sourceJson": "null"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='null';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "17d0419c4c527604580b7934ffea78a90b6b94cd6ed203737d021122c8fdca49",
+          "captureSourceSHA256": {
+            "C187Observe033": "63a654af8d2359823c9865f006002c8bfa070cc62addb8c94814526163bd8563"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [
+                  {
+                    "null": true
+                  }
+                ],
+                "resultsNull": false,
+                "sourceJson": "null"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [
+                  {
+                    "null": true
+                  }
+                ],
+                "resultsNull": false,
+                "sourceJson": "null"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [
+                  {
+                    "null": true
+                  }
+                ],
+                "resultsNull": false,
+                "sourceJson": "null"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_034",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"syntheticUnknown\":\"extra\"}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "eb49e1fa4a92e0334bbe1d72af5ab8fe85d9564141eb5bd8dc36750cb47ca180",
+          "captureSourceSHA256": {
+            "anonymous": "af6d0950f9fb3fa1a2890899abc0bdd29ebd53c410540c44f45f075aea38a82d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"syntheticUnknown\":\"extra\"}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"syntheticUnknown\":\"extra\"}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"syntheticUnknown\":\"extra\"}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"syntheticUnknown\":\"extra\"}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "eb49e1fa4a92e0334bbe1d72af5ab8fe85d9564141eb5bd8dc36750cb47ca180",
+          "captureSourceSHA256": {
+            "C187Observe034": "cea6772916ad890f76c527442902ccb4bb11eda1fbe3927720bb881b5b61d8be"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"syntheticUnknown\":\"extra\"}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"syntheticUnknown\":\"extra\"}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null},\"syntheticUnknown\":\"extra\"}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_035",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "5edd065399a2478cbdfc7a2b9a56f64dbab106c4cb1f4da9298bb3acf2967ea4",
+          "captureSourceSHA256": {
+            "anonymous": "d3ad6bc9e29e6513644a342ee6785b89a0f39001ad1f50bf591536862b19998c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "5edd065399a2478cbdfc7a2b9a56f64dbab106c4cb1f4da9298bb3acf2967ea4",
+          "captureSourceSHA256": {
+            "C187Observe035": "9366e557cc51963b08502a7823748194c3ba816b13f654c05c8330c490f898a5"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_036",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "0a4c86ed4e311cf1441ba24b5162a56a57d3d2d6d808b696149afd462f34a895",
+          "captureSourceSHA256": {
+            "anonymous": "11206bf4f6695266c72bbd5dca4137f8a0f6ddf93edaedbba10f64e1d55e71a0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}';payload.put('sourceJson',sourceJson);Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(sourceJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "0a4c86ed4e311cf1441ba24b5162a56a57d3d2d6d808b696149afd462f34a895",
+          "captureSourceSHA256": {
+            "C187Observe036": "044257baf67ec58cd692e6dda3261dfb4f10d797eac2031824ae025e73845265"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "{\"isSuccess\":null,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_037",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]';payload.put('sourceJson',sourceJson);List<Invocable.Action.Result> jsonResults=(List<Invocable.Action.Result>)JSON.deserialize(sourceJson,List<Invocable.Action.Result>.class);step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "b78774c7ab626915dfdf953a2363b5fba086c55c1d9f3ecebf85ec74c8304ee7",
+          "captureSourceSHA256": {
+            "anonymous": "76d0df3adce794be03c489cd3b3e1d4c4e157d8ad430803b13017d6d5343bb75"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]';payload.put('sourceJson',sourceJson);List<Invocable.Action.Result> jsonResults=(List<Invocable.Action.Result>)JSON.deserialize(sourceJson,List<Invocable.Action.Result>.class);step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "b78774c7ab626915dfdf953a2363b5fba086c55c1d9f3ecebf85ec74c8304ee7",
+          "captureSourceSHA256": {
+            "C187Observe037": "4f6b7185e06c000a144462620c298eb6f5e64922d05d15d0461708533dfc6668"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_038",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}},{\"isSuccess\":false,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]';payload.put('sourceJson',sourceJson);List<Invocable.Action.Result> jsonResults=(List<Invocable.Action.Result>)JSON.deserialize(sourceJson,List<Invocable.Action.Result>.class);step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "06b41054a93e0d70e1cf9dadcb3b363d4dbec482385d864a13283f90389d77d6",
+          "captureSourceSHA256": {
+            "anonymous": "ee6911dc9abf662a771e763fc6daefd51121276ec599fd9721ab96ca80ebe34f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}},{\"isSuccess\":false,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}},{\"isSuccess\":false,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}},{\"isSuccess\":false,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}},{\"isSuccess\":false,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]';payload.put('sourceJson',sourceJson);List<Invocable.Action.Result> jsonResults=(List<Invocable.Action.Result>)JSON.deserialize(sourceJson,List<Invocable.Action.Result>.class);step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "06b41054a93e0d70e1cf9dadcb3b363d4dbec482385d864a13283f90389d77d6",
+          "captureSourceSHA256": {
+            "C187Observe038": "5850a1b8939c2f7815d40f1f674b1b19d10ef450b58fd3fb4a2f1c67f6f5b5bd"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}},{\"isSuccess\":false,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}},{\"isSuccess\":false,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "sourceJson": "[{\"isSuccess\":true,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}},{\"isSuccess\":false,\"errors\":[],\"outputParameters\":{\"value\":7,\"text\":\"synthetic\"},\"invocationParameters\":{\"record\":null}}]"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_039",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='[]';payload.put('sourceJson',sourceJson);List<Invocable.Action.Result> jsonResults=(List<Invocable.Action.Result>)JSON.deserialize(sourceJson,List<Invocable.Action.Result>.class);step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "7cb6ae897a2575ad795a8dc850ecc07650deaf49e3d2f1fad53baac52f65430a",
+          "captureSourceSHA256": {
+            "anonymous": "b75d8e1bab9791781358977da6f8c0dc4c5d0963e888deeef63bde97c09e051e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [],
+                "resultsNull": false,
+                "sourceJson": "[]"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [],
+                "resultsNull": false,
+                "sourceJson": "[]"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [],
+                "resultsNull": false,
+                "sourceJson": "[]"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='[]';payload.put('sourceJson',sourceJson);List<Invocable.Action.Result> jsonResults=(List<Invocable.Action.Result>)JSON.deserialize(sourceJson,List<Invocable.Action.Result>.class);step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "7cb6ae897a2575ad795a8dc850ecc07650deaf49e3d2f1fad53baac52f65430a",
+          "captureSourceSHA256": {
+            "C187Observe039": "6de67de1427cb6f5b20e1802ee948322e06813ed61c5068b9a5fc7adcfbab0de"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [],
+                "resultsNull": false,
+                "sourceJson": "[]"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [],
+                "resultsNull": false,
+                "sourceJson": "[]"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [],
+                "resultsNull": false,
+                "sourceJson": "[]"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_040",
+      "routes": {
+        "anonymous": {
+          "code": "step='deserialize';String sourceJson='null';payload.put('sourceJson',sourceJson);List<Invocable.Action.Result> jsonResults=(List<Invocable.Action.Result>)JSON.deserialize(sourceJson,List<Invocable.Action.Result>.class);step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "ae25769ce98364944ab23b07ab56718bbebf3ebbd3c4eef7f22653174dfa8bff",
+          "captureSourceSHA256": {
+            "anonymous": "1609c2e503d2c05520473d604b1b5563353c6928a0e3196498690508b42bb567"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [],
+                "resultsNull": true,
+                "sourceJson": "null"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [],
+                "resultsNull": true,
+                "sourceJson": "null"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [],
+                "resultsNull": true,
+                "sourceJson": "null"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='deserialize';String sourceJson='null';payload.put('sourceJson',sourceJson);List<Invocable.Action.Result> jsonResults=(List<Invocable.Action.Result>)JSON.deserialize(sourceJson,List<Invocable.Action.Result>.class);step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "ae25769ce98364944ab23b07ab56718bbebf3ebbd3c4eef7f22653174dfa8bff",
+          "captureSourceSHA256": {
+            "C187Observe040": "0c415b5564f8f9a9647a0aea21f9fba048b5327710282b69171b87bb209cac52"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [],
+                "resultsNull": true,
+                "sourceJson": "null"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [],
+                "resultsNull": true,
+                "sourceJson": "null"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "getters",
+                "jsonResults": [],
+                "resultsNull": true,
+                "sourceJson": "null"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    }
+  ]
+}

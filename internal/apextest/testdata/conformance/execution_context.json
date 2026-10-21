@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "assertedCases": 257,
   "assertedAnonymousCases": 256,
@@ -2005,5 +2006,49 @@
     "R071": "A26: shared validation fixture has no installed A26 label; conformance uses the exported native fixture.",
     "R073": "A26: shared validation fixture has no installed A26 label; conformance uses the exported native fixture.",
     "R086": "A26: shared validation fixture has no installed A26 label; conformance uses the exported native fixture."
+  },
+  "ceilingOracle": {
+    "apiVersion": "68.0",
+    "route": "anonymous",
+    "rows": 267,
+    "observed": 266,
+    "orgTSVMissing": [
+      "R089"
+    ],
+    "uncaughtRecapture": {
+      "route": "anonymous",
+      "rows": [
+        "R089"
+      ],
+      "result": "R089 compiled, success=false, uncaught System.UnexpectedException: Salesforce System Error with generated error IDs. The IDs are not deterministic, so R089 stays carried.",
+      "source": "native-capture",
+      "sha256": "17ecb87bcf62b9d5989bb4fb3b8c0a50e8c939c140a3559894b0ba38ccdb49d4"
+    },
+    "lineNormalized": [
+      "R126",
+      "R130",
+      "R171",
+      "R175",
+      "R176",
+      "R186",
+      "R195"
+    ],
+    "lineNormalizedReason": "Native compile text is equal; only the line number differs because the capture packs rows into shared anonymous chunks. Compile rows assert the rejection category.",
+    "namedUnobserved": [
+      "R007",
+      "R025",
+      "R041",
+      "R042",
+      "R046",
+      "R229",
+      "SC001"
+    ],
+    "namedUnobservedReason": "No native @IsTest named-route capture exists at API 68.0; these rows have named answers that differ from or replace the anonymous route.",
+    "controlsUnobserved": [
+      "SC001",
+      "N001"
+    ],
+    "orgTSV": "native-capture",
+    "orgRowsSHA256": "3c531c7348b9a3bc127d0f03688861d1cec1b43d64763e14804b0acdb981f6aa"
   }
 }

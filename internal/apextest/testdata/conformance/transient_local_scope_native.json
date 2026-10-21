@@ -1,0 +1,226 @@
+{
+  "apis": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "sourcesByAPI": {
+    "59.0": {
+      "helperName": "TransientScopeOracle59",
+      "helperSource": "public class TransientScopeOracle59 { private static Object read(Map<String,Object> packet){return packet.get('slot');} private static Boolean present(Object item){return item!=null;} private static Object outer(Boolean enabled){try{transient Map<String,Object> payload;if(enabled){payload=(Map<String,Object>)JSON.deserializeUntyped('{\"slot\":1}');}for(Integer item:new List<Integer>{0}){return read(payload);}}catch(Exception e){return null;}return null;} private static Object method(Boolean enabled){transient Map<String,Object> payload;transient ContentVersion specimen=new ContentVersion();if(enabled){payload=(Map<String,Object>)JSON.deserializeUntyped('{\"slot\":2}');}if(payload!=null){return read(payload);}return null;}public static String snapshot(){Map<String,Object> results=new Map<String,Object>{'outerDeclared'=>outer(true),'methodDeclared'=>method(true)};if(true){transient ContentVersion specimen=new ContentVersion();results.put('recordLocal',present(specimen));}if(true){Map<String,Object> ordinary=new Map<String,Object>{'slot'=>3};results.put('ordinaryControl',read(ordinary));}if(true){final Map<String,Object> fixedPacket=new Map<String,Object>{'slot'=>4};results.put('finalControl',read(fixedPacket));}return JSON.serialize(results);} }",
+      "helperMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>",
+      "testSource": "@IsTest private class TransientScopeObserved59{@IsTest static void observed(){System.assert(false,'TRANSIENT_SCOPE|'+TransientScopeOracle59.snapshot());}}",
+      "testMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug('TRANSIENT_SCOPE|'+TransientScopeOracle59.snapshot());",
+      "testName": "TransientScopeObserved59"
+    },
+    "62.0": {
+      "helperName": "TransientScopeOracle62",
+      "helperSource": "public class TransientScopeOracle62 { private static Object read(Map<String,Object> packet){return packet.get('slot');} private static Boolean present(Object item){return item!=null;} private static Object outer(Boolean enabled){try{transient Map<String,Object> payload;if(enabled){payload=(Map<String,Object>)JSON.deserializeUntyped('{\"slot\":1}');}for(Integer item:new List<Integer>{0}){return read(payload);}}catch(Exception e){return null;}return null;} private static Object method(Boolean enabled){transient Map<String,Object> payload;transient ContentVersion specimen=new ContentVersion();if(enabled){payload=(Map<String,Object>)JSON.deserializeUntyped('{\"slot\":2}');}if(payload!=null){return read(payload);}return null;}public static String snapshot(){Map<String,Object> results=new Map<String,Object>{'outerDeclared'=>outer(true),'methodDeclared'=>method(true)};if(true){transient ContentVersion specimen=new ContentVersion();results.put('recordLocal',present(specimen));}if(true){Map<String,Object> ordinary=new Map<String,Object>{'slot'=>3};results.put('ordinaryControl',read(ordinary));}if(true){final Map<String,Object> fixedPacket=new Map<String,Object>{'slot'=>4};results.put('finalControl',read(fixedPacket));}return JSON.serialize(results);} }",
+      "helperMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "testSource": "@IsTest private class TransientScopeObserved62{@IsTest static void observed(){System.assert(false,'TRANSIENT_SCOPE|'+TransientScopeOracle62.snapshot());}}",
+      "testMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug('TRANSIENT_SCOPE|'+TransientScopeOracle62.snapshot());",
+      "testName": "TransientScopeObserved62"
+    },
+    "67.0": {
+      "helperName": "TransientScopeOracle67",
+      "helperSource": "public class TransientScopeOracle67 { private static Object read(Map<String,Object> packet){return packet.get('slot');} private static Boolean present(Object item){return item!=null;} private static Object outer(Boolean enabled){try{transient Map<String,Object> payload;if(enabled){payload=(Map<String,Object>)JSON.deserializeUntyped('{\"slot\":1}');}for(Integer item:new List<Integer>{0}){return read(payload);}}catch(Exception e){return null;}return null;} private static Object method(Boolean enabled){transient Map<String,Object> payload;transient ContentVersion specimen=new ContentVersion();if(enabled){payload=(Map<String,Object>)JSON.deserializeUntyped('{\"slot\":2}');}if(payload!=null){return read(payload);}return null;}public static String snapshot(){Map<String,Object> results=new Map<String,Object>{'outerDeclared'=>outer(true),'methodDeclared'=>method(true)};if(true){transient ContentVersion specimen=new ContentVersion();results.put('recordLocal',present(specimen));}if(true){Map<String,Object> ordinary=new Map<String,Object>{'slot'=>3};results.put('ordinaryControl',read(ordinary));}if(true){final Map<String,Object> fixedPacket=new Map<String,Object>{'slot'=>4};results.put('finalControl',read(fixedPacket));}return JSON.serialize(results);} }",
+      "helperMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "testSource": "@IsTest private class TransientScopeObserved67{@IsTest static void observed(){System.assert(false,'TRANSIENT_SCOPE|'+TransientScopeOracle67.snapshot());}}",
+      "testMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug('TRANSIENT_SCOPE|'+TransientScopeOracle67.snapshot());",
+      "testName": "TransientScopeObserved67"
+    },
+    "68.0": {
+      "helperName": "TransientScopeOracle68",
+      "helperSource": "public class TransientScopeOracle68 { private static Object read(Map<String,Object> packet){return packet.get('slot');} private static Boolean present(Object item){return item!=null;} private static Object outer(Boolean enabled){try{transient Map<String,Object> payload;if(enabled){payload=(Map<String,Object>)JSON.deserializeUntyped('{\"slot\":1}');}for(Integer item:new List<Integer>{0}){return read(payload);}}catch(Exception e){return null;}return null;} private static Object method(Boolean enabled){transient Map<String,Object> payload;transient ContentVersion specimen=new ContentVersion();if(enabled){payload=(Map<String,Object>)JSON.deserializeUntyped('{\"slot\":2}');}if(payload!=null){return read(payload);}return null;}public static String snapshot(){Map<String,Object> results=new Map<String,Object>{'outerDeclared'=>outer(true),'methodDeclared'=>method(true)};if(true){transient ContentVersion specimen=new ContentVersion();results.put('recordLocal',present(specimen));}if(true){Map<String,Object> ordinary=new Map<String,Object>{'slot'=>3};results.put('ordinaryControl',read(ordinary));}if(true){final Map<String,Object> fixedPacket=new Map<String,Object>{'slot'=>4};results.put('finalControl',read(fixedPacket));}return JSON.serialize(results);} }",
+      "helperMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "testSource": "@IsTest private class TransientScopeObserved68{@IsTest static void observed(){System.assert(false,'TRANSIENT_SCOPE|'+TransientScopeOracle68.snapshot());}}",
+      "testMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug('TRANSIENT_SCOPE|'+TransientScopeOracle68.snapshot());",
+      "testName": "TransientScopeObserved68"
+    }
+  },
+  "cells": [
+    {
+      "api": "59.0",
+      "context": "anonymous",
+      "map": {
+        "finalControl": 4,
+        "ordinaryControl": 3,
+        "recordLocal": true,
+        "methodDeclared": 2,
+        "outerDeclared": 1
+      }
+    },
+    {
+      "api": "59.0",
+      "context": "istest",
+      "map": {
+        "finalControl": 4,
+        "ordinaryControl": 3,
+        "recordLocal": true,
+        "methodDeclared": 2,
+        "outerDeclared": 1
+      }
+    },
+    {
+      "api": "62.0",
+      "context": "anonymous",
+      "map": {
+        "finalControl": 4,
+        "ordinaryControl": 3,
+        "recordLocal": true,
+        "methodDeclared": 2,
+        "outerDeclared": 1
+      }
+    },
+    {
+      "api": "62.0",
+      "context": "istest",
+      "map": {
+        "finalControl": 4,
+        "ordinaryControl": 3,
+        "recordLocal": true,
+        "methodDeclared": 2,
+        "outerDeclared": 1
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "anonymous",
+      "map": {
+        "finalControl": 4,
+        "ordinaryControl": 3,
+        "recordLocal": true,
+        "methodDeclared": 2,
+        "outerDeclared": 1
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "istest",
+      "map": {
+        "finalControl": 4,
+        "ordinaryControl": 3,
+        "recordLocal": true,
+        "methodDeclared": 2,
+        "outerDeclared": 1
+      }
+    },
+    {
+      "api": "68.0",
+      "context": "anonymous",
+      "map": {
+        "finalControl": 4,
+        "ordinaryControl": 3,
+        "recordLocal": true,
+        "methodDeclared": 2,
+        "outerDeclared": 1
+      }
+    },
+    {
+      "api": "68.0",
+      "context": "istest",
+      "map": {
+        "finalControl": 4,
+        "ordinaryControl": 3,
+        "recordLocal": true,
+        "methodDeclared": 2,
+        "outerDeclared": 1
+      }
+    }
+  ],
+  "carries": [],
+  "capture": {
+    "orgIdSHA256": "a99b615b242f4ba4d23d93289d70f1f7faf542a2d6dc8840a1b04094c4994582",
+    "nativeObservationCount": 8,
+    "observedValueCount": 40,
+    "scope": "Both anonymous and named observation routes invoke the captured helper method. Its transient Map and SObject locals cross nested conditional, loop, and try scopes into calls that take the local as an argument. Direct transient declarations in the anonymous lexical scope were not captured.",
+    "transport": "Anonymous debug and intentional named observation assertion; the eight exported payloads were checked against raw responses.",
+    "sourceSHA256": {
+      "59.0": {
+        "helperSource": "7d9f8b13748a60f7363b30ee3bf534c9a5a7b1a7c32923c2bdf37dc0c851e77b",
+        "helperMetadata": "652920851b2e696cad13f9fc2012139d6ca843bba62b4cb20dd6ff526b03ce3c",
+        "testSource": "628d89c5fb293c60064217bdd4cabdaba327659ec635ea1f424c6e997100da05",
+        "testMetadata": "652920851b2e696cad13f9fc2012139d6ca843bba62b4cb20dd6ff526b03ce3c",
+        "anonymous": "4526d0a8e5fdee484c6d942f7c2a1c3db55876418174e575d00b0d012e3d2539"
+      },
+      "62.0": {
+        "helperSource": "4a0dfcebfdb9d23fcaae4110a53a74493cd3d958e8c6b54347c664d789cd91fc",
+        "helperMetadata": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "testSource": "9bfbae88a54160cbdcb4f4fa18fefb5b6644aedcaa08130e52980a29eb9c07cc",
+        "testMetadata": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "anonymous": "8eeac4257b6e16e360a39df7275cd2004f1145e9ae953283e10040cfd5542d48"
+      },
+      "67.0": {
+        "helperSource": "ff99000544bff9b24f7d8711f8ca590e42cf682c81e4d47dc55a831a98faa4e7",
+        "helperMetadata": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "testSource": "1d4f688e6438e3d2c98afe7c65d99f2bd224c303f1049923a8be4644c07ef27a",
+        "testMetadata": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "anonymous": "3ddc81b28ac05f5279fd1044dfe37b1fd28ce9981842129b68da5ad9bdb443a1"
+      },
+      "68.0": {
+        "helperSource": "ee589cac2643b283ffd615672db62a3388067dc3451ec8ee479db8d46a287a0f",
+        "helperMetadata": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+        "testSource": "2d5dd4eccfbb2553a17c67fef9ad66d086baf5ded9c15cf37b98c0b91f49b79b",
+        "testMetadata": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+        "anonymous": "564bf684f27369a5e062eba716e08c9bbac6855b08a23b1238a5a614da515e00"
+      }
+    },
+    "cells": [
+      {
+        "api": "59.0",
+        "context": "anonymous",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 59.0 --file <synthetic-probe>/api59.apex --json",
+        "rawResponseSha256": "7d9f3ab8ec16d8b6b34a46b5521b3e2455e07856141b98a8a3370401152eea44"
+      },
+      {
+        "api": "59.0",
+        "context": "istest",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names TransientScopeObserved59 --synchronous --result-format json --wait 15 --json",
+        "rawResponseSha256": "5f2bb17b42a5bfdc24681b034e65e2603b234f92a9093766fa1ef71d82c14f0e"
+      },
+      {
+        "api": "62.0",
+        "context": "anonymous",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 62.0 --file <synthetic-probe>/api62.apex --json",
+        "rawResponseSha256": "cb1708e4ed8ccbe31e7e9b758b177ef4af83399009730b921e0fe193557b6159"
+      },
+      {
+        "api": "62.0",
+        "context": "istest",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names TransientScopeObserved62 --synchronous --result-format json --wait 15 --json",
+        "rawResponseSha256": "3c6590b73f656997de78d80f0e68b0059a09643df33ae79c065a826d94b65abe"
+      },
+      {
+        "api": "67.0",
+        "context": "anonymous",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 67.0 --file <synthetic-probe>/api67.apex --json",
+        "rawResponseSha256": "4601bcd1a322e362237401e6585aedea534551afc65b849d1ee9ae9dba0a5b44"
+      },
+      {
+        "api": "67.0",
+        "context": "istest",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names TransientScopeObserved67 --synchronous --result-format json --wait 15 --json",
+        "rawResponseSha256": "178eefbc6b741fa42e327644e867f78961076eb8dd847e8090ef6688166e34eb"
+      },
+      {
+        "api": "68.0",
+        "context": "anonymous",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 68.0 --file <synthetic-probe>/api68.apex --json",
+        "rawResponseSha256": "05b4ad3ff92cd3a00947bf23c2fee525596173d9c201f6ee7ab4b6cdae869535"
+      },
+      {
+        "api": "68.0",
+        "context": "istest",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names TransientScopeObserved68 --synchronous --result-format json --wait 15 --json",
+        "rawResponseSha256": "9ce200379312dc3fb6be3345f2965ce406d6c2add158a9a8064682afa8eb659f"
+      }
+    ],
+    "orgTSVSHA256": "af377ef5ba3a13440341a4553a90ee2f4b70bb42ed166bd12ba95f00209b60e1",
+    "commandPathNormalization": "Authentication home, scratch target alias, and synthetic project paths are replaced by placeholders; command options are unchanged."
+  }
+}

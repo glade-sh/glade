@@ -1,0 +1,5 @@
+shape	observation
+profile_names	Count visible Profile rows whose Name is null
+process_users	Observe whether AutomatedProcess User rows are visible without retaining their Ids
+process_profiles	Count visible Profile rows referenced by AutomatedProcess users
+process_profile_names	Retain ordered names of the visible process profiles

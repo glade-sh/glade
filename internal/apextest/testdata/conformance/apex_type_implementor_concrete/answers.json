@@ -1,0 +1,30 @@
+{
+  "apiVersions": ["62.0", "67.0", "68.0"],
+  "contexts": ["anonymous", "@IsTest"],
+  "rows": [
+    {"apiVersion": "62.0", "context": "anonymous", "className": "ProbeConcrete62Top", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "62.0", "context": "anonymous", "className": "ProbeConcrete62Container.NestedImplementor", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "62.0", "context": "anonymous", "className": "ProbeConcrete62Container.MultiImplementor", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "62.0", "context": "anonymous", "className": "ProbeConcrete62Container.MultiImplementor", "namespacePrefix": null, "interfaceName": "ProbeSecondContract", "isConcrete": true},
+    {"apiVersion": "62.0", "context": "@IsTest", "className": "ProbeConcrete62Top", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "62.0", "context": "@IsTest", "className": "ProbeConcrete62Container.NestedImplementor", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "62.0", "context": "@IsTest", "className": "ProbeConcrete62Container.MultiImplementor", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "62.0", "context": "@IsTest", "className": "ProbeConcrete62Container.MultiImplementor", "namespacePrefix": null, "interfaceName": "ProbeSecondContract", "isConcrete": true},
+    {"apiVersion": "67.0", "context": "anonymous", "className": "ProbeConcrete67Top", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "67.0", "context": "anonymous", "className": "ProbeConcrete67Container.NestedImplementor", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "67.0", "context": "anonymous", "className": "ProbeConcrete67Container.MultiImplementor", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "67.0", "context": "anonymous", "className": "ProbeConcrete67Container.MultiImplementor", "namespacePrefix": null, "interfaceName": "ProbeSecondContract", "isConcrete": true},
+    {"apiVersion": "67.0", "context": "@IsTest", "className": "ProbeConcrete67Top", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "67.0", "context": "@IsTest", "className": "ProbeConcrete67Container.NestedImplementor", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "67.0", "context": "@IsTest", "className": "ProbeConcrete67Container.MultiImplementor", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "67.0", "context": "@IsTest", "className": "ProbeConcrete67Container.MultiImplementor", "namespacePrefix": null, "interfaceName": "ProbeSecondContract", "isConcrete": true},
+    {"apiVersion": "68.0", "context": "anonymous", "className": "ProbeConcrete68Top", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "68.0", "context": "anonymous", "className": "ProbeConcrete68Container.NestedImplementor", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "68.0", "context": "anonymous", "className": "ProbeConcrete68Container.MultiImplementor", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "68.0", "context": "anonymous", "className": "ProbeConcrete68Container.MultiImplementor", "namespacePrefix": null, "interfaceName": "ProbeSecondContract", "isConcrete": true},
+    {"apiVersion": "68.0", "context": "@IsTest", "className": "ProbeConcrete68Top", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "68.0", "context": "@IsTest", "className": "ProbeConcrete68Container.NestedImplementor", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "68.0", "context": "@IsTest", "className": "ProbeConcrete68Container.MultiImplementor", "namespacePrefix": null, "interfaceName": "ProbeNestedContract", "isConcrete": true},
+    {"apiVersion": "68.0", "context": "@IsTest", "className": "ProbeConcrete68Container.MultiImplementor", "namespacePrefix": null, "interfaceName": "ProbeSecondContract", "isConcrete": true}
+  ]
+}

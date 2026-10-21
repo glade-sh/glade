@@ -141,6 +141,13 @@ func TestAnalyzeAllowsEveryDocumentedSystemQualifiedTypeSpelling(t *testing.T) {
 		if name == "String" || name == "Integer" || name == "List" {
 			continue
 		}
+		// GI012 rejects the raw System.Comparator cast on both routes at
+		// API 62/67/68. The catalog spelling still resolves; it cannot
+		// generate a raw value round-trip. Keep the qualified Iterable
+		// and Iterator neighbors, whose raw casts have no GI capture.
+		if name == "Comparator" {
+			continue
+		}
 		// The generated catalog still contains the stale qualified PushUpgrade
 		// alias. Salesforce rejects that spelling; the canonical unqualified
 		// type remains covered by the residual contract tests.

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { chromium } from "playwright";
+import { chromium } from "./shared-playwright.mjs";
 import { requireLWCToolchain, startLWCDevServer } from "./helpers.mjs";
 
 const fixture = "testdata/local-tests/lwc-shell";

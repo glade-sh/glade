@@ -1,0 +1,11 @@
+source_api	method	observation
+62.0	observeCollision	{"value":"stub"}
+62.0	observeExplicitRecordTypeDefault	{"caller":null,"fresh":null,"freshTypeMatches":true,"persisted":"Alpha","persistedTypeMatches":true}
+62.0	observePlain	{"value":"stub"}
+62.0	observeRecordTypeDefault	{"caller":null,"callerTypePresent":false,"fresh":null,"freshTypePresent":false,"persisted":null,"persistedTypePresent":false}
+62.0	observeSchema	{"message":"Test.createStub() can only be invoked on user defined types.","type":"System.TypeException"}
+67.0	observeCollision	{"value":"stub"}
+67.0	observeExplicitRecordTypeDefault	{"caller":null,"fresh":null,"freshTypeMatches":true,"persisted":"Alpha","persistedTypeMatches":true}
+67.0	observePlain	{"value":"stub"}
+67.0	observeRecordTypeDefault	{"caller":null,"callerTypePresent":false,"fresh":null,"freshTypePresent":false,"persisted":null,"persistedTypePresent":false}
+67.0	observeSchema	{"message":"Test.createStub() can only be invoked on user defined types.","type":"System.TypeException"}

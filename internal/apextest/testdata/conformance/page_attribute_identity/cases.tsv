@@ -1,0 +1,3 @@
+shape	observation
+identity_attribute	Deploy an Id component attribute assigned to a String controller property
+page_reference	Resolve the page that instantiates the component

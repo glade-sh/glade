@@ -20,7 +20,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Owned API 62/67 observations. Callback value rows and native test-drain
+// Owned API 62/67/68 observations. Callback value rows and native test-drain
 // outcomes are separate assertions; only the latter establish async execution.
 func TestAsyncOrgConformance(t *testing.T) {
 	type familyCase struct {
@@ -47,7 +47,7 @@ func TestAsyncOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 228 || len(data.Controls) != 44 || len(data.NativeCases) != 47 || len(data.CronControls) != 3 || len(data.ShadowCases) != 4 || len(data.ShadowDeclarations) != 1 || len(data.NativeTests) != 10 || len(data.Remaining) != 0 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 228 || len(data.Controls) != 44 || len(data.NativeCases) != 47 || len(data.CronControls) != 3 || len(data.ShadowCases) != 4 || len(data.ShadowDeclarations) != 1 || len(data.NativeTests) != 10 || len(data.Remaining) != 0 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle: %d original rows, %d adjacent controls, %d native controls, %d Cron controls, %d shadow controls, %d shadow declarations, %d drain outcomes, %d carries at %v", len(data.Cases), len(data.Controls), len(data.NativeCases), len(data.CronControls), len(data.ShadowCases), len(data.ShadowDeclarations), len(data.NativeTests), len(data.Remaining), data.APIVersions)
 	}
 	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)
@@ -205,6 +205,9 @@ func TestAsyncOrgConformance(t *testing.T) {
 	}
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
+			if api == "68.0" {
+				t.Log("API68 named primary/adjacent checks use anonymous native answers except R012/R199; 47 native controls, 3 Cron controls, 4 shadows and 10 drains have native named observations")
+			}
 			counts := newConformanceCountLog(t, "async Apex", api)
 			root := t.TempDir()
 			names := []string{"P"}

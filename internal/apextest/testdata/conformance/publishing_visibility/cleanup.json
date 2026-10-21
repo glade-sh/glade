@@ -1,0 +1,20 @@
+{
+  "knowledgeSettingsRetrieved": true,
+  "knowledgeDisabled": true,
+  "deleteExit": 0,
+  "deleteStatus": 0,
+  "ScratchOrgInfo": {
+    "exit": 0,
+    "totalSize": 1,
+    "statuses": [
+      "Deleted"
+    ]
+  },
+  "ActiveScratchOrg": {
+    "exit": 0,
+    "totalSize": 0,
+    "statuses": []
+  },
+  "aliasAbsent": true,
+  "verifiedAt": "2026-10-19T04:54:48.571298+00:00"
+}

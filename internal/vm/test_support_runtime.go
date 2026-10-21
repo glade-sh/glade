@@ -46,8 +46,23 @@ func (vm *VM) testSetMock(args []Value) (Value, error) {
 		return Null, unsupportedCallError("Test.setMock " + mockType + " mock surface")
 	}
 	vm.testContext.HTTPMock = args[1]
+	vm.testContext.httpMockSourceUnit = vm.currentMethod.SourceUnit
+	vm.testContext.httpMockDependency = vm.currentMethod.Dependency
 	return Null, nil
 }
+
+func (vm *VM) resolveRegisteredHTTPMockMethod(request Value) (Method, bool, bool) {
+	// A callback can enter through shared transport code. Bind its overloads to
+	// the source context that registered the mock, rather than that transport.
+	previous := vm.currentMethod
+	if vm.testContext.httpMockSourceUnit != "" {
+		vm.currentMethod.SourceUnit = vm.testContext.httpMockSourceUnit
+		vm.currentMethod.Dependency = vm.testContext.httpMockDependency
+	}
+	defer func() { vm.currentMethod = previous }()
+	return vm.resolveInstanceMethodForArgs(vm.testContext.HTTPMock.Type, "respond", []Value{request})
+}
+
 func (vm *VM) testSetContinuationResponse(args []Value) (Value, error) {
 	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueObject || !strings.EqualFold(args[1].Type, "HttpResponse") {
 		return Null, fmt.Errorf("Test.setContinuationResponse expects label String and HttpResponse")
@@ -246,9 +261,17 @@ func (vm *VM) testCreateStub(args []Value) (Value, error) {
 	if args[1].Kind == ValueNull {
 		return Null, newExceptionError("System.NullPointerException", "stubProvider cannot be null")
 	}
-	// T042/T043/J011/J062: reject catalog/schema sObjects, while source
-	// classes remain stubbable even when their names end in ChangeEvent.
-	if strings.EqualFold(stubbedType, "String") || isCommonSObjectTypeName(stubbedType) || vm.isSObjectType(stubbedType) {
+	// Captured at named APIs 62/67/68: a namespaced caller encounters the
+	// namespace boundary for String.class before the user-defined-type check.
+	if strings.EqualFold(stubbedType, "String") && vm.currentCallerNamespace() != "" {
+		return Null, newExceptionError("System.TypeException", "Test.createStub() can only be called with classes in the current namespace")
+	}
+	// A source class may shadow a standard object. Explicit Schema
+	// qualification still selects the record rather than the source class.
+	class, hasClass := vm.lookupClass(stubbedType)
+	_, schemaRecord := vm.explicitSchemaRecordType(stubbedType)
+	sourceClass := hasClass && !class.PlatformType && !schemaRecord
+	if strings.EqualFold(stubbedType, "String") || (!sourceClass && (isCommonSObjectTypeName(stubbedType) || vm.isSObjectType(stubbedType))) {
 		return Null, newExceptionError("System.TypeException", "Test.createStub() can only be invoked on user defined types.")
 	}
 	if args[1].Kind != ValueObject || !vm.typeMatches(args[1].Type, "StubProvider", make(map[string]bool)) {
@@ -257,9 +280,30 @@ func (vm *VM) testCreateStub(args []Value) (Value, error) {
 	if resolved, ok := vm.resolveClassName(stubbedType); ok {
 		stubbedType = resolved
 		if class, classOK := vm.lookupClass(resolved); classOK {
+			if class.PlatformType && strings.EqualFold(shortTypeName(class.Name), "HttpRequest") {
+				return Null, newExceptionError("System.TypeException", "Test.createStub() can only be called with classes in the current namespace")
+			}
+			// Native NS330A/NS330B/NS332B/NS332C: inner classes and interfaces,
+			// including a test class's own, are refused after the null-provider check.
+			if !class.Dependency && classIsInner(class) {
+				return Null, newExceptionError("System.TypeException", "Test.createStub() cannot be called with inner Apex classes")
+			}
+			onlyPrivateConstructors := len(class.Constructors) > 0
+			for _, constructor := range class.Constructors {
+				if constructor.Access != "" && !strings.EqualFold(constructor.Access, "private") {
+					onlyPrivateConstructors = false
+					break
+				}
+			}
+			if onlyPrivateConstructors {
+				return Null, newExceptionError("System.TypeException", "Classes with only private constructors cannot be mocked.")
+			}
 			stubbedType = vm.classTypeToken(class)
 		}
 	} else {
+		if strings.EqualFold(stubbedType, "HttpRequest") || strings.EqualFold(stubbedType, "System.HttpRequest") {
+			return Null, newExceptionError("System.TypeException", "Test.createStub() can only be called with classes in the current namespace")
+		}
 		return Null, unsupportedCallError("Test.createStub local proxy for unknown type " + stubbedType)
 	}
 	proxy := Object(stubbedType)
@@ -658,7 +702,7 @@ func (vm *VM) testInstall(args []Value, result *Result) (Value, error) {
 		return Null, fmt.Errorf("Test.testInstall expects InstallHandler, previousVersion[, isPush]")
 	}
 	if err := vm.requireTestContext("Test.testInstall"); err != nil {
-		return Null, err
+		return Null, newExceptionError("System.StringException", "Test.testInstall() can only be called from testMethods")
 	}
 	handler := args[0]
 	if handler.Kind != ValueObject || handler.Type == "" {
@@ -725,9 +769,33 @@ func testMockTypeName(value Value) (string, bool) {
 		}
 		return value.Text, true
 	case ValueObject:
-		if (strings.EqualFold(value.Type, "Type") || strings.EqualFold(value.Static, "Type") || strings.EqualFold(value.Runtime, "Type")) && value.Text != "" {
-			return value.Text, true
+		// Type.forName keeps its name in the scalar value field (NS332C forNameNested).
+		if text := typeValueText(value); (strings.EqualFold(value.Type, "Type") || strings.EqualFold(value.Static, "Type") || strings.EqualFold(value.Runtime, "Type")) && text != "" {
+			return text, true
 		}
 	}
 	return "", false
+}
+
+// classIsInner reports a class or interface declared inside another type.
+func classIsInner(class Class) bool {
+	name := strings.TrimSpace(class.Name)
+	if namespace := strings.TrimSpace(class.Namespace); namespace != "" && hasPrefixFold(name, namespace+".") {
+		name = name[len(namespace)+1:]
+	}
+	return strings.Contains(name, ".")
+}
+
+// stubParameterName is the listOfParamNames entry of a stubbed call. Native
+// NS320A, NS322B and NS322C: a method without a body (an interface method or
+// an abstract method) reports unnamed__<i>; NS322A and NS322D: a method with
+// a body reports its declared name.
+func (vm *VM) stubParameterName(target Method, index int, declared string) string {
+	if methodHasModifier(target.Modifiers, "abstract") {
+		return fmt.Sprintf("unnamed__%d", index)
+	}
+	if class, ok := vm.lookupClass(target.ClassName); ok && class.IsInterface {
+		return fmt.Sprintf("unnamed__%d", index)
+	}
+	return declared
 }

@@ -21,6 +21,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/pluginhost"
@@ -390,7 +391,7 @@ func TestRunDoctorReportsParser(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
 	out := stdout.String()
-	for _, want := range []string{"Glade doctor", "Project", "LWC tools", "Parser", "Apex default", "checked window: 65.0, 66.0, 67.0", "Salesforce", "not contacted", "Next:", "glade check --project", "glade test --project"} {
+	for _, want := range []string{"Glade doctor", "Project", "LWC tools", "Parser", "Apex default", "checked window: " + strings.Join(apexversion.SupportedSourceAPIVersions, ", "), "Salesforce", "not contacted", "Next:", "glade check --project", "glade test --project"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("doctor output missing %q:\n%s", want, out)
 		}
@@ -3862,9 +3863,99 @@ private class BadBodyTest {
 		t.Fatalf("summary = %#v", envelope.Summary)
 	}
 	if len(envelope.Tests) != 1 || envelope.Tests[0].Problem == nil ||
-		!strings.Contains(envelope.Tests[0].Problem.Message, "constructs unknown type") ||
-		!strings.Contains(envelope.Tests[0].Problem.Message, "MissingHelper") {
-		t.Fatalf("test cases = %#v", envelope.Tests)
+		!strings.Contains(envelope.Tests[0].Problem.Message, "GLADESEMA006: Invalid type: MissingHelper") {
+		t.Fatalf("test cases = %#v; stdout=%s", envelope.Tests, stdout.String())
+	}
+}
+
+// D40: a compile error excludes only the invalid class and its dependents.
+// The independent test runs and passes, the report lists the excluded classes
+// with their roots, and the command still fails.
+func TestRunTestDependencyScopedCompileGate(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	classes := map[string]string{
+		"GateBad":       `public class GateBad { public static Integer one() { Integer x = 'not a number'; return 1; } }`,
+		"GateDep":       `public class GateDep { public static Integer two() { return GateBad.one() + 1; } }`,
+		"GateDepTest":   `@IsTest private class GateDepTest { @IsTest static void observe() { System.assertEquals(2, GateDep.two()); } }`,
+		"GateIndep":     `public class GateIndep { public static Integer five() { return 5; } }`,
+		"GateIndepTest": `@IsTest private class GateIndepTest { @IsTest static void observe() { System.assertEquals(5, GateIndep.five()); } }`,
+	}
+	for name, source := range classes {
+		writeTestFile(t, filepath.Join(root, "force-app/main/classes", name+".cls"), source)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--json", "--no-progress", "--no-cache"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	var envelope struct {
+		Status   string             `json:"status"`
+		ExitCode int                `json:"exitCode"`
+		Summary  testreport.Summary `json:"summary"`
+		Data     testreport.Run     `json:"data"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout.String())
+	}
+	if envelope.Status != "failed" || envelope.ExitCode != 1 {
+		t.Fatalf("envelope = %#v", envelope)
+	}
+	if envelope.Summary.Total != 2 || envelope.Summary.Passed != 1 || envelope.Summary.CompileErrors != 1 || envelope.Summary.ExcludedClasses != 3 {
+		t.Fatalf("summary = %#v", envelope.Summary)
+	}
+	statuses := make(map[string]testreport.Case)
+	for _, suite := range envelope.Data.Suites {
+		for _, testCase := range suite.Cases {
+			statuses[testCase.ClassName] = testCase
+		}
+	}
+	if statuses["GateIndepTest"].Status != testreport.StatusPass {
+		t.Fatalf("independent test = %#v", statuses["GateIndepTest"])
+	}
+	dependent := statuses["GateDepTest"]
+	wantDependent := "Dependent class is invalid and needs recompilation:\n Class GateDep : Dependent class is invalid and needs recompilation:\n Class GateBad : "
+	if dependent.Status != testreport.StatusCompileError || dependent.Problem == nil || !strings.HasPrefix(dependent.Problem.Message, wantDependent) || !strings.Contains(dependent.Problem.Detail, "GateBad.cls:1:") {
+		t.Fatalf("dependent test = %#v", dependent)
+	}
+	var excluded []string
+	for _, entry := range envelope.Data.ExcludedClasses {
+		excluded = append(excluded, entry.ClassName+"<"+entry.DependsOn+"<"+entry.Root)
+	}
+	if got := strings.Join(excluded, ","); got != "GateBad<<GateBad,GateDep<GateBad<GateBad,GateDepTest<GateDep<GateBad" {
+		t.Fatalf("excluded classes = %s", got)
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"test", "--project", root, "--no-progress", "--no-cache"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("text exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	text := stdout.String()
+	for _, want := range []string{"Excluded: 3", "Compile errors excluded 3 classes:", "GateDep      depends on GateBad", "GateDepTest  depends on GateDep (root GateBad)", "(GateBad.cls:1)"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("console output missing %q:\n%s", want, text)
+		}
+	}
+
+	// Selecting only the independent class still fails the run: the project has
+	// a compile error even though every selected test passes.
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"test", "--project", root, "--class", "GateIndepTest", "--json", "--no-progress", "--no-cache"}, &stdout, &stderr)
+	envelope = struct {
+		Status   string             `json:"status"`
+		ExitCode int                `json:"exitCode"`
+		Summary  testreport.Summary `json:"summary"`
+		Data     testreport.Run     `json:"data"`
+	}{}
+	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+		t.Fatalf("selected stdout is not JSON: %v\n%s", err, stdout.String())
+	}
+	if code != 1 || envelope.ExitCode != 1 || envelope.Status != "failed" || envelope.Summary.Total != 1 || envelope.Summary.Passed != 1 || envelope.Summary.ExcludedClasses != 3 {
+		t.Fatalf("selected run code=%d envelope=%#v", code, envelope)
 	}
 }
 
@@ -4425,7 +4516,7 @@ func TestRunExec(t *testing.T) {
 }
 
 func TestSupportedSourceAPIVersionExecutionMatrix(t *testing.T) {
-	for _, apiVersion := range []string{"65.0", "66.0", "67.0"} {
+	for _, apiVersion := range []string{"62.0", "63.0", "64.0", "65.0", "66.0", "67.0", "68.0"} {
 		t.Run(apiVersion, func(t *testing.T) {
 			root := t.TempDir()
 			writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"`+apiVersion+`"}`)
@@ -4433,7 +4524,12 @@ func TestSupportedSourceAPIVersionExecutionMatrix(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			prepared, err := prepareAnonymousSource("Integer value = 1 + 1; System.assertEquals(2, value);", p.SourceAPIVersion)
+			source := "Integer value = 1 + 1; System.assertEquals(2, value);"
+			if apiVersion == "68.0" {
+				// Native API 68 A03 R001: true && true is true at API 68.
+				source = "Boolean value = true && true; System.assertEquals(true, value);"
+			}
+			prepared, err := prepareAnonymousSource(source, p.SourceAPIVersion)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -1,0 +1,1 @@
+System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor67.observe('CHAIN')));

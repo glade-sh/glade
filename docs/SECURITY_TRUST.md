@@ -12,7 +12,20 @@ not public issues. If GitHub reporting is unavailable, use
 
 - `govulncheck` checks reachable vulnerabilities in Go dependencies and the Go
   standard library.
-- CodeQL runs the Go security-extended query suite.
+- CodeQL runs the Go security-extended query suite with event-specific query
+  filters. Both initialization profiles declare `**/*_generated.go` in
+  `paths-ignore`. Analysis keeps a 90-minute step budget and a 100-minute job
+  budget. Go uses a manual build;
+  [GitHub documents](https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/alerts-in-generated-code)
+  that compiled Go analysis follows the build, so this path setting alone does
+  not prove generated Go is excluded from the database or that analysis will
+  finish within the budget. Hosted execution still needs verification.
+  Both profiles exclude `go/cookie-httponly-not-set` and
+  `go/cookie-secure-not-set`: they never finished in run 39616762308. The only
+  cookie sink is the Visualforce Apex Cookie emulation in
+  `internal/server/visualforce.go`, which writes the flags the Apex program
+  set. A server test pins those flags, and a source scan fails if another
+  non-test file sets a cookie.
 - `gosec` uploads SARIF for source-pattern review.
 - `npm audit --omit=dev --audit-level=high` checks packaged JavaScript
   production dependencies in the LWC toolchain and VS Code extension.
@@ -22,6 +35,10 @@ not public issues. If GitHub reporting is unavailable, use
   publishes repository-posture results.
 
 ## Release proof
+
+The v0.3.0 archive inventories and embedded revision must be read from that
+release's binaries, SBOMs, and attestations. The measurements below are
+historical v0.2.15 evidence and do not describe v0.3.0 artifacts.
 
 The v0.2.15 binaries embed commit `82b8495972715a27aec8f864bc4ab39e7fa03974`
 with `vcs.modified=false`.

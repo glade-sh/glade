@@ -1,0 +1,377 @@
+{
+  "cluster": "package-lexical",
+  "cellCount": 12,
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cells": [
+    {
+      "id": "C154R09",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.Caller.run());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R09|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "76aae9bb663bbed8624f656d3616266e314154310f7a41c3e10c8c5c8b1fba61"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": false
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R10",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Util": "public class Util { public static Boolean has(List<Id> x) { return true; } public static Boolean has(List<Object> x) { return true; } public static Boolean has(List<String> x) { return true; } }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.Caller.run());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R10|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Util": "b1750a1ec2137c533638cde4c4ff820d49ef74f7134648ae5e5c0ab6d058f9c5",
+          "class:E10Observe": "b5b1f825af3055b18aa2071c0ffd1ac340f60ce54d1287a16ac11fc081507724"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": false
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R37",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Item": "public class Item { public String name; }",
+          "Data": "public class Data { public List<Item> items {get;set;} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.Caller.run());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R37|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Item": "40b3aaeccfdb7e2d7a8c79cc508b4fab9929c8b61f9f870d19150f919360f194",
+          "class:Data": "1caf1c2dd3d3811f065ee901241449ca176568bd4ad88106bd63fa6a22be1447",
+          "class:E10Observe": "80a31f59c9d94915626970cbd810064db1905f116c975eff1877e6ec9260a586"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": false
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R38",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new gladens001.Data());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R38|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "53fa22eaee9404c50852d53a361e69b78cfa5edd78eaa5da648afc7c7ab49452"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Type is not visible: gladens001.Data",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Type is not visible: gladens001.Data",
+      "rejectUnit": "route",
+      "rejectClass": "E10Observe"
+    },
+    {
+      "id": "C154R09",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.Caller.run());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R09|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "76aae9bb663bbed8624f656d3616266e314154310f7a41c3e10c8c5c8b1fba61"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": false
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R10",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Util": "public class Util { public static Boolean has(List<Id> x) { return true; } public static Boolean has(List<Object> x) { return true; } public static Boolean has(List<String> x) { return true; } }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.Caller.run());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R10|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Util": "b1750a1ec2137c533638cde4c4ff820d49ef74f7134648ae5e5c0ab6d058f9c5",
+          "class:E10Observe": "b5b1f825af3055b18aa2071c0ffd1ac340f60ce54d1287a16ac11fc081507724"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": false
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R37",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Item": "public class Item { public String name; }",
+          "Data": "public class Data { public List<Item> items {get;set;} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.Caller.run());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R37|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Item": "40b3aaeccfdb7e2d7a8c79cc508b4fab9929c8b61f9f870d19150f919360f194",
+          "class:Data": "1caf1c2dd3d3811f065ee901241449ca176568bd4ad88106bd63fa6a22be1447",
+          "class:E10Observe": "80a31f59c9d94915626970cbd810064db1905f116c975eff1877e6ec9260a586"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": false
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R38",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new gladens001.Data());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R38|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "53fa22eaee9404c50852d53a361e69b78cfa5edd78eaa5da648afc7c7ab49452"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Type is not visible: gladens001.Data",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Type is not visible: gladens001.Data",
+      "rejectUnit": "route",
+      "rejectClass": "E10Observe"
+    },
+    {
+      "id": "C154R09",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.Caller.run());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R09|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "76aae9bb663bbed8624f656d3616266e314154310f7a41c3e10c8c5c8b1fba61"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": false
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R10",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Util": "public class Util { public static Boolean has(List<Id> x) { return true; } public static Boolean has(List<Object> x) { return true; } public static Boolean has(List<String> x) { return true; } }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.Caller.run());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R10|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Util": "b1750a1ec2137c533638cde4c4ff820d49ef74f7134648ae5e5c0ab6d058f9c5",
+          "class:E10Observe": "b5b1f825af3055b18aa2071c0ffd1ac340f60ce54d1287a16ac11fc081507724"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": false
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R37",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Item": "public class Item { public String name; }",
+          "Data": "public class Data { public List<Item> items {get;set;} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.Caller.run());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R37|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Item": "40b3aaeccfdb7e2d7a8c79cc508b4fab9929c8b61f9f870d19150f919360f194",
+          "class:Data": "1caf1c2dd3d3811f065ee901241449ca176568bd4ad88106bd63fa6a22be1447",
+          "class:E10Observe": "80a31f59c9d94915626970cbd810064db1905f116c975eff1877e6ec9260a586"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": false
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R38",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new gladens001.Data());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R38|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "53fa22eaee9404c50852d53a361e69b78cfa5edd78eaa5da648afc7c7ab49452"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Type is not visible: gladens001.Data",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Type is not visible: gladens001.Data",
+      "rejectUnit": "route",
+      "rejectClass": "E10Observe"
+    }
+  ]
+}

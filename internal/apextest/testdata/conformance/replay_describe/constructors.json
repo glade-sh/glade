@@ -1,0 +1,2432 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "constructors",
+  "shapeCount": 13,
+  "nativeObservationCount": 104,
+  "assertedObservationCount": 104,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C168RP_042",
+      "group": "constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(ReplayId=1L);v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "0ccd80b6ca73688a246143b69ca4fb62b1ec0a241056cbc9dd4c0d8b9dfaa7da",
+          "sourceSha256": {
+            "anonymous": "f71f078eedf7bc5b9379d0bfe42778137de089c1669250d8c4268dd1cf68139b"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A59626e9fa2Event__e.ReplayId",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.ReplayId"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A6238d1de48Event__e.ReplayId",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.ReplayId"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A67bc36e5d1Event__e.ReplayId",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.ReplayId"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A683f314eb3Event__e.ReplayId",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.ReplayId"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(ReplayId=1L);v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_042');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(ReplayId=1L);v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "0ccd80b6ca73688a246143b69ca4fb62b1ec0a241056cbc9dd4c0d8b9dfaa7da",
+          "sourceSha256": {
+            "class:C168C168RP042Test": "f1471e7366e5c4f8fd80d8e02ecf023a864e74d8a30671612ef85f51137accc3"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP042Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A59626e9fa2Event__e.ReplayId"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.ReplayId"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP042Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A6238d1de48Event__e.ReplayId"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.ReplayId"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP042Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A67bc36e5d1Event__e.ReplayId"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.ReplayId"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP042Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A683f314eb3Event__e.ReplayId"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.ReplayId"
+            }
+          },
+          "classes": {
+            "C168C168RP042Test": "@IsTest private class C168C168RP042Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(ReplayId=1L);v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_042');}}"
+          },
+          "tests": [
+            "C168C168RP042Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_043",
+      "group": "constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(ReplayId=null);v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "78022afa3c9617814c735ea4f330c9e2c3e80f3038168804348fd75d5f342854",
+          "sourceSha256": {
+            "anonymous": "b5abc2f7f6eeedbb0e3450f68d7f8d57bd110e2daaa7ca1bd763f32cb4206422"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A59626e9fa2Event__e.ReplayId",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.ReplayId"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A6238d1de48Event__e.ReplayId",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.ReplayId"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A67bc36e5d1Event__e.ReplayId",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.ReplayId"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A683f314eb3Event__e.ReplayId",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.ReplayId"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(ReplayId=null);v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_043');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(ReplayId=null);v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "78022afa3c9617814c735ea4f330c9e2c3e80f3038168804348fd75d5f342854",
+          "sourceSha256": {
+            "class:C168C168RP043Test": "a08aadff8b7b321c4ead41afa694cc6c0371e50c85bfc293e9348a16256d353a"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP043Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A59626e9fa2Event__e.ReplayId"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.ReplayId"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP043Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A6238d1de48Event__e.ReplayId"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.ReplayId"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP043Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A67bc36e5d1Event__e.ReplayId"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.ReplayId"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP043Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A683f314eb3Event__e.ReplayId"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.ReplayId"
+            }
+          },
+          "classes": {
+            "C168C168RP043Test": "@IsTest private class C168C168RP043Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(ReplayId=null);v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_043');}}"
+          },
+          "tests": [
+            "C168C168RP043Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_044",
+      "group": "constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(EventUuid='00000000-0000-4000-8000-000000000001');v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "4b85cea400278f20a740d66c6823cbe588662613ea21262274c0804af43c2b91",
+          "sourceSha256": {
+            "anonymous": "0beb8fbfc961004faae3f20944518196387caf72df42504ea79705d29cb9097d"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A59626e9fa2Event__e.EventUuid",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.EventUuid"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A6238d1de48Event__e.EventUuid",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.EventUuid"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A67bc36e5d1Event__e.EventUuid",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.EventUuid"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A683f314eb3Event__e.EventUuid",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.EventUuid"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(EventUuid='00000000-0000-4000-8000-000000000001');v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_044');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(EventUuid='00000000-0000-4000-8000-000000000001');v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "4b85cea400278f20a740d66c6823cbe588662613ea21262274c0804af43c2b91",
+          "sourceSha256": {
+            "class:C168C168RP044Test": "51e6976a21a82894d903083b364609da8d080932ca3ede2de60d78312688638c"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP044Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A59626e9fa2Event__e.EventUuid"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.EventUuid"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP044Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A6238d1de48Event__e.EventUuid"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.EventUuid"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP044Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A67bc36e5d1Event__e.EventUuid"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.EventUuid"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP044Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A683f314eb3Event__e.EventUuid"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.EventUuid"
+            }
+          },
+          "classes": {
+            "C168C168RP044Test": "@IsTest private class C168C168RP044Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(EventUuid='00000000-0000-4000-8000-000000000001');v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_044');}}"
+          },
+          "tests": [
+            "C168C168RP044Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_045",
+      "group": "constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(EventUuid=null);v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "29402cc625471ae984462b9016acfc45eeef32bf4c2e78b8440dd512ea52ef58",
+          "sourceSha256": {
+            "anonymous": "b3c17812f62369b550528ec717b26000c1bf95d779f81ff5d118bc5902350b82"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A59626e9fa2Event__e.EventUuid",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.EventUuid"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A6238d1de48Event__e.EventUuid",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.EventUuid"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A67bc36e5d1Event__e.EventUuid",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.EventUuid"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A683f314eb3Event__e.EventUuid",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.EventUuid"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(EventUuid=null);v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_045');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(EventUuid=null);v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "29402cc625471ae984462b9016acfc45eeef32bf4c2e78b8440dd512ea52ef58",
+          "sourceSha256": {
+            "class:C168C168RP045Test": "b64ce15e79e54230668763fe725b3c574133f99e5e95c28cf77e820154bed2e1"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP045Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A59626e9fa2Event__e.EventUuid"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.EventUuid"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP045Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A6238d1de48Event__e.EventUuid"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.EventUuid"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP045Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A67bc36e5d1Event__e.EventUuid"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.EventUuid"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP045Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A683f314eb3Event__e.EventUuid"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.EventUuid"
+            }
+          },
+          "classes": {
+            "C168C168RP045Test": "@IsTest private class C168C168RP045Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(EventUuid=null);v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_045');}}"
+          },
+          "tests": [
+            "C168C168RP045Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_046",
+      "group": "constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(CreatedDate=Datetime.newInstanceGmt(2024,1,15,12,0,0));v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "69e7013309092ce148af9b429a899a981c12eac186d4617af1bc7c805e7e0054",
+          "sourceSha256": {
+            "anonymous": "f3bd601dd275eca44f07fbc142fbc8e9d4e4903229b916f85877c209a407dea4"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A59626e9fa2Event__e.CreatedDate",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.CreatedDate"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A6238d1de48Event__e.CreatedDate",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.CreatedDate"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedDate",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedDate"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A683f314eb3Event__e.CreatedDate",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.CreatedDate"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(CreatedDate=Datetime.newInstanceGmt(2024,1,15,12,0,0));v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_046');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(CreatedDate=Datetime.newInstanceGmt(2024,1,15,12,0,0));v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "69e7013309092ce148af9b429a899a981c12eac186d4617af1bc7c805e7e0054",
+          "sourceSha256": {
+            "class:C168C168RP046Test": "e6d71430a5ea10252562d35617178088b3ded21227304d3923b07267bfe5ddf1"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP046Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A59626e9fa2Event__e.CreatedDate"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.CreatedDate"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP046Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A6238d1de48Event__e.CreatedDate"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.CreatedDate"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP046Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedDate"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedDate"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP046Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A683f314eb3Event__e.CreatedDate"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.CreatedDate"
+            }
+          },
+          "classes": {
+            "C168C168RP046Test": "@IsTest private class C168C168RP046Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(CreatedDate=Datetime.newInstanceGmt(2024,1,15,12,0,0));v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_046');}}"
+          },
+          "tests": [
+            "C168C168RP046Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_047",
+      "group": "constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(CreatedDate=null);v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "018825ce7d8f3f0ec67969af6283cc3d91e6b3b38aa53b7f8bc6360fe81526f3",
+          "sourceSha256": {
+            "anonymous": "4fd2fdedbb9262df1027129e56d3044158e71218c8b0f36a6a7828a345e9983d"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A59626e9fa2Event__e.CreatedDate",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.CreatedDate"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A6238d1de48Event__e.CreatedDate",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.CreatedDate"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedDate",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedDate"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A683f314eb3Event__e.CreatedDate",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.CreatedDate"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(CreatedDate=null);v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_047');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(CreatedDate=null);v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "018825ce7d8f3f0ec67969af6283cc3d91e6b3b38aa53b7f8bc6360fe81526f3",
+          "sourceSha256": {
+            "class:C168C168RP047Test": "ec83306fecab4f1b66fecdc1fbe2b88b4d74f7f450eeee5d613f3de26e1cd564"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP047Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A59626e9fa2Event__e.CreatedDate"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.CreatedDate"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP047Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A6238d1de48Event__e.CreatedDate"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.CreatedDate"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP047Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedDate"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedDate"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP047Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A683f314eb3Event__e.CreatedDate"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.CreatedDate"
+            }
+          },
+          "classes": {
+            "C168C168RP047Test": "@IsTest private class C168C168RP047Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(CreatedDate=null);v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_047');}}"
+          },
+          "tests": [
+            "C168C168RP047Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_048",
+      "group": "constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(CreatedById=UserInfo.getUserId());v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "25aeab1cb3c3836195f87de1a7d47057f82adb0cc35a6c4dade70d2bdb2590fa",
+          "sourceSha256": {
+            "anonymous": "bce6e939f77bd3a343f0a60949dde80f61523a5a3eb9d821f2bc7c4015971c79"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A59626e9fa2Event__e.CreatedById",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.CreatedById"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A6238d1de48Event__e.CreatedById",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.CreatedById"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedById",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedById"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A683f314eb3Event__e.CreatedById",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.CreatedById"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(CreatedById=UserInfo.getUserId());v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_048');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(CreatedById=UserInfo.getUserId());v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "25aeab1cb3c3836195f87de1a7d47057f82adb0cc35a6c4dade70d2bdb2590fa",
+          "sourceSha256": {
+            "class:C168C168RP048Test": "28e7814dced5968dc9c52f69149292228a36f381413bf747108a0ee8b96f653d"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP048Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A59626e9fa2Event__e.CreatedById"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.CreatedById"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP048Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A6238d1de48Event__e.CreatedById"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.CreatedById"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP048Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedById"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedById"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP048Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A683f314eb3Event__e.CreatedById"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.CreatedById"
+            }
+          },
+          "classes": {
+            "C168C168RP048Test": "@IsTest private class C168C168RP048Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(CreatedById=UserInfo.getUserId());v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_048');}}"
+          },
+          "tests": [
+            "C168C168RP048Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_049",
+      "group": "constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(CreatedById=null);v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "d7fa5a87ec2dad2d62c8cac9dfd38a6da2913bb69c7eb5e49b5e08de72e41f3f",
+          "sourceSha256": {
+            "anonymous": "cb0442b77b55bdcdee6c98977364cbeed23230b7adebb0739b0fdb22b6203952"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A59626e9fa2Event__e.CreatedById",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.CreatedById"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A6238d1de48Event__e.CreatedById",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.CreatedById"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedById",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedById"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: C168A683f314eb3Event__e.CreatedById",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.CreatedById"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(CreatedById=null);v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_049');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(CreatedById=null);v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "d7fa5a87ec2dad2d62c8cac9dfd38a6da2913bb69c7eb5e49b5e08de72e41f3f",
+          "sourceSha256": {
+            "class:C168C168RP049Test": "360002c30a00d8ed172e5340501cbc644baf586d27bf3a5d080604c0e640cacd"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP049Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A59626e9fa2Event__e.CreatedById"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A59626e9fa2Event__e.CreatedById"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP049Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A6238d1de48Event__e.CreatedById"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A6238d1de48Event__e.CreatedById"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP049Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedById"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A67bc36e5d1Event__e.CreatedById"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP049Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: C168A683f314eb3Event__e.CreatedById"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: C168A683f314eb3Event__e.CreatedById"
+            }
+          },
+          "classes": {
+            "C168C168RP049Test": "@IsTest private class C168C168RP049Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(CreatedById=null);v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_049');}}"
+          },
+          "tests": [
+            "C168C168RP049Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_050",
+      "group": "constructor",
+      "role": "positive",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(Text__c='text');v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "fbd37171292e0fa8f6492843ba512e50fc0a970e3c87c89d9e8afc26a5be5cee",
+          "sourceSha256": {
+            "anonymous": "227298c99db4bbce986a4febf218b1f12b10cc2af19b98308f1a3c2f1813c87e"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": "text"
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":\"text\"}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": "text"
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":\"text\"}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": "text"
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":\"text\"}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": "text"
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":\"text\"}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(Text__c='text');v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_050');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(Text__c='text');v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "fbd37171292e0fa8f6492843ba512e50fc0a970e3c87c89d9e8afc26a5be5cee",
+          "sourceSha256": {
+            "class:C168C168RP050Test": "3fa52f42e41b630144d833c5b289cea04b11fcca77f5285c853dc437229217c4"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": "text"
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":\"text\"}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": "text"
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":\"text\"}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": "text"
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":\"text\"}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": "text"
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":\"text\"}}"
+            }
+          },
+          "classes": {
+            "C168C168RP050Test": "@IsTest private class C168C168RP050Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(Text__c='text');v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_050');}}"
+          },
+          "tests": [
+            "C168C168RP050Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_051",
+      "group": "constructor",
+      "role": "positive",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(Text__c=null);v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "c2861f66d8d3e9771840f25839ed384ef6d9b5084a5d885c4e38fe560c1f58e5",
+          "sourceSha256": {
+            "anonymous": "55a7c75fcfe68a680e0870432106ed53485b795ce110297072243cba42e4237f"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": null
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":null}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": null
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":null}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": null
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":null}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": null
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":null}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(Text__c=null);v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_051');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(Text__c=null);v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "c2861f66d8d3e9771840f25839ed384ef6d9b5084a5d885c4e38fe560c1f58e5",
+          "sourceSha256": {
+            "class:C168C168RP051Test": "c5cd8d0b26d0105d4f89a53b5aca233c4f11d9273d7be52ac75609edd8fd9153"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": null
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":null}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": null
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":null}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": null
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":null}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "Text__c": null
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"Text__c\":null}}"
+            }
+          },
+          "classes": {
+            "C168C168RP051Test": "@IsTest private class C168C168RP051Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(Text__c=null);v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_051');}}"
+          },
+          "tests": [
+            "C168C168RP051Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_052",
+      "group": "constructor",
+      "role": "boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=RpEvent__e.SObjectType.newSObject(null,true);v=new Map<String,Object>{'uuid'=>s.get('EventUuid'),'replay'=>s.get('ReplayId'),'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "ab47706ba6bd43cc3561907c2c5570db559bfe7dd8088826a38d34180f0dc666",
+          "sourceSha256": {
+            "anonymous": "d6360fe466ced0687c04cf87222858dd7475eaa3894d436e22e10a8759cd5cc1"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "uuidShaped": true,
+                      "length": 36,
+                      "isNull": false
+                    },
+                    "replay": null,
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false},\"replay\":null,\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "uuidShaped": true,
+                      "length": 36,
+                      "isNull": false
+                    },
+                    "replay": null,
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false},\"replay\":null,\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "uuidShaped": true,
+                      "length": 36,
+                      "isNull": false
+                    },
+                    "replay": null,
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false},\"replay\":null,\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "uuidShaped": true,
+                      "length": 36,
+                      "isNull": false
+                    },
+                    "replay": null,
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false},\"replay\":null,\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=RpEvent__e.SObjectType.newSObject(null,true);v=new Map<String,Object>{'uuid'=>s.get('EventUuid'),'replay'=>s.get('ReplayId'),'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_052');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=RpEvent__e.SObjectType.newSObject(null,true);v=new Map<String,Object>{'uuid'=>s.get('EventUuid'),'replay'=>s.get('ReplayId'),'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "ab47706ba6bd43cc3561907c2c5570db559bfe7dd8088826a38d34180f0dc666",
+          "sourceSha256": {
+            "class:C168C168RP052Test": "6241f48c217b09688715ee0f1dc58df662369e6c6718fe6cf117057e4116186c"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "uuidShaped": true,
+                      "length": 36,
+                      "isNull": false
+                    },
+                    "replay": null,
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false},\"replay\":null,\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "uuidShaped": true,
+                      "length": 36,
+                      "isNull": false
+                    },
+                    "replay": null,
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false},\"replay\":null,\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "uuidShaped": true,
+                      "length": 36,
+                      "isNull": false
+                    },
+                    "replay": null,
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false},\"replay\":null,\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "uuidShaped": true,
+                      "length": 36,
+                      "isNull": false
+                    },
+                    "replay": null,
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false},\"replay\":null,\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP052Test": "@IsTest private class C168C168RP052Test{@IsTest static void observe(){Object v;try{SObject s=RpEvent__e.SObjectType.newSObject(null,true);v=new Map<String,Object>{'uuid'=>s.get('EventUuid'),'replay'=>s.get('ReplayId'),'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_052');}}"
+          },
+          "tests": [
+            "C168C168RP052Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_053",
+      "group": "constructor",
+      "role": "boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=RpEvent__e.SObjectType.newSObject(null,false);v=new Map<String,Object>{'uuid'=>s.get('EventUuid'),'replay'=>s.get('ReplayId'),'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "e7ed1e1010c280994d6b6502fe509fbf6f15af61c401fce3442ab275d4072a50",
+          "sourceSha256": {
+            "anonymous": "c5e6502dd2da10fdc34d6d16f876d33b95eb196716e50439b19d6db08592c720"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "isNull": true
+                    },
+                    "replay": null,
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"isNull\":true},\"replay\":null,\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "isNull": true
+                    },
+                    "replay": null,
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"isNull\":true},\"replay\":null,\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "isNull": true
+                    },
+                    "replay": null,
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"isNull\":true},\"replay\":null,\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "isNull": true
+                    },
+                    "replay": null,
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"isNull\":true},\"replay\":null,\"record\":{}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=RpEvent__e.SObjectType.newSObject(null,false);v=new Map<String,Object>{'uuid'=>s.get('EventUuid'),'replay'=>s.get('ReplayId'),'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_053');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=RpEvent__e.SObjectType.newSObject(null,false);v=new Map<String,Object>{'uuid'=>s.get('EventUuid'),'replay'=>s.get('ReplayId'),'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "e7ed1e1010c280994d6b6502fe509fbf6f15af61c401fce3442ab275d4072a50",
+          "sourceSha256": {
+            "class:C168C168RP053Test": "eaebe940ee1c3a0a2bbe31fb131d6c13c1bbbe2013cfd79072b2231266a7e068"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "isNull": true
+                    },
+                    "replay": null,
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"isNull\":true},\"replay\":null,\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "isNull": true
+                    },
+                    "replay": null,
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"isNull\":true},\"replay\":null,\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "isNull": true
+                    },
+                    "replay": null,
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"isNull\":true},\"replay\":null,\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "uuid": {
+                      "isNull": true
+                    },
+                    "replay": null,
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"uuid\":{\"isNull\":true},\"replay\":null,\"record\":{}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP053Test": "@IsTest private class C168C168RP053Test{@IsTest static void observe(){Object v;try{SObject s=RpEvent__e.SObjectType.newSObject(null,false);v=new Map<String,Object>{'uuid'=>s.get('EventUuid'),'replay'=>s.get('ReplayId'),'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_053');}}"
+          },
+          "tests": [
+            "C168C168RP053Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_054",
+      "group": "constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(Absent__c='x');v=s;",
+          "originalApexSha256": "190420a88b0ce7e6efd4b331414564b69446d763a646c4a9db42b782bcb43dee",
+          "sourceSha256": {
+            "anonymous": "1f505dbb8ca082f18181889910dbe719582cd45d47b36c5ae9401b0e07d949a3"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field does not exist: Absent__c on C168A59626e9fa2Event__e",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field does not exist: Absent__c on C168A59626e9fa2Event__e"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field does not exist: Absent__c on C168A6238d1de48Event__e",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field does not exist: Absent__c on C168A6238d1de48Event__e"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field does not exist: Absent__c on C168A67bc36e5d1Event__e",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field does not exist: Absent__c on C168A67bc36e5d1Event__e"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field does not exist: Absent__c on C168A683f314eb3Event__e",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field does not exist: Absent__c on C168A683f314eb3Event__e"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(Absent__c='x');v=s;}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_054');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(Absent__c='x');v=s;",
+          "originalApexSha256": "190420a88b0ce7e6efd4b331414564b69446d763a646c4a9db42b782bcb43dee",
+          "sourceSha256": {
+            "class:C168C168RP054Test": "29716e8adceb6a33f09a50f4eb3dd11a1c7878ba92c3255cd9723b4ef6a2dca4"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP054Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field does not exist: Absent__c on C168A59626e9fa2Event__e"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field does not exist: Absent__c on C168A59626e9fa2Event__e"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP054Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field does not exist: Absent__c on C168A6238d1de48Event__e"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field does not exist: Absent__c on C168A6238d1de48Event__e"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP054Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field does not exist: Absent__c on C168A67bc36e5d1Event__e"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field does not exist: Absent__c on C168A67bc36e5d1Event__e"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP054Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field does not exist: Absent__c on C168A683f314eb3Event__e"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field does not exist: Absent__c on C168A683f314eb3Event__e"
+            }
+          },
+          "classes": {
+            "C168C168RP054Test": "@IsTest private class C168C168RP054Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(Absent__c='x');v=s;}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_054');}}"
+          },
+          "tests": [
+            "C168C168RP054Test"
+          ]
+        }
+      }
+    }
+  ]
+}

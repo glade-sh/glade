@@ -5,6 +5,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -497,14 +498,21 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 			return vm.reflectionTypeToken("Schema." + record)
 		}
 	}
-	if namespace == "" && strings.EqualFold(name, "System.Callable") {
-		return vm.reflectionTypeToken("System.Callable")
+	if namespace == "" {
+		for _, visible := range []string{"System.Callable", "System.Schedulable", "System.SchedulableContext"} {
+			if strings.EqualFold(name, visible) && (visible == "System.Callable" || !explicitNamespace) {
+				return vm.reflectionTypeToken(visible)
+			}
+		}
 	}
 	// The single-name overload prefers a schema record even when a project
 	// class has the same name. Empty/null explicit namespaces keep class lookup.
 	if namespace == "" && !explicitNamespace {
 		if record, ok := vm.resolveObjectName(name); ok {
 			return vm.reflectionTypeToken("Schema." + record)
+		}
+		if event, ok := standardChangeEventName(name); ok {
+			return vm.reflectionTypeToken("Schema." + event)
 		}
 		if record, ok := storage.ResolveKnownStandardObjectName(name); ok {
 			return vm.reflectionTypeToken("Schema." + record)
@@ -523,17 +531,36 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		}
 		for _, candidate := range namespaceTypeNameCandidates(namespace, name) {
 			if class, ok := vm.lookupClass(candidate); ok && !methodHasModifier(class.Modifiers, AnonymousClassModifier) {
+				if !vm.typeForNameNestedClassVisible(class, namespace, name) {
+					return Null
+				}
 				return vm.reflectionTypeToken(typeForNameClassToken(namespace, class))
 			}
 		}
 		if objectName, ok := vm.localNamespaceSObjectTypeForName(namespace, name); ok {
 			return vm.reflectionTypeToken(objectName)
 		}
+		// Native rows (scratch org): below API 60, forName('Schema', sObject)
+		// returns the SObject type; from API 60 it returns null.
+		if strings.EqualFold(namespace, "Schema") && apexversion.Before(vm.currentMethod.APIVersion, 60) {
+			if record, ok := vm.resolveObjectName(name); ok {
+				return vm.reflectionTypeToken("Schema." + record)
+			}
+			if record, ok := storage.ResolveKnownStandardObjectName(name); ok {
+				return vm.reflectionTypeToken("Schema." + record)
+			}
+		}
 		return Null
 	}
 	if resolved, ok := vm.resolveClassName(name); ok {
 		if class, ok := vm.lookupClass(resolved); ok && !methodHasModifier(class.Modifiers, AnonymousClassModifier) {
-			if !explicitNamespace && !strings.Contains(name, ".") && !typeForNameClassVisible(class) {
+			if !vm.typeForNameNestedClassVisible(class, namespace, name) {
+				return Null
+			}
+			// H01/H05 API62/67/68 local observations also hide private
+			// top-level tests through empty/null explicit namespaces.
+			if !strings.Contains(name, ".") && !typeForNameClassVisible(class) &&
+				(!explicitNamespace || class.Namespace == "" && vm.currentCallerNamespace() == "") {
 				return Null
 			}
 			return vm.reflectionTypeToken(vm.classTypeToken(class))
@@ -555,6 +582,14 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 			return Null
 		}
 		return vm.reflectionTypeToken(resolved)
+	}
+	if !explicitNamespace && name == "ANY" && vm.collectionCastReflectionEnabled() {
+		return vm.reflectionTypeToken("Object")
+	}
+	if !explicitNamespace {
+		if alias, ok := vm.rawListReflectionAlias(name); ok {
+			return vm.reflectionTypeToken(alias)
+		}
 	}
 	if isBuiltinTypeName(name) || isGenericTypeName(name) || isCommonSObjectTypeName(name) {
 		return vm.reflectionTypeToken(name)
@@ -617,6 +652,22 @@ func generatedPlatformTypeForName(namespace, name string) (string, bool) {
 	}
 	return "", false
 }
+func (vm *VM) typeForNameNestedClassVisible(class Class, namespace, name string) bool {
+	if class.Namespace != "" || vm.currentCallerNamespace() != "" ||
+		(vm.Org != nil && strings.TrimSpace(vm.Org.Namespace) != "") ||
+		!strings.Contains(name, ".") || !strings.Contains(class.Name, ".") {
+		return true
+	}
+	// A local nested class is not found through an outer-name prefix with a
+	// trailing separator, even when its qualified name is otherwise visible.
+	if strings.HasSuffix(namespace, ".") {
+		return false
+	}
+	// Local private nested classes are not discoverable by qualified name,
+	// including from their declaring class. Class literals remain usable.
+	return !strings.EqualFold(class.Access, "private")
+}
+
 func typeForNameClassVisible(class Class) bool {
 	if !class.IsTest || strings.Contains(class.Name, ".") {
 		return true
@@ -781,6 +832,9 @@ func (vm *VM) explicitSchemaRecordType(typeName string) (string, bool) {
 	if canonical, ok := vm.resolveObjectName(record); ok {
 		return canonical, true
 	}
+	if event, ok := standardChangeEventName(record); ok {
+		return event, true
+	}
 	// Suffix-shaped names alone do not establish that a record exists.
 	if isCommonSObjectTypeName(record) {
 		return record, true
@@ -818,6 +872,12 @@ func (vm *VM) resolveClassName(typeName string) (string, bool) {
 		}
 	}
 	if class, ok := vm.lookupClass(typeName); ok {
+		if vm.cacheUnrelatedPlatformRootAlias(typeName, class) {
+			if platform, found := vm.lookupClass("System." + typeName); found && platform.PlatformType {
+				return runtimeClassName(platform), true
+			}
+			return "", false
+		}
 		if strings.Contains(typeName, ".") && class.Namespace != "" {
 			return runtimeClassName(class), true
 		}

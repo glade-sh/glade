@@ -17,9 +17,9 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// The checked-in oracle contains API62 and API67 Salesforce results, never inferred
-// expectations or a dependency on glade-tools. Both product execution routes
-// consume the same table, including compile rejection and caught exceptions.
+// The checked-in oracle contains API 62, 67 and 68 Salesforce answers, never
+// inferred expectations or a dependency on glade-tools. API 68 primary and
+// preservation answers match API 67; named checks remain legacy local assertions.
 func TestDoubleDecimalConformance(t *testing.T) {
 	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	type probeCase struct {
@@ -38,6 +38,12 @@ func TestDoubleDecimalConformance(t *testing.T) {
 			Rows           int    `json:"rows"`
 			MissingResults int    `json:"missingResults"`
 		} `json:"floorOracle"`
+		CeilingOracle struct {
+			APIVersion       string `json:"apiVersion"`
+			Rows             int    `json:"rows"`
+			PreservationRows int    `json:"preservationRows"`
+			MissingResults   int    `json:"missingResults"`
+		} `json:"ceilingOracle"`
 	}
 	data, err := os.ReadFile("testdata/conformance/double_decimal.json")
 	if err != nil {
@@ -52,6 +58,9 @@ func TestDoubleDecimalConformance(t *testing.T) {
 	if fixture.FloorOracle.APIVersion != "62.0" || fixture.FloorOracle.Rows != len(fixture.Cases) || fixture.FloorOracle.MissingResults != 0 {
 		t.Fatal("incomplete or wrong-version floor oracle")
 	}
+	if fixture.CeilingOracle.APIVersion != "68.0" || fixture.CeilingOracle.Rows != len(fixture.Cases) || fixture.CeilingOracle.PreservationRows != len(fixture.Preservation) || fixture.CeilingOracle.PreservationRows != 13 || fixture.CeilingOracle.MissingResults != 0 {
+		t.Fatal("incomplete or wrong-version ceiling oracle")
+	}
 	nativeCompilerRows := map[string]string{}
 	for _, row := range fixture.Cases {
 		if strings.HasPrefix(row.FloorExpected, "COMPILE_ERROR") {
@@ -59,10 +68,10 @@ func TestDoubleDecimalConformance(t *testing.T) {
 		}
 	}
 	floorMismatches := newFloorCompilerMismatches(t, "Double and Decimal", nativeCompilerRows, "anonymous", "@IsTest")
-	for _, api := range []string{"62.0", fixture.APIVersion} {
+	for _, api := range []string{"62.0", fixture.APIVersion, fixture.CeilingOracle.APIVersion} {
 		t.Run(api, func(t *testing.T) {
 			rows := fixture.Cases
-			if api == fixture.APIVersion {
+			if api != "62.0" {
 				rows = append(append([]probeCase{}, rows...), fixture.Preservation...)
 			}
 			anonymousExact, namedExact, anonymousCategory, namedCategory := 0, 0, 0, 0

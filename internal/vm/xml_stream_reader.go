@@ -21,7 +21,10 @@ const (
 func newXmlStreamReader(text string) (Value, error) {
 	tokens, err := xmlStreamReaderTokens(text)
 	if err != nil {
-		return Null, newExceptionError("XmlException", err.Error())
+		// Keep the valid prefix available. Parsing faults surface when the
+		// caller advances to the malformed portion of the document.
+		fault := xmlStreamReaderToken("ERROR", "", "", err.Error(), Null, Null)
+		tokens = append(tokens, fault)
 	}
 	reader := Object("XmlStreamReader")
 	reader.Fields["tokens"] = List(tokens...)
@@ -235,7 +238,7 @@ func xmlReadTokens(source string, dom bool) ([]Value, error) {
 	rootSeen := false
 	state := "START_DOCUMENT"
 	fail := func(kind string, offset int, name, expected string, startLine int) ([]Value, error) {
-		return nil, xmlReadFailure(source, dom, kind, offset, name, expected, startLine, state)
+		return tokens, xmlReadFailure(source, dom, kind, offset, name, expected, startLine, state)
 	}
 	for {
 		start := int(decoder.InputOffset())
@@ -257,7 +260,7 @@ func xmlReadTokens(source string, dom bool) ([]Value, error) {
 				entity := strings.Index(source[start:], "&"+name+";")
 				return fail("entity", start+entity+len(name)+2, name, "", 0)
 			}
-			return nil, fmt.Errorf("Dom.Document.load invalid XML: %w", err)
+			return tokens, fmt.Errorf("Dom.Document.load invalid XML: %w", err)
 		}
 		lexical := source[start:end]
 		location := xmlStreamReaderLocation(source, end)
@@ -532,6 +535,9 @@ func xmlStreamReaderNext(receiver Value) (Value, Value, bool, bool, error) {
 	index = xmlStreamReaderTextBlockEnd(receiver, tokens, index)
 	if index < len(tokens)-1 {
 		index++
+		if xmlStreamReaderTokenKind(tokens[index]) == "ERROR" {
+			return Null, receiver, false, true, newExceptionError("XmlException", tokens[index].Fields["text"].Text)
+		}
 		receiver.Fields["index"] = Int(int64(index))
 	}
 	return Int(int64(xmlStreamReaderEventCode(xmlStreamReaderTokenKind(tokens[index])))), receiver, true, true, nil

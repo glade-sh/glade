@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"after":"dml","afterReadOnly":true,"afterType":"System.DmlException","before":"accepted","beforeName":"Related","direct":"accepted","directName":"Related"}
+62.0	isTest	{"after":"dml","afterReadOnly":true,"afterType":"System.DmlException","before":"accepted","beforeName":"Related","direct":"accepted","directName":"Related"}
+67.0	anonymous	{"after":"dml","afterReadOnly":true,"afterType":"System.DmlException","before":"accepted","beforeName":"Related","direct":"accepted","directName":"Related"}
+67.0	isTest	{"after":"dml","afterReadOnly":true,"afterType":"System.DmlException","before":"accepted","beforeName":"Related","direct":"accepted","directName":"Related"}

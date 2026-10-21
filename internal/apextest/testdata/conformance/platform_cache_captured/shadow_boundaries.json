@@ -1,0 +1,1481 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "shadow_boundaries",
+  "cellCount": 42,
+  "observedCount": 42,
+  "assertedCount": 36,
+  "carriedCount": 6,
+  "cells": [
+    {
+      "id": "PCH001",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH001|'+pcWire);",
+        "classes": {
+          "PcShadowHolder": "public class PcShadowHolder { private class Cache { } }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "9d6bca283970c03b6ed3fdb272f21939373818837c49428d528207318c728b27",
+        "class:PcShadowHolder": "6ca3af9ecacb22c1fc8596a1d76d6733e72a51e5ce5db65bf2b3934f523c9ca1"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH002",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH002|'+pcWire);",
+        "classes": {
+          "PcShadowHolder": "global class PcShadowHolder { private class Cache { } }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "e77e24700ded5ab264badbdbe2341594a0f1a3243fdcb68895c0688702b699c3",
+        "class:PcShadowHolder": "6fe10ae71013b1067f796c3801dc95e0f57385a4602418bb5670934b06be97a4"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH003",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH003|'+pcWire);",
+        "classes": {
+          "PcShadowHolder": "public class PcShadowHolder { public class Cache { public class Org { } } }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "30673577f046dc0410666fdcc64ba68ecb72b91b3dce236e736febc255897f75",
+        "class:PcShadowHolder": "e0912dd8993d7f04edfd1ba05eb61a68a9a5ec47bbbb233f5f286cccfa898416"
+      },
+      "outcome": "reject",
+      "native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcShadowHolder",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Inner types are not allowed to have inner types"
+          }
+        ]
+      },
+      "primary": "Inner types are not allowed to have inner types",
+      "rejectUnit": "PcShadowHolder"
+    },
+    {
+      "id": "PCH004",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(PcSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH004|'+pcWire);",
+        "classes": {
+          "PcSelf": "public class PcSelf { private class Cache { } public static Object run() { return Cache.Org.getPartition('PcAlt'); } }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "ebbd49bb8fb632c135b189f69d943a014ec6ee7abf4f989d7e57c36582c4d4e8",
+        "class:PcSelf": "91f18c63b92fc588a645bddf292b1590b973aa1388424da0bee91a84af446590"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "OrgPartition:[Partition.CURRENT_NAMESPACE=c, Partition.DEFAULT_NAME=default, Partition.DELIMITER=., Partition.EMPTY_OR_NULL_OR_NON_ALPHANUMERIC_KEY=Invalid Key, Key cannot be null or empty and must be alphanumeric, Partition.FULL_DEFAULT_PARTITION=c.default, Partition.IMPROPER_QUALIFIED_KEY=Invalid Key, Key is not properly qualified with partition and namespace. Valid key format is <namespace>.<partition>.<key>, Partition.INVALID_CACHE_BUILDER= does not implement CacheBuilder, Partition.INVALID_NAMESPACE=Namespace cannot be null or empty, Partition.INVALID_PARTITION=Partition name cannot be null or empty and must be alphanumeric, Partition.INVALID_VALUE=Value cannot be null, delegate=PlatformCacheDelegateWrapper:[delegate=common.apex.api.platformcache.OrgCacheDelegate@a54744]]"
+      },
+      "value": "OrgPartition:[Partition.CURRENT_NAMESPACE=c, Partition.DEFAULT_NAME=default, Partition.DELIMITER=., Partition.EMPTY_OR_NULL_OR_NON_ALPHANUMERIC_KEY=Invalid Key, Key cannot be null or empty and must be alphanumeric, Partition.FULL_DEFAULT_PARTITION=c.default, Partition.IMPROPER_QUALIFIED_KEY=Invalid Key, Key is not properly qualified with partition and namespace. Valid key format is <namespace>.<partition>.<key>, Partition.INVALID_CACHE_BUILDER= does not implement CacheBuilder, Partition.INVALID_NAMESPACE=Namespace cannot be null or empty, Partition.INVALID_PARTITION=Partition name cannot be null or empty and must be alphanumeric, Partition.INVALID_VALUE=Value cannot be null, delegate=PlatformCacheDelegateWrapper:[delegate=common.apex.api.platformcache.OrgCacheDelegate@a54744]]",
+      "carryReason": "Opaque OrgPartition rendering includes an unstable delegate identity; named transport records a digest, not a stable comparable value; namespaced shadowing remains uncaptured"
+    },
+    {
+      "id": "PCH006",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { Object Cache = 1; r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH006|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "13e27cce5172126ff604706bd828b42b649c78df2825dee1bb080affc58129d9"
+      },
+      "outcome": "reject",
+      "native": {
+        "outcome": "compile-error",
+        "message": "Variable does not exist: Session",
+        "line": 1,
+        "column": 60
+      },
+      "primary": "Variable does not exist: Session",
+      "rejectUnit": "anonymous"
+    },
+    {
+      "id": "PCH006",
+      "api": "62.0",
+      "route": "anon",
+      "variant": "retry",
+      "launcher": "execute-anonymous",
+      "measurementRoute": "anon",
+      "source": {
+        "anonymous": "String r; try { Object Cache = 1; r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH006|'+pcWire);",
+        "classes": {}
+      },
+      "allocationMB": {
+        "PcZero": {
+          "Session": 0,
+          "Organization": 0
+        },
+        "PcAlt": {
+          "Session": 0,
+          "Organization": 1
+        },
+        "PcMain": {
+          "Session": 1,
+          "Organization": 1
+        }
+      },
+      "capacityLayout": {
+        "achieved": "primary",
+        "allocation_mb": {
+          "PcZero": {
+            "Session": 0,
+            "Organization": 0
+          },
+          "PcAlt": {
+            "Session": 0,
+            "Organization": 1
+          },
+          "PcMain": {
+            "Session": 1,
+            "Organization": 1
+          }
+        },
+        "verified": true,
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown",
+        "preferred": "primary",
+        "missing_required_capacity": [],
+        "default_context_uncertain": true
+      },
+      "native": {
+        "outcome": "compile-error",
+        "message": "Variable does not exist: Session",
+        "line": 1,
+        "column": 60,
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "outcome": "reject",
+      "primary": "Variable does not exist: Session",
+      "rejectUnit": "anonymous",
+      "sourceSHA256": {
+        "anonymous": "13e27cce5172126ff604706bd828b42b649c78df2825dee1bb080affc58129d9"
+      },
+      "requiredCapacity": []
+    },
+    {
+      "id": "PCH005",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH005|'+pcWire);",
+        "classes": {
+          "Cache": "public class Cache { }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "64d9f67971f970f63082c7997d8d54a31436fc4f0e20c527d5fec3e2eb2f61ff",
+        "class:Cache": "35fe9ac0ba6f55248854f4229c8b5a725f72d36a5b91ce998b1fa7355b205a42"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH001",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcShadowHolder": "public class PcShadowHolder { private class Cache { } }",
+          "PcPCH001A62Test": "@IsTest private class PcPCH001A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH001|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH001A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcShadowHolder": "6ca3af9ecacb22c1fc8596a1d76d6733e72a51e5ce5db65bf2b3934f523c9ca1",
+        "class:PcPCH001A62Test": "17a44761f71ebac20583bd87443f497e2f08c7c3226dcd8b29f20676b3414a58"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH002",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcShadowHolder": "global class PcShadowHolder { private class Cache { } }",
+          "PcPCH002A62Test": "@IsTest private class PcPCH002A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH002|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH002A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcShadowHolder": "6fe10ae71013b1067f796c3801dc95e0f57385a4602418bb5670934b06be97a4",
+        "class:PcPCH002A62Test": "24fe75f8322decaf6d8bd229375e8dd7bd7158bc8fee7def8db2e2f3f0dc3742"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH003",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcShadowHolder": "public class PcShadowHolder { public class Cache { public class Org { } } }",
+          "PcPCH003A62Test": "@IsTest private class PcPCH003A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH003|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH003A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcShadowHolder": "e0912dd8993d7f04edfd1ba05eb61a68a9a5ec47bbbb233f5f286cccfa898416",
+        "class:PcPCH003A62Test": "fb9b70e28e2234e2dba2b63e35b53906daba0274ccc59a9beac71b5c2ac9668c"
+      },
+      "outcome": "reject",
+      "native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcShadowHolder",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Inner types are not allowed to have inner types"
+          }
+        ]
+      },
+      "primary": "Inner types are not allowed to have inner types",
+      "rejectUnit": "PcShadowHolder"
+    },
+    {
+      "id": "PCH004",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcSelf": "public class PcSelf { private class Cache { } public static Object run() { return Cache.Org.getPartition('PcAlt'); } }",
+          "PcPCH004A62Test": "@IsTest private class PcPCH004A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(PcSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH004|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH004A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcSelf": "91f18c63b92fc588a645bddf292b1590b973aa1388424da0bee91a84af446590",
+        "class:PcPCH004A62Test": "be08c4f07726d546a4d82312c893faca5415c5da11e737d5a743c822bccb01ee"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": {
+          "prefix": "OrgPartition:[Partition.CURRENT_NAMESPACE=c, Partition.DEFAULT_NAME=default, Partition.DELIMITER=., Partition.EMPTY_OR_NULL_OR_NON_ALPHANUMERIC_KEY=Invalid Key, Key cannot be null or empty and must be alphanumeric, Partition.FULL_DEFAULT_PA",
+          "sha256": "75c5af1d188c6ad75e9cbd073368302b348e3fdfe33065c7170df80a820103df",
+          "bytes": 789,
+          "length": 789
+        }
+      },
+      "value": {
+        "prefix": "OrgPartition:[Partition.CURRENT_NAMESPACE=c, Partition.DEFAULT_NAME=default, Partition.DELIMITER=., Partition.EMPTY_OR_NULL_OR_NON_ALPHANUMERIC_KEY=Invalid Key, Key cannot be null or empty and must be alphanumeric, Partition.FULL_DEFAULT_PA",
+        "sha256": "75c5af1d188c6ad75e9cbd073368302b348e3fdfe33065c7170df80a820103df",
+        "bytes": 789,
+        "length": 789
+      },
+      "carryReason": "Opaque OrgPartition rendering includes an unstable delegate identity; named transport records a digest, not a stable comparable value; namespaced shadowing remains uncaptured"
+    },
+    {
+      "id": "PCH006",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcPCH006A62Test": "@IsTest private class PcPCH006A62Test { @IsTest static void observe(){String r; try { Object Cache = 1; r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH006|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH006A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCH006A62Test": "3f45545070dfbc83178d2365bd6a57fe341e324383690f3a410906f5433ed47f"
+      },
+      "outcome": "reject",
+      "native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcPCH006A62Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Variable does not exist: Session"
+          }
+        ]
+      },
+      "primary": "Variable does not exist: Session",
+      "rejectUnit": "PcPCH006A62Test"
+    },
+    {
+      "id": "PCH006",
+      "api": "62.0",
+      "route": "istest",
+      "variant": "retry",
+      "launcher": "apex-run-test",
+      "measurementRoute": "istest",
+      "source": {
+        "classes": {
+          "PcPCH006A62Test": "@IsTest private class PcPCH006A62Test { @IsTest static void observe(){String r; try { Object Cache = 1; r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH006|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH006A62Test"
+        ]
+      },
+      "allocationMB": {
+        "PcZero": {
+          "Session": 0,
+          "Organization": 0
+        },
+        "PcAlt": {
+          "Session": 0,
+          "Organization": 1
+        },
+        "PcMain": {
+          "Session": 1,
+          "Organization": 1
+        }
+      },
+      "capacityLayout": {
+        "achieved": "primary",
+        "allocation_mb": {
+          "PcZero": {
+            "Session": 0,
+            "Organization": 0
+          },
+          "PcAlt": {
+            "Session": 0,
+            "Organization": 1
+          },
+          "PcMain": {
+            "Session": 1,
+            "Organization": 1
+          }
+        },
+        "verified": true,
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown",
+        "preferred": "primary",
+        "missing_required_capacity": [],
+        "default_context_uncertain": true
+      },
+      "native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcPCH006A62Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Variable does not exist: Session"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "outcome": "reject",
+      "primary": "Variable does not exist: Session",
+      "rejectUnit": "PcPCH006A62Test",
+      "sourceSHA256": {
+        "class:PcPCH006A62Test": "3f45545070dfbc83178d2365bd6a57fe341e324383690f3a410906f5433ed47f"
+      },
+      "requiredCapacity": []
+    },
+    {
+      "id": "PCH005",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "Cache": "public class Cache { }",
+          "PcPCH005A62Test": "@IsTest private class PcPCH005A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH005|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH005A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:Cache": "35fe9ac0ba6f55248854f4229c8b5a725f72d36a5b91ce998b1fa7355b205a42",
+        "class:PcPCH005A62Test": "8fe80f84bc0e6d82184ce21430aad9669f5aee6b659469ff470b1f7512cc8e12"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH001",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH001|'+pcWire);",
+        "classes": {
+          "PcShadowHolder": "public class PcShadowHolder { private class Cache { } }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "9d6bca283970c03b6ed3fdb272f21939373818837c49428d528207318c728b27",
+        "class:PcShadowHolder": "6ca3af9ecacb22c1fc8596a1d76d6733e72a51e5ce5db65bf2b3934f523c9ca1"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH002",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH002|'+pcWire);",
+        "classes": {
+          "PcShadowHolder": "global class PcShadowHolder { private class Cache { } }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "e77e24700ded5ab264badbdbe2341594a0f1a3243fdcb68895c0688702b699c3",
+        "class:PcShadowHolder": "6fe10ae71013b1067f796c3801dc95e0f57385a4602418bb5670934b06be97a4"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH003",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH003|'+pcWire);",
+        "classes": {
+          "PcShadowHolder": "public class PcShadowHolder { public class Cache { public class Org { } } }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "30673577f046dc0410666fdcc64ba68ecb72b91b3dce236e736febc255897f75",
+        "class:PcShadowHolder": "e0912dd8993d7f04edfd1ba05eb61a68a9a5ec47bbbb233f5f286cccfa898416"
+      },
+      "outcome": "reject",
+      "native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcShadowHolder",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Inner types are not allowed to have inner types"
+          }
+        ]
+      },
+      "primary": "Inner types are not allowed to have inner types",
+      "rejectUnit": "PcShadowHolder"
+    },
+    {
+      "id": "PCH004",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(PcSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH004|'+pcWire);",
+        "classes": {
+          "PcSelf": "public class PcSelf { private class Cache { } public static Object run() { return Cache.Org.getPartition('PcAlt'); } }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "ebbd49bb8fb632c135b189f69d943a014ec6ee7abf4f989d7e57c36582c4d4e8",
+        "class:PcSelf": "91f18c63b92fc588a645bddf292b1590b973aa1388424da0bee91a84af446590"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "OrgPartition:[Partition.CURRENT_NAMESPACE=c, Partition.DEFAULT_NAME=default, Partition.DELIMITER=., Partition.EMPTY_OR_NULL_OR_NON_ALPHANUMERIC_KEY=Invalid Key, Key cannot be null or empty and must be alphanumeric, Partition.FULL_DEFAULT_PARTITION=c.default, Partition.IMPROPER_QUALIFIED_KEY=Invalid Key, Key is not properly qualified with partition and namespace. Valid key format is <namespace>.<partition>.<key>, Partition.INVALID_CACHE_BUILDER= does not implement CacheBuilder, Partition.INVALID_NAMESPACE=Namespace cannot be null or empty, Partition.INVALID_PARTITION=Partition name cannot be null or empty and must be alphanumeric, Partition.INVALID_VALUE=Value cannot be null, delegate=PlatformCacheDelegateWrapper:[delegate=common.apex.api.platformcache.OrgCacheDelegate@457bee9e]]"
+      },
+      "value": "OrgPartition:[Partition.CURRENT_NAMESPACE=c, Partition.DEFAULT_NAME=default, Partition.DELIMITER=., Partition.EMPTY_OR_NULL_OR_NON_ALPHANUMERIC_KEY=Invalid Key, Key cannot be null or empty and must be alphanumeric, Partition.FULL_DEFAULT_PARTITION=c.default, Partition.IMPROPER_QUALIFIED_KEY=Invalid Key, Key is not properly qualified with partition and namespace. Valid key format is <namespace>.<partition>.<key>, Partition.INVALID_CACHE_BUILDER= does not implement CacheBuilder, Partition.INVALID_NAMESPACE=Namespace cannot be null or empty, Partition.INVALID_PARTITION=Partition name cannot be null or empty and must be alphanumeric, Partition.INVALID_VALUE=Value cannot be null, delegate=PlatformCacheDelegateWrapper:[delegate=common.apex.api.platformcache.OrgCacheDelegate@457bee9e]]",
+      "carryReason": "Opaque OrgPartition rendering includes an unstable delegate identity; named transport records a digest, not a stable comparable value; namespaced shadowing remains uncaptured"
+    },
+    {
+      "id": "PCH006",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { Object Cache = 1; r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH006|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "13e27cce5172126ff604706bd828b42b649c78df2825dee1bb080affc58129d9"
+      },
+      "outcome": "reject",
+      "native": {
+        "outcome": "compile-error",
+        "message": "Variable does not exist: Session",
+        "line": 1,
+        "column": 60
+      },
+      "primary": "Variable does not exist: Session",
+      "rejectUnit": "anonymous"
+    },
+    {
+      "id": "PCH006",
+      "api": "67.0",
+      "route": "anon",
+      "variant": "retry",
+      "launcher": "execute-anonymous",
+      "measurementRoute": "anon",
+      "source": {
+        "anonymous": "String r; try { Object Cache = 1; r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH006|'+pcWire);",
+        "classes": {}
+      },
+      "allocationMB": {
+        "PcZero": {
+          "Session": 0,
+          "Organization": 0
+        },
+        "PcAlt": {
+          "Session": 0,
+          "Organization": 1
+        },
+        "PcMain": {
+          "Session": 1,
+          "Organization": 1
+        }
+      },
+      "capacityLayout": {
+        "achieved": "primary",
+        "allocation_mb": {
+          "PcZero": {
+            "Session": 0,
+            "Organization": 0
+          },
+          "PcAlt": {
+            "Session": 0,
+            "Organization": 1
+          },
+          "PcMain": {
+            "Session": 1,
+            "Organization": 1
+          }
+        },
+        "verified": true,
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown",
+        "preferred": "primary",
+        "missing_required_capacity": [],
+        "default_context_uncertain": true
+      },
+      "native": {
+        "outcome": "compile-error",
+        "message": "Variable does not exist: Session",
+        "line": 1,
+        "column": 60,
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "outcome": "reject",
+      "primary": "Variable does not exist: Session",
+      "rejectUnit": "anonymous",
+      "sourceSHA256": {
+        "anonymous": "13e27cce5172126ff604706bd828b42b649c78df2825dee1bb080affc58129d9"
+      },
+      "requiredCapacity": []
+    },
+    {
+      "id": "PCH005",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH005|'+pcWire);",
+        "classes": {
+          "Cache": "public class Cache { }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "64d9f67971f970f63082c7997d8d54a31436fc4f0e20c527d5fec3e2eb2f61ff",
+        "class:Cache": "35fe9ac0ba6f55248854f4229c8b5a725f72d36a5b91ce998b1fa7355b205a42"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH001",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcShadowHolder": "public class PcShadowHolder { private class Cache { } }",
+          "PcPCH001A67Test": "@IsTest private class PcPCH001A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH001|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH001A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcShadowHolder": "6ca3af9ecacb22c1fc8596a1d76d6733e72a51e5ce5db65bf2b3934f523c9ca1",
+        "class:PcPCH001A67Test": "5e201c097c06b538d75821e5e7758c69d600a372e782a27a4289e9efdb0909de"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH002",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcShadowHolder": "global class PcShadowHolder { private class Cache { } }",
+          "PcPCH002A67Test": "@IsTest private class PcPCH002A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH002|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH002A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcShadowHolder": "6fe10ae71013b1067f796c3801dc95e0f57385a4602418bb5670934b06be97a4",
+        "class:PcPCH002A67Test": "fb25542ef10ec4838c1d9516953c7d1158a2d04b402c5adb4cedd0e0bee2ceba"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH003",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcShadowHolder": "public class PcShadowHolder { public class Cache { public class Org { } } }",
+          "PcPCH003A67Test": "@IsTest private class PcPCH003A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH003|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH003A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcShadowHolder": "e0912dd8993d7f04edfd1ba05eb61a68a9a5ec47bbbb233f5f286cccfa898416",
+        "class:PcPCH003A67Test": "3d9f69a6aa716c8ec4f7d840c491bdfb9a1194334daa9e52ded716ef19ead728"
+      },
+      "outcome": "reject",
+      "native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcShadowHolder",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Inner types are not allowed to have inner types"
+          }
+        ]
+      },
+      "primary": "Inner types are not allowed to have inner types",
+      "rejectUnit": "PcShadowHolder"
+    },
+    {
+      "id": "PCH004",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcSelf": "public class PcSelf { private class Cache { } public static Object run() { return Cache.Org.getPartition('PcAlt'); } }",
+          "PcPCH004A67Test": "@IsTest private class PcPCH004A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(PcSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH004|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH004A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcSelf": "91f18c63b92fc588a645bddf292b1590b973aa1388424da0bee91a84af446590",
+        "class:PcPCH004A67Test": "31e88879dd6f8a90540b50477bb8b08aef42ceb8479d87b26f8dac5441a4c65e"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": {
+          "prefix": "OrgPartition:[Partition.CURRENT_NAMESPACE=c, Partition.DEFAULT_NAME=default, Partition.DELIMITER=., Partition.EMPTY_OR_NULL_OR_NON_ALPHANUMERIC_KEY=Invalid Key, Key cannot be null or empty and must be alphanumeric, Partition.FULL_DEFAULT_PA",
+          "sha256": "0f2a45b560fc36a85b2ea83a70e3c088a1a013e43be147629ea573bb1347875c",
+          "bytes": 789,
+          "length": 789
+        }
+      },
+      "value": {
+        "prefix": "OrgPartition:[Partition.CURRENT_NAMESPACE=c, Partition.DEFAULT_NAME=default, Partition.DELIMITER=., Partition.EMPTY_OR_NULL_OR_NON_ALPHANUMERIC_KEY=Invalid Key, Key cannot be null or empty and must be alphanumeric, Partition.FULL_DEFAULT_PA",
+        "sha256": "0f2a45b560fc36a85b2ea83a70e3c088a1a013e43be147629ea573bb1347875c",
+        "bytes": 789,
+        "length": 789
+      },
+      "carryReason": "Opaque OrgPartition rendering includes an unstable delegate identity; named transport records a digest, not a stable comparable value; namespaced shadowing remains uncaptured"
+    },
+    {
+      "id": "PCH006",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcPCH006A67Test": "@IsTest private class PcPCH006A67Test { @IsTest static void observe(){String r; try { Object Cache = 1; r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH006|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH006A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCH006A67Test": "f76d5747648f0f56e532eb7352ffd1e236e52024530a9655cd9c306ac247f02f"
+      },
+      "outcome": "reject",
+      "native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcPCH006A67Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Variable does not exist: Session"
+          }
+        ]
+      },
+      "primary": "Variable does not exist: Session",
+      "rejectUnit": "PcPCH006A67Test"
+    },
+    {
+      "id": "PCH006",
+      "api": "67.0",
+      "route": "istest",
+      "variant": "retry",
+      "launcher": "apex-run-test",
+      "measurementRoute": "istest",
+      "source": {
+        "classes": {
+          "PcPCH006A67Test": "@IsTest private class PcPCH006A67Test { @IsTest static void observe(){String r; try { Object Cache = 1; r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH006|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH006A67Test"
+        ]
+      },
+      "allocationMB": {
+        "PcZero": {
+          "Session": 0,
+          "Organization": 0
+        },
+        "PcAlt": {
+          "Session": 0,
+          "Organization": 1
+        },
+        "PcMain": {
+          "Session": 1,
+          "Organization": 1
+        }
+      },
+      "capacityLayout": {
+        "achieved": "primary",
+        "allocation_mb": {
+          "PcZero": {
+            "Session": 0,
+            "Organization": 0
+          },
+          "PcAlt": {
+            "Session": 0,
+            "Organization": 1
+          },
+          "PcMain": {
+            "Session": 1,
+            "Organization": 1
+          }
+        },
+        "verified": true,
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown",
+        "preferred": "primary",
+        "missing_required_capacity": [],
+        "default_context_uncertain": true
+      },
+      "native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcPCH006A67Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Variable does not exist: Session"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "outcome": "reject",
+      "primary": "Variable does not exist: Session",
+      "rejectUnit": "PcPCH006A67Test",
+      "sourceSHA256": {
+        "class:PcPCH006A67Test": "f76d5747648f0f56e532eb7352ffd1e236e52024530a9655cd9c306ac247f02f"
+      },
+      "requiredCapacity": []
+    },
+    {
+      "id": "PCH005",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "Cache": "public class Cache { }",
+          "PcPCH005A67Test": "@IsTest private class PcPCH005A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH005|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH005A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:Cache": "35fe9ac0ba6f55248854f4229c8b5a725f72d36a5b91ce998b1fa7355b205a42",
+        "class:PcPCH005A67Test": "37db7cfbbd2c76a45fb67613f256f7d71993da32468343d1b071ea61b9f5eb87"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH001",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH001|'+pcWire);",
+        "classes": {
+          "PcShadowHolder": "public class PcShadowHolder { private class Cache { } }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "9d6bca283970c03b6ed3fdb272f21939373818837c49428d528207318c728b27",
+        "class:PcShadowHolder": "6ca3af9ecacb22c1fc8596a1d76d6733e72a51e5ce5db65bf2b3934f523c9ca1"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH002",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH002|'+pcWire);",
+        "classes": {
+          "PcShadowHolder": "global class PcShadowHolder { private class Cache { } }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "e77e24700ded5ab264badbdbe2341594a0f1a3243fdcb68895c0688702b699c3",
+        "class:PcShadowHolder": "6fe10ae71013b1067f796c3801dc95e0f57385a4602418bb5670934b06be97a4"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH003",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH003|'+pcWire);",
+        "classes": {
+          "PcShadowHolder": "public class PcShadowHolder { public class Cache { public class Org { } } }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "30673577f046dc0410666fdcc64ba68ecb72b91b3dce236e736febc255897f75",
+        "class:PcShadowHolder": "e0912dd8993d7f04edfd1ba05eb61a68a9a5ec47bbbb233f5f286cccfa898416"
+      },
+      "outcome": "reject",
+      "native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcShadowHolder",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Inner types are not allowed to have inner types"
+          }
+        ]
+      },
+      "primary": "Inner types are not allowed to have inner types",
+      "rejectUnit": "PcShadowHolder"
+    },
+    {
+      "id": "PCH004",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(PcSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH004|'+pcWire);",
+        "classes": {
+          "PcSelf": "public class PcSelf { private class Cache { } public static Object run() { return Cache.Org.getPartition('PcAlt'); } }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "ebbd49bb8fb632c135b189f69d943a014ec6ee7abf4f989d7e57c36582c4d4e8",
+        "class:PcSelf": "91f18c63b92fc588a645bddf292b1590b973aa1388424da0bee91a84af446590"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "OrgPartition:[Partition.CURRENT_NAMESPACE=c, Partition.DEFAULT_NAME=default, Partition.DELIMITER=., Partition.EMPTY_OR_NULL_OR_NON_ALPHANUMERIC_KEY=Invalid Key, Key cannot be null or empty and must be alphanumeric, Partition.FULL_DEFAULT_PARTITION=c.default, Partition.IMPROPER_QUALIFIED_KEY=Invalid Key, Key is not properly qualified with partition and namespace. Valid key format is <namespace>.<partition>.<key>, Partition.INVALID_CACHE_BUILDER= does not implement CacheBuilder, Partition.INVALID_NAMESPACE=Namespace cannot be null or empty, Partition.INVALID_PARTITION=Partition name cannot be null or empty and must be alphanumeric, Partition.INVALID_VALUE=Value cannot be null, delegate=PlatformCacheDelegateWrapper:[delegate=common.apex.api.platformcache.OrgCacheDelegate@3543faed]]"
+      },
+      "value": "OrgPartition:[Partition.CURRENT_NAMESPACE=c, Partition.DEFAULT_NAME=default, Partition.DELIMITER=., Partition.EMPTY_OR_NULL_OR_NON_ALPHANUMERIC_KEY=Invalid Key, Key cannot be null or empty and must be alphanumeric, Partition.FULL_DEFAULT_PARTITION=c.default, Partition.IMPROPER_QUALIFIED_KEY=Invalid Key, Key is not properly qualified with partition and namespace. Valid key format is <namespace>.<partition>.<key>, Partition.INVALID_CACHE_BUILDER= does not implement CacheBuilder, Partition.INVALID_NAMESPACE=Namespace cannot be null or empty, Partition.INVALID_PARTITION=Partition name cannot be null or empty and must be alphanumeric, Partition.INVALID_VALUE=Value cannot be null, delegate=PlatformCacheDelegateWrapper:[delegate=common.apex.api.platformcache.OrgCacheDelegate@3543faed]]",
+      "carryReason": "Opaque OrgPartition rendering includes an unstable delegate identity; named transport records a digest, not a stable comparable value; namespaced shadowing remains uncaptured"
+    },
+    {
+      "id": "PCH006",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { Object Cache = 1; r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH006|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "13e27cce5172126ff604706bd828b42b649c78df2825dee1bb080affc58129d9"
+      },
+      "outcome": "reject",
+      "native": {
+        "outcome": "compile-error",
+        "message": "Variable does not exist: Session",
+        "line": 1,
+        "column": 60
+      },
+      "primary": "Variable does not exist: Session",
+      "rejectUnit": "anonymous"
+    },
+    {
+      "id": "PCH006",
+      "api": "68.0",
+      "route": "anon",
+      "variant": "retry",
+      "launcher": "execute-anonymous",
+      "measurementRoute": "anon",
+      "source": {
+        "anonymous": "String r; try { Object Cache = 1; r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH006|'+pcWire);",
+        "classes": {}
+      },
+      "allocationMB": {
+        "PcZero": {
+          "Session": 0,
+          "Organization": 0
+        },
+        "PcAlt": {
+          "Session": 0,
+          "Organization": 1
+        },
+        "PcMain": {
+          "Session": 1,
+          "Organization": 1
+        }
+      },
+      "capacityLayout": {
+        "achieved": "primary",
+        "allocation_mb": {
+          "PcZero": {
+            "Session": 0,
+            "Organization": 0
+          },
+          "PcAlt": {
+            "Session": 0,
+            "Organization": 1
+          },
+          "PcMain": {
+            "Session": 1,
+            "Organization": 1
+          }
+        },
+        "verified": true,
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown",
+        "preferred": "primary",
+        "missing_required_capacity": [],
+        "default_context_uncertain": true
+      },
+      "native": {
+        "outcome": "compile-error",
+        "message": "Variable does not exist: Session",
+        "line": 1,
+        "column": 60,
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "outcome": "reject",
+      "primary": "Variable does not exist: Session",
+      "rejectUnit": "anonymous",
+      "sourceSHA256": {
+        "anonymous": "13e27cce5172126ff604706bd828b42b649c78df2825dee1bb080affc58129d9"
+      },
+      "requiredCapacity": []
+    },
+    {
+      "id": "PCH005",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCH005|'+pcWire);",
+        "classes": {
+          "Cache": "public class Cache { }"
+        }
+      },
+      "sourceSHA256": {
+        "anonymous": "64d9f67971f970f63082c7997d8d54a31436fc4f0e20c527d5fec3e2eb2f61ff",
+        "class:Cache": "35fe9ac0ba6f55248854f4229c8b5a725f72d36a5b91ce998b1fa7355b205a42"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH001",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcShadowHolder": "public class PcShadowHolder { private class Cache { } }",
+          "PcPCH001A68Test": "@IsTest private class PcPCH001A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH001|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH001A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcShadowHolder": "6ca3af9ecacb22c1fc8596a1d76d6733e72a51e5ce5db65bf2b3934f523c9ca1",
+        "class:PcPCH001A68Test": "feed9f83496815861599b873abd650cb1f7886950b643e4f56e81abd6d06582e"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH002",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcShadowHolder": "global class PcShadowHolder { private class Cache { } }",
+          "PcPCH002A68Test": "@IsTest private class PcPCH002A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH002|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH002A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcShadowHolder": "6fe10ae71013b1067f796c3801dc95e0f57385a4602418bb5670934b06be97a4",
+        "class:PcPCH002A68Test": "3148419a66beccd8389bf885995a9ea065c0cebbe31af361d0328938fa469886"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    },
+    {
+      "id": "PCH003",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcShadowHolder": "public class PcShadowHolder { public class Cache { public class Org { } } }",
+          "PcPCH003A68Test": "@IsTest private class PcPCH003A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH003|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH003A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcShadowHolder": "e0912dd8993d7f04edfd1ba05eb61a68a9a5ec47bbbb233f5f286cccfa898416",
+        "class:PcPCH003A68Test": "125934e672e09798ee8daedbeb22ba34405461d92357451eb5dfd7c6ddd0cce0"
+      },
+      "outcome": "reject",
+      "native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcShadowHolder",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Inner types are not allowed to have inner types"
+          }
+        ]
+      },
+      "primary": "Inner types are not allowed to have inner types",
+      "rejectUnit": "PcShadowHolder"
+    },
+    {
+      "id": "PCH004",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcSelf": "public class PcSelf { private class Cache { } public static Object run() { return Cache.Org.getPartition('PcAlt'); } }",
+          "PcPCH004A68Test": "@IsTest private class PcPCH004A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(PcSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH004|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH004A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcSelf": "91f18c63b92fc588a645bddf292b1590b973aa1388424da0bee91a84af446590",
+        "class:PcPCH004A68Test": "dd2ae760a98e645a4a339d767cb259c563dd313124259c2af7f229bee17569bc"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": {
+          "prefix": "OrgPartition:[Partition.CURRENT_NAMESPACE=c, Partition.DEFAULT_NAME=default, Partition.DELIMITER=., Partition.EMPTY_OR_NULL_OR_NON_ALPHANUMERIC_KEY=Invalid Key, Key cannot be null or empty and must be alphanumeric, Partition.FULL_DEFAULT_PA",
+          "sha256": "48fc560ce8c2fda08fb1699c60e6ae85936d555dcbcafba1b4bcdf321c1bb240",
+          "bytes": 789,
+          "length": 789
+        }
+      },
+      "value": {
+        "prefix": "OrgPartition:[Partition.CURRENT_NAMESPACE=c, Partition.DEFAULT_NAME=default, Partition.DELIMITER=., Partition.EMPTY_OR_NULL_OR_NON_ALPHANUMERIC_KEY=Invalid Key, Key cannot be null or empty and must be alphanumeric, Partition.FULL_DEFAULT_PA",
+        "sha256": "48fc560ce8c2fda08fb1699c60e6ae85936d555dcbcafba1b4bcdf321c1bb240",
+        "bytes": 789,
+        "length": 789
+      },
+      "carryReason": "Opaque OrgPartition rendering includes an unstable delegate identity; named transport records a digest, not a stable comparable value; namespaced shadowing remains uncaptured"
+    },
+    {
+      "id": "PCH006",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "PcPCH006A68Test": "@IsTest private class PcPCH006A68Test { @IsTest static void observe(){String r; try { Object Cache = 1; r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH006|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH006A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCH006A68Test": "9cd96868ad8ebb4363f404194073793e8f3dee59a578fd07c746c8a1572c0249"
+      },
+      "outcome": "reject",
+      "native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcPCH006A68Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Variable does not exist: Session"
+          }
+        ]
+      },
+      "primary": "Variable does not exist: Session",
+      "rejectUnit": "PcPCH006A68Test"
+    },
+    {
+      "id": "PCH006",
+      "api": "68.0",
+      "route": "istest",
+      "variant": "retry",
+      "launcher": "apex-run-test",
+      "measurementRoute": "istest",
+      "source": {
+        "classes": {
+          "PcPCH006A68Test": "@IsTest private class PcPCH006A68Test { @IsTest static void observe(){String r; try { Object Cache = 1; r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH006|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH006A68Test"
+        ]
+      },
+      "allocationMB": {
+        "PcZero": {
+          "Session": 0,
+          "Organization": 0
+        },
+        "PcAlt": {
+          "Session": 0,
+          "Organization": 1
+        },
+        "PcMain": {
+          "Session": 1,
+          "Organization": 1
+        }
+      },
+      "capacityLayout": {
+        "achieved": "primary",
+        "allocation_mb": {
+          "PcZero": {
+            "Session": 0,
+            "Organization": 0
+          },
+          "PcAlt": {
+            "Session": 0,
+            "Organization": 1
+          },
+          "PcMain": {
+            "Session": 1,
+            "Organization": 1
+          }
+        },
+        "verified": true,
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown",
+        "preferred": "primary",
+        "missing_required_capacity": [],
+        "default_context_uncertain": true
+      },
+      "native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcPCH006A68Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Variable does not exist: Session"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "outcome": "reject",
+      "primary": "Variable does not exist: Session",
+      "rejectUnit": "PcPCH006A68Test",
+      "sourceSHA256": {
+        "class:PcPCH006A68Test": "9cd96868ad8ebb4363f404194073793e8f3dee59a578fd07c746c8a1572c0249"
+      },
+      "requiredCapacity": []
+    },
+    {
+      "id": "PCH005",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "apex-run-test",
+      "source": {
+        "classes": {
+          "Cache": "public class Cache { }",
+          "PcPCH005A68Test": "@IsTest private class PcPCH005A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt').getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCH005|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCH005A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:Cache": "35fe9ac0ba6f55248854f4229c8b5a725f72d36a5b91ce998b1fa7355b205a42",
+        "class:PcPCH005A68Test": "4b735724ce62114985be39afda2314fa15022104fff157be6afde4b7e75225ed"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "local.PcAlt"
+      },
+      "value": "local.PcAlt"
+    }
+  ]
+}

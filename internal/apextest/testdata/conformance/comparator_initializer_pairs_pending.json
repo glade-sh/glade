@@ -1,0 +1,226 @@
+{
+  "disposition": "PENDING-ROWS",
+  "scope": "Six implementation arguments cast to Object views: String, Datetime, Long, Double, Boolean, Time. Keys naming other field types select these implementations; they add no type arguments.",
+  "apis": [
+    "61.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "contexts": [
+    "anonymous",
+    "@IsTest(SeeAllData=false)"
+  ],
+  "versionCells": [
+    {
+      "helperApi": "61.0",
+      "callerApi": "61.0"
+    },
+    {
+      "helperApi": "61.0",
+      "callerApi": "62.0"
+    },
+    {
+      "helperApi": "61.0",
+      "callerApi": "67.0"
+    },
+    {
+      "helperApi": "61.0",
+      "callerApi": "68.0"
+    },
+    {
+      "helperApi": "62.0",
+      "callerApi": "62.0"
+    },
+    {
+      "helperApi": "67.0",
+      "callerApi": "67.0"
+    },
+    {
+      "helperApi": "68.0",
+      "callerApi": "68.0"
+    }
+  ],
+  "record": [
+    "compile outcome",
+    "stage (cast / initializer / read / invoke)",
+    "non-null flag",
+    "concrete instanceof identity",
+    "compare result",
+    "caught exception type and exact message",
+    "uncaught outcome",
+    "helper and caller metadata separately"
+  ],
+  "controls": [
+    "Integer value=17;",
+    "Caught and uncaught List<Integer> x=new List<Integer>(); Integer value=x[0];"
+  ],
+  "rows": [
+    {
+      "id": "DATETIME_DIRECT",
+      "pair": "Datetime:Object",
+      "reportRow": "B01",
+      "shape": "direct",
+      "classes": {
+        "WideningFixture": "public class WideningFixture {public class TickOrder implements System.Comparator<Datetime> {public Integer compare(Datetime left,Datetime right){return 7;}}}"
+      },
+      "body": "payload.put('stage','cast');Object held=new WideningFixture.TickOrder();System.Comparator<Object> castValue=(System.Comparator<Object>)held;payload.put('nonNull',castValue!=null);payload.put('identity',castValue instanceof WideningFixture.TickOrder);payload.put('stage','invoke');Integer value=castValue.compare(Datetime.newInstanceGmt(2040,1,2,3,4,5),Datetime.newInstanceGmt(2040,1,3,3,4,5));payload.put('value',value);payload.put('stage','complete');",
+      "declaredSentinel": 7,
+      "expectedOutcome": "UNKNOWN; do not infer native acceptance from this sentinel."
+    },
+    {
+      "id": "DATETIME_TYPED_MAP",
+      "pair": "Datetime:Object",
+      "reportRow": "B06",
+      "shape": "typed-map",
+      "classes": {
+        "WideningFixture": "public class WideningFixture {public class TickOrder implements System.Comparator<Datetime> {public Integer compare(Datetime left,Datetime right){return 7;}}}",
+        "WideningInitializer": "public class WideningInitializer {public static Map<String,System.Comparator<Object>> bucket=new Map<String,System.Comparator<Object>>{'k'=>(System.Comparator<Object>)new WideningFixture.TickOrder()};}"
+      },
+      "body": "payload.put('stage','initializer');System.Comparator<Object> castValue=WideningInitializer.bucket.get('k');payload.put('stage','read');payload.put('nonNull',castValue!=null);payload.put('identity',castValue instanceof WideningFixture.TickOrder);payload.put('stage','invoke');Integer value=castValue.compare(Datetime.newInstanceGmt(2040,1,2,3,4,5),Datetime.newInstanceGmt(2040,1,3,3,4,5));payload.put('value',value);payload.put('stage','complete');",
+      "declaredSentinel": 7,
+      "expectedOutcome": "UNKNOWN; do not infer native acceptance from this sentinel."
+    },
+    {
+      "id": "LONG_DIRECT",
+      "pair": "Long:Object",
+      "reportRow": "B12",
+      "shape": "direct",
+      "classes": {
+        "WideningFixture": "public class WideningFixture {public class LongOrder implements System.Comparator<Long> {public Integer compare(Long left,Long right){return 17;}}}"
+      },
+      "body": "payload.put('stage','cast');Object held=new WideningFixture.LongOrder();System.Comparator<Object> castValue=(System.Comparator<Object>)held;payload.put('nonNull',castValue!=null);payload.put('identity',castValue instanceof WideningFixture.LongOrder);payload.put('stage','invoke');Integer value=castValue.compare(1L,2L);payload.put('value',value);payload.put('stage','complete');",
+      "declaredSentinel": 17,
+      "expectedOutcome": "UNKNOWN; do not infer native acceptance from this sentinel."
+    },
+    {
+      "id": "LONG_TYPED_MAP",
+      "pair": "Long:Object",
+      "reportRow": "B12",
+      "shape": "typed-map",
+      "classes": {
+        "WideningFixture": "public class WideningFixture {public class LongOrder implements System.Comparator<Long> {public Integer compare(Long left,Long right){return 17;}}}",
+        "WideningInitializer": "public class WideningInitializer {public static Map<String,System.Comparator<Object>> bucket=new Map<String,System.Comparator<Object>>{'k'=>(System.Comparator<Object>)new WideningFixture.LongOrder()};}"
+      },
+      "body": "payload.put('stage','initializer');System.Comparator<Object> castValue=WideningInitializer.bucket.get('k');payload.put('stage','read');payload.put('nonNull',castValue!=null);payload.put('identity',castValue instanceof WideningFixture.LongOrder);payload.put('stage','invoke');Integer value=castValue.compare(1L,2L);payload.put('value',value);payload.put('stage','complete');",
+      "declaredSentinel": 17,
+      "expectedOutcome": "UNKNOWN; do not infer native acceptance from this sentinel."
+    },
+    {
+      "id": "DOUBLE_DIRECT",
+      "pair": "Double:Object",
+      "reportRow": "B15",
+      "shape": "direct",
+      "classes": {
+        "WideningFixture": "public class WideningFixture {public class DoubleOrder implements System.Comparator<Double> {public Integer compare(Double left,Double right){return 23;}}}"
+      },
+      "body": "payload.put('stage','cast');Object held=new WideningFixture.DoubleOrder();System.Comparator<Object> castValue=(System.Comparator<Object>)held;payload.put('nonNull',castValue!=null);payload.put('identity',castValue instanceof WideningFixture.DoubleOrder);payload.put('stage','invoke');Integer value=castValue.compare(Double.valueOf('1.0'),Double.valueOf('2.0'));payload.put('value',value);payload.put('stage','complete');",
+      "declaredSentinel": 23,
+      "expectedOutcome": "UNKNOWN; do not infer native acceptance from this sentinel."
+    },
+    {
+      "id": "DOUBLE_TYPED_MAP",
+      "pair": "Double:Object",
+      "reportRow": "B15",
+      "shape": "typed-map",
+      "classes": {
+        "WideningFixture": "public class WideningFixture {public class DoubleOrder implements System.Comparator<Double> {public Integer compare(Double left,Double right){return 23;}}}",
+        "WideningInitializer": "public class WideningInitializer {public static Map<String,System.Comparator<Object>> bucket=new Map<String,System.Comparator<Object>>{'k'=>(System.Comparator<Object>)new WideningFixture.DoubleOrder()};}"
+      },
+      "body": "payload.put('stage','initializer');System.Comparator<Object> castValue=WideningInitializer.bucket.get('k');payload.put('stage','read');payload.put('nonNull',castValue!=null);payload.put('identity',castValue instanceof WideningFixture.DoubleOrder);payload.put('stage','invoke');Integer value=castValue.compare(Double.valueOf('1.0'),Double.valueOf('2.0'));payload.put('value',value);payload.put('stage','complete');",
+      "declaredSentinel": 23,
+      "expectedOutcome": "UNKNOWN; do not infer native acceptance from this sentinel."
+    },
+    {
+      "id": "TIME_DIRECT",
+      "pair": "Time:Object",
+      "reportRow": "B16",
+      "shape": "direct",
+      "classes": {
+        "WideningFixture": "public class WideningFixture {public class TimeOrder implements System.Comparator<Time> {public Integer compare(Time left,Time right){return 29;}}}"
+      },
+      "body": "payload.put('stage','cast');Object held=new WideningFixture.TimeOrder();System.Comparator<Object> castValue=(System.Comparator<Object>)held;payload.put('nonNull',castValue!=null);payload.put('identity',castValue instanceof WideningFixture.TimeOrder);payload.put('stage','invoke');Integer value=castValue.compare(Time.newInstance(1,2,3,0),Time.newInstance(2,3,4,0));payload.put('value',value);payload.put('stage','complete');",
+      "declaredSentinel": 29,
+      "expectedOutcome": "UNKNOWN; do not infer native acceptance from this sentinel."
+    },
+    {
+      "id": "TIME_TYPED_MAP",
+      "pair": "Time:Object",
+      "reportRow": "B16",
+      "shape": "typed-map",
+      "classes": {
+        "WideningFixture": "public class WideningFixture {public class TimeOrder implements System.Comparator<Time> {public Integer compare(Time left,Time right){return 29;}}}",
+        "WideningInitializer": "public class WideningInitializer {public static Map<String,System.Comparator<Object>> bucket=new Map<String,System.Comparator<Object>>{'k'=>(System.Comparator<Object>)new WideningFixture.TimeOrder()};}"
+      },
+      "body": "payload.put('stage','initializer');System.Comparator<Object> castValue=WideningInitializer.bucket.get('k');payload.put('stage','read');payload.put('nonNull',castValue!=null);payload.put('identity',castValue instanceof WideningFixture.TimeOrder);payload.put('stage','invoke');Integer value=castValue.compare(Time.newInstance(1,2,3,0),Time.newInstance(2,3,4,0));payload.put('value',value);payload.put('stage','complete');",
+      "declaredSentinel": 29,
+      "expectedOutcome": "UNKNOWN; do not infer native acceptance from this sentinel."
+    },
+    {
+      "id": "STRING_DIRECT",
+      "pair": "String:Object",
+      "reportRow": "B09",
+      "shape": "direct",
+      "classes": {
+        "WideningFixture": "public class WideningFixture {public class WordOrder implements System.Comparator<String> {public Integer compare(String left,String right){return 11;}}}"
+      },
+      "body": "payload.put('stage','cast');Object held=new WideningFixture.WordOrder();System.Comparator<Object> castValue=(System.Comparator<Object>)held;payload.put('nonNull',castValue!=null);payload.put('identity',castValue instanceof WideningFixture.WordOrder);payload.put('stage','invoke');Integer value=castValue.compare('a','b');payload.put('value',value);payload.put('stage','complete');",
+      "declaredSentinel": 11,
+      "expectedOutcome": "UNKNOWN; do not infer native acceptance from this sentinel."
+    },
+    {
+      "id": "STRING_TYPED_MAP",
+      "pair": "String:Object",
+      "reportRow": "B09",
+      "shape": "typed-map",
+      "classes": {
+        "WideningFixture": "public class WideningFixture {public class WordOrder implements System.Comparator<String> {public Integer compare(String left,String right){return 11;}}}",
+        "WideningInitializer": "public class WideningInitializer {public static Map<String,System.Comparator<Object>> bucket=new Map<String,System.Comparator<Object>>{'k'=>(System.Comparator<Object>)new WideningFixture.WordOrder()};}"
+      },
+      "body": "payload.put('stage','initializer');System.Comparator<Object> castValue=WideningInitializer.bucket.get('k');payload.put('stage','read');payload.put('nonNull',castValue!=null);payload.put('identity',castValue instanceof WideningFixture.WordOrder);payload.put('stage','invoke');Integer value=castValue.compare('a','b');payload.put('value',value);payload.put('stage','complete');",
+      "declaredSentinel": 11,
+      "expectedOutcome": "UNKNOWN; do not infer native acceptance from this sentinel."
+    },
+    {
+      "id": "BOOLEAN_DIRECT",
+      "pair": "Boolean:Object",
+      "shape": "direct",
+      "classes": {
+        "WideningFixture": "public class WideningFixture {public class FlagOrder implements System.Comparator<Boolean> {public Integer compare(Object left,Object right){return 7;}}}"
+      },
+      "body": "payload.put('stage','cast');Object held=new WideningFixture.FlagOrder();System.Comparator<Object> castValue=(System.Comparator<Object>)held;payload.put('nonNull',castValue!=null);payload.put('identity',castValue instanceof WideningFixture.FlagOrder);payload.put('stage','invoke');Integer value=castValue.compare(true,false);payload.put('value',value);payload.put('stage','complete');",
+      "declaredSentinel": 7,
+      "expectedOutcome": "API61 is a bounded inference from uniformly accepted primitive casts and owned Boolean/Object-parameter rows62/67/68; exact API61 row remains unknown."
+    },
+    {
+      "id": "BOOLEAN_TYPED_MAP",
+      "pair": "Boolean:Object",
+      "shape": "typed-map",
+      "classes": {
+        "WideningFixture": "public class WideningFixture {public class FlagOrder implements System.Comparator<Boolean> {public Integer compare(Object left,Object right){return 7;}}}",
+        "WideningInitializer": "public class WideningInitializer {public static Map<String,System.Comparator<Object>> bucket=new Map<String,System.Comparator<Object>>{'k'=>(System.Comparator<Object>)new WideningFixture.FlagOrder()};}"
+      },
+      "body": "payload.put('stage','initializer');System.Comparator<Object> castValue=WideningInitializer.bucket.get('k');payload.put('stage','read');payload.put('nonNull',castValue!=null);payload.put('identity',castValue instanceof WideningFixture.FlagOrder);payload.put('stage','invoke');Integer value=castValue.compare(true,false);payload.put('value',value);payload.put('stage','complete');",
+      "declaredSentinel": 7,
+      "expectedOutcome": "API61 is a bounded inference from uniformly accepted primitive casts and owned Boolean/Object-parameter rows62/67/68; exact API61 row remains unknown."
+    }
+  ],
+  "caughtEnvelope": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{BODY;payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.debug(JSON.serialize(payload));",
+  "uncaughtEnvelope": "Use the same BODY without an outer catch in a separate invocation; retain native output.",
+  "evidence": {
+    "observedPrimitiveObjectArgumentsAt61": [
+      "Datetime",
+      "String",
+      "Integer",
+      "Long",
+      "Decimal",
+      "Double",
+      "Time"
+    ],
+    "uniformCastAcceptance": true,
+    "wrongGenericArgumentControl": "integration assemble one combined run accept re probe Datetime-to-Integer accepted with concrete identity retained",
+    "nonimplementorControl": " rejects a class without the interface",
+    "pendingExactPair": "Boolean:Object at helper61, including compare(Object,Object)",
+    "boundedInference": "Extend Boolean:Object to61 only for compare(Object,Object); preserve concrete class shape guards and69 ceiling. Boolean-parameter implementation at61 remains unsupported pending rows."
+  }
+}

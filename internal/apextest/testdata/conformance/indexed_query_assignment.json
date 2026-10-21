@@ -1,0 +1,588 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 9,
+  "nativeObservationCount": 54,
+  "packetRowsSha256": "ecd6446eac134080510113b57cebbfc6c04b28a651a35613c58458ef9920bcc9",
+  "rows": [
+    {
+      "id": "C125C08_001",
+      "expected": {
+        "outcome": "runtime",
+        "value": "true"
+      },
+      "question": "Indexed singleton query assignment with one row",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C125C08_001A",
+          "anonymous": "String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; rows[0]=[SELECT Id,Name FROM Account WHERE Id=:a.Id]; obs=String.valueOf(rows[0].Id==a.Id);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_001A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "8e6140257a4732cc10b7300ef1edc4f0dcf146eb88274097deae7a80350acb03"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C08_001T",
+          "classes": {
+            "CAC125C08001Test": "@IsTest private class CAC125C08001Test {@IsTest static void observe(){String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; rows[0]=[SELECT Id,Name FROM Account WHERE Id=:a.Id]; obs=String.valueOf(rows[0].Id==a.Id);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_001T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C08001Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C08001Test": "565bd94566629c6bfa3418a46e5fa3d226acf93b9f11184ce6fdf6f6ffad3324"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C08_002",
+      "expected": {
+        "outcome": "runtime",
+        "value": "EXC|System.QueryException|List has no rows for assignment to SObject"
+      },
+      "question": "Indexed singleton query with zero rows",
+      "role": "rejection",
+      "routes": {
+        "anonymous": {
+          "id": "C125C08_002A",
+          "anonymous": "String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; rows[0]=[SELECT Id FROM Account WHERE Id=null]; obs='assigned';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_002A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "bf20f9899434c4a41c296744d6b02c0628b62da73f7d4519c84700beb482c87c"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C08_002T",
+          "classes": {
+            "CAC125C08002Test": "@IsTest private class CAC125C08002Test {@IsTest static void observe(){String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; rows[0]=[SELECT Id FROM Account WHERE Id=null]; obs='assigned';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_002T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C08002Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C08002Test": "aa3cee7fec19fc0bc211e24cb1f20fe7d9c79ce0f2de6939285d1d3d908f5ced"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C08_003",
+      "expected": {
+        "outcome": "runtime",
+        "value": "EXC|System.QueryException|List has more than 1 row for assignment to SObject"
+      },
+      "question": "Indexed singleton query with two rows",
+      "role": "rejection",
+      "routes": {
+        "anonymous": {
+          "id": "C125C08_003A",
+          "anonymous": "String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; insert new Account(Name='two'); rows[0]=[SELECT Id FROM Account WHERE Name IN ('one','two')]; obs='assigned';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_003A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "6cca04675737c8faed67f9b6ba264aab9f9c591bd0bcc4233c5148171ad0e79e"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C08_003T",
+          "classes": {
+            "CAC125C08003Test": "@IsTest private class CAC125C08003Test {@IsTest static void observe(){String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; insert new Account(Name='two'); rows[0]=[SELECT Id FROM Account WHERE Name IN ('one','two')]; obs='assigned';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_003T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C08003Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C08003Test": "da2f3c0ea8ac29730cb5a1b5119322b22ac430225c0f925cae146e4de4f1b348"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C08_004",
+      "expected": {
+        "outcome": "runtime",
+        "value": "true"
+      },
+      "question": "Indexed singleton query LIMIT 1 boundary",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125C08_004A",
+          "anonymous": "String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; insert new Account(Name='two'); rows[0]=[SELECT Id FROM Account ORDER BY Name LIMIT 1]; obs=String.valueOf(rows[0].Id!=null);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_004A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "0ad57fe9ab3bce01cd51a4a4e3e37e908f7c6bfd67608363d8091af9a96a6b64"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C08_004T",
+          "classes": {
+            "CAC125C08004Test": "@IsTest private class CAC125C08004Test {@IsTest static void observe(){String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; insert new Account(Name='two'); rows[0]=[SELECT Id FROM Account ORDER BY Name LIMIT 1]; obs=String.valueOf(rows[0].Id!=null);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_004T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C08004Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C08004Test": "d4998d58dea164c15fcd6d7083e81fea89931910e5054542d03012b13a5d8636"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C08_005",
+      "expected": {
+        "outcome": "runtime",
+        "value": "true"
+      },
+      "question": "Scalar declaration assignment control",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C125C08_005A",
+          "anonymous": "String obs; try {Account a=new Account(Name='one'); insert a; Account x=[SELECT Id FROM Account WHERE Id=:a.Id]; obs=String.valueOf(x.Id==a.Id);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_005A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "5e59cabf1089952d981d2818b0a646019a221f8cfecd96083817cd37eb74d783"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C08_005T",
+          "classes": {
+            "CAC125C08005Test": "@IsTest private class CAC125C08005Test {@IsTest static void observe(){String obs; try {Account a=new Account(Name='one'); insert a; Account x=[SELECT Id FROM Account WHERE Id=:a.Id]; obs=String.valueOf(x.Id==a.Id);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_005T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C08005Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C08005Test": "371fda1c844edce2c4efb4dcb814eb063f09fc5b3f27a0038d4506af413a8215"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C08_006",
+      "expected": {
+        "outcome": "runtime",
+        "value": "1"
+      },
+      "question": "List query assignment preserves list result",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125C08_006A",
+          "anonymous": "String obs; try {Account a=new Account(Name='one'); insert a; List<Account> x=[SELECT Id FROM Account WHERE Id=:a.Id]; obs=String.valueOf(x.size());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_006A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "dd9e584fd362586fceb3570bffbeadc588e752d098194b186f9718004ff6debb"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C08_006T",
+          "classes": {
+            "CAC125C08006Test": "@IsTest private class CAC125C08006Test {@IsTest static void observe(){String obs; try {Account a=new Account(Name='one'); insert a; List<Account> x=[SELECT Id FROM Account WHERE Id=:a.Id]; obs=String.valueOf(x.size());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_006T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C08006Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C08006Test": "64e7a1e7973a7f631d5e4e29ebb15a8d6957c9746b92d6c5f979abc7e9d60f04"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C08_007",
+      "expected": {
+        "outcome": "runtime",
+        "value": "true"
+      },
+      "question": "Explicit List.set gets inline query rather than singleton assignment",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125C08_007A",
+          "anonymous": "String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; rows.set(0,[SELECT Id FROM Account WHERE Id=:a.Id]); obs=String.valueOf(rows[0].Id==a.Id);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_007A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "175263c8d78c7789eab88b58aa4bc60c4ce36e5f32a8e2ca7cea026dc882ca19"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C08_007T",
+          "classes": {
+            "CAC125C08007Test": "@IsTest private class CAC125C08007Test {@IsTest static void observe(){String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; rows.set(0,[SELECT Id FROM Account WHERE Id=:a.Id]); obs=String.valueOf(rows[0].Id==a.Id);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_007T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C08007Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C08007Test": "d34409b3c51f42b03c3683a281c9f9ba2ae78263971def436704ebd34dbef496"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C08_008",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Wrong SObject query type cannot use scalar conversion",
+      "role": "rejection",
+      "routes": {
+        "anonymous": {
+          "id": "C125C08_008A",
+          "anonymous": "String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; rows[0]=[SELECT Id FROM Contact LIMIT 1]; obs='assigned';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_008A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "2d4ecd803afa9b49887f73b01e4e894a6456a5db0f7dff91d96d9cb081512f31"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "problem": "Illegal assignment from List<Contact> to Account"
+            }
+          ]
+        },
+        "isTest": {
+          "id": "C125C08_008T",
+          "classes": {
+            "CAC125C08008Test": "@IsTest private class CAC125C08008Test {@IsTest static void observe(){String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; rows[0]=[SELECT Id FROM Contact LIMIT 1]; obs='assigned';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_008T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C08008Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C08008Test": "68d0dead9763f7636912803a6cfbc952fa7703d9870133b7d62daaff0461faba"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC125C08008Test",
+              "problem": "Illegal assignment from List<Contact> to Account",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C08_009",
+      "expected": {
+        "outcome": "runtime",
+        "value": "EXC|System.ListException|List index out of bounds: 1"
+      },
+      "question": "Index out of range remains a runtime boundary",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125C08_009A",
+          "anonymous": "String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; rows[1]=[SELECT Id FROM Account WHERE Id=:a.Id]; obs='assigned';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_009A|'+obs);",
+          "sourceSha256": {
+            "anonymous": "aa743f29e817e6b556f3a019d0851aaf1887b84271700a6f4808f31056fd2901"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C08_009T",
+          "classes": {
+            "CAC125C08009Test": "@IsTest private class CAC125C08009Test {@IsTest static void observe(){String obs; try {Account a=new Account(Name='one'); insert a; List<Account> rows=new List<Account>{new Account()}; rows[1]=[SELECT Id FROM Account WHERE Id=:a.Id]; obs='assigned';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C08_009T|'+obs);}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125C08009Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C08009Test": "882d66509af8f1681435187eb36a5d98930249640e1d30e33e176645cc1ab81d"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          },
+          "isTest": {
+            "tsvSha256": "fff90d85de56980e1d3b0268ef41a5db48f0067783b3715d737634df15e2a6c9"
+          }
+        }
+      }
+    }
+  ],
+  "diagnosticContract": "Exact primary native text asserted on each rejected route; full deployment diagnostic arrays preserved, cascades are evidence only",
+  "provenance": "Synthetic source; independent anonymous and check-only named observations. Named native.json artifact excluded; TSV and setup evidence authoritative.",
+  "staticAnalysis": {
+    "baseline": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+    "executed": false,
+    "predictionBasis": "Code reading only; semantic and diagnostic-only differences counted separately, both routes/all APIs",
+    "predictedSemanticMismatchShapes": [
+      "C125C08_001",
+      "C125C08_002",
+      "C125C08_003",
+      "C125C08_004",
+      "C125C08_007",
+      "C125C08_009"
+    ],
+    "predictedPrimaryDiagnosticMismatchShapes": [
+      "C125C08_008"
+    ],
+    "predictedAssertedMismatches": 42,
+    "codeReferences": [
+      "internal/vm/compiler.go:1110",
+      "internal/sema/body_ir.go:2985",
+      "internal/sema/body_ir.go:3942",
+      "internal/sema/platform_signatures.go:53",
+      "internal/vm/method_dispatch.go:3382",
+      "internal/vm/type_coercion.go:1458"
+    ],
+    "proposedChange": "Use existing singleton SOQL assignability for inline query arguments to List.set, including explicit calls (native007 accepts). Preserve list/scalar boundaries and wrong-SObject rejection with its native text. Existing runtime singleton/cardinality coercion needs no indicated change.",
+    "limits": "The proposed distinction between indexed assignment and explicit List.set is contradicted by row007; do not implement it."
+  }
+}

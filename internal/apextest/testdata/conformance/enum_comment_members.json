@@ -1,0 +1,41 @@
+{
+  "basis": "Documented Apex comment syntax: both single-line and multiline comment contents are ignored. Existing enum name/ordinal/declaration-order behavior is retained. Source APIs are local regression coverage, not new native observations.",
+  "sources": [
+    "https://trailhead.salesforce.com/content/learn/modules/apex-basics-for-admins/get-started-with-apex",
+    "https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/langCon_apex_expressions_comments.htm"
+  ],
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "testClass": "OwnedEnumCommentTest",
+  "testSource": "@IsTest private class OwnedEnumCommentTest {\n @IsTest static void namesAndOrder() {\n  System.assertEquals('Second',OwnedEnumCarrier.Phase.Second.name());\n  System.assertEquals(1,OwnedEnumCarrier.Phase.Second.ordinal());\n  List<OwnedEnumCarrier.Phase> items=OwnedEnumCarrier.Phase.values();\n  System.assertEquals(3,items.size());\n  System.assertEquals('First',items[0].name());\n  System.assertEquals('Second',items[1].name());\n  System.assertEquals('Third',items[2].name());\n }\n @IsTest static void plainNeighbor() {\n  System.assertEquals('Single',OwnedEnumCarrier.Neighbor.Single.name());\n  System.assertEquals(0,OwnedEnumCarrier.Neighbor.Single.ordinal());\n  System.assertEquals(2,OwnedEnumCarrier.Neighbor.values().size());\n }\n @IsTest static void nullableValue() {\n  OwnedEnumCarrier.Phase item=null;\n  System.assertEquals(null,item);\n }\n}\n",
+  "methodCount": 3,
+  "variants": [
+    {
+      "id": "plain",
+      "source": "public class OwnedEnumCarrier {\n public enum Phase { First, Second, Third }\n public enum Neighbor { Single, Pair }\n}\n"
+    },
+    {
+      "id": "block-control",
+      "source": "public class OwnedEnumCarrier {\n public enum Phase { First, /* explanatory note */ Second, Third }\n public enum Neighbor { Single, Pair }\n}\n"
+    },
+    {
+      "id": "documentation-semicolon",
+      "source": "public class OwnedEnumCarrier {\n public enum Phase { First, /** Descriptive text; still a comment. */ Second, Third }\n public enum Neighbor { Single, Pair }\n}\n"
+    },
+    {
+      "id": "line-semicolon",
+      "source": "public class OwnedEnumCarrier {\n public enum Phase { First, // Descriptive text; still a comment.\n Second, Third }\n public enum Neighbor { Single, Pair }\n}\n"
+    },
+    {
+      "id": "leading-semicolon",
+      "source": "public class OwnedEnumCarrier {\n public enum Phase { /* Leading note; ignored. */ First, Second, Third }\n public enum Neighbor { Single, Pair }\n}\n"
+    },
+    {
+      "id": "trailing-semicolon",
+      "source": "public class OwnedEnumCarrier {\n public enum Phase { First, Second, Third /* Trailing note; ignored. */ }\n public enum Neighbor { Single, Pair }\n}\n"
+    }
+  ]
+}

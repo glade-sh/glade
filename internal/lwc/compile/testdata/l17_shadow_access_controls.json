@@ -152,6 +152,76 @@
           "message": "An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing."
         }
       ]
+    },
+    "68.0": {
+      "id": "dom_repeat_loadScript_once",
+      "events": [
+        {
+          "call": 1,
+          "thenable": true,
+          "state": "pending",
+          "phase": "immediate"
+        },
+        {
+          "call": 1,
+          "phase": "microtask",
+          "state": "pending"
+        },
+        {
+          "call": 1,
+          "phase": "settled",
+          "state": "fulfilled",
+          "valueType": "undefined"
+        }
+      ],
+      "promiseIdentity": null,
+      "scriptCount": 1,
+      "style": {
+        "color": "rgb(17, 34, 51)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "inline",
+        "visibility": "visible",
+        "position": "static",
+        "paddingTop": "0px",
+        "width": "37px",
+        "hook": "",
+        "loaded": "",
+        "className": "owned-target",
+        "style": null
+      },
+      "baseButton": {
+        "internalVisible": false,
+        "background": null,
+        "declaredHook": ""
+      },
+      "shadowAccessControls": {
+        "baseButton": {
+          "hostPresent": true,
+          "rootIsNull": true,
+          "rootIsUndefined": false,
+          "rootType": "object"
+        },
+        "ordinaryElement": {
+          "hostPresent": true,
+          "rootIsNull": true,
+          "rootIsUndefined": false,
+          "rootType": "object"
+        },
+        "component": {
+          "hostPresent": true,
+          "rootIsNull": true,
+          "rootIsUndefined": false,
+          "rootType": "object"
+        }
+      },
+      "console": []
     }
+  },
+  "api68_capture": {
+    "api": "68.0",
+    "source_sha256": "4631c7f6b80768c0329ad37ec6e9436979f7a6deff804eb1b64083edfae90c33",
+    "runtime_sha256": "6b4be494112fab17036bbff15d17bf4ed8cf5cfd2707eb55e23c2ede3dbfa735",
+    "wrapper_sha256": "e3a3ccf8ee9ea9cc7f5480440183a23157e6747a138bef685d23a4b782e13217",
+    "baseline_restored_sha256": "07421551709dcbf5d15fb0ec1451914f886074b269e34cda241f1c19048f308e"
   }
 }

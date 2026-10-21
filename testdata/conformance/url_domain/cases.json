@@ -1587,7 +1587,8 @@
     "code": "URL u = URL.getSalesforceBaseUrl(); r = u.getProtocol();",
     "compile": false,
     "expected": "COMPILE_ERROR\tline 45: Method was removed after version 58.0: getSalesforceBaseUrl",
-    "floorExpected": "COMPILE_ERROR\tline 45: Method was removed after version 58.0: getSalesforceBaseUrl"
+    "floorExpected": "COMPILE_ERROR\tline 45: Method was removed after version 58.0: getSalesforceBaseUrl",
+    "api68Expected": "COMPILE_ERROR\tline 6: Method was removed after version 58.0: getSalesforceBaseUrl"
   },
   {
     "id": "H001",
@@ -1756,7 +1757,8 @@
     "compile": false,
     "expected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getDomainType() from the type Domain",
     "floorExpected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getDomainType() from the type Domain",
-    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only."
+    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only.",
+    "api68Expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getDomainType() from the type Domain"
   },
   {
     "id": "H025",
@@ -1764,7 +1766,8 @@
     "compile": false,
     "expected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getMyDomainName() from the type Domain",
     "floorExpected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getMyDomainName() from the type Domain",
-    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only."
+    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only.",
+    "api68Expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getMyDomainName() from the type Domain"
   },
   {
     "id": "H026",
@@ -1772,7 +1775,8 @@
     "compile": false,
     "expected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getPackageName() from the type Domain",
     "floorExpected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getPackageName() from the type Domain",
-    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only."
+    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only.",
+    "api68Expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getPackageName() from the type Domain"
   },
   {
     "id": "H027",
@@ -1780,7 +1784,8 @@
     "compile": false,
     "expected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getSandboxName() from the type Domain",
     "floorExpected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getSandboxName() from the type Domain",
-    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only."
+    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only.",
+    "api68Expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getSandboxName() from the type Domain"
   },
   {
     "id": "H028",
@@ -1788,7 +1793,8 @@
     "compile": false,
     "expected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getSitesSubdomainName() from the type Domain",
     "floorExpected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getSitesSubdomainName() from the type Domain",
-    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only."
+    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only.",
+    "api68Expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getSitesSubdomainName() from the type Domain"
   },
   {
     "id": "H029",

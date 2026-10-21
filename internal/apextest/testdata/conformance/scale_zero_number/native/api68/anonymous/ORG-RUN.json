@@ -1,0 +1,22 @@
+{
+  "api": "68.0",
+  "route": "anonymous",
+  "rows_expected": 129,
+  "rows_processed": 129,
+  "rows_observed": 129,
+  "complete": true,
+  "manifest_sha256": "05b673a141ac81404a96705380c9c32e69135ae2f4b784deb48b08f694fa4e1f",
+  "answer_source": "native Salesforce",
+  "groups": {
+    "aggregate": 8,
+    "boundaries": 17,
+    "direct-cast": 18,
+    "equality-map": 8,
+    "memory": 20,
+    "object-instanceof": 2,
+    "persisted-query": 15,
+    "transport-control": 1,
+    "trigger": 40
+  },
+  "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+}

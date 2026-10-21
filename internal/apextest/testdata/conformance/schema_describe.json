@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "declarations": {
     "SD": "public class SD {\n    public Schema.DescribeTabSetResult app() {\n        for (Schema.DescribeTabSetResult a : Schema.describeTabs()) {\n            if (a.getLabel() == 'A23 Oracle') { return a; }\n        }\n        return null;\n    }\n    public Schema.DescribeTabResult tab(String objectName) {\n        for (Schema.DescribeTabResult t : app().getTabs()) {\n            if (t.getSobjectName() == objectName) { return t; }\n        }\n        return null;\n    }\n    public Schema.ChildRelationship contactRelationship() {\n        for (Schema.ChildRelationship c : Account.SObjectType.getDescribe().getChildRelationships()) {\n            if (c.getChildSObject() == Contact.SObjectType && c.getField() == Contact.AccountId) {\n                return c;\n            }\n        }\n        return null;\n    }\n}"

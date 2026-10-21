@@ -38,6 +38,7 @@ const classLookupPerfShardCount = 64
 
 type ScopeAliasPerfCounters struct {
 	Calls                     uint64 `json:"calls,omitempty"`
+	ElisionFallbackWalks      uint64 `json:"elisionFallbackWalks,omitempty"`
 	Roots                     uint64 `json:"roots,omitempty"`
 	RecursiveVisits           uint64 `json:"recursiveVisits,omitempty"`
 	ShortcutVisits            uint64 `json:"shortcutVisits,omitempty"`
@@ -64,6 +65,7 @@ type StaticAliasPerfCounters struct {
 	DurationNS      int64  `json:"durationNs,omitempty"`
 	CollectCalls    uint64 `json:"collectCalls,omitempty"`
 	CollectNS       int64  `json:"collectNs,omitempty"`
+	RefScanVisits   uint64 `json:"refScanVisits,omitempty"`
 }
 
 type StaticAliasFieldPerf struct {
@@ -100,11 +102,13 @@ type PerfRecorder struct {
 		durationNS      atomic.Int64
 		collectCalls    atomic.Uint64
 		collectNS       atomic.Int64
+		refScanVisits   atomic.Uint64
 		mu              sync.Mutex
 		fields          map[string]*StaticAliasFieldPerf
 	}
 	scopeAlias struct {
 		calls                     atomic.Uint64
+		elisionFallbackWalks      atomic.Uint64
 		roots                     atomic.Uint64
 		recursiveVisits           atomic.Uint64
 		shortcutVisits            atomic.Uint64
@@ -212,6 +216,7 @@ func SnapshotPerfCounters() PerfCounters {
 func (recorder *PerfRecorder) snapshotScopeAlias() ScopeAliasPerfCounters {
 	return ScopeAliasPerfCounters{
 		Calls:                     recorder.scopeAlias.calls.Load(),
+		ElisionFallbackWalks:      recorder.scopeAlias.elisionFallbackWalks.Load(),
 		Roots:                     recorder.scopeAlias.roots.Load(),
 		RecursiveVisits:           recorder.scopeAlias.recursiveVisits.Load(),
 		ShortcutVisits:            recorder.scopeAlias.shortcutVisits.Load(),
@@ -252,6 +257,12 @@ func (recorder *PerfRecorder) recordScopeAliasProbe(probe scopeAliasProbe, durat
 	recorder.scopeAlias.durationNS.Add(duration.Nanoseconds())
 }
 
+func (recorder *PerfRecorder) recordScopeAliasElisionFallback() {
+	if recorder != nil {
+		recorder.scopeAlias.elisionFallbackWalks.Add(1)
+	}
+}
+
 func (recorder *PerfRecorder) recordScopeAliasContainmentCacheClear(entries int) {
 	recorder.scopeAlias.containmentCacheClears.Add(1)
 	if entries > 0 {
@@ -281,6 +292,7 @@ func (recorder *PerfRecorder) snapshotStaticAlias() StaticAliasPerfCounters {
 		DurationNS:      recorder.staticAlias.durationNS.Load(),
 		CollectCalls:    recorder.staticAlias.collectCalls.Load(),
 		CollectNS:       recorder.staticAlias.collectNS.Load(),
+		RefScanVisits:   recorder.staticAlias.refScanVisits.Load(),
 	}
 }
 
@@ -337,6 +349,10 @@ func (recorder *PerfRecorder) recordStaticAliasPerf(duration time.Duration, refM
 func (recorder *PerfRecorder) recordStaticAliasCollectPerf(duration time.Duration) {
 	recorder.staticAlias.collectCalls.Add(1)
 	recorder.staticAlias.collectNS.Add(duration.Nanoseconds())
+}
+
+func (recorder *PerfRecorder) recordStaticAliasRefScanVisits(visits uint64) {
+	recorder.staticAlias.refScanVisits.Add(visits)
 }
 
 func (recorder *PerfRecorder) recordStaticAliasFieldPerf(field, kind string, maxChildren int, duration time.Duration, changed bool) {

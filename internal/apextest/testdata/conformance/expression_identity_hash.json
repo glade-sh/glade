@@ -1,0 +1,588 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "packetRowsSha256": "bdb07c4592ca774891f1569ddbb47b04d8979873883901e5e60ab5a6c6092167",
+  "nativeJsonSha256": "3371b4658cc7034d1461a6b1e24ebf443dbdfb588c66ae393a06296feaa30e65",
+  "sourceManifestSha256": "cd86500b7b47c95e1fe5992615a7f7169c90dd9d903e6776516d2162a3219255",
+  "rows": [
+    {
+      "id": "C126HASH_001",
+      "question": "System.hashCode versus custom method",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126HASH_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "9d3f6ba7cc5048e9e2f9aa508528f56b41eb80c263b543b9d4593963b7d392ca"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "system": 37,
+                "direct": 37
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "system": 37,
+                "direct": 37
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "system": 37,
+                "direct": 37
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "936061c92c5a82d355d2d5fe686a9c16987763f50ea7f00a6653b9b1b9c9472a",
+            "67.0": "f7e724d9217ea07093759e163812cee695c82fef422ea806063a76571101e995",
+            "68.0": "583ac0a1cf0e43269152d2de01eaa3c90389a51754a0b358f271cf7afcea22b7"
+          },
+          "anonymous": "class C126Key {public Integer n;public C126Key(Integer v){n=v;}public Boolean equals(Object x){return x instanceof C126Key && ((C126Key)x).n==n;}public Integer hashCode(){return 37;}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nC126Key k=new C126Key(7);o.put('direct',k.hashCode());o.put('system',System.hashCode(k));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126HASH_001|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126HASH_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Key": "3a5ee9e650ac7d27bfc19c5270904137ecacbb8cd0de8e02848a050f71501d45",
+            "class:C126Test": "773b2857301b9180322f615b24503f06e9057771d4fedf366bfb5ebafe1e13b3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "system": 37,
+                "direct": 37
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "system": 37,
+                "direct": 37
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "system": 37,
+                "direct": 37
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "1969b4517587136262ee02aefd1b6df7ba8f33555f5a204c3e2480334b8e95cc",
+            "67.0": "16a9f789af986ce08e288f195525880459430e8630c0c1b3cb47dc793ac010d7",
+            "68.0": "b896a6347d8e21d9259b2dae308cc31f3bad988d84534ef0a6c933e9773f3976"
+          },
+          "classes": {
+            "C126Key": "public class C126Key {public Integer n;public C126Key(Integer v){n=v;}public Boolean equals(Object x){return x instanceof C126Key && ((C126Key)x).n==n;}public Integer hashCode(){return 37;}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nC126Key k=new C126Key(7);o.put('direct',k.hashCode());o.put('system',System.hashCode(k));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126HASH_001|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126HASH_002",
+      "question": "List hash recursively dispatches custom element hash",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126HASH_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "1e0bf9b247d91faee405f3ceca842bfe9e9b02dd0d38bdd188ac76749d589c46"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "second": 68,
+                "first": 68
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "second": 68,
+                "first": 68
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "second": 68,
+                "first": 68
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "93024589caf19e307a6efb023533ec25b02dd41921b4745ee80b87d23befe9e2",
+            "67.0": "36a763bd36976507a95ab5c12b00abb917123f11a1c4ba63ba1e3c081b6c9dd3",
+            "68.0": "4776880b17a7f065501966b3c634c9e2be604d60c5bc504d6d7568d0d7b09bd1"
+          },
+          "anonymous": "class C126Key {public Integer n;public C126Key(Integer v){n=v;}public Boolean equals(Object x){return x instanceof C126Key && ((C126Key)x).n==n;}public Integer hashCode(){return 37;}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('first',System.hashCode(new List<C126Key>{new C126Key(7)}));o.put('second',System.hashCode(new List<C126Key>{new C126Key(7)}));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126HASH_002|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126HASH_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Key": "3a5ee9e650ac7d27bfc19c5270904137ecacbb8cd0de8e02848a050f71501d45",
+            "class:C126Test": "c6516fe9220bcbe3f363c03f19efc7890384b371e0ae0e3e43195e6c2ae25c49"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "second": 68,
+                "first": 68
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "second": 68,
+                "first": 68
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "second": 68,
+                "first": 68
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "5d8a819f93d9f27c18958e180db90ff89212b306521814b2fbd0fd79b121fb2e",
+            "67.0": "d1e581a0aa0356fc021fab1b8ffb5e580589066ab7a13e43ea6e63606eb62c82",
+            "68.0": "88cd90f747c5aad8b42951d475a10fa3388b14555db06ff02a8c2d247465383b"
+          },
+          "classes": {
+            "C126Key": "public class C126Key {public Integer n;public C126Key(Integer v){n=v;}public Boolean equals(Object x){return x instanceof C126Key && ((C126Key)x).n==n;}public Integer hashCode(){return 37;}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('first',System.hashCode(new List<C126Key>{new C126Key(7)}));o.put('second',System.hashCode(new List<C126Key>{new C126Key(7)}));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126HASH_002|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126HASH_003",
+      "question": "Composite Map key hashed through System.hashCode",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126HASH_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "860959bebe12b373167c7b1707587d8687438dad9e399464eea418729b1c9d3d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": "value",
+                "found": true,
+                "secondHash": 37,
+                "firstHash": 37
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": "value",
+                "found": true,
+                "secondHash": 37,
+                "firstHash": 37
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": "value",
+                "found": true,
+                "secondHash": 37,
+                "firstHash": 37
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "2f5588d29ab979d4c064ea4b2b3a46f26e327fcca5a411aa858f90a6e59ff544",
+            "67.0": "aad2d99f20947dd1607d53d276fc664ee3968a0e3318e594770ca050a5c7f9e4",
+            "68.0": "bb5f1f8c86940619e3dcefd52226525e30f347d9f8c12e24fc350ff7c20b5300"
+          },
+          "anonymous": "class C126Key {public Integer n;public C126Key(Integer v){n=v;}public Boolean equals(Object x){return x instanceof C126Key && ((C126Key)x).n==n;}public Integer hashCode(){return 37;}}\nclass C126Composite {public C126Key child;public C126Composite(){child=new C126Key(7);}public Boolean equals(Object x){return x instanceof C126Composite && child.equals(((C126Composite)x).child);}public Integer hashCode(){return System.hashCode(child);}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nC126Composite a=new C126Composite();C126Composite b=new C126Composite();Map<C126Composite,String> m=new Map<C126Composite,String>{a=>'value'};o.put('firstHash',a.hashCode());o.put('secondHash',b.hashCode());o.put('found',m.containsKey(b));o.put('value',m.get(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126HASH_003|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126HASH_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Key": "3a5ee9e650ac7d27bfc19c5270904137ecacbb8cd0de8e02848a050f71501d45",
+            "class:C126Composite": "89c1db512d34dcc3c60c7af11874609665dd7646dcc5f731d7f6b92fdcedfb69",
+            "class:C126Test": "f42c55edb7b16dc7624b83ebab94af9168f48bec95c5ffb5fca8862f117c742d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": "value",
+                "found": true,
+                "secondHash": 37,
+                "firstHash": 37
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": "value",
+                "found": true,
+                "secondHash": 37,
+                "firstHash": 37
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": "value",
+                "found": true,
+                "secondHash": 37,
+                "firstHash": 37
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "6707af907e6f65c5b5dc66b05237ad5180a2f3c2a1a4e2e086ba58dd7a485df5",
+            "67.0": "20ca441fa6d9d2fb450938f356acd96ee4bf36877ea739faa766c8a53177bd73",
+            "68.0": "96545d0426330e255dc7e2d255a7ab56b10fc7096624faa88815cc12ddd4f74c"
+          },
+          "classes": {
+            "C126Key": "public class C126Key {public Integer n;public C126Key(Integer v){n=v;}public Boolean equals(Object x){return x instanceof C126Key && ((C126Key)x).n==n;}public Integer hashCode(){return 37;}}",
+            "C126Composite": "public class C126Composite {public C126Key child;public C126Composite(){child=new C126Key(7);}public Boolean equals(Object x){return x instanceof C126Composite && child.equals(((C126Composite)x).child);}public Integer hashCode(){return System.hashCode(child);}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nC126Composite a=new C126Composite();C126Composite b=new C126Composite();Map<C126Composite,String> m=new Map<C126Composite,String>{a=>'value'};o.put('firstHash',a.hashCode());o.put('secondHash',b.hashCode());o.put('found',m.containsKey(b));o.put('value',m.get(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126HASH_003|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126HASH_004",
+      "question": "Throwing custom hash must not become silent fallback",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126HASH_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "60f13d114df243c0c633be6e62751b73f05915bdb961ed0b6bf5d902fffe9856"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "synthetic hash",
+                "exceptionType": "System.IllegalArgumentException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "synthetic hash",
+                "exceptionType": "System.IllegalArgumentException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "synthetic hash",
+                "exceptionType": "System.IllegalArgumentException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "557951ccae75f8db6ff7504eaace6fdc1e0e06aa3364d3d88334191edb87f1d9",
+            "67.0": "3cfe7f5a201ff3a4162019b794280d5205a8fa9d04f3329a2c2fd6e6da8bfcd2",
+            "68.0": "4046e945bcf512b0c64298cb8126a737c85b6fe73a7cec68b4569293ba51f32c"
+          },
+          "anonymous": "class C126ThrowKey {public Integer hashCode(){throw new IllegalArgumentException('synthetic hash');}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('hash',System.hashCode(new C126ThrowKey()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126HASH_004|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126HASH_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126ThrowKey": "408b92258eda917f87f48dab95d7889b57430dd01fa43f7a93ffe56914f3eda5",
+            "class:C126Test": "48b9afc8ceb856ac6d571c621bb45819d8e2fa993f4058088966c8ac4cbb623e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "synthetic hash",
+                "exceptionType": "System.IllegalArgumentException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "synthetic hash",
+                "exceptionType": "System.IllegalArgumentException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "synthetic hash",
+                "exceptionType": "System.IllegalArgumentException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "c2a7cc804c85fa4126e35580a05c50fbdba59e17cf3961a226de5e90849230b7",
+            "67.0": "37f304e8f3f217bae499b27d7130ef224176d6bca6d082908fc8e4d70c21a80f",
+            "68.0": "b7cb322aaa6ed276d94fff1f3130b96e53b388826043819df9e73a87a0e5e5e5"
+          },
+          "classes": {
+            "C126ThrowKey": "public class C126ThrowKey {public Integer hashCode(){throw new IllegalArgumentException('synthetic hash');}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('hash',System.hashCode(new C126ThrowKey()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126HASH_004|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126HASH_005",
+      "question": "No custom hash identity observation only",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126HASH_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "2eecb83f5e8b84d3ac47f6de0f19eb804bcad9cd5ee52a2750841857dd9a8c67"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "other": 1562661419,
+                "sameAgain": 2103215887,
+                "sameFirst": 2103215887
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "other": 1096846725,
+                "sameAgain": 1269729112,
+                "sameFirst": 1269729112
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "other": 74332528,
+                "sameAgain": 1281806523,
+                "sameFirst": 1281806523
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "0926087514e2a0f8e03808731abbbd844d2c6312dfbf727e1b096525212aa2cc",
+            "67.0": "67bf2d1be4865ef25d958fa7627eb3fdd27758e321f2ea10e78b9f5eb95393d0",
+            "68.0": "8ea9a2298e73b7807daf1e772c5fcac7c6eef6166f3d9dc352d95e970cd9a730"
+          },
+          "anonymous": "class C126Plain {}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nC126Plain a=new C126Plain();C126Plain b=new C126Plain();o.put('sameFirst',System.hashCode(a));o.put('sameAgain',System.hashCode(a));o.put('other',System.hashCode(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126HASH_005|'+JSON.serialize(o));",
+          "objects": {},
+          "comparison": "identityHashRelation"
+        },
+        "isTest": {
+          "id": "C126HASH_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Plain": "c1671005243c266565c8efabedbb1d124de92ebf2f8c59e7bfa883b2fa4bc1c8",
+            "class:C126Test": "53e07d9925e768bd7accbb3ab3c31e3a34d72eb026997ef37af59055b1642d5e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "other": 1603953149,
+                "sameAgain": 1867679500,
+                "sameFirst": 1867679500
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "other": 81344473,
+                "sameAgain": 1730818245,
+                "sameFirst": 1730818245
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "other": 1192388549,
+                "sameAgain": 1444398075,
+                "sameFirst": 1444398075
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "bf8b57c3b5388ac79e09e88f1b4dbfd68a5f9a059382f443be4d8d4b89b89c6c",
+            "67.0": "445a4efb499da5a348761a36f986bb828c4e5c2fe363c516652ea9cf912a6b65",
+            "68.0": "95b73676c0ad3ac7db2be1970a2cdf1aac98e1040fa8755ff925ad5fd1cd18b9"
+          },
+          "classes": {
+            "C126Plain": "public class C126Plain {}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nC126Plain a=new C126Plain();C126Plain b=new C126Plain();o.put('sameFirst',System.hashCode(a));o.put('sameAgain',System.hashCode(a));o.put('other',System.hashCode(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126HASH_005|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {},
+          "comparison": "identityHashRelation"
+        }
+      }
+    },
+    {
+      "id": "C126HASH_006",
+      "question": "Standard SObject hashing remains separate",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126HASH_006",
+          "stage": "carried",
+          "sourceSha256": {
+            "anonymous": "906fce4eeafa8d35b24db4ec3081ef8f8b4c0fe00dc2197ead17f5e40ba4e269"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "second": -1304172146,
+                "first": -1304172146
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "second": -1304172146,
+                "first": -1304172146
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "second": -1304172146,
+                "first": -1304172146
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "1f6838b2c2466479ff56c6e48fc496adc350ae925744529e9418ecea6e80dfe8",
+            "67.0": "86905e33a1a3fb8cef26c42cd1290fccb429c7ec8c96fd22bb4f9e7d41888424",
+            "68.0": "fc8d23182efaa0be001c4d034503313f69f0f93b758f34b969fd9868a694583e"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=new Account(Name='Synthetic');Account b=new Account(Name='Synthetic');o.put('first',System.hashCode(a));o.put('second',System.hashCode(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126HASH_006|'+JSON.serialize(o));",
+          "objects": {},
+          "carryReason": "Exact numeric SObject hash relation needs more native captures; known gap in the frozen release scope.",
+          "carryOwner": "classify the one shot baselines and the six vetted candidate repos"
+        },
+        "isTest": {
+          "id": "C126HASH_006",
+          "stage": "carried",
+          "sourceSha256": {
+            "class:C126Test": "8401f8d044ac51bb7553aa5a657744fcfcb38a6fa71ed7899319cb8f9d3c7f30"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "second": -1304172146,
+                "first": -1304172146
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "second": -1304172146,
+                "first": -1304172146
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "second": -1304172146,
+                "first": -1304172146
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "e9d4168a84ed13e1dd6ae96f8698b433662447d00da00ca280c783b4a27bced3",
+            "67.0": "098caf17aeeaa22407ca888afd516e675d6f576aa9654a4d18a54565a05a5156",
+            "68.0": "9b266d3d334307aa2ec649d336d3baaf3e3e7fc0557786b1b5c927166c026691"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=new Account(Name='Synthetic');Account b=new Account(Name='Synthetic');o.put('first',System.hashCode(a));o.put('second',System.hashCode(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126HASH_006|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {},
+          "carryReason": "Exact numeric SObject hash relation needs more native captures; known gap in the frozen release scope.",
+          "carryOwner": "classify the one shot baselines and the six vetted candidate repos"
+        }
+      }
+    }
+  ]
+}

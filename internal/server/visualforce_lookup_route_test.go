@@ -21,11 +21,20 @@ import (
 // OwnerId/User target. /record/User/{id} is a local destination, not a claim
 // about Salesforce's lookup href or its full record-detail UI.
 func TestVisualforceLookupRecordDestinationAPI67(t *testing.T) {
+	for _, prefix := range []string{"/record/User/", "/"} {
+		t.Run(prefix, func(t *testing.T) {
+			testVisualforceLookupRecordDestination(t, prefix)
+		})
+	}
+}
+
+func testVisualforceLookupRecordDestination(t *testing.T, prefix string) {
+	t.Helper()
 	const targetName = `VF_ROUTE_OWNER_&<probe>`
-	path := "/record/User/" + string(vfAccessOwnerID)
+	path := prefix + string(vfAccessOwnerID)
 	// vfAccessOwnerID contains only digits, so its valid 18-character checksum is AAA.
 	alternateWidthID := storage.ID(string(vfAccessOwnerID) + "AAA")
-	alternateWidthPath := "/record/User/" + string(alternateWidthID)
+	alternateWidthPath := prefix + string(alternateWidthID)
 
 	t.Run("readable User target shows ID and escaped available Name", func(t *testing.T) {
 		srv := newVisualforceLookupRouteServer(t, vfAccessOwnerID, targetName)
@@ -56,7 +65,7 @@ func TestVisualforceLookupRecordDestinationAPI67(t *testing.T) {
 	t.Run("malformed 18-character checksum does not resolve stored User", func(t *testing.T) {
 		srv := newVisualforceLookupRouteServer(t, vfAccessOwnerID, targetName)
 		malformed := storage.ID(string(vfAccessOwnerID) + "AAB")
-		rec := requestVisualforceLookupRoute(srv, "/record/User/"+string(malformed), "")
+		rec := requestVisualforceLookupRoute(srv, prefix+string(malformed), "")
 		assertVisualforceLookupRouteHidden(t, rec, vfAccessOwnerID, targetName)
 	})
 
@@ -69,7 +78,7 @@ func TestVisualforceLookupRecordDestinationAPI67(t *testing.T) {
 	t.Run("missing target is controlled and does not reveal record data", func(t *testing.T) {
 		srv := newVisualforceLookupRouteServer(t, vfAccessOwnerID, targetName)
 		missing := storage.ID("005000000000098")
-		rec := requestVisualforceLookupRoute(srv, "/record/User/"+string(missing), "")
+		rec := requestVisualforceLookupRoute(srv, prefix+string(missing), "")
 		assertVisualforceLookupRouteHidden(t, rec, missing, targetName)
 	})
 
@@ -151,6 +160,44 @@ func TestVisualforceLookupRecordDestinationAPI67(t *testing.T) {
 	}
 }
 
+// V09 lookup_account_runtime captures the native /<Id> destination at
+// API59/67. Reuse the same Account authorization controls as the page route.
+func TestVisualforceLookupNativeAccountDestinationAPI67(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		principal  storage.ID
+		id         storage.ID
+		targetName string
+		status     int
+		showName   bool
+	}{
+		{"owner", vfAccessOwnerID, vfAccessOwnerRecord, "VF_OWNER_NAME_CANARY", http.StatusOK, true},
+		{"valid 18 character ID", vfAccessOwnerID, storage.ID(string(vfAccessOwnerRecord) + "AAA"), "VF_OWNER_NAME_CANARY", http.StatusOK, true},
+		{"unshared row", vfAccessReaderID, vfAccessOwnerRecord, "VF_OWNER_NAME_CANARY", http.StatusNotFound, false},
+		{"object denied", vfAccessNoObject, vfAccessObjectRow, "VF_OBJECT_NAME_CANARY", http.StatusNotFound, false},
+		{"Name denied", vfAccessNoName, vfAccessNoNameRow, "VF_NO_NAME_CANARY", http.StatusOK, false},
+		{"missing principal", "", vfAccessOwnerRecord, "VF_OWNER_NAME_CANARY", http.StatusNotFound, false},
+		{"unknown principal", vfAccessUnknownUser, vfAccessOwnerRecord, "VF_OWNER_NAME_CANARY", http.StatusNotFound, false},
+		{"missing row", vfAccessOwnerID, "001000000000099", "VF_OWNER_NAME_CANARY", http.StatusNotFound, false},
+		{"invalid checksum", vfAccessOwnerID, storage.ID(string(vfAccessOwnerRecord) + "AAB"), "VF_OWNER_NAME_CANARY", http.StatusNotFound, false},
+		{"unsupported object", vfAccessOwnerID, "003000000000011", "VF_OWNER_NAME_CANARY", http.StatusNotFound, false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			srv := newVisualforceLookupRouteServer(t, test.principal, "owner")
+			rec := requestVisualforceLookupRoute(srv, "/"+string(test.id), string(vfAccessOwnerID))
+			if test.status == http.StatusNotFound {
+				assertVisualforceLookupRouteHidden(t, rec, test.id, test.targetName)
+				return
+			}
+			if rec.Code != test.status || !strings.HasPrefix(rec.Header().Get("Content-Type"), "text/html") ||
+				!strings.Contains(rec.Body.String(), string(test.id)[:15]) ||
+				strings.Contains(rec.Body.String(), test.targetName) != test.showName {
+				t.Fatalf("native Account destination status=%d body=%q", rec.Code, rec.Body.String())
+			}
+		})
+	}
+}
+
 func TestVisualforceLookupOutputFieldAnchorDestinationAPI67(t *testing.T) {
 	const targetName = `VF_ROUTE_OWNER_&<probe>`
 	srv := newVisualforceLookupRouteServer(t, vfAccessOwnerID, targetName)
@@ -161,11 +208,14 @@ func TestVisualforceLookupOutputFieldAnchorDestinationAPI67(t *testing.T) {
 		t.Fatalf("authorized outputField page status=%d escapedName=%t rawName=%t", page.Code, pageHasEscapedName, pageHasRawName)
 	}
 	href := visualforceLookupOutputAnchor(t, page.Body.String())
-	if want := "/record/User/" + string(vfAccessOwnerID); href != want {
-		t.Fatalf("outputField href=%q, want authorized local destination %q", href, want)
+	// V09 lookup_standard_owner_runtime captures this exact href at API59/67.
+	if want := "/" + string(vfAccessOwnerID); href != want {
+		t.Fatalf("outputField href=%q, want native lookup href %q", href, want)
 	}
 
-	visible := requestVisualforceLookupRoute(srv, href, "")
+	// Follow the exact native href with the configured principal.
+	localDestination := href
+	visible := requestVisualforceLookupRoute(srv, localDestination, "")
 	visibleHTML := strings.HasPrefix(visible.Header().Get("Content-Type"), "text/html")
 	visibleID := strings.Contains(visible.Body.String(), string(vfAccessOwnerID))
 	visibleEscapedName := strings.Contains(visible.Body.String(), html.EscapeString(targetName))
@@ -179,7 +229,7 @@ func TestVisualforceLookupOutputFieldAnchorDestinationAPI67(t *testing.T) {
 	users := deniedServer.Org.Objects["User"]
 	users.Definition.SharingModel = "Private"
 	deniedServer.Org.Objects["User"] = users
-	denied := requestVisualforceLookupRoute(deniedServer, href, string(vfAccessOwnerID))
+	denied := requestVisualforceLookupRoute(deniedServer, localDestination, string(vfAccessOwnerID))
 	assertVisualforceLookupRouteHidden(t, denied, vfAccessOwnerID, targetName)
 }
 
@@ -194,7 +244,7 @@ func visualforceLookupOutputAnchor(t *testing.T, pageHTML string) string {
 	visit = func(node *nethtml.Node) {
 		if node.Type == nethtml.ElementNode && node.Data == "a" {
 			for _, attr := range node.Attr {
-				if attr.Key == "href" && strings.HasPrefix(attr.Val, "/record/User/") {
+				if attr.Key == "href" {
 					hrefs = append(hrefs, attr.Val)
 				}
 			}
@@ -205,7 +255,7 @@ func visualforceLookupOutputAnchor(t *testing.T, pageHTML string) string {
 	}
 	visit(doc)
 	if len(hrefs) != 1 {
-		t.Fatalf("outputField local lookup anchors=%d, want one", len(hrefs))
+		t.Fatalf("outputField lookup anchors=%d, want one", len(hrefs))
 	}
 	return hrefs[0]
 }
@@ -304,4 +354,74 @@ func assertVisualforceLookupRouteHidden(t *testing.T, rec *httptest.ResponseReco
 		strings.Contains(rec.Body.String(), name) || strings.Contains(rec.Body.String(), html.EscapeString(name)) {
 		t.Fatalf("missing or unauthorized target leaked: status=%d body=%q", rec.Code, rec.Body.String())
 	}
+}
+
+// The popup shares the existing principal and USER_MODE Id/Name projection.
+// These local denial controls complement the native API59/67 click oracle.
+func TestVisualforceLookupSearchAuthorizationAPI67(t *testing.T) {
+	const name = `VF Popup & <owned>`
+	path := "/_ui/common/data/LookupPage?lkfm=ownedForm&lknm=ownedForm:owned&lktp=005&lksrch=vf%20POPUP"
+	t.Run("case-insensitive prefix returns escaped selection", func(t *testing.T) {
+		srv := newVisualforceLookupRouteServer(t, vfAccessOwnerID, name)
+		rec := requestVisualforceLookupRoute(srv, path, "")
+		if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), html.EscapeString(name)) || strings.Contains(rec.Body.String(), name) || !strings.Contains(rec.Body.String(), "gladeVisualforceSelectLookup") {
+			t.Fatalf("popup status=%d body=%q", rec.Code, rec.Body.String())
+		}
+	})
+	t.Run("interior token does not match", func(t *testing.T) {
+		srv := newVisualforceLookupRouteServer(t, vfAccessOwnerID, name)
+		rec := requestVisualforceLookupRoute(srv, strings.Replace(path, "vf%20POPUP", "Popup", 1), "")
+		if rec.Code != http.StatusOK || strings.Contains(rec.Body.String(), string(vfAccessOwnerID)) || strings.Contains(rec.Body.String(), html.EscapeString(name)) {
+			t.Fatalf("interior search status=%d body=%q", rec.Code, rec.Body.String())
+		}
+	})
+	for _, kind := range []string{"object denied", "Name denied", "unshared", "unbound", "invalid form", "unknown prefix"} {
+		t.Run(kind, func(t *testing.T) {
+			principal := vfAccessOwnerID
+			if kind == "unshared" {
+				principal = vfAccessReaderID
+			}
+			srv := newVisualforceLookupRouteServer(t, principal, name)
+			target := path
+			switch kind {
+			case "object denied":
+				permissions := srv.Org.Objects["ObjectPermissions"]
+				grant := permissions.Records["110000000000097"]
+				grant.Fields["PermissionsRead"] = storage.BooleanValue(false)
+				permissions.Records[grant.ID] = grant
+				srv.Org.Objects["ObjectPermissions"] = permissions
+			case "Name denied":
+				permissions := srv.Org.Objects["FieldPermissions"]
+				grant := permissions.Records["120000000000097"]
+				grant.Fields["PermissionsRead"] = storage.BooleanValue(false)
+				permissions.Records[grant.ID] = grant
+				srv.Org.Objects["FieldPermissions"] = permissions
+			case "unshared":
+				users := srv.Org.Objects["User"]
+				users.Definition.SharingModel = "Private"
+				srv.Org.Objects["User"] = users
+			case "unbound":
+				srv.VisualforceHTMLUserID = ""
+			case "invalid form":
+				target = strings.Replace(path, "lknm=ownedForm:owned", "lknm=otherForm:owned", 1)
+			case "unknown prefix":
+				target = strings.Replace(path, "lktp=005", "lktp=zzz", 1)
+			}
+			rec := requestVisualforceLookupRoute(srv, target, string(vfAccessOwnerID))
+			if strings.Contains(rec.Body.String(), string(vfAccessOwnerID)) || strings.Contains(rec.Body.String(), name) || strings.Contains(rec.Body.String(), html.EscapeString(name)) {
+				t.Fatalf("%s leaked target: status=%d body=%q", kind, rec.Code, rec.Body.String())
+			}
+			if kind != "unshared" && rec.Code != http.StatusNotFound {
+				t.Fatalf("%s status=%d, want404", kind, rec.Code)
+			}
+		})
+	}
+	t.Run("POST is not accepted", func(t *testing.T) {
+		srv := newVisualforceLookupRouteServer(t, vfAccessOwnerID, name)
+		rec := httptest.NewRecorder()
+		srv.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, path, nil))
+		if rec.Code != http.StatusMethodNotAllowed {
+			t.Fatalf("POST status=%d", rec.Code)
+		}
+	})
 }

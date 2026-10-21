@@ -1,5 +1,9 @@
 # Private-Corpus Salesforce Assurance
 
+This is a historical v0.2.11/v0.2.12 report. Its results and identities belong
+to those versions and are not v0.3.0 qualification evidence. See the current
+[compatibility policy](COMPATIBILITY.md) for the local support boundary.
+
 This published v0.2.11 surface snapshot records how the exact Glade candidate
 behaves against two authoritative repositories. Public artifacts identify them only as
 `private-corpus-001` and `private-corpus-002`.
@@ -7,6 +11,9 @@ behaves against two authoritative repositories. Public artifacts identify them o
 The result is surface-specific. It is not a claim of blanket Salesforce parity.
 Compile readiness, real local test readiness, fresh Salesforce runtime parity,
 and explicit non-parity are separate outcomes.
+
+The explorer digest below identifies the original historical HTML, before the
+historical notice was added. The notice does not change its data payload.
 
 ## Exact reviewed inputs
 

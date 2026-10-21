@@ -1,0 +1,48 @@
+{
+  "api": "62.0",
+  "deployment": {
+    "id": "0Afhv000000WuogCAC",
+    "status": "Succeeded",
+    "success": true,
+    "numberComponentErrors": 0,
+    "numberComponentsDeployed": 15
+  },
+  "captured_at": "2026-10-19T04:27:14.281063+00:00",
+  "anonymous": {
+    "success": true,
+    "compiled": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": {
+      "direct": {
+        "value": "count:3"
+      },
+      "inherited": {
+        "value": "later:3"
+      },
+      "qualified": {
+        "value": "count:3"
+      }
+    }
+  },
+  "tests": [
+    {
+      "MethodName": "direct",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|direct|{\"value\":\"count:3\"}",
+      "StackTrace": "Class.DriverProbeTest.direct: line 2, column 1"
+    },
+    {
+      "MethodName": "inherited",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|inherited|{\"value\":\"later:3\"}",
+      "StackTrace": "Class.DriverProbeTest.inherited: line 3, column 1"
+    },
+    {
+      "MethodName": "qualified",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|qualified|{\"value\":\"count:3\"}",
+      "StackTrace": "Class.DriverProbeTest.qualified: line 4, column 1"
+    }
+  ]
+}

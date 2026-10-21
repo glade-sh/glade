@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fieldPermissions><editable>true</editable><field>ChildMemo__c.Parent__c</field><readable>true</readable></fieldPermissions>
+  <label>Owned Lookup Access</label>
+  <objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>ChildMemo__c</object><viewAllRecords>false</viewAllRecords></objectPermissions>
+  <objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>ParentMemo__c</object><viewAllRecords>false</viewAllRecords></objectPermissions>
+</PermissionSet>

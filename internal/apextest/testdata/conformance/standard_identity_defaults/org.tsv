@@ -1,0 +1,7 @@
+source_api	route	observation
+62.0	anonymous	{"orderNumberDigits":true,"orderNumberPresent":true,"visitAccount":true}
+62.0	isTest	{"orderNumberDigits":true,"orderNumberPresent":true,"visitAccount":true}
+67.0	anonymous	{"orderNumberDigits":true,"orderNumberPresent":true,"visitAccount":true}
+67.0	isTest	{"orderNumberDigits":true,"orderNumberPresent":true,"visitAccount":true}
+68.0	anonymous	{"orderNumberDigits":true,"orderNumberPresent":true,"visitAccount":true}
+68.0	isTest	{"orderNumberDigits":true,"orderNumberPresent":true,"visitAccount":true}

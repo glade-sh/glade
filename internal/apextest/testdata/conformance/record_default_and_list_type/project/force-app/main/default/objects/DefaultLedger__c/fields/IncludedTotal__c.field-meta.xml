@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>IncludedTotal__c</fullName><label>Included Total</label>
+    <summarizedField>DefaultEntry__c.Amount__c</summarizedField>
+    <summaryFilterItems><field>DefaultEntry__c.Included__c</field><operation>equals</operation><value>True</value></summaryFilterItems>
+    <summaryForeignKey>DefaultEntry__c.Ledger__c</summaryForeignKey>
+    <summaryOperation>sum</summaryOperation><type>Summary</type>
+</CustomField>

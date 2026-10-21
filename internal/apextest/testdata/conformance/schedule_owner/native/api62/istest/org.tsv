@@ -1,0 +1,10 @@
+id	group	route	status	value
+SO01	SCHEDULE_OWNER	istest	runtime	{"outcome":"runtime","value":true}
+SO02	SCHEDULE_OWNER	istest	runtime	{"outcome":"runtime","value":true}
+SB01	SCHEDULE_OWNER	istest	runtime	{"outcome":"runtime","value":true}
+SC01	CONTROL	istest	runtime	{"outcome":"runtime","value":true}
+SC02	CONTROL	istest	runtime	{"outcome":"runtime","value":true}
+SC03	CONTROL	istest	runtime	{"outcome":"runtime","value":true}
+SR01	SCHEDULE_OWNER	istest	runtime	{"outcome":"runtime","value":true}
+SR02	SCHEDULE_OWNER	istest	runtime	{"outcome":"runtime","value":true}
+SC04	CONTROL	istest	runtime	{"outcome":"runtime","value":true}

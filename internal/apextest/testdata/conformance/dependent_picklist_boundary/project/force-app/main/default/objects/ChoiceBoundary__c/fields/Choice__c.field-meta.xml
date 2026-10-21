@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Choice__c</fullName><label>Choice</label><type>Picklist</type>
+    <valueSet><controllingField>Control__c</controllingField><restricted>true</restricted>
+        <valueSetDefinition><sorted>false</sorted>
+            <value><fullName>Allowed</fullName><default>false</default><label>Allowed</label></value>
+            <value><fullName>Loose</fullName><default>false</default><label>Loose</label></value>
+        </valueSetDefinition>
+        <valueSettings><controllingFieldValue>Red</controllingFieldValue><valueName>Allowed</valueName></valueSettings>
+    </valueSet>
+</CustomField>

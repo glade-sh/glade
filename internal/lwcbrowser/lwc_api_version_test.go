@@ -18,8 +18,17 @@ import (
 )
 
 func TestLWCAPI67RegistrationRunsInBrowser(t *testing.T) {
+	testLWCAPIRegistrationRunsInBrowser(t, 67)
+}
+
+func TestLWCAPI68RegistrationRunsInBrowser(t *testing.T) {
+	testLWCAPIRegistrationRunsInBrowser(t, 68)
+}
+
+func testLWCAPIRegistrationRunsInBrowser(t *testing.T, api int) {
+	t.Helper()
 	if os.Getenv("GLADE_LWC_BROWSER") == "" {
-		t.Skip("set GLADE_LWC_BROWSER=1 to run the focused API 67 browser integration")
+		t.Skip("set GLADE_LWC_BROWSER=1 to run the focused API version browser integration")
 	}
 	if _, err := exec.LookPath("node"); err != nil {
 		t.Fatalf("GLADE_LWC_BROWSER is enabled but node is unavailable: %v", err)
@@ -76,10 +85,10 @@ func TestLWCAPI67RegistrationRunsInBrowser(t *testing.T) {
 	}
 
 	projectRoot := t.TempDir()
-	api67Dir := filepath.Join(projectRoot, "force-app", "main", "default", "lwc", "gladeApi67Oracle")
-	writeLWCAPI67FixtureFile(t, filepath.Join(api67Dir, "gladeApi67Oracle.js"), `import { LightningElement } from 'lwc';
+	oracleDir := filepath.Join(projectRoot, "force-app", "main", "default", "lwc", "gladeApiVersionOracle")
+	writeLWCAPIVersionFixtureFile(t, filepath.Join(oracleDir, "gladeApiVersionOracle.js"), `import { LightningElement } from 'lwc';
 
-export default class GladeApi67Oracle extends LightningElement {
+export default class GladeApiVersionOracle extends LightningElement {
     count = 0;
 
     increment() {
@@ -87,8 +96,8 @@ export default class GladeApi67Oracle extends LightningElement {
     }
 }
 `)
-	writeLWCAPI67FixtureFile(t, filepath.Join(api67Dir, "gladeApi67Oracle.html"), `<template>
-    <section aria-label="Glade API 67 oracle">
+	writeLWCAPIVersionFixtureFile(t, filepath.Join(oracleDir, "gladeApiVersionOracle.html"), `<template>
+    <section aria-label="Glade API version oracle">
         <output data-count>{count}</output>
         <output data-complex>{count + 1}</output>
         <button type="button" onclick={increment}>Increment oracle</button>
@@ -104,24 +113,24 @@ export default class GladeApi67Oracle extends LightningElement {
     </section>
 </template>
 `)
-	writeLWCAPI67FixtureFile(t, filepath.Join(api67Dir, "gladeApi67Oracle.css"), `.style-probe {
+	writeLWCAPIVersionFixtureFile(t, filepath.Join(oracleDir, "gladeApiVersionOracle.css"), `.style-probe {
     color: rgb(17, 34, 51);
     font-weight: 700;
 }
 `)
-	writeLWCAPI67FixtureFile(t, filepath.Join(api67Dir, "gladeApi67Oracle.js-meta.xml"), `<?xml version="1.0" encoding="UTF-8"?>
+	writeLWCAPIVersionFixtureFile(t, filepath.Join(oracleDir, "gladeApiVersionOracle.js-meta.xml"), fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-  <apiVersion>67.0</apiVersion>
+  <apiVersion>%d.0</apiVersion>
   <isExposed>true</isExposed>
   <targets><target>lightning__UrlAddressable</target></targets>
 </LightningComponentBundle>
-`)
+`, api))
 
 	controlDir := filepath.Join(projectRoot, "force-app", "main", "default", "lwc", "api66Control")
-	writeLWCAPI67FixtureFile(t, filepath.Join(controlDir, "api66Control.js"), `import { LightningElement } from 'lwc';
+	writeLWCAPIVersionFixtureFile(t, filepath.Join(controlDir, "api66Control.js"), `import { LightningElement } from 'lwc';
 export default class Api66Control extends LightningElement {}`)
-	writeLWCAPI67FixtureFile(t, filepath.Join(controlDir, "api66Control.html"), `<template><p>API 66 lower control</p></template>`)
-	writeLWCAPI67FixtureFile(t, filepath.Join(controlDir, "api66Control.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	writeLWCAPIVersionFixtureFile(t, filepath.Join(controlDir, "api66Control.html"), `<template><p>API 66 lower control</p></template>`)
+	writeLWCAPIVersionFixtureFile(t, filepath.Join(controlDir, "api66Control.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
   <apiVersion>66.0</apiVersion>
   <isExposed>false</isExposed>
 </LightningComponentBundle>`)
@@ -135,9 +144,13 @@ export default class Api66Control extends LightningElement {}`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	api67Entry, ok := compiled.Modules["c:gladeApi67Oracle"]
+	oracleEntry, ok := compiled.Modules["c:gladeApiVersionOracle"]
 	if !ok {
-		t.Fatalf("compiled modules missing c:gladeApi67Oracle: %#v", compiled.Modules)
+		t.Fatalf("compiled modules missing c:gladeApiVersionOracle: %#v", compiled.Modules)
+	}
+	registration, err := os.ReadFile(oracleEntry.File)
+	if err != nil || !strings.Contains(string(registration), fmt.Sprintf("apiVersion: %d", api)) {
+		t.Fatalf("fixture must preserve exact API %d registration: %v", api, err)
 	}
 	controlEntry, ok := compiled.Modules["c:api66Control"]
 	if !ok {
@@ -151,10 +164,10 @@ export default class Api66Control extends LightningElement {}`)
 		return "/lightning/modules/" + filepath.ToSlash(rel)
 	}
 	imports, err := json.Marshal(map[string]string{
-		"lwc":                   "/lightning/vendor/lwc.js",
-		"@lwc/synthetic-shadow": "/lightning/vendor/synthetic-shadow.js",
-		"c/gladeApi67Oracle":    moduleURL(api67Entry),
-		"c/api66Control":        moduleURL(controlEntry),
+		"lwc":                     "/lightning/vendor/lwc.js",
+		"@lwc/synthetic-shadow":   "/lightning/vendor/synthetic-shadow.js",
+		"c/gladeApiVersionOracle": moduleURL(oracleEntry),
+		"c/api66Control":          moduleURL(controlEntry),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -178,10 +191,10 @@ export default class Api66Control extends LightningElement {}`)
 			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 			fmt.Fprint(w, `import "@lwc/synthetic-shadow";
 import { createElement } from "lwc";
-import Api67Oracle from "c/gladeApi67Oracle";
+import ApiVersionOracle from "c/gladeApiVersionOracle";
 import Api66Control from "c/api66Control";
 const host = document.getElementById("host");
-host.appendChild(createElement("c-glade-api67-oracle", { is: Api67Oracle }));
+host.appendChild(createElement("c-glade-api-version-oracle", { is: ApiVersionOracle }));
 host.appendChild(createElement("c-api66-control", { is: Api66Control }));
 `)
 		case r.URL.Path == "/lightning/vendor/lwc.js":
@@ -225,15 +238,11 @@ host.appendChild(createElement("c-api66-control", { is: Api66Control }));
 		if readyPath == "" || !filepath.IsAbs(readyPath) {
 			t.Fatal("manual serve-only mode requires an explicit absolute ready file")
 		}
-		registration, err := os.ReadFile(api67Entry.File)
-		if err != nil || !strings.Contains(string(registration), "apiVersion: 67") {
-			t.Fatalf("manual serve-only fixture must preserve exact API67 registration: %v", err)
-		}
 		ready, err := json.Marshal(map[string]string{
 			"mode": "manual-only-not-automated-PASS", "url": server.URL,
 			"listener": server.Listener.Addr().String(), "toolchainRoot": toolchainRoot,
 			"enginePath": enginePath, "shadowPath": syntheticShadowPath,
-			"moduleURL": moduleURL(api67Entry), "registrationPath": api67Entry.File,
+			"moduleURL": moduleURL(oracleEntry), "registrationPath": oracleEntry.File,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -267,7 +276,7 @@ try {
   page.on("pageerror", (err) => pageErrors.push(err.message));
   page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
   await page.goto(%q, { waitUntil: "networkidle" });
-  const oracle = page.locator("c-glade-api67-oracle");
+  const oracle = page.locator("c-glade-api-version-oracle");
   await oracle.locator("[data-count]").waitFor();
   await page.getByText("API 66 lower control").waitFor();
   assert.equal((await oracle.locator("[data-count]").textContent()).trim(), "0");
@@ -298,11 +307,11 @@ try {
 	cmd.Dir = testDir
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("API 67 component browser test failed: %v\n%s", err, output)
+		t.Fatalf("API %d component browser test failed: %v\n%s", api, err, output)
 	}
 }
 
-func writeLWCAPI67FixtureFile(t *testing.T, file, contents string) {
+func writeLWCAPIVersionFixtureFile(t *testing.T, file, contents string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
 		t.Fatal(err)

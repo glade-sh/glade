@@ -1,0 +1,5 @@
+case	shape
+callback	Object wrapper retains mutable list identity through an inherited callback
+list_type	Object holding typed lists accepts List<Object> runtime checks
+schema_list	Object holding child relationships accepts List<Object> runtime checks
+query_wrapper	Query result retained by a wrapper remains present

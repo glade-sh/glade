@@ -1,0 +1,857 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 7,
+  "nativeObservationCount": 56,
+  "sourcePacketRowsSHA256": "3053ea628c66ebe1c53bb1a6912eaa8de9583308927559faf6e1e8c93365b3cd",
+  "captureManifestSHA256": "121a4c2e0c9f130d0fd9e5341a802bd0f372e2a0dc1328a454bb103e2b405dd8",
+  "productBase": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+  "nativeComplete": true,
+  "cleanupVerified": true,
+  "captureReceipts": [
+    {
+      "api": "59.0",
+      "route": "anonymous",
+      "rows": 55,
+      "orgTSVSHA256": "781b4ccedadcd0ca3fac9e4cc6cc1a9b7252ea8ef22c3c783a10ae410fbd4c35",
+      "orgRunSHA256": "036fc9fcb34a8cd6450ecaf495c63c53d4fdb9a383e7a7d353e8d2dabec65338",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "59.0",
+      "route": "isTest",
+      "rows": 94,
+      "orgTSVSHA256": "bda9649d8e8909259d77d74ea8d6a5531119be4da8e93d0f78a7ce9827c6ba85",
+      "orgRunSHA256": "9ff5bb097b9e73872b50b7e622816bcd9244929d6f657245d438370d3d53b527",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "rows": 55,
+      "orgTSVSHA256": "4d742e7d3d53d70c8cc50531f9dcaee061e4f06ef0547b61896df7f0c577a0bb",
+      "orgRunSHA256": "aca1bd244908967ad5aecd1a013f388b2dfbbe9a02dd3655d1b13fef2a114d31",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "rows": 94,
+      "orgTSVSHA256": "3e7c66d69491e4628b3ee3721b46ce67c0af7283a8ef78beee5b5224e6be7dad",
+      "orgRunSHA256": "2dec49992a75e9233086cfeaac6cbb0200a4b3c60448fb36370b037cc90a1f89",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "rows": 55,
+      "orgTSVSHA256": "dd8d1d0ce57f90a509a1583aa964bb37cdab6183d5c4da629ddb7c1c46f13747",
+      "orgRunSHA256": "64d9910cebed6e4384822bc31866198b7d72f4c7447830b4efd1b8881d1bef7d",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "rows": 94,
+      "orgTSVSHA256": "b09e8fe10751aa4900ca19466319d783fedef55d3128165d1c110edfafbfd3a1",
+      "orgRunSHA256": "97f3f1ca25ef6c1fe86e938ddd85e510b720eb2e47ce06de04319c356badfebf",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "rows": 55,
+      "orgTSVSHA256": "39e36de3b06b7067ed4ff0d34f758c54f6c7f49963914ad85b0d9a36cbd63083",
+      "orgRunSHA256": "66185096968f6326ae17d247a0b8242c10cb34533a813f8ff531eb8e04e2b8a2",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "68.0",
+      "route": "isTest",
+      "rows": 94,
+      "orgTSVSHA256": "8dbcc7b888c8cf9b248e8a1e6ecf2c1a6afbedf6d006bf84ac5f158d89692318",
+      "orgRunSHA256": "a2a3630274ce6b87b3c1ea6e25b862ee42f635b2df13e7a0fb34353838d07755",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    }
+  ],
+  "rows": [
+    {
+      "id": "C186FE_061",
+      "label": "missing-property",
+      "twin": "C186FE_015",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_061",
+          "shapeStyle": "inner",
+          "routeExclusions": "Named inner and anonymous flat siblings are distinct captured declarations.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE061Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE061Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE061Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE061Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "4446542bce17038611dc9c00ffc2e4c445909dd684b7f6356cfcd25d6a971813"
+          },
+          "anonymous": "class C186FE061Leaf {public String textValue {get;set;}} class C186FE061GetterException extends Exception {} class C186FE061Context {public Account record {get;set;}}\nMap<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};C186FE061Context ctx=new C186FE061Context();try{ctx.record=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(C186FE061Context.class).withFormula('missing.Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_061|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_061",
+          "shapeStyle": "inner",
+          "routeExclusions": "Named inner and anonymous flat siblings are distinct captured declarations.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE061Outer": "e7ef9bef390cb943619c4fb4ca38fadd20ccb77442aeed3712cec4d2908592e4",
+            "class:C186FE061Test": "6cc2e5f4a6141b3a4934fc119dae89d570d20b2cfc08d27f62b9e8d5b2242ebd"
+          },
+          "classes": {
+            "C186FE061Outer": "public class C186FE061Outer {public class Context {public Account record {get;set;}} public class Leaf {public String textValue {get;set;}} public class GetterException extends Exception {}}",
+            "C186FE061Test": "@IsTest private class C186FE061Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};C186FE061Outer.Context ctx=new C186FE061Outer.Context();try{ctx.record=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(C186FE061Outer.Context.class).withFormula('missing.Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_061|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE061Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_062",
+      "label": "missing-sobject-field",
+      "twin": "C186FE_015",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_062",
+          "shapeStyle": "inner",
+          "routeExclusions": "Named inner and anonymous flat siblings are distinct captured declarations.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE062Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE062Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE062Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE062Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "f836fc7c2f14f24206bc001e3fa191f78a3860ccc210f736656a03982ced23ef"
+          },
+          "anonymous": "class C186FE062Leaf {public String textValue {get;set;}} class C186FE062GetterException extends Exception {} class C186FE062Context {public Account record {get;set;}}\nMap<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};C186FE062Context ctx=new C186FE062Context();try{ctx.record=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(C186FE062Context.class).withFormula('record.NoSuchField = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_062|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_062",
+          "shapeStyle": "inner",
+          "routeExclusions": "Named inner and anonymous flat siblings are distinct captured declarations.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE062Outer": "f4653fc4a5c3acc472675320f06335fb0648889c5daf1e11df04fda6d79918c0",
+            "class:C186FE062Test": "31a00497f14416477f401d0273f56cf083e28dba6afad717785bdbf953245c89"
+          },
+          "classes": {
+            "C186FE062Outer": "public class C186FE062Outer {public class Context {public Account record {get;set;}} public class Leaf {public String textValue {get;set;}} public class GetterException extends Exception {}}",
+            "C186FE062Test": "@IsTest private class C186FE062Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};C186FE062Outer.Context ctx=new C186FE062Outer.Context();try{ctx.record=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(C186FE062Outer.Context.class).withFormula('record.NoSuchField = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_062|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE062Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_063",
+      "label": "bad-quotes",
+      "twin": "C186FE_015",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_063",
+          "shapeStyle": "inner",
+          "routeExclusions": "Named inner and anonymous flat siblings are distinct captured declarations.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE063Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE063Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE063Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE063Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "28ab9e5af9dcf1a5c850c49912422c55ea2b43106c2c3f89d16a295435073cdd"
+          },
+          "anonymous": "class C186FE063Leaf {public String textValue {get;set;}} class C186FE063GetterException extends Exception {} class C186FE063Context {public Account record {get;set;}}\nMap<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};C186FE063Context ctx=new C186FE063Context();try{ctx.record=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(C186FE063Context.class).withFormula('record.Name = \"A').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_063|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_063",
+          "shapeStyle": "inner",
+          "routeExclusions": "Named inner and anonymous flat siblings are distinct captured declarations.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE063Outer": "d5ac52b4807f42f4f578512d56055b618cf773dbd96c518d707272c6267b1abc",
+            "class:C186FE063Test": "5c47ea367d8fe38fa830604ce8074f481f99d3266c7212e092978c521ead888d"
+          },
+          "classes": {
+            "C186FE063Outer": "public class C186FE063Outer {public class Context {public Account record {get;set;}} public class Leaf {public String textValue {get;set;}} public class GetterException extends Exception {}}",
+            "C186FE063Test": "@IsTest private class C186FE063Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};C186FE063Outer.Context ctx=new C186FE063Outer.Context();try{ctx.record=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(C186FE063Outer.Context.class).withFormula('record.Name = \"A').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_063|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE063Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_064",
+      "label": "return-mismatch",
+      "twin": "C186FE_015",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_064",
+          "shapeStyle": "inner",
+          "routeExclusions": "Named inner and anonymous flat siblings are distinct captured declarations.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE064Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE064Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE064Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE064Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "7a33547f9cdf6eb4b4bd0429f7a1f729c34495e573437db47fd676dc3942ffdc"
+          },
+          "anonymous": "class C186FE064Leaf {public String textValue {get;set;}} class C186FE064GetterException extends Exception {} class C186FE064Context {public Account record {get;set;}}\nMap<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};C186FE064Context ctx=new C186FE064Context();try{ctx.record=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(C186FE064Context.class).withFormula('record.Name').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_064|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_064",
+          "shapeStyle": "inner",
+          "routeExclusions": "Named inner and anonymous flat siblings are distinct captured declarations.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE064Outer": "b74c23afea3b9502328fafbc2605d37682d55ea1e48d0949df4c5df70025de84",
+            "class:C186FE064Test": "c73e9c9d52d7e39879b346ba472bca917d7726b3daaa2c42bbcf85c3d0af6568"
+          },
+          "classes": {
+            "C186FE064Outer": "public class C186FE064Outer {public class Context {public Account record {get;set;}} public class Leaf {public String textValue {get;set;}} public class GetterException extends Exception {}}",
+            "C186FE064Test": "@IsTest private class C186FE064Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};C186FE064Outer.Context ctx=new C186FE064Outer.Context();try{ctx.record=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(C186FE064Outer.Context.class).withFormula('record.Name').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_064|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE064Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_065",
+      "label": "wrong-input",
+      "twin": "C186FE_015",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_065",
+          "shapeStyle": "inner",
+          "routeExclusions": "Named inner and anonymous flat siblings are distinct captured declarations.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE065Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE065Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE065Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE065Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "d1454d66157f1b065f159f6a1241e5c4021c78bf879fed307e30b33ac6ec0435"
+          },
+          "anonymous": "class C186FE065Leaf {public String textValue {get;set;}} class C186FE065GetterException extends Exception {} class C186FE065Context {public Account record {get;set;}}\nMap<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};C186FE065Context ctx=new C186FE065Context();try{ctx.record=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(C186FE065Context.class).withFormula('record.Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(new Account(Name='A'));v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_065|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_065",
+          "shapeStyle": "inner",
+          "routeExclusions": "Named inner and anonymous flat siblings are distinct captured declarations.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE065Outer": "ca7a1db23315ad62eee31e714be451465bff976a6e151b49e0172772c0194800",
+            "class:C186FE065Test": "c96e3b186a2bba063769a1b823f5cec68e27f4f5948f407001169cb0b08bb363"
+          },
+          "classes": {
+            "C186FE065Outer": "public class C186FE065Outer {public class Context {public Account record {get;set;}} public class Leaf {public String textValue {get;set;}} public class GetterException extends Exception {}}",
+            "C186FE065Test": "@IsTest private class C186FE065Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};C186FE065Outer.Context ctx=new C186FE065Outer.Context();try{ctx.record=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(C186FE065Outer.Context.class).withFormula('record.Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(new Account(Name='A'));v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_065|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE065Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_066",
+      "label": "null-input",
+      "twin": "C186FE_015",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_066",
+          "shapeStyle": "inner",
+          "routeExclusions": "Named inner and anonymous flat siblings are distinct captured declarations.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE066Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE066Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE066Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: C186FE066Context",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "83b65542e07460d679c62fc2d3eb47ff5ef8b114bd97efad981bc09015cb9797"
+          },
+          "anonymous": "class C186FE066Leaf {public String textValue {get;set;}} class C186FE066GetterException extends Exception {} class C186FE066Context {public Account record {get;set;}}\nMap<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};C186FE066Context ctx=new C186FE066Context();try{ctx.record=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(C186FE066Context.class).withFormula('record.Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(null);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_066|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_066",
+          "shapeStyle": "inner",
+          "routeExclusions": "Named inner and anonymous flat siblings are distinct captured declarations.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "context type must be global",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE066Outer": "1ab014624acb21ebd59c86fce105a8caee652a87d8244d7063f99fc321501cff",
+            "class:C186FE066Test": "35bbdc3624edce9e256e6c551d3a07b1f0735c43e88c4348238c992aece477f4"
+          },
+          "classes": {
+            "C186FE066Outer": "public class C186FE066Outer {public class Context {public Account record {get;set;}} public class Leaf {public String textValue {get;set;}} public class GetterException extends Exception {}}",
+            "C186FE066Test": "@IsTest private class C186FE066Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};C186FE066Outer.Context ctx=new C186FE066Outer.Context();try{ctx.record=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(C186FE066Outer.Context.class).withFormula('record.Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(null);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_066|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE066Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_067",
+      "label": "string-type",
+      "twin": "C186FE_034",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_067",
+          "shapeStyle": "string",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: String",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: String",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: String",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: String",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "c8fe77ef2a41fba8f2617d08a63f89ed738d68d261c6e90116c71d460b28a7fd"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};String ctx;try{ctx='A';if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(String.class).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_067|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_067",
+          "shapeStyle": "string",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: String",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: String",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: String",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Unsupported standard library type: String",
+                "exceptionType": "System.FormulaValidationException",
+                "fixtureError": false,
+                "phase": "build"
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE067Test": "ae909bffa30d243d96d5137c8e0a07f378bf97675ad5a20281d006369011f567"
+          },
+          "classes": {
+            "C186FE067Test": "@IsTest private class C186FE067Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};String ctx;try{ctx='A';if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(String.class).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_067|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE067Test"
+          ]
+        }
+      }
+    }
+  ]
+}

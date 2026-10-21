@@ -1,0 +1,5 @@
+Public Salesforce documentation for DTO type names, constructors, and fields:
+https://developer.salesforce.com/docs/ai/agentforce/references/models-apex-api/models-apex-reference.html
+https://developer.salesforce.com/docs/ai/agentforce/guide/access-models-api-with-apex
+The local public Apex stubs have no aiplatform namespace or ModelsAPI declarations.
+This owned probe constructs DTOs and a client; it never invokes a model or hosted service.

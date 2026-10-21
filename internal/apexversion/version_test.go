@@ -58,6 +58,10 @@ func TestResolveSourceNormalizesSupportedVersions(t *testing.T) {
 		"65.00": "65.0",
 		"66.0":  "66.0",
 		"67.0":  "67.0",
+		"68.0":  "68.0",
+		"62.0":  "62.0",
+		"63.0":  "63.0",
+		"64.0":  "64.0",
 	} {
 		got, err := ResolveSource(raw)
 		if err != nil || got != want {
@@ -67,22 +71,22 @@ func TestResolveSourceNormalizesSupportedVersions(t *testing.T) {
 }
 
 func TestResolveSourceRejectsUnsupportedWithoutFallback(t *testing.T) {
-	for _, raw := range []string{"64.0", "68.0", "67.1", "v", "+65.0", "junk"} {
+	for _, raw := range []string{"61.0", "69.0", "67.1", "v", "+65.0", "junk"} {
 		got, err := ResolveSource(raw)
-		if err == nil || got != "" || !strings.Contains(err.Error(), raw) || !strings.Contains(err.Error(), "65.0, 66.0, 67.0") {
+		if err == nil || got != "" || !strings.Contains(err.Error(), raw) || !strings.Contains(err.Error(), "62.0, 63.0, 64.0, 65.0, 66.0, 67.0, 68.0") {
 			t.Errorf("ResolveSource(%q) = %q, %v", raw, got, err)
 		}
 	}
 }
 
 func TestPreserveSourceKeepsHistoricalVersionsAndRejectsMalformedOrFuture(t *testing.T) {
-	for _, raw := range []string{"1.0", "43.0", "61.0"} {
+	for _, raw := range []string{"1.0", "43.0", "61.0", "68.0"} {
 		got, err := PreserveSource(raw)
 		if err != nil || got != raw {
 			t.Errorf("PreserveSource(%q) = %q, %v", raw, got, err)
 		}
 	}
-	for _, raw := range []string{"68.0", "67.1", "v", "+65.0", "junk"} {
+	for _, raw := range []string{"69.0", "67.1", "v", "+65.0", "junk"} {
 		got, err := PreserveSource(raw)
 		if err == nil || got != "" {
 			t.Errorf("PreserveSource(%q) = %q, %v", raw, got, err)

@@ -3,78 +3,51 @@ package gladecli
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"github.com/glade-sh/glade/internal/gladehome"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 )
 
-func TestDataWeaveToolchainCLIExplicitComponent(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
+func TestDataWeaveToolchainUnsupported(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("GLADE_HOME", home)
 	t.Setenv("GLADE_ROOT", "")
-	var output bytes.Buffer
-	err := runToolchain(context.Background(), []string{"status", "dataweave", "--json"}, &output)
-	if err == nil {
-		t.Fatal("missing runtime reported ready")
+	for _, args := range [][]string{
+		{"install", "dataweave"},
+		{"install", "dataweave", "--java-home", home, "--json"},
+		{"install", "dataweave", "--help"},
+		{"status", "dataweave"},
+		{"status", "dataweave", "--json"},
+		{"status", "dataweave", "--help"},
+	} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			var output bytes.Buffer
+			err := runToolchain(context.Background(), args, &output)
+			if err == nil || !strings.Contains(err.Error(), "DataWeave is unsupported") {
+				t.Errorf("error = %v, want unsupported DataWeave", err)
+			}
+			if output.Len() != 0 {
+				t.Errorf("unsupported command produced toolchain output: %s", output.String())
+			}
+		})
 	}
-	var status struct {
-		OK            bool   `json:"ok"`
-		Detail        string `json:"detail"`
-		EngineVersion string `json:"engineVersion"`
-	}
-	if err := json.Unmarshal(output.Bytes(), &status); err != nil {
-		t.Fatal(err)
-	}
-	if status.OK || status.EngineVersion != "2.12.2" || !strings.Contains(status.Detail, "--java-home") {
-		t.Fatalf("status=%+v", status)
-	}
-	output.Reset()
-	if err := runToolchain(context.Background(), []string{"install", "dataweave"}, &output); err == nil || !strings.Contains(err.Error(), "--java-home") {
-		t.Fatalf("missing Java path: %v", err)
-	}
-	output.Reset()
-	if err := runToolchain(context.Background(), []string{"install", "dataweave", "--java-home"}, &output); err == nil {
-		t.Fatal("missing Java path value accepted")
-	}
-	output.Reset()
-	if err := runToolchain(context.Background(), []string{"install", "dataweave", "--help"}, &output); err != nil || !strings.Contains(output.String(), "Java17-JDK") {
-		t.Fatalf("component help: %v %s", err, output.String())
+	entries, err := os.ReadDir(home)
+	if err != nil || len(entries) != 0 {
+		t.Fatalf("unsupported toolchain modified installation root: entries=%v err=%v", entries, err)
 	}
 }
 
-func TestDataWeaveToolchainCLIInstalledJSON(t *testing.T) {
-	javaHome, engine := os.Getenv("GLADE_DATAWEAVE_TEST_JAVA_HOME"), os.Getenv("GLADE_DATAWEAVE_TEST_ENGINE")
-	if javaHome == "" || engine == "" {
-		t.Skip("explicit Java17 JDK and verified DataWeave engine required")
-	}
-	root := t.TempDir()
-	t.Setenv("GLADE_HOME", root)
-	t.Setenv("GLADE_ROOT", "")
-	if err := os.CopyFS(filepath.Join(root, "toolchains", "dataweave", "2.12.2", "engine"), os.DirFS(engine)); err != nil {
-		t.Fatal(err)
-	}
+func TestToolchainHelpExcludesDataWeaveInstallation(t *testing.T) {
 	var output bytes.Buffer
-	if err := runToolchain(context.Background(), []string{"install", "dataweave", "--java-home", javaHome, "--json"}, &output); err != nil {
+	if err := runToolchain(context.Background(), []string{"--help"}, &output); err != nil {
 		t.Fatal(err)
 	}
-	var installed gladehome.DataWeaveToolchainStatus
-	if err := json.Unmarshal(output.Bytes(), &installed); err != nil {
-		t.Fatal(err)
+	for _, removed := range []string{"install dataweave", "status dataweave", "--java-home"} {
+		if strings.Contains(output.String(), removed) {
+			t.Errorf("toolchain help advertises %q", removed)
+		}
 	}
-	if !installed.OK || installed.JavaPath == "" || installed.AdapterBuildKey == "" {
-		t.Fatalf("installed=%+v", installed)
-	}
-	output.Reset()
-	if err := runToolchain(context.Background(), []string{"status", "dataweave", "--json"}, &output); err != nil {
-		t.Fatal(err)
-	}
-	var status gladehome.DataWeaveToolchainStatus
-	if err := json.Unmarshal(output.Bytes(), &status); err != nil {
-		t.Fatal(err)
-	}
-	if status != installed {
-		t.Fatalf("status=%+v differs from install=%+v", status, installed)
+	if !strings.Contains(output.String(), "DataWeave is unsupported") {
+		t.Error("toolchain help does not explain the unsupported component")
 	}
 }

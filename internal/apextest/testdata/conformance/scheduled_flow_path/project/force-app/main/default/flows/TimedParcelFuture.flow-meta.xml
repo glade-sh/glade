@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+ <apiVersion>62.0</apiVersion>
+ <interviewLabel>Timed parcel future {!$Flow.CurrentDateTime}</interviewLabel>
+ <label>Timed parcel future</label>
+ <processType>AutoLaunchedFlow</processType>
+ <recordUpdates>
+  <name>MarkParcel</name><label>Mark parcel</label><locationX>0</locationX><locationY>0</locationY>
+  <inputAssignments><field>Marker__c</field><value><booleanValue>true</booleanValue></value></inputAssignments>
+  <inputReference>$Record</inputReference>
+ </recordUpdates>
+ <start>
+  <locationX>0</locationX><locationY>0</locationY>
+  <filterLogic>and</filterLogic>
+  <filters><field>Name</field><operator>EqualTo</operator><value><stringValue>Scheduled parcel</stringValue></value></filters>
+  <object>TimedParcel__c</object>
+  <recordTriggerType>Create</recordTriggerType>
+  <scheduledPaths>
+   <name>FutureMark</name>
+   <connector><targetReference>MarkParcel</targetReference></connector>
+   <label>Future mark</label>
+   <offsetNumber>0</offsetNumber><offsetUnit>Minutes</offsetUnit>
+   <recordField>NextRun__c</recordField><timeSource>RecordField</timeSource>
+  </scheduledPaths>
+  <triggerType>RecordAfterSave</triggerType>
+ </start>
+ <status>Active</status>
+</Flow>

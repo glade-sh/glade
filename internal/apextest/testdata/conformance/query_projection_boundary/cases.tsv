@@ -1,0 +1,5 @@
+case	shape
+grouped_alias	USER_MODE grouped field alias
+child_projection	USER_MODE upsert ignores queried child relationships
+numeric_map	Reflective numeric Map instanceof
+system_type	UserInfo class name

@@ -1,0 +1,41 @@
+api	route	case	accepted	problems	source_sha256
+62.0	named	tokenBoolean	false	["Illegal assignment from Schema.SObjectField to Boolean"]	4e55eaade99d6947d52a98a87fd30ae2a34b9b05c25db978c8477c1ce1a06307
+62.0	anonymous	tokenBoolean	false	["Illegal assignment from Schema.SObjectField to Boolean"]	8d5bdfe402d8bfdaede040c86d763323034f3a6ded9aeea59c0c4082ec9f8517
+62.0	named	tokenString	false	["Illegal assignment from Schema.SObjectField to String"]	a932207f06baee9cf421addf42e49fd2909dfc6cf93f00e4989f3f20933a110a
+62.0	anonymous	tokenString	false	["Illegal assignment from Schema.SObjectField to String"]	10baa632e3ae10a5c6b52d00b40534408a43c8b57f2093e446fc019528f41a8a
+62.0	named	stringBoolean	false	["Illegal assignment from String to Boolean"]	eac31487c9497637e6a440b1fe59136354bc3d316197c35ab265d1d28b6ac562
+62.0	anonymous	stringBoolean	false	["Illegal assignment from String to Boolean"]	c762cb1a9d3edc2e925d3ad8bb48f6b9517b88d26184f1464dd52b5146edff13
+62.0	named	boolean	true	[]	e6c952b4a79cea37a9ba5d457ecfb22e2fbb94735e3e66bcf345f89ef3c810b5
+62.0	anonymous	boolean	true	[]	72b9d3e1d5bcf0b35ffb189a962e86dc8f2d2c7f8405ee3c277d9bb2a67c86de
+62.0	named	name	true	[]	627b0eff057de7775a02813073235b386c843df71132ed9efec9c1ae5ac83cd7
+62.0	anonymous	name	true	[]	7ab03a414807e82450825d8621d11396bfc9d4fe2d5d7178ea0d1c122edc9eed
+62.0	named	stringNumber	false	["Illegal assignment from String to Integer"]	9049e743eb590d3df3aa9a5a06214aff3bfdeae49910801acd06c7a368f36a4e
+62.0	anonymous	stringNumber	false	["Illegal assignment from String to Integer"]	b12ef4af75c8aec0d7bc444c844f7790e53d91b6675ed9a63a113d902853c0eb
+62.0	named	number	true	[]	4327c727c60de021e2660ff10a46c7b9fae3db3a6d46fb79b7202b1dc1aad3e7
+62.0	anonymous	number	true	[]	e22c0e4d7e72ccfa8c6dcb06ae03d2f9cb70505041f3392d1f5b46fdca5dd7b8
+62.0	named	nullBoolean	true	[]	09f4b990ebe36b59aab840b0248b5d321e35eada021a3bb7b1997caa3ec7473e
+62.0	anonymous	nullBoolean	true	[]	252d67019f6f6238c272e9b2d9113ea55fae57328e606ba688130f31daf3332b
+62.0	named	objectBoolean	false	["Illegal assignment from Object to Boolean"]	e04d3f0c2508d9bd973264515ff5c369b01973b0e5a92be40ed6ee79beb931a0
+62.0	anonymous	objectBoolean	false	["Illegal assignment from Object to Boolean"]	f3e978f63178a006969e49de791835db37ba3308206ce99f5a121b74780d9872
+62.0	named	numberString	false	["Illegal assignment from Integer to String"]	e6eb8d35d3fe7b6023d9dba4973da3a4e8e2ec4b2f05e3ed076795a2cbd6ad52
+62.0	anonymous	numberString	false	["Illegal assignment from Integer to String"]	ce628250af95a1a771b42652cb8dceff668d28cafee7d23e69d12cf9658c70cb
+67.0	named	tokenBoolean	false	["Illegal assignment from Schema.SObjectField to Boolean"]	b3bc2cc4c156b8f80760e6be50eeeaed1766bbb4b1a1a85735fb2a76d2240d81
+67.0	anonymous	tokenBoolean	false	["Illegal assignment from Schema.SObjectField to Boolean"]	8d5bdfe402d8bfdaede040c86d763323034f3a6ded9aeea59c0c4082ec9f8517
+67.0	named	tokenString	false	["Illegal assignment from Schema.SObjectField to String"]	0bc68a75d6be22c1bd8cc5b56c8f0372891e408a299de59df99726a5d4b03f1f
+67.0	anonymous	tokenString	false	["Illegal assignment from Schema.SObjectField to String"]	10baa632e3ae10a5c6b52d00b40534408a43c8b57f2093e446fc019528f41a8a
+67.0	named	stringBoolean	false	["Illegal assignment from String to Boolean"]	39d85688bb558b69e1027458029b9629a88493ecf60afa0628530b0f9a6441d0
+67.0	anonymous	stringBoolean	false	["Illegal assignment from String to Boolean"]	c762cb1a9d3edc2e925d3ad8bb48f6b9517b88d26184f1464dd52b5146edff13
+67.0	named	boolean	true	[]	fa14050732d7b3d7c3cc76ed30b8ae7ad1638e401ef76d248fb967b14b80a190
+67.0	anonymous	boolean	true	[]	72b9d3e1d5bcf0b35ffb189a962e86dc8f2d2c7f8405ee3c277d9bb2a67c86de
+67.0	named	name	true	[]	1843792b4d9831ef36e2de0c592bcfbb9b101a557cd57bd983f2dafa7596ba37
+67.0	anonymous	name	true	[]	7ab03a414807e82450825d8621d11396bfc9d4fe2d5d7178ea0d1c122edc9eed
+67.0	named	stringNumber	false	["Illegal assignment from String to Integer"]	9a1241355506ebf7195d4d6979b3a9b285bc225819fcdec9a82b4c14f8d1be35
+67.0	anonymous	stringNumber	false	["Illegal assignment from String to Integer"]	b12ef4af75c8aec0d7bc444c844f7790e53d91b6675ed9a63a113d902853c0eb
+67.0	named	number	true	[]	113002220e975103a8cb54d9db87eb8ebcbb042a631dba4cac268e53c51b06ad
+67.0	anonymous	number	true	[]	e22c0e4d7e72ccfa8c6dcb06ae03d2f9cb70505041f3392d1f5b46fdca5dd7b8
+67.0	named	nullBoolean	true	[]	1b196b2df2ef22304b0d08f8165f137fdbb93b656a82c0578f8857116886c303
+67.0	anonymous	nullBoolean	true	[]	252d67019f6f6238c272e9b2d9113ea55fae57328e606ba688130f31daf3332b
+67.0	named	objectBoolean	false	["Illegal assignment from Object to Boolean"]	e4b8aadc8283c1a6758c24fce7d26712361798f8c65577ba687346e5cc2b42ff
+67.0	anonymous	objectBoolean	false	["Illegal assignment from Object to Boolean"]	f3e978f63178a006969e49de791835db37ba3308206ce99f5a121b74780d9872
+67.0	named	numberString	false	["Illegal assignment from Integer to String"]	15c0c46a2e6cec7456132e42ac73e69446b38361627f212070c86213c0107db8
+67.0	anonymous	numberString	false	["Illegal assignment from Integer to String"]	ce628250af95a1a771b42652cb8dceff668d28cafee7d23e69d12cf9658c70cb

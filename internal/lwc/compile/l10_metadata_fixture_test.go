@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -12,8 +11,7 @@ import (
 // The native org has configured standard value sets and layouts. Export those
 // inputs separately from expected wire outputs so CI renders a comparable org,
 // rather than the legacy Enterprise catalog's different configuration.
-func l10SetupOrgMetadata(t *testing.T, org *storage.OrgState) {
-	t.Helper()
+func l10SetupOrgMetadata(org *storage.OrgState) error {
 	var fixture struct {
 		Source  string `json:"source"`
 		Objects map[string]struct {
@@ -26,13 +24,13 @@ func l10SetupOrgMetadata(t *testing.T, org *storage.OrgState) {
 	}
 	data, err := os.ReadFile("testdata/l10_org_metadata.json")
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
 	if err := json.Unmarshal(data, &fixture); err != nil {
-		t.Fatal(err)
+		return err
 	}
 	if fixture.Source == "" || len(fixture.Objects) != 5 {
-		t.Fatal("missing captured L10 org configuration")
+		return fmt.Errorf("missing captured L10 org configuration")
 	}
 	for objectName, metadata := range fixture.Objects {
 		storage.EnsureStandardObject(org, objectName)
@@ -69,7 +67,7 @@ func l10SetupOrgMetadata(t *testing.T, org *storage.OrgState) {
 			}
 			setupName, ok := picklist.DefaultAttributes["picklistAtrributesValueType"].(string)
 			if !ok || (setupName != "CaseStatus" && setupName != "LeadStatus") {
-				t.Fatalf("invalid captured status metadata: %s.%s", objectName, name)
+				return fmt.Errorf("invalid captured status metadata: %s.%s", objectName, name)
 			}
 			storage.EnsureStandardObject(org, setupName)
 			setup := org.Objects[setupName].Clone()
@@ -79,7 +77,7 @@ func l10SetupOrgMetadata(t *testing.T, org *storage.OrgState) {
 			}
 			state, ok := picklist.DefaultAttributes[attr].(bool)
 			if !ok {
-				t.Fatal("missing captured status flag")
+				return fmt.Errorf("missing captured status flag")
 			}
 			for _, value := range picklist.Values {
 				if !value.Default {
@@ -101,11 +99,12 @@ func l10SetupOrgMetadata(t *testing.T, org *storage.OrgState) {
 		for name, label := range metadata.ComponentLabels {
 			field, exists := object.Definition.Fields[name]
 			if !exists {
-				t.Fatalf("captured layout component missing: %s.%s", objectName, name)
+				return fmt.Errorf("captured layout component missing: %s.%s", objectName, name)
 			}
 			field.Label = label
 			object.Definition.Fields[name] = field
 		}
 		org.Objects[objectName] = object
 	}
+	return nil
 }

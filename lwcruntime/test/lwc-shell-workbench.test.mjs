@@ -3,7 +3,7 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import test from "node:test";
-import { chromium } from "playwright";
+import { chromium } from "./shared-playwright.mjs";
 import { defaultSLDSHref, repoRoot, startLWCDevServer } from "./helpers.mjs";
 
 const shellFiles = {

@@ -22,7 +22,13 @@ const (
 )
 
 const (
-	ProtocolVersionV1     = 1
+	// ProtocolVersionV1 is the wire version the V1 frame codec speaks. The
+	// codec rejects every other version, so a client and a daemon from
+	// different builds fail at ping rather than on one run. Version 2 added
+	// run.excludedClasses, the classes the dependency-scoped compile gate
+	// excluded; a version 1 strict decoder rejects that field. Version 3 adds
+	// timeoutSource so timeout diagnostics retain the client setting.
+	ProtocolVersionV1     = 3
 	MaxProtocolFrameBytes = 8 << 20
 )
 
@@ -65,6 +71,7 @@ type RunRequestV1 struct {
 	TraceAll              bool             `json:"traceAll"`
 	SlowTestThresholdMS   int64            `json:"slowTestThresholdMs"`
 	TimeoutMS             int64            `json:"timeoutMs"`
+	TimeoutSource         string           `json:"timeoutSource,omitempty"`
 	Parallelism           int              `json:"parallelism"`
 	ParallelMethods       bool             `json:"parallelMethods"`
 	NoDiskCache           bool             `json:"noDiskCache"`
@@ -126,12 +133,13 @@ type ClassShardV1 struct {
 // testreport.Run.MarshalJSON. Decoding through this explicit shape keeps the
 // response decoder strict without rejecting output produced by its encoder.
 type testReportRunV1Wire struct {
-	RuntimeRESTAPIVersion string                   `json:"runtimeRestApiVersion,omitempty"`
-	Name                  string                   `json:"name,omitempty"`
-	DurationMS            int64                    `json:"durationMs,omitempty"`
-	Dependencies          []typesys.DependencyInfo `json:"dependencies,omitempty"`
-	Summary               testreport.Summary       `json:"summary"`
-	Suites                []testreport.Suite       `json:"suites"`
+	RuntimeRESTAPIVersion string                        `json:"runtimeRestApiVersion,omitempty"`
+	Name                  string                        `json:"name,omitempty"`
+	DurationMS            int64                         `json:"durationMs,omitempty"`
+	Dependencies          []typesys.DependencyInfo      `json:"dependencies,omitempty"`
+	Summary               testreport.Summary            `json:"summary"`
+	Suites                []testreport.Suite            `json:"suites"`
+	ExcludedClasses       []testreport.CompileExclusion `json:"excludedClasses,omitempty"`
 }
 
 type responseV1Wire struct {
@@ -200,6 +208,7 @@ func DecodeResponseV1(r io.Reader) (ResponseV1, error) {
 			DurationMS:            wire.Run.DurationMS,
 			Dependencies:          wire.Run.Dependencies,
 			Suites:                wire.Run.Suites,
+			ExcludedClasses:       wire.Run.ExcludedClasses,
 		}
 		if reconstructed := response.Run.Summary(); wire.Run.Summary != reconstructed {
 			return ResponseV1{}, fmt.Errorf("decode test daemon protocol frame: run summary does not match suites")

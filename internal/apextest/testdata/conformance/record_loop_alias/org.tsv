@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"assignmentCount":3,"assignmentDirect":"processed","assignmentDuplicate0":"processed","assignmentDuplicate1":"processed","putCount":3,"putDirect":"processed","putDuplicate0":"processed","putDuplicate1":"processed"}
+62.0	isTest	{"assignmentCount":3,"assignmentDirect":"processed","assignmentDuplicate0":"processed","assignmentDuplicate1":"processed","putCount":3,"putDirect":"processed","putDuplicate0":"processed","putDuplicate1":"processed"}
+67.0	anonymous	{"assignmentCount":3,"assignmentDirect":"processed","assignmentDuplicate0":"processed","assignmentDuplicate1":"processed","putCount":3,"putDirect":"processed","putDuplicate0":"processed","putDuplicate1":"processed"}
+67.0	isTest	{"assignmentCount":3,"assignmentDirect":"processed","assignmentDuplicate0":"processed","assignmentDuplicate1":"processed","putCount":3,"putDirect":"processed","putDuplicate0":"processed","putDuplicate1":"processed"}

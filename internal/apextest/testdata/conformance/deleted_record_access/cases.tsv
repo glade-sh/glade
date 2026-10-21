@@ -1,0 +1,9 @@
+case	observation
+before	Live target access row count, all access flags, maximum access level and identity
+liveBefore	Independent live record access before deletion
+deleted	Deleted target retains access row count, all access flags, maximum access level and identity
+liveAfterDelete	Independent live record access after target deletion
+visibleDeleted	Ordinary Account query excludes the deleted target
+restored	Undeleted target access row count, all access flags, maximum access level and identity
+liveAfterRestore	Independent live record access after target restoration
+visibleRestored	Ordinary Account query includes the restored target

@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "Declarations": {
     "A42ListBuilder": "global class A42ListBuilder implements Cache.CacheBuilder { global Object doLoad(String key) { return new List<Integer>{2,4}; } }\n",

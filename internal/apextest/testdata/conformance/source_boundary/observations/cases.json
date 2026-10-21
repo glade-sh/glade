@@ -1,0 +1,296 @@
+[
+  {
+    "api": "62.0",
+    "id": "trace",
+    "route": "isTest",
+    "className": "Observation62",
+    "source": "@IsTest private class Observation62 {\n@IsTest static void trace(){\nSystem.assert(false,'OBS|'+FrameSample.observe());\n}\n@IsTest static void object(){\nSparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c row=[SELECT Name FROM SparseSample__c WHERE Id=:sample.Id];List<String> keys=new List<String>(SparseSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();System.assert(false,'OBS|'+JSON.serialize(new List<Object>{String.valueOf(row).replace(String.valueOf(row.Id),'[RECORD_ID]'),keys}));\n}\n@IsTest static void snapshot(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();sample.Name='after';System.assert(false,'OBS|'+JSON.serialize(new List<Object>{fields.get('Name'),sample.Name}));\n}\n@IsTest static void mutation(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();try{fields.put('Name','after');System.assert(false,'OBS|mutation allowed');}catch(Exception e){System.assert(false,'OBS|caught '+e.getTypeName()+': '+e.getMessage());}\n}\n}\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": [
+      {
+        "MethodName": "trace",
+        "Outcome": "Fail",
+        "Message": "System.AssertException: Assertion Failed: OBS|Class.FrameSample.observe: line 4, column 1\nClass.Observation62.trace: line 3, column 1",
+        "StackTrace": "Class.Observation62.trace: line 3, column 1"
+      }
+    ]
+  },
+  {
+    "api": "62.0",
+    "id": "trace",
+    "route": "anonymous",
+    "source": "System.assert(false,'OBS|'+FrameSample.observe());\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|Class.FrameSample.observe: line 4, column 1\nAnonymousBlock: line 1, column 1",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "object",
+    "route": "isTest",
+    "className": "Observation62",
+    "source": "@IsTest private class Observation62 {\n@IsTest static void trace(){\nSystem.assert(false,'OBS|'+FrameSample.observe());\n}\n@IsTest static void object(){\nSparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c row=[SELECT Name FROM SparseSample__c WHERE Id=:sample.Id];List<String> keys=new List<String>(SparseSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();System.assert(false,'OBS|'+JSON.serialize(new List<Object>{String.valueOf(row).replace(String.valueOf(row.Id),'[RECORD_ID]'),keys}));\n}\n@IsTest static void snapshot(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();sample.Name='after';System.assert(false,'OBS|'+JSON.serialize(new List<Object>{fields.get('Name'),sample.Name}));\n}\n@IsTest static void mutation(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();try{fields.put('Name','after');System.assert(false,'OBS|mutation allowed');}catch(Exception e){System.assert(false,'OBS|caught '+e.getTypeName()+': '+e.getMessage());}\n}\n}\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": [
+      {
+        "MethodName": "object",
+        "Outcome": "Fail",
+        "Message": "System.AssertException: Assertion Failed: OBS|[\"SparseSample__c:{Name=sample, Id=[RECORD_ID]}\",[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"systemmodstamp\"]]",
+        "StackTrace": "Class.Observation62.object: line 6, column 1"
+      }
+    ]
+  },
+  {
+    "api": "62.0",
+    "id": "object",
+    "route": "anonymous",
+    "source": "SparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c row=[SELECT Name FROM SparseSample__c WHERE Id=:sample.Id];List<String> keys=new List<String>(SparseSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();System.assert(false,'OBS|'+JSON.serialize(new List<Object>{String.valueOf(row).replace(String.valueOf(row.Id),'[RECORD_ID]'),keys}));\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|[\"SparseSample__c:{Name=sample, Id=[RECORD_ID]}\",[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"systemmodstamp\"]]",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "snapshot",
+    "route": "isTest",
+    "className": "Observation62",
+    "source": "@IsTest private class Observation62 {\n@IsTest static void trace(){\nSystem.assert(false,'OBS|'+FrameSample.observe());\n}\n@IsTest static void object(){\nSparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c row=[SELECT Name FROM SparseSample__c WHERE Id=:sample.Id];List<String> keys=new List<String>(SparseSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();System.assert(false,'OBS|'+JSON.serialize(new List<Object>{String.valueOf(row).replace(String.valueOf(row.Id),'[RECORD_ID]'),keys}));\n}\n@IsTest static void snapshot(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();sample.Name='after';System.assert(false,'OBS|'+JSON.serialize(new List<Object>{fields.get('Name'),sample.Name}));\n}\n@IsTest static void mutation(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();try{fields.put('Name','after');System.assert(false,'OBS|mutation allowed');}catch(Exception e){System.assert(false,'OBS|caught '+e.getTypeName()+': '+e.getMessage());}\n}\n}\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": [
+      {
+        "MethodName": "snapshot",
+        "Outcome": "Fail",
+        "Message": "System.AssertException: Assertion Failed: OBS|[\"before\",\"after\"]",
+        "StackTrace": "Class.Observation62.snapshot: line 9, column 1"
+      }
+    ]
+  },
+  {
+    "api": "62.0",
+    "id": "snapshot",
+    "route": "anonymous",
+    "source": "Account sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();sample.Name='after';System.assert(false,'OBS|'+JSON.serialize(new List<Object>{fields.get('Name'),sample.Name}));\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|[\"before\",\"after\"]",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "mutation",
+    "route": "isTest",
+    "className": "Observation62",
+    "source": "@IsTest private class Observation62 {\n@IsTest static void trace(){\nSystem.assert(false,'OBS|'+FrameSample.observe());\n}\n@IsTest static void object(){\nSparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c row=[SELECT Name FROM SparseSample__c WHERE Id=:sample.Id];List<String> keys=new List<String>(SparseSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();System.assert(false,'OBS|'+JSON.serialize(new List<Object>{String.valueOf(row).replace(String.valueOf(row.Id),'[RECORD_ID]'),keys}));\n}\n@IsTest static void snapshot(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();sample.Name='after';System.assert(false,'OBS|'+JSON.serialize(new List<Object>{fields.get('Name'),sample.Name}));\n}\n@IsTest static void mutation(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();try{fields.put('Name','after');System.assert(false,'OBS|mutation allowed');}catch(Exception e){System.assert(false,'OBS|caught '+e.getTypeName()+': '+e.getMessage());}\n}\n}\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": [
+      {
+        "MethodName": "mutation",
+        "Outcome": "Fail",
+        "Message": "System.FinalException: Collection is read-only",
+        "StackTrace": "External entry point"
+      }
+    ]
+  },
+  {
+    "api": "67.0",
+    "id": "trace",
+    "route": "isTest",
+    "className": "Observation67",
+    "source": "@IsTest private class Observation67 {\n@IsTest static void trace(){\nSystem.assert(false,'OBS|'+FrameSample.observe());\n}\n@IsTest static void object(){\nSparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c row=[SELECT Name FROM SparseSample__c WHERE Id=:sample.Id];List<String> keys=new List<String>(SparseSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();System.assert(false,'OBS|'+JSON.serialize(new List<Object>{String.valueOf(row).replace(String.valueOf(row.Id),'[RECORD_ID]'),keys}));\n}\n@IsTest static void snapshot(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();sample.Name='after';System.assert(false,'OBS|'+JSON.serialize(new List<Object>{fields.get('Name'),sample.Name}));\n}\n@IsTest static void mutation(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();try{fields.put('Name','after');System.assert(false,'OBS|mutation allowed');}catch(Exception e){System.assert(false,'OBS|caught '+e.getTypeName()+': '+e.getMessage());}\n}\n}\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": [
+      {
+        "MethodName": "trace",
+        "Outcome": "Fail",
+        "Message": "System.AssertException: Assertion Failed: OBS|Class.FrameSample.observe: line 4, column 1\nClass.Observation67.trace: line 3, column 1",
+        "StackTrace": "Class.Observation67.trace: line 3, column 1"
+      }
+    ]
+  },
+  {
+    "api": "67.0",
+    "id": "trace",
+    "route": "anonymous",
+    "source": "System.assert(false,'OBS|'+FrameSample.observe());\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|Class.FrameSample.observe: line 4, column 1\nAnonymousBlock: line 1, column 1",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "object",
+    "route": "isTest",
+    "className": "Observation67",
+    "source": "@IsTest private class Observation67 {\n@IsTest static void trace(){\nSystem.assert(false,'OBS|'+FrameSample.observe());\n}\n@IsTest static void object(){\nSparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c row=[SELECT Name FROM SparseSample__c WHERE Id=:sample.Id];List<String> keys=new List<String>(SparseSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();System.assert(false,'OBS|'+JSON.serialize(new List<Object>{String.valueOf(row).replace(String.valueOf(row.Id),'[RECORD_ID]'),keys}));\n}\n@IsTest static void snapshot(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();sample.Name='after';System.assert(false,'OBS|'+JSON.serialize(new List<Object>{fields.get('Name'),sample.Name}));\n}\n@IsTest static void mutation(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();try{fields.put('Name','after');System.assert(false,'OBS|mutation allowed');}catch(Exception e){System.assert(false,'OBS|caught '+e.getTypeName()+': '+e.getMessage());}\n}\n}\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": [
+      {
+        "MethodName": "object",
+        "Outcome": "Fail",
+        "Message": "System.AssertException: Assertion Failed: OBS|[\"SparseSample__c:{Name=sample, Id=[RECORD_ID]}\",[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"systemmodstamp\"]]",
+        "StackTrace": "Class.Observation67.object: line 6, column 1"
+      }
+    ]
+  },
+  {
+    "api": "67.0",
+    "id": "object",
+    "route": "anonymous",
+    "source": "SparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c row=[SELECT Name FROM SparseSample__c WHERE Id=:sample.Id];List<String> keys=new List<String>(SparseSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();System.assert(false,'OBS|'+JSON.serialize(new List<Object>{String.valueOf(row).replace(String.valueOf(row.Id),'[RECORD_ID]'),keys}));\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|[\"SparseSample__c:{Name=sample, Id=[RECORD_ID]}\",[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"systemmodstamp\"]]",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "snapshot",
+    "route": "isTest",
+    "className": "Observation67",
+    "source": "@IsTest private class Observation67 {\n@IsTest static void trace(){\nSystem.assert(false,'OBS|'+FrameSample.observe());\n}\n@IsTest static void object(){\nSparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c row=[SELECT Name FROM SparseSample__c WHERE Id=:sample.Id];List<String> keys=new List<String>(SparseSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();System.assert(false,'OBS|'+JSON.serialize(new List<Object>{String.valueOf(row).replace(String.valueOf(row.Id),'[RECORD_ID]'),keys}));\n}\n@IsTest static void snapshot(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();sample.Name='after';System.assert(false,'OBS|'+JSON.serialize(new List<Object>{fields.get('Name'),sample.Name}));\n}\n@IsTest static void mutation(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();try{fields.put('Name','after');System.assert(false,'OBS|mutation allowed');}catch(Exception e){System.assert(false,'OBS|caught '+e.getTypeName()+': '+e.getMessage());}\n}\n}\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": [
+      {
+        "MethodName": "snapshot",
+        "Outcome": "Fail",
+        "Message": "System.AssertException: Assertion Failed: OBS|[\"before\",\"after\"]",
+        "StackTrace": "Class.Observation67.snapshot: line 9, column 1"
+      }
+    ]
+  },
+  {
+    "api": "67.0",
+    "id": "snapshot",
+    "route": "anonymous",
+    "source": "Account sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();sample.Name='after';System.assert(false,'OBS|'+JSON.serialize(new List<Object>{fields.get('Name'),sample.Name}));\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|[\"before\",\"after\"]",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "mutation",
+    "route": "isTest",
+    "className": "Observation67",
+    "source": "@IsTest private class Observation67 {\n@IsTest static void trace(){\nSystem.assert(false,'OBS|'+FrameSample.observe());\n}\n@IsTest static void object(){\nSparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c row=[SELECT Name FROM SparseSample__c WHERE Id=:sample.Id];List<String> keys=new List<String>(SparseSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();System.assert(false,'OBS|'+JSON.serialize(new List<Object>{String.valueOf(row).replace(String.valueOf(row.Id),'[RECORD_ID]'),keys}));\n}\n@IsTest static void snapshot(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();sample.Name='after';System.assert(false,'OBS|'+JSON.serialize(new List<Object>{fields.get('Name'),sample.Name}));\n}\n@IsTest static void mutation(){\nAccount sample=new Account(Name='before');Map<String,Object> fields=sample.getPopulatedFieldsAsMap();try{fields.put('Name','after');System.assert(false,'OBS|mutation allowed');}catch(Exception e){System.assert(false,'OBS|caught '+e.getTypeName()+': '+e.getMessage());}\n}\n}\n",
+    "classes": {
+      "FrameSample": "public class FrameSample {\n    public static String observe() {\n        try {\n            throw new IllegalArgumentException('sample');\n        } catch (Exception e) {\n            return e.getStackTraceString();\n        }\n    }\n}"
+    },
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": [
+      {
+        "MethodName": "mutation",
+        "Outcome": "Fail",
+        "Message": "System.FinalException: Collection is read-only",
+        "StackTrace": "External entry point"
+      }
+    ]
+  }
+]

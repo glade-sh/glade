@@ -1,0 +1,5 @@
+api	route	case	native
+62.0	anonymous	growth	{"success":false,"compiled":true,"compileProblem":"","line":"-1","column":"-1","exceptionMessage":"System.LimitException: Apex heap size too large: 52504553","exceptionStackTrace":"External entry point"}
+62.0	queueable	growth	[{"MethodName":"observe","Outcome":"Fail","Message":"System.LimitException: Apex heap size too large: 52504707","StackTrace":"External entry point"}]
+67.0	anonymous	growth	{"success":false,"compiled":true,"compileProblem":"","line":"-1","column":"-1","exceptionMessage":"System.LimitException: Apex heap size too large: 52504553","exceptionStackTrace":"External entry point"}
+67.0	queueable	growth	[{"MethodName":"observe","Outcome":"Fail","Message":"System.LimitException: Apex heap size too large: 52504712","StackTrace":"External entry point"}]

@@ -19,13 +19,28 @@ import (
 )
 
 // Salesforce observations at both source API endpoints; all inputs are local.
+// API 68 binds an anonymous capture (ceilingOracle in the fixture). It equals
+// the API 67 oracle on 264 supported rows; its one missing row, R261, has a
+// native API 68 uncaught recapture that equals the stored answer. The API 68
+// @IsTest route runs locally against these anonymous answers and counts as
+// legacy, not as observed native named behavior.
 func TestSchemaProfilesOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected  string
 		Compile, NativeNull bool
 	}
 	var data struct {
-		APIVersions            []string `json:"apiVersions"`
+		APIVersions   []string `json:"apiVersions"`
+		CeilingOracle struct {
+			APIVersion, Route string
+			OrgTSV            string   `json:"orgTSV"`
+			OrgRowsSHA256     string   `json:"orgRowsSHA256"`
+			Missing           []string `json:"missing"`
+			UncaughtRecapture struct {
+				Source, SHA256 string
+				Rows           []string
+			} `json:"uncaughtRecapture"`
+		} `json:"ceilingOracle"`
 		Declarations, Metadata map[string]string
 		Prelude                string
 		Cases                  []familyCase
@@ -41,8 +56,29 @@ func TestSchemaProfilesOrgConformance(t *testing.T) {
 	if len(data.Cases) != 265 || len(data.Remaining) != 18 {
 		t.Fatalf("oracle rows: %d supported + %d remaining", len(data.Cases), len(data.Remaining))
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle versions: %v", data.APIVersions)
+	}
+	ceiling := data.CeilingOracle
+	if ceiling.APIVersion != "68.0" || ceiling.Route != "anonymous" || ceiling.OrgTSV == "" || len(ceiling.OrgRowsSHA256) != 64 {
+		t.Fatalf("API 68 source binding: %#v", ceiling)
+	}
+	if strings.Join(ceiling.Missing, ",") != "R261" {
+		t.Fatalf("API 68 org.tsv missing rows: %v, want R261", ceiling.Missing)
+	}
+	recapture := ceiling.UncaughtRecapture
+	if recapture.Source == "" || len(recapture.SHA256) != 64 || strings.Join(recapture.Rows, ",") != "R261" {
+		t.Fatalf("API 68 uncaught recapture: %#v", recapture)
+	}
+	recaptured68 := map[string]bool{}
+	for _, id := range recapture.Rows {
+		recaptured68[id] = true
+	}
+	uncaptured68 := map[string]bool{}
+	for _, id := range ceiling.Missing {
+		if !recaptured68[id] {
+			uncaptured68[id] = true
+		}
 	}
 	seen := map[string]bool{}
 	for _, tc := range data.Cases {
@@ -90,6 +126,20 @@ func TestSchemaProfilesOrgConformance(t *testing.T) {
 	}
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
+			cases := data.Cases
+			if api == "68.0" {
+				cases = nil
+				for _, tc := range data.Cases {
+					if uncaptured68[tc.ID] {
+						t.Logf("%s excluded at API 68: no API 68 answer", tc.ID)
+						continue
+					}
+					cases = append(cases, tc)
+				}
+			}
+			if api == "68.0" {
+				t.Log("API 68: anonymous capture plus native uncaught recapture of R261; @IsTest checks retain anonymous-backed local assertions without native named-route capture")
+			}
 			counts := newConformanceCounts()
 			defer counts.Log(t, "schema profiles", api, "")
 			root := t.TempDir()
@@ -140,7 +190,7 @@ func TestSchemaProfilesOrgConformance(t *testing.T) {
 			var namedSource strings.Builder
 			namedSource.WriteString("@IsTest private class SchemaProfilesProbe {\n")
 			accepted := 0
-			for _, tc := range data.Cases {
+			for _, tc := range cases {
 				if strings.HasPrefix(tc.Expected, "COMPILE_ERROR") {
 					continue
 				}
@@ -173,7 +223,7 @@ func TestSchemaProfilesOrgConformance(t *testing.T) {
 			if run.Summary().Total != accepted || len(namedResults) != accepted {
 				t.Fatalf("named results: %#v, unique %d expected %d: %s", run.Summary(), len(namedResults), accepted, firstRunProblem(run))
 			}
-			for _, tc := range data.Cases {
+			for _, tc := range cases {
 				t.Run(tc.ID, func(t *testing.T) {
 					source := body(tc)
 					rejected := strings.HasPrefix(tc.Expected, "COMPILE_ERROR")
@@ -215,7 +265,11 @@ func TestSchemaProfilesOrgConformance(t *testing.T) {
 							t.Fatal(err)
 						}
 					})
-					counts.RunKind(t, "isTest", tc.ID, "isTest", kind, func(t *testing.T) {
+					namedKind := kind
+					if api == "68.0" {
+						namedKind = "legacy"
+					}
+					counts.RunKind(t, "isTest", tc.ID, "isTest", namedKind, func(t *testing.T) {
 						if !rejected {
 							result := namedResults[tc.ID]
 							if strings.HasPrefix(tc.Expected, "UNCAUGHT|") {
@@ -243,6 +297,87 @@ func TestSchemaProfilesOrgConformance(t *testing.T) {
 						}
 					})
 				})
+			}
+		})
+	}
+}
+
+// Reuse the captured numeric-text answer; the field-source variants exercise
+// local propagation of that same String value rather than new native rows.
+func TestSchemaProfileNumberPutFromStringField(t *testing.T) {
+	var data struct {
+		APIVersions []string `json:"apiVersions"`
+		Metadata    map[string]string
+		Cases       []struct{ ID, Code, Expected string }
+	}
+	raw, err := os.ReadFile("testdata/conformance/schema_profiles.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(raw, &data); err != nil {
+		t.Fatal(err)
+	}
+	var code, expected string
+	for _, row := range data.Cases {
+		if row.ID == "R259" {
+			code, expected = row.Code, row.Expected
+		}
+	}
+	if code == "" || expected != "12" || strings.Count(code, "'12'") != 1 {
+		t.Fatal("missing numeric-text native answer")
+	}
+	for _, api := range data.APIVersions {
+		t.Run(api, func(t *testing.T) {
+			root := t.TempDir()
+			for path, source := range data.Metadata {
+				writeFile(t, filepath.Join(root, path), source)
+			}
+			bodies := map[string]string{}
+			var named strings.Builder
+			named.WriteString("@IsTest private class NumberPutProbe {\n")
+			for _, input := range []struct{ name, setup, expression string }{
+				{"literal", "", "'12'"},
+				{"textField", "Account sourceRecord=new Account(Name='12');", "sourceRecord.Name"},
+				{"picklistField", "Account sourceRecord=new Account(Industry='12');", "sourceRecord.Industry"},
+			} {
+				body := input.setup + "Object r;" + strings.Replace(code, "'12'", input.expression, 1) +
+					"Decimal amount=(Decimal)r;System.assertEquals(" + expected + ",amount);" + `
+String rejected;
+try { x.put('Amount__c','not-a-number'); }
+catch(SObjectException e) { rejected=e.getMessage(); }
+System.assertEquals('Illegal assignment from String to Decimal',rejected);
+System.assertEquals(amount,x.Amount__c);`
+				bodies[input.name] = body
+				fmt.Fprintf(&named, "@IsTest static void %s(){%s}\n", input.name, body)
+			}
+			named.WriteString("}\n")
+			path := filepath.Join(root, "force-app/main/default/classes/NumberPutProbe.cls")
+			writeFile(t, path, named.String())
+			writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
+			index := loadTestIndex(t, root)
+			if index.HasErrors() {
+				t.Fatal(index.Diagnostics)
+			}
+			if analysis := sema.Analyze(index); analysis.HasErrors() {
+				t.Fatal(analysis.Diagnostics)
+			}
+			org := orgFromIndex(index)
+			org.APIVersion = api
+			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+			for name, body := range bodies {
+				t.Run(name, func(t *testing.T) {
+					program, err := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: api})
+					if err != nil {
+						t.Fatal(err)
+					}
+					if _, err := runner.execute(program); err != nil {
+						t.Fatal(err)
+					}
+				})
+			}
+			run := Run(index, Options{NoDiskCache: true, Parallelism: 1})
+			if summary := run.Summary(); summary.Total != len(bodies) || summary.Passed != len(bodies) {
+				t.Fatalf("named results: %#v: %s", summary, firstRunProblem(run))
 			}
 		})
 	}

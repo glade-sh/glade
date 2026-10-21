@@ -1,0 +1,484 @@
+{
+  "captureCompletion": {
+    "observations": 780,
+    "accounted_rows": 780,
+    "native_answers": 432,
+    "fault_counts": {
+      "FIXTURE_ERROR": 348
+    },
+    "repair_control_calls": 6,
+    "apis": [
+      "62.0",
+      "67.0",
+      "68.0"
+    ],
+    "rows_per_api_per_route": {
+      "anonymous": 130,
+      "istest": 130
+    },
+    "family_observations": 762,
+    "control_observations": 18,
+    "named_only_ids": [],
+    "transport_controls_verified": true,
+    "routes": [
+      "anonymous",
+      "istest"
+    ],
+    "source_manifest_sha256": "f12fa5a14244d6bc5d0ec44bcd1ed83d306de1970da8e5bb12e76ae031ccb576",
+    "requires_scratch_deletion_verification": true
+  },
+  "sourceRowsSha256": "01b43d39a3ac85a97cc00f12f170d2df11fa069cef35192d5ce400335a09e8e4",
+  "cells": {
+    "62.0/anonymous": {
+      "orgTsvSha256": "f9fc0092871f8d2887236a0dcd8464e16b8fcd969b307348373c40f49091b519",
+      "run": {
+        "started_at": "2026-10-13T00:31:14.760655+00:00",
+        "orgIdSha256": "29e18b0b94d5a825969615b2b9870d3ec6bfff0673bfccfea1bfbc1513461269",
+        "api": "62.0",
+        "route": "anonymous",
+        "rows_expected": 130,
+        "rows_observed": 130,
+        "complete": true,
+        "transport_control_verified": true,
+        "manifest_sha256": "f12fa5a14244d6bc5d0ec44bcd1ed83d306de1970da8e5bb12e76ae031ccb576",
+        "answer_source": "Native answers plus explicitly non-answer classified faults",
+        "groups": {
+          "CL-seeds": 10,
+          "GI-seeds": 8,
+          "SOQL-boundaries": 4,
+          "application-boundaries": 5,
+          "different-argument": 5,
+          "direct-typed-casts": 9,
+          "element-boundaries": 4,
+          "inner-classes": 6,
+          "interface-matrix": 24,
+          "list-element-casts": 4,
+          "list-matrix": 21,
+          "list-upcast-controls": 2,
+          "must-not-apply": 3,
+          "nongeneric-boundaries": 8,
+          "null-boundaries": 4,
+          "object-list-element-casts": 4,
+          "query-list-element-casts": 4,
+          "static-initializer": 2,
+          "transport-control": 3
+        },
+        "release_drift": "API62/67 in this same-release org are controls for API68 differences"
+      },
+      "transport": {
+        "C14CONTROL_001": {
+          "api": "62.0",
+          "route": "anonymous",
+          "verified": true,
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "value": 7
+            }
+          }
+        },
+        "C14CONTROL_002": {
+          "api": "62.0",
+          "route": "anonymous",
+          "verified": true,
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "value": "EXC|System.ListException|List index out of bounds: 0"
+            }
+          }
+        },
+        "C14CONTROL_003": {
+          "api": "62.0",
+          "route": "anonymous",
+          "verified": true,
+          "observation": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.ListException: List index out of bounds: 0",
+            "exceptionType": "System.ListException",
+            "exceptionTypeSource": "returned_message_prefix"
+          }
+        }
+      }
+    },
+    "62.0/istest": {
+      "orgTsvSha256": "196db00ff019c35057ba28ffd2ecd527c15704e324c0eb6de2424445835ee0ba",
+      "run": {
+        "started_at": "2026-10-13T00:31:14.760655+00:00",
+        "orgIdSha256": "29e18b0b94d5a825969615b2b9870d3ec6bfff0673bfccfea1bfbc1513461269",
+        "api": "62.0",
+        "route": "istest",
+        "rows_expected": 130,
+        "rows_observed": 130,
+        "complete": true,
+        "transport_control_verified": true,
+        "manifest_sha256": "f12fa5a14244d6bc5d0ec44bcd1ed83d306de1970da8e5bb12e76ae031ccb576",
+        "answer_source": "Native answers plus explicitly non-answer classified faults",
+        "groups": {
+          "CL-seeds": 10,
+          "GI-seeds": 8,
+          "SOQL-boundaries": 4,
+          "application-boundaries": 5,
+          "different-argument": 5,
+          "direct-typed-casts": 9,
+          "element-boundaries": 4,
+          "inner-classes": 6,
+          "interface-matrix": 24,
+          "list-element-casts": 4,
+          "list-matrix": 21,
+          "list-upcast-controls": 2,
+          "must-not-apply": 3,
+          "nongeneric-boundaries": 8,
+          "null-boundaries": 4,
+          "object-list-element-casts": 4,
+          "query-list-element-casts": 4,
+          "static-initializer": 2,
+          "transport-control": 3
+        },
+        "release_drift": "API62/67 in this same-release org are controls for API68 differences"
+      },
+      "transport": {
+        "C14CONTROL_001": {
+          "api": "62.0",
+          "route": "istest",
+          "verified": true,
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "value": 7
+            }
+          }
+        },
+        "C14CONTROL_002": {
+          "api": "62.0",
+          "route": "istest",
+          "verified": true,
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "value": "EXC|System.ListException|List index out of bounds: 0"
+            }
+          }
+        },
+        "C14CONTROL_003": {
+          "api": "62.0",
+          "route": "istest",
+          "verified": true,
+          "observation": {
+            "outcome": "uncaught_test_failure",
+            "testFailures": [
+              {
+                "cls": "C14Transport003",
+                "method": "observe",
+                "message": "System.ListException: List index out of bounds: 0",
+                "exceptionType": "System.ListException",
+                "exceptionTypeSource": "returned_message_prefix"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "67.0/anonymous": {
+      "orgTsvSha256": "f9fc0092871f8d2887236a0dcd8464e16b8fcd969b307348373c40f49091b519",
+      "run": {
+        "started_at": "2026-10-13T00:31:14.760655+00:00",
+        "orgIdSha256": "29e18b0b94d5a825969615b2b9870d3ec6bfff0673bfccfea1bfbc1513461269",
+        "api": "67.0",
+        "route": "anonymous",
+        "rows_expected": 130,
+        "rows_observed": 130,
+        "complete": true,
+        "transport_control_verified": true,
+        "manifest_sha256": "f12fa5a14244d6bc5d0ec44bcd1ed83d306de1970da8e5bb12e76ae031ccb576",
+        "answer_source": "Native answers plus explicitly non-answer classified faults",
+        "groups": {
+          "CL-seeds": 10,
+          "GI-seeds": 8,
+          "SOQL-boundaries": 4,
+          "application-boundaries": 5,
+          "different-argument": 5,
+          "direct-typed-casts": 9,
+          "element-boundaries": 4,
+          "inner-classes": 6,
+          "interface-matrix": 24,
+          "list-element-casts": 4,
+          "list-matrix": 21,
+          "list-upcast-controls": 2,
+          "must-not-apply": 3,
+          "nongeneric-boundaries": 8,
+          "null-boundaries": 4,
+          "object-list-element-casts": 4,
+          "query-list-element-casts": 4,
+          "static-initializer": 2,
+          "transport-control": 3
+        },
+        "release_drift": "API62/67 in this same-release org are controls for API68 differences"
+      },
+      "transport": {
+        "C14CONTROL_001": {
+          "api": "67.0",
+          "route": "anonymous",
+          "verified": true,
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "value": 7
+            }
+          }
+        },
+        "C14CONTROL_002": {
+          "api": "67.0",
+          "route": "anonymous",
+          "verified": true,
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "value": "EXC|System.ListException|List index out of bounds: 0"
+            }
+          }
+        },
+        "C14CONTROL_003": {
+          "api": "67.0",
+          "route": "anonymous",
+          "verified": true,
+          "observation": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.ListException: List index out of bounds: 0",
+            "exceptionType": "System.ListException",
+            "exceptionTypeSource": "returned_message_prefix"
+          }
+        }
+      }
+    },
+    "67.0/istest": {
+      "orgTsvSha256": "196db00ff019c35057ba28ffd2ecd527c15704e324c0eb6de2424445835ee0ba",
+      "run": {
+        "started_at": "2026-10-13T00:31:14.760655+00:00",
+        "orgIdSha256": "29e18b0b94d5a825969615b2b9870d3ec6bfff0673bfccfea1bfbc1513461269",
+        "api": "67.0",
+        "route": "istest",
+        "rows_expected": 130,
+        "rows_observed": 130,
+        "complete": true,
+        "transport_control_verified": true,
+        "manifest_sha256": "f12fa5a14244d6bc5d0ec44bcd1ed83d306de1970da8e5bb12e76ae031ccb576",
+        "answer_source": "Native answers plus explicitly non-answer classified faults",
+        "groups": {
+          "CL-seeds": 10,
+          "GI-seeds": 8,
+          "SOQL-boundaries": 4,
+          "application-boundaries": 5,
+          "different-argument": 5,
+          "direct-typed-casts": 9,
+          "element-boundaries": 4,
+          "inner-classes": 6,
+          "interface-matrix": 24,
+          "list-element-casts": 4,
+          "list-matrix": 21,
+          "list-upcast-controls": 2,
+          "must-not-apply": 3,
+          "nongeneric-boundaries": 8,
+          "null-boundaries": 4,
+          "object-list-element-casts": 4,
+          "query-list-element-casts": 4,
+          "static-initializer": 2,
+          "transport-control": 3
+        },
+        "release_drift": "API62/67 in this same-release org are controls for API68 differences"
+      },
+      "transport": {
+        "C14CONTROL_001": {
+          "api": "67.0",
+          "route": "istest",
+          "verified": true,
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "value": 7
+            }
+          }
+        },
+        "C14CONTROL_002": {
+          "api": "67.0",
+          "route": "istest",
+          "verified": true,
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "value": "EXC|System.ListException|List index out of bounds: 0"
+            }
+          }
+        },
+        "C14CONTROL_003": {
+          "api": "67.0",
+          "route": "istest",
+          "verified": true,
+          "observation": {
+            "outcome": "uncaught_test_failure",
+            "testFailures": [
+              {
+                "cls": "C14Transport003",
+                "method": "observe",
+                "message": "System.ListException: List index out of bounds: 0",
+                "exceptionType": "System.ListException",
+                "exceptionTypeSource": "returned_message_prefix"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "68.0/anonymous": {
+      "orgTsvSha256": "f9fc0092871f8d2887236a0dcd8464e16b8fcd969b307348373c40f49091b519",
+      "run": {
+        "started_at": "2026-10-13T00:31:14.760655+00:00",
+        "orgIdSha256": "29e18b0b94d5a825969615b2b9870d3ec6bfff0673bfccfea1bfbc1513461269",
+        "api": "68.0",
+        "route": "anonymous",
+        "rows_expected": 130,
+        "rows_observed": 130,
+        "complete": true,
+        "transport_control_verified": true,
+        "manifest_sha256": "f12fa5a14244d6bc5d0ec44bcd1ed83d306de1970da8e5bb12e76ae031ccb576",
+        "answer_source": "Native answers plus explicitly non-answer classified faults",
+        "groups": {
+          "CL-seeds": 10,
+          "GI-seeds": 8,
+          "SOQL-boundaries": 4,
+          "application-boundaries": 5,
+          "different-argument": 5,
+          "direct-typed-casts": 9,
+          "element-boundaries": 4,
+          "inner-classes": 6,
+          "interface-matrix": 24,
+          "list-element-casts": 4,
+          "list-matrix": 21,
+          "list-upcast-controls": 2,
+          "must-not-apply": 3,
+          "nongeneric-boundaries": 8,
+          "null-boundaries": 4,
+          "object-list-element-casts": 4,
+          "query-list-element-casts": 4,
+          "static-initializer": 2,
+          "transport-control": 3
+        },
+        "release_drift": "API62/67 in this same-release org are controls for API68 differences"
+      },
+      "transport": {
+        "C14CONTROL_001": {
+          "api": "68.0",
+          "route": "anonymous",
+          "verified": true,
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "value": 7
+            }
+          }
+        },
+        "C14CONTROL_002": {
+          "api": "68.0",
+          "route": "anonymous",
+          "verified": true,
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "value": "EXC|System.ListException|List index out of bounds: 0"
+            }
+          }
+        },
+        "C14CONTROL_003": {
+          "api": "68.0",
+          "route": "anonymous",
+          "verified": true,
+          "observation": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.ListException: List index out of bounds: 0",
+            "exceptionType": "System.ListException",
+            "exceptionTypeSource": "returned_message_prefix"
+          }
+        }
+      }
+    },
+    "68.0/istest": {
+      "orgTsvSha256": "196db00ff019c35057ba28ffd2ecd527c15704e324c0eb6de2424445835ee0ba",
+      "run": {
+        "started_at": "2026-10-13T00:31:14.760655+00:00",
+        "orgIdSha256": "29e18b0b94d5a825969615b2b9870d3ec6bfff0673bfccfea1bfbc1513461269",
+        "api": "68.0",
+        "route": "istest",
+        "rows_expected": 130,
+        "rows_observed": 130,
+        "complete": true,
+        "transport_control_verified": true,
+        "manifest_sha256": "f12fa5a14244d6bc5d0ec44bcd1ed83d306de1970da8e5bb12e76ae031ccb576",
+        "answer_source": "Native answers plus explicitly non-answer classified faults",
+        "groups": {
+          "CL-seeds": 10,
+          "GI-seeds": 8,
+          "SOQL-boundaries": 4,
+          "application-boundaries": 5,
+          "different-argument": 5,
+          "direct-typed-casts": 9,
+          "element-boundaries": 4,
+          "inner-classes": 6,
+          "interface-matrix": 24,
+          "list-element-casts": 4,
+          "list-matrix": 21,
+          "list-upcast-controls": 2,
+          "must-not-apply": 3,
+          "nongeneric-boundaries": 8,
+          "null-boundaries": 4,
+          "object-list-element-casts": 4,
+          "query-list-element-casts": 4,
+          "static-initializer": 2,
+          "transport-control": 3
+        },
+        "release_drift": "API62/67 in this same-release org are controls for API68 differences"
+      },
+      "transport": {
+        "C14CONTROL_001": {
+          "api": "68.0",
+          "route": "istest",
+          "verified": true,
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "value": 7
+            }
+          }
+        },
+        "C14CONTROL_002": {
+          "api": "68.0",
+          "route": "istest",
+          "verified": true,
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "value": "EXC|System.ListException|List index out of bounds: 0"
+            }
+          }
+        },
+        "C14CONTROL_003": {
+          "api": "68.0",
+          "route": "istest",
+          "verified": true,
+          "observation": {
+            "outcome": "uncaught_test_failure",
+            "testFailures": [
+              {
+                "cls": "C14Transport003",
+                "method": "observe",
+                "message": "System.ListException: List index out of bounds: 0",
+                "exceptionType": "System.ListException",
+                "exceptionTypeSource": "returned_message_prefix"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "api59": "Not captured; no API-68-only claim."
+}

@@ -1,0 +1,77 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "helpers": {
+    "SlotFactory": "public class SlotFactory { public static Account save(List<Account> cache, Account row) { row.Id='001000000000001'; Account saved=cache[0]=row; return saved; } }",
+    "SlotKinds": "public class SlotKinds { public static String choose(Account value){return 'record';} public static String choose(String value){return 'text';} }"
+  },
+  "rows": [
+    {
+      "id": "SA01",
+      "source": "List<Integer> slots=new List<Integer>{null}; Integer chosen=slots[0]=7;",
+      "observe": "chosen and slots[0], compilation",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "SA02",
+      "source": "List<Account> cache=new List<Account>{null}; Account row=new Account(Name='owned'); Account chosen=cache[0]=row; chosen.Name='changed';",
+      "observe": "chosen nonnull; row/cache alias and Name",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "SA03",
+      "source": "List<Account> cache=new List<Account>{null}; Account row=new Account(Name='owned'); Account chosen=SlotFactory.save(cache,row);",
+      "observe": "cached factory return null predicate, chosen Id and alias",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "SA04",
+      "source": "List<Integer> slots=new List<Integer>{null}; Integer receiverIndex=0,index=0,source=7; List<List<Integer>> holders=new List<List<Integer>>{slots}; Integer chosen=holders[receiverIndex++][index++]=source++;",
+      "observe": "chosen, slot and all three counters",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "SA05",
+      "source": "List<Integer> slots=new List<Integer>{null}; Integer chosen=slots[0]=null;",
+      "observe": "chosen and slot null predicates",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "SA06",
+      "source": "List<Integer> slots=new List<Integer>{7}; Integer next=0; Integer chosen=slots[0]??new List<Integer>{11}[next++];",
+      "observe": "nonnull lazy fallback and next counter",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "SA07",
+      "source": "List<Integer> slots=new List<Integer>{null}; Integer next=0; Integer chosen=slots[0]??new List<Integer>{11}[next++];",
+      "observe": "null lazy fallback and next counter",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "SA08",
+      "source": "List<Integer> slots=new List<Integer>{null}; slots.set(0,7);",
+      "observe": "slot value after explicit Void List.set statement",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "SA09",
+      "source": "List<Integer> slots=new List<Integer>{null}; Integer chosen=slots.set(0,7);",
+      "observe": "compilation rejection, exact primary problem and wrapper line/column",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "SA10",
+      "source": "List<Account> slots=new List<Account>{new Account()}; String chosen=SlotKinds.choose(slots[0]=null);",
+      "observe": "selected overload label, slot null predicate; compilation and exact error if rejected",
+      "captureStatus": "PENDING-ROWS"
+    }
+  ]
+}

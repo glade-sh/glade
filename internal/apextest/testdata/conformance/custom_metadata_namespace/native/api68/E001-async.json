@@ -1,0 +1,17 @@
+{
+  "deployment": {
+    "status": "Succeeded",
+    "success": true,
+    "checkOnly": false,
+    "numberComponentErrors": 0,
+    "componentFailures": []
+  },
+  "records": [
+    {
+      "DeveloperName": "Apex68",
+      "NamespacePrefix": null,
+      "QualifiedApiName": "Apex68",
+      "gladens001__Enabled__c": true
+    }
+  ]
+}

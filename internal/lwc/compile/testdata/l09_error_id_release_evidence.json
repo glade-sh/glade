@@ -1,0 +1,325 @@
+{
+  "capture_date": "2026-10-12",
+  "finding": "Winter '27 release drift at every captured API version for these rows' error body.id, not an API-68 gate. Nine error rows return UUID-shaped IDs at 59.0, 67.0 and 68.0; r_getRecord_wrong_object retains numeric string 945406546.",
+  "scope": "13 existing L09 rows per API, 39 observations; nine UUID error rows, one numeric error row and three successful name controls per API. This subset does not re-observe every retained L09 UUID error row.",
+  "comparison_rule": "API68 captured UUID error IDs remain masked carries. API59/67 retained numeric answers predate the release change and remain byte-exact against their original recorded answers.",
+  "source_root": "native-capture",
+  "total_observed_rows": 39,
+  "successful_name_controls": 9,
+  "sources": {
+    "59.0": {
+      "capture_date": "2026-10-12T14:03:56.220669+00:00",
+      "capture_status": "complete",
+      "observed_rows": 13,
+      "successful_name_controls": 3,
+      "distinct_error_ids": 10,
+      "distinct_uuid_error_ids": 9,
+      "distinct_numeric_error_ids": 1,
+      "source_sha256": {
+        "api59/error-ids.json": "4a226dc2bd83fe8343abee971bab8eb39775a14a400044d6eab228ec360349d1",
+        "api59/org.tsv": "f73fc631fdeb648c2456b1374abe5f8e51d25f416503d46292dae71e76743bf2",
+        "api59/ORG-RUN.txt": "b28deab1ea4b819bca791c16576a846272e0eba7926faa8aab7d965606f50daf",
+        "api59/case-table.json": "f9cabbdccd43c2247fc9ffc2f97324a8fa07b4f17ae81aabc329c474560110fa",
+        "api59/capture-source.json": "d2cbb780b4117f4919a9341561bbc4ca4a1f10a5c7b1d7e95716d80ea4ebbcc6",
+        "api59/capture-status.json": "1af8c9ef06492f24c6f623d585df816bc8eee7a1765938c39a58cb56d5ebbc31"
+      }
+    },
+    "67.0": {
+      "capture_date": "2026-10-12T14:04:51.658728+00:00",
+      "capture_status": "complete",
+      "observed_rows": 13,
+      "successful_name_controls": 3,
+      "distinct_error_ids": 10,
+      "distinct_uuid_error_ids": 9,
+      "distinct_numeric_error_ids": 1,
+      "source_sha256": {
+        "api67/error-ids.json": "9d40f36b3a57659ebc80dc4db3167fc2bb79e8bc87bbe3c7eac2d94aab79d981",
+        "api67/org.tsv": "85deed6fe97df21bd0ad2861a818a3e206d7d89a9b90ff7033cf7786e0f1bf31",
+        "api67/ORG-RUN.txt": "bce091b87e4e75912a58fed00ec09e7e478e91ad7c456163a4b5236163198ec9",
+        "api67/case-table.json": "f9cabbdccd43c2247fc9ffc2f97324a8fa07b4f17ae81aabc329c474560110fa",
+        "api67/capture-source.json": "a6deb82ebba80c905f9da5fec64f0f7a750aac71294241d0948895741a2141fd",
+        "api67/capture-status.json": "c1ed5c9ec865bbb4735ad089a07deaf0f529f59424098c3337818e5c2e69c47b"
+      }
+    },
+    "68.0": {
+      "capture_date": "2026-10-12T14:05:47.606274+00:00",
+      "capture_status": "complete",
+      "observed_rows": 13,
+      "successful_name_controls": 3,
+      "distinct_error_ids": 10,
+      "distinct_uuid_error_ids": 9,
+      "distinct_numeric_error_ids": 1,
+      "source_sha256": {
+        "api68/error-ids.json": "b3d04d1535a8d6593c976b033b93ffe9d6ab65bf47b50a2acfb79b2c40615c8f",
+        "api68/org.tsv": "5dfdd951d02fcf19d961c651f10998aa8562e3d66745f68ba0e0323e7ab9006b",
+        "api68/ORG-RUN.txt": "d24a9fb7e567345db39b289fc6fa99d3debd99ae32c279a476b9226c92156b12",
+        "api68/case-table.json": "f9cabbdccd43c2247fc9ffc2f97324a8fa07b4f17ae81aabc329c474560110fa",
+        "api68/capture-source.json": "82dbac1ce25e0c414bf62385a04d2aee6b19a6273ef3a6ad0ca8cea7ead78b58",
+        "api68/capture-status.json": "eff30ef273ab44550965256d2399fdd55b8e88567e9af248a529875d0c6def3a"
+      }
+    }
+  },
+  "observations": [
+    {
+      "id": "r_getRecord_name",
+      "by_api": {
+        "59.0": [],
+        "67.0": [],
+        "68.0": []
+      }
+    },
+    {
+      "id": "r_createRecord_name",
+      "by_api": {
+        "59.0": [],
+        "67.0": [],
+        "68.0": []
+      }
+    },
+    {
+      "id": "r_updateRecord_name",
+      "by_api": {
+        "59.0": [],
+        "67.0": [],
+        "68.0": []
+      }
+    },
+    {
+      "id": "r_getRecord_required_missing",
+      "by_api": {
+        "59.0": [
+          {
+            "shape": "uuid",
+            "path": "$.returned.error.body.id"
+          }
+        ],
+        "67.0": [
+          {
+            "shape": "uuid",
+            "path": "$.returned.error.body.id"
+          }
+        ],
+        "68.0": [
+          {
+            "shape": "uuid",
+            "path": "$.returned.error.body.id"
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_getRecord_deleted",
+      "by_api": {
+        "59.0": [
+          {
+            "shape": "uuid",
+            "path": "$.returned.error.body.id"
+          }
+        ],
+        "67.0": [
+          {
+            "shape": "uuid",
+            "path": "$.returned.error.body.id"
+          }
+        ],
+        "68.0": [
+          {
+            "shape": "uuid",
+            "path": "$.returned.error.body.id"
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_createRecord_name_null",
+      "by_api": {
+        "59.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ],
+        "67.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ],
+        "68.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_createRecord_name_empty",
+      "by_api": {
+        "59.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ],
+        "67.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ],
+        "68.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_createRecord_name_long",
+      "by_api": {
+        "59.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ],
+        "67.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ],
+        "68.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_updateRecord_name_null",
+      "by_api": {
+        "59.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ],
+        "67.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ],
+        "68.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_updateRecord_if_unmodified_stale",
+      "by_api": {
+        "59.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ],
+        "67.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ],
+        "68.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_deleteRecord_twice",
+      "by_api": {
+        "59.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ],
+        "67.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ],
+        "68.0": [
+          {
+            "shape": "uuid",
+            "path": "$.thrown.body.id"
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_cache_notify_deleted",
+      "by_api": {
+        "59.0": [
+          {
+            "shape": "uuid",
+            "path": "$.returned.after.error.body.id"
+          }
+        ],
+        "67.0": [
+          {
+            "shape": "uuid",
+            "path": "$.returned.after.error.body.id"
+          }
+        ],
+        "68.0": [
+          {
+            "shape": "uuid",
+            "path": "$.returned.after.error.body.id"
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_getRecord_wrong_object",
+      "by_api": {
+        "59.0": [
+          {
+            "shape": "numeric",
+            "path": "$.returned.error.body.id",
+            "value": "945406546"
+          }
+        ],
+        "67.0": [
+          {
+            "shape": "numeric",
+            "path": "$.returned.error.body.id",
+            "value": "945406546"
+          }
+        ],
+        "68.0": [
+          {
+            "shape": "numeric",
+            "path": "$.returned.error.body.id",
+            "value": "945406546"
+          }
+        ]
+      }
+    }
+  ],
+  "uncertainties": [
+    "No claim about error classes outside this 13-row capture or the first release date of the change. UUID values are omitted; distinctness is computed from source files identified by SHA256."
+  ],
+  "same_org_across_apis": true
+}

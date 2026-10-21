@@ -1,0 +1,129 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 1,
+  "nativeObservationCount": 6,
+  "rows": [
+    {
+      "id": "NA01",
+      "expected": {
+        "outcome": "runtime",
+        "value": "field:0:1:2|independent:0|static:1|local:1:2|cube:1:x|generic:1:4|flat:1|null:true|sized:2:true|cast:1|type:true"
+      },
+      "routes": {
+        "anonymous": {
+          "id": "NA01A",
+          "anonymous": "System.assert(false, 'P|NA01A|' + MatrixSyntaxProbe.observe());\n",
+          "setupClasses": {
+            "MatrixSyntaxProbe": "public class MatrixSyntaxProbe {\n    private Integer[][] matrix = new Integer[][]{};\n    private static Integer[][] shared = new Integer[][]{};\n    private Integer[][] absent;\n    public static String observe() {\n        MatrixSyntaxProbe first = new MatrixSyntaxProbe();\n        MatrixSyntaxProbe second = new MatrixSyntaxProbe();\n        Integer initial = first.matrix.size();\n        first.matrix.add(new Integer[]{2, 3});\n        shared.add(new Integer[]{9});\n        Integer[][] local = new Integer[][]{};\n        local.add(new Integer[]{5, 6});\n        Object[][][] cube = new Object[][][]{};\n        cube.add(new Object[][]{new Object[]{'x'}});\n        List<List<Integer>> genericRows = new List<List<Integer>>();\n        genericRows.add(new List<Integer>{4});\n        Integer[] flat = new Integer[]{8};\n        Integer[] sized = new Integer[2];\n        Integer[][] casted = (Integer[][])(Object)local;\n        Type matrixType = Integer[][].class;\n        return 'field:' + initial + ':' + first.matrix.size() + ':' + first.matrix[0].size()\n            + '|independent:' + second.matrix.size() + '|static:' + shared.size()\n            + '|local:' + local.size() + ':' + local[0].size() + '|cube:' + cube.size() + ':' + cube[0][0][0]\n            + '|generic:' + genericRows.size() + ':' + genericRows[0][0] + '|flat:' + flat.size()\n            + '|null:' + (first.absent == null) + '|sized:' + sized.size() + ':' + (sized[0] == null)\n            + '|cast:' + casted.size() + '|type:' + (matrixType != null);\n    }\n}\n"
+          },
+          "stage": "runtime",
+          "sourceSha256": {
+            "anonymous": "1aa0b2ddea76e01620a0652d2d8580f864fbbdcbddbeaee976a7aed5ae9ac21b",
+            "setupClass:MatrixSyntaxProbe": "da93cce09c387a339267ffeb7e5b6d8a8623b16f7c621f70d4906732f2959594"
+          }
+        },
+        "isTest": {
+          "id": "NA01T",
+          "classes": {
+            "MatrixSyntaxProbe": "public class MatrixSyntaxProbe {\n    private Integer[][] matrix = new Integer[][]{};\n    private static Integer[][] shared = new Integer[][]{};\n    private Integer[][] absent;\n    public static String observe() {\n        MatrixSyntaxProbe first = new MatrixSyntaxProbe();\n        MatrixSyntaxProbe second = new MatrixSyntaxProbe();\n        Integer initial = first.matrix.size();\n        first.matrix.add(new Integer[]{2, 3});\n        shared.add(new Integer[]{9});\n        Integer[][] local = new Integer[][]{};\n        local.add(new Integer[]{5, 6});\n        Object[][][] cube = new Object[][][]{};\n        cube.add(new Object[][]{new Object[]{'x'}});\n        List<List<Integer>> genericRows = new List<List<Integer>>();\n        genericRows.add(new List<Integer>{4});\n        Integer[] flat = new Integer[]{8};\n        Integer[] sized = new Integer[2];\n        Integer[][] casted = (Integer[][])(Object)local;\n        Type matrixType = Integer[][].class;\n        return 'field:' + initial + ':' + first.matrix.size() + ':' + first.matrix[0].size()\n            + '|independent:' + second.matrix.size() + '|static:' + shared.size()\n            + '|local:' + local.size() + ':' + local[0].size() + '|cube:' + cube.size() + ':' + cube[0][0][0]\n            + '|generic:' + genericRows.size() + ':' + genericRows[0][0] + '|flat:' + flat.size()\n            + '|null:' + (first.absent == null) + '|sized:' + sized.size() + ':' + (sized[0] == null)\n            + '|cast:' + casted.size() + '|type:' + (matrixType != null);\n    }\n}\n",
+            "MatrixSyntaxSpec": "@IsTest private class MatrixSyntaxSpec { @IsTest static void observe(){System.assert(false, 'P|NA01T|' + MatrixSyntaxProbe.observe());} }\n"
+          },
+          "tests": [
+            "MatrixSyntaxSpec"
+          ],
+          "stage": "runtime",
+          "sourceSha256": {
+            "class:MatrixSyntaxProbe": "da93cce09c387a339267ffeb7e5b6d8a8623b16f7c621f70d4906732f2959594",
+            "class:MatrixSyntaxSpec": "3ad1b683819065e23f0f18ab7897b06053faf8a0e695a461937f9a90651302d0"
+          }
+        }
+      }
+    }
+  ],
+  "cells": [
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "NA01A",
+      "native": "field:0:1:2|independent:0|static:1|local:1:2|cube:1:x|generic:1:4|flat:1|null:true|sized:2:true|cast:1|type:true",
+      "nativeSHA256": "642ce6f3455bccde834b7ed04569c1180f6099c73d5d7d30221d6b7730924438",
+      "rawReceiptSHA256": "25d1da33b6875a2404aa148b391f46c712ab880a1608c63efe6764227eed3049"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "NA01T",
+      "native": "field:0:1:2|independent:0|static:1|local:1:2|cube:1:x|generic:1:4|flat:1|null:true|sized:2:true|cast:1|type:true",
+      "nativeSHA256": "642ce6f3455bccde834b7ed04569c1180f6099c73d5d7d30221d6b7730924438",
+      "rawReceiptSHA256": "7671edb2f89470dfcb7828a465631c249463844e89e685cdff8ccfd1be32d9ee"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "NA01A",
+      "native": "field:0:1:2|independent:0|static:1|local:1:2|cube:1:x|generic:1:4|flat:1|null:true|sized:2:true|cast:1|type:true",
+      "nativeSHA256": "642ce6f3455bccde834b7ed04569c1180f6099c73d5d7d30221d6b7730924438",
+      "rawReceiptSHA256": "d1e67a7dc2bf3b0ac232e474b994c04b9d40f8e4bb37ecf4d5184b7137d4b84a"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "NA01T",
+      "native": "field:0:1:2|independent:0|static:1|local:1:2|cube:1:x|generic:1:4|flat:1|null:true|sized:2:true|cast:1|type:true",
+      "nativeSHA256": "642ce6f3455bccde834b7ed04569c1180f6099c73d5d7d30221d6b7730924438",
+      "rawReceiptSHA256": "7e8879274ea5a6145083fc259c21e65def856be80cf8ec2b4c906c1628369ca9"
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "id": "NA01A",
+      "native": "field:0:1:2|independent:0|static:1|local:1:2|cube:1:x|generic:1:4|flat:1|null:true|sized:2:true|cast:1|type:true",
+      "nativeSHA256": "642ce6f3455bccde834b7ed04569c1180f6099c73d5d7d30221d6b7730924438",
+      "rawReceiptSHA256": "2d7dfafa776e6e5176d27704cf83a085130b4254ef2918508c71f5a4b4f66fc9"
+    },
+    {
+      "api": "68.0",
+      "route": "isTest",
+      "id": "NA01T",
+      "native": "field:0:1:2|independent:0|static:1|local:1:2|cube:1:x|generic:1:4|flat:1|null:true|sized:2:true|cast:1|type:true",
+      "nativeSHA256": "642ce6f3455bccde834b7ed04569c1180f6099c73d5d7d30221d6b7730924438",
+      "rawReceiptSHA256": "a078e939dfdbe9f51e432b5cfb2609531e0f79f5fd73e4a87ff9ef61a3c68bc5"
+    }
+  ],
+  "classMetadataByAPI": {
+    "62.0": {
+      "MatrixSyntaxProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "MatrixSyntaxSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "67.0": {
+      "MatrixSyntaxProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "MatrixSyntaxSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "68.0": {
+      "MatrixSyntaxProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "MatrixSyntaxSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+    }
+  },
+  "classMetadataSHA256": {
+    "62.0": {
+      "MatrixSyntaxProbe": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "MatrixSyntaxSpec": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+    },
+    "67.0": {
+      "MatrixSyntaxProbe": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "MatrixSyntaxSpec": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+    },
+    "68.0": {
+      "MatrixSyntaxProbe": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "MatrixSyntaxSpec": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+    }
+  }
+}

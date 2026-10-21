@@ -1,0 +1,1 @@
+System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor67.observe('SINGLE')));

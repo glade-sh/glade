@@ -663,6 +663,22 @@ func (s *Server) handleLightningWireDeleteRecord(w http.ResponseWriter, r *http.
 }
 
 func getRecordWireData(org *storage.OrgState, recordID string, fields []string, optionalFields []string) (map[string]any, *lwcbrowser.WireError) {
+	return getRecordWireDataInLocation(org, recordID, fields, optionalFields, ldsRecordLocation(org))
+}
+
+func ldsRecordLocation(org *storage.OrgState) *time.Location {
+	if org == nil {
+		return time.UTC
+	}
+	user := (&Server{Org: org}).currentUser(nil, "")
+	if location, err := time.LoadLocation(userString(user, "TimeZoneSidKey", "UTC")); err == nil {
+		return location
+	}
+	return time.UTC
+}
+
+// Reuse the request's location for every field and expanded parent record.
+func getRecordWireDataInLocation(org *storage.OrgState, recordID string, fields []string, optionalFields []string, zone *time.Location) (map[string]any, *lwcbrowser.WireError) {
 	recordID = strings.TrimSpace(recordID)
 	if recordID == "" {
 		return nil, &lwcbrowser.WireError{Message: "recordId is required"}
@@ -713,7 +729,7 @@ func getRecordWireData(org *storage.OrgState, recordID string, fields []string, 
 					fieldsOut[relationship] = map[string]any{"value": nil, "displayValue": nil}
 					break
 				}
-				parent, wireErr := getRecordWireData(org, parentID, []string{parentName + "." + rest}, nil)
+				parent, wireErr := getRecordWireDataInLocation(org, parentID, []string{parentName + "." + rest}, nil, zone)
 				if wireErr != nil {
 					return nil, wireErr
 				}
@@ -752,14 +768,14 @@ func getRecordWireData(org *storage.OrgState, recordID string, fields []string, 
 			return nil, &lwcbrowser.WireError{Type: "INVALID_FIELD", Status: http.StatusBadRequest, RecordErrorID: "-92527422", Message: fmt.Sprintf("field not found: %s", name)}
 		}
 		if !ok {
-			fieldsOut[fieldName] = ldsRecordFieldPayload(field, nil)
+			fieldsOut[fieldName] = ldsRecordFieldPayload(field, nil, zone)
 			continue
 		}
 		if !hasField && value.Kind == storage.ValueDateTime {
 			field.Type = storage.FieldDateTime
 		}
 		jsonVal := recordWireValueJSON(value)
-		fieldsOut[fieldName] = ldsRecordFieldPayload(field, jsonVal)
+		fieldsOut[fieldName] = ldsRecordFieldPayload(field, jsonVal, zone)
 	}
 	return map[string]any{
 		"id":                 recordID,
@@ -797,7 +813,7 @@ func ldsRecordValue(record storage.Record, name string) (storage.Value, bool) {
 	}
 }
 
-func ldsRecordFieldPayload(field storage.Field, value any) map[string]any {
+func ldsRecordFieldPayload(field storage.Field, value any, zone *time.Location) map[string]any {
 	out := map[string]any{
 		"value":        value,
 		"displayValue": nil,
@@ -807,9 +823,9 @@ func ldsRecordFieldPayload(field storage.Field, value any) map[string]any {
 	}
 	if value != nil && field.Type == storage.FieldDateTime {
 		if stamp, err := time.Parse(time.RFC3339Nano, fmt.Sprint(value)); err == nil {
-			// The default local LDS context is en-US/UTC. Keep the raw value;
-			// native audit-field displays use numeric dates and minute precision.
-			out["displayValue"] = stamp.UTC().Format("1/2/2006, 3:04 PM")
+			// Keep the raw UTC value; native LDS displays use the context
+			// user's zone with numeric dates and minute precision.
+			out["displayValue"] = stamp.In(zone).Format("1/2/2006, 3:04 PM")
 		}
 	}
 	if value != nil && strings.EqualFold(field.DisplayType, "CURRENCY") {
@@ -920,6 +936,7 @@ func wireFieldName(ref string) string {
 }
 
 func getRecordsWireData(org *storage.OrgState, req lwcbrowser.WireGetRecordsRequest) map[string]any {
+	zone := ldsRecordLocation(org)
 	results := make([]map[string]any, 0)
 	for _, item := range req.Records {
 		seen := map[storage.ID]bool{}
@@ -932,7 +949,7 @@ func getRecordsWireData(org *storage.OrgState, req lwcbrowser.WireGetRecordsRequ
 				continue
 			}
 			seen[id] = true
-			data, wireErr := getRecordWireData(org, recordID, item.Fields, item.OptionalFields)
+			data, wireErr := getRecordWireDataInLocation(org, recordID, item.Fields, item.OptionalFields, zone)
 			result := batchWireResult(data, wireErr)
 			if wireErr != nil && wireErr.Type == "INVALID_FIELD" {
 				message := wireErr.Message
@@ -948,6 +965,7 @@ func getRecordsWireData(org *storage.OrgState, req lwcbrowser.WireGetRecordsRequ
 }
 
 func getRecordUIWireData(org *storage.OrgState, req lwcbrowser.WireGetRecordUIRequest, source SourceMetadata) (map[string]any, *lwcbrowser.WireError) {
+	zone := ldsRecordLocation(org)
 	records := map[string]any{}
 	objectInfos := map[string]any{}
 	layouts := map[string]any{}
@@ -958,7 +976,7 @@ func getRecordUIWireData(org *storage.OrgState, req lwcbrowser.WireGetRecordUIRe
 		if recordID == "" {
 			continue
 		}
-		record, wireErr := getRecordWireData(org, recordID, req.Fields, req.OptionalFields)
+		record, wireErr := getRecordWireDataInLocation(org, recordID, req.Fields, req.OptionalFields, zone)
 		if wireErr != nil {
 			return nil, wireErr
 		}
@@ -1583,6 +1601,7 @@ func getRelatedListRecordsWireData(org *storage.OrgState, req lwcbrowser.WireGet
 		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("related list not found: %s", relationshipName)}
 	}
 	records := make([]map[string]any, 0)
+	zone := ldsRecordLocation(org)
 	for id, record := range childObject.Records {
 		if record.System.IsDeleted {
 			continue
@@ -1593,7 +1612,7 @@ func getRelatedListRecordsWireData(org *storage.OrgState, req lwcbrowser.WireGet
 		}
 		record.ID = id
 		record.Object = childObjectName
-		row, _ := getRecordWireData(org, string(id), req.Fields, req.OptionalFields)
+		row, _ := getRecordWireDataInLocation(org, string(id), req.Fields, req.OptionalFields, zone)
 		if row != nil {
 			records = append(records, row)
 		}

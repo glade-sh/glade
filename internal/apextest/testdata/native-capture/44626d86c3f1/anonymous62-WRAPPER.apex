@@ -1,0 +1,1 @@
+System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor62.observe('WRAPPER')));

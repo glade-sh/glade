@@ -1,0 +1,2096 @@
+{
+  "cluster": "package-inheritance",
+  "cellCount": 48,
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cells": [
+    {
+      "id": "C154R26",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().direct(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R26|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> direct(Integer n){return insertAll(n);} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "b2354d861e296ff09e88c694baeec4ceb68066669989e414c515c31c27ab3572",
+          "class:Builder": "197cc1f8bc9d64cbc8d369d0a988c38f24ba9479acd6bc566f022d8ba92ee355"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R26",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> direct(Integer n){return insertAll(n);} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().direct(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R26|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "197cc1f8bc9d64cbc8d369d0a988c38f24ba9479acd6bc566f022d8ba92ee355",
+          "class:E10Observe": "d83e83f2d4758a159c1b2b28b3e2396ff38d5ecf581acbc7eaa1026e6a4889d4"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R27",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R27|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> chained(Integer n){return self().insertAll(n);} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "cd28ed9f718538fc02c343d4e97321cdecca48369d431b8ce63e0d623b0da9d4",
+          "class:Builder": "a4db865a019bf8a3005f71dac9896ca5c005d0bd1723fa8a5b7b83fdf98337ef"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R27",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> chained(Integer n){return self().insertAll(n);} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R27|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "a4db865a019bf8a3005f71dac9896ca5c005d0bd1723fa8a5b7b83fdf98337ef",
+          "class:E10Observe": "6d810366f798614ee54714983546e8256a2943e64dcd7b996ad1d9880090b2cd"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R28",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().thisQualified(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R28|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> thisQualified(Integer n){return this.insertAll(n);} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "fed1173697eeac83bc7b2b5742cbc282d520ba7c87855c88411614bf9197bbce",
+          "class:Builder": "cc29043bac958a768260f96c7c4c708cc4c049e23d5110307d5cfc96364508d4"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R28",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> thisQualified(Integer n){return this.insertAll(n);} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().thisQualified(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R28|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "cc29043bac958a768260f96c7c4c708cc4c049e23d5110307d5cfc96364508d4",
+          "class:E10Observe": "348fb01a78aeff29479105e746da0183f66ff6778e7f809f87884e4130b800a7"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R29",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().superQualified(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R29|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> superQualified(Integer n){return super.insertAll(n);} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "d1e54d4e07d70b1167c4ca69474f71a554200876e36b4dadea9c50e403e58505",
+          "class:Builder": "62f10f6e2d676c0121fd841a580c2a4559468e3e1f44e74b76677648c4cea5d5"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R29",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> superQualified(Integer n){return super.insertAll(n);} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().superQualified(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R29|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "62f10f6e2d676c0121fd841a580c2a4559468e3e1f44e74b76677648c4cea5d5",
+          "class:E10Observe": "faeb5872cd3a45a9f486fbe5572f2cfda8db9fe36164483dd96476d9459d2015"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R30",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().protectedCall());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R30|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public String protectedCall(){return self().protectedToken();} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "f994ab653df361e9f97a2d4115da8714e115c1654d3b4c17ad18c048cba629f8",
+          "class:Builder": "7ea2e3d335c7d9ad95ea8306bf93b04c2096309d23612e56eab2c73f3396b362"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String gladens001.BuilderBase.protectedToken()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String gladens001.BuilderBase.protectedToken()",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R30",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public String protectedCall(){return self().protectedToken();} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().protectedCall());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R30|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "7ea2e3d335c7d9ad95ea8306bf93b04c2096309d23612e56eab2c73f3396b362",
+          "class:E10Observe": "d73931b1a1c60c27388e137de99dfb63f6241fac1bf68117c9b893480f693eb4"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String gladens001.BuilderBase.protectedToken()",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: String gladens001.BuilderBase.protectedToken()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String gladens001.BuilderBase.protectedToken()",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R31",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().globalToken());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R31|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;}  }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "5cb620244efc7cf3a60ebb7a73f111bea0bffb42cb0ffb18a0294bf31fa712fa",
+          "class:Builder": "804e7405b54db017bd90aacb370260e639e60ac89d03b464258ea65623f9cc56"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "pkg-global"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R31",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;}  }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().globalToken());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R31|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "804e7405b54db017bd90aacb370260e639e60ac89d03b464258ea65623f9cc56",
+          "class:E10Observe": "3e5d21e0d57970471ce740f6711ef395404e38ffa0b58dabec75e81fda62719c"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "pkg-global"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R32",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().call());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R32|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public String call(){return self().privateToken();} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "e68d72e1cdd2eafbd960081b3dac63915c7b742b52bcbb2a81367c38f87d53dc",
+          "class:Builder": "a0b9efa993aa8d16131564a9eacc8f5619be33811fb23f0971bb8b6bb1585c5e"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String gladens001.BuilderBase.privateToken()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": true,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String gladens001.BuilderBase.privateToken()",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R32",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public String call(){return self().privateToken();} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().call());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R32|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "a0b9efa993aa8d16131564a9eacc8f5619be33811fb23f0971bb8b6bb1585c5e",
+          "class:E10Observe": "944b21469414179b374d8f4e4d42d2b5c7b05fd08a5b0042bdf4dfdfeaafadea"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String gladens001.BuilderBase.privateToken()",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: String gladens001.BuilderBase.privateToken()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String gladens001.BuilderBase.privateToken()",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R33",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().pkgOnly());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R33|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.Builder {}"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "043853e1fb192a7f20819e4194b4b424b8fd6cc5d755bdb03252c54655ee861e",
+          "class:Builder": "2ac3ea38a8a3f7d425c9ad37c7b5a4fac533f50e70f3d4af08817180613095c4"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": true,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R33",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.Builder {}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().pkgOnly());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R33|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "2ac3ea38a8a3f7d425c9ad37c7b5a4fac533f50e70f3d4af08817180613095c4",
+          "class:E10Observe": "79443e43dcbcd732c35194edbbe972906709370b4f459eacc2f8b5b487682aa9"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R26",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().direct(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R26|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> direct(Integer n){return insertAll(n);} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "b2354d861e296ff09e88c694baeec4ceb68066669989e414c515c31c27ab3572",
+          "class:Builder": "197cc1f8bc9d64cbc8d369d0a988c38f24ba9479acd6bc566f022d8ba92ee355"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R26",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> direct(Integer n){return insertAll(n);} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().direct(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R26|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "197cc1f8bc9d64cbc8d369d0a988c38f24ba9479acd6bc566f022d8ba92ee355",
+          "class:E10Observe": "d83e83f2d4758a159c1b2b28b3e2396ff38d5ecf581acbc7eaa1026e6a4889d4"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R27",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R27|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> chained(Integer n){return self().insertAll(n);} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "cd28ed9f718538fc02c343d4e97321cdecca48369d431b8ce63e0d623b0da9d4",
+          "class:Builder": "a4db865a019bf8a3005f71dac9896ca5c005d0bd1723fa8a5b7b83fdf98337ef"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R27",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> chained(Integer n){return self().insertAll(n);} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R27|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "a4db865a019bf8a3005f71dac9896ca5c005d0bd1723fa8a5b7b83fdf98337ef",
+          "class:E10Observe": "6d810366f798614ee54714983546e8256a2943e64dcd7b996ad1d9880090b2cd"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R28",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().thisQualified(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R28|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> thisQualified(Integer n){return this.insertAll(n);} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "fed1173697eeac83bc7b2b5742cbc282d520ba7c87855c88411614bf9197bbce",
+          "class:Builder": "cc29043bac958a768260f96c7c4c708cc4c049e23d5110307d5cfc96364508d4"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R28",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> thisQualified(Integer n){return this.insertAll(n);} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().thisQualified(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R28|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "cc29043bac958a768260f96c7c4c708cc4c049e23d5110307d5cfc96364508d4",
+          "class:E10Observe": "348fb01a78aeff29479105e746da0183f66ff6778e7f809f87884e4130b800a7"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R29",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().superQualified(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R29|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> superQualified(Integer n){return super.insertAll(n);} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "d1e54d4e07d70b1167c4ca69474f71a554200876e36b4dadea9c50e403e58505",
+          "class:Builder": "62f10f6e2d676c0121fd841a580c2a4559468e3e1f44e74b76677648c4cea5d5"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R29",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> superQualified(Integer n){return super.insertAll(n);} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().superQualified(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R29|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "62f10f6e2d676c0121fd841a580c2a4559468e3e1f44e74b76677648c4cea5d5",
+          "class:E10Observe": "faeb5872cd3a45a9f486fbe5572f2cfda8db9fe36164483dd96476d9459d2015"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R30",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().protectedCall());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R30|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public String protectedCall(){return self().protectedToken();} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "f994ab653df361e9f97a2d4115da8714e115c1654d3b4c17ad18c048cba629f8",
+          "class:Builder": "7ea2e3d335c7d9ad95ea8306bf93b04c2096309d23612e56eab2c73f3396b362"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String gladens001.BuilderBase.protectedToken()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String gladens001.BuilderBase.protectedToken()",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R30",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public String protectedCall(){return self().protectedToken();} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().protectedCall());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R30|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "7ea2e3d335c7d9ad95ea8306bf93b04c2096309d23612e56eab2c73f3396b362",
+          "class:E10Observe": "d73931b1a1c60c27388e137de99dfb63f6241fac1bf68117c9b893480f693eb4"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String gladens001.BuilderBase.protectedToken()",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: String gladens001.BuilderBase.protectedToken()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String gladens001.BuilderBase.protectedToken()",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R31",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().globalToken());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R31|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;}  }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "5cb620244efc7cf3a60ebb7a73f111bea0bffb42cb0ffb18a0294bf31fa712fa",
+          "class:Builder": "804e7405b54db017bd90aacb370260e639e60ac89d03b464258ea65623f9cc56"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "pkg-global"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R31",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;}  }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().globalToken());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R31|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "804e7405b54db017bd90aacb370260e639e60ac89d03b464258ea65623f9cc56",
+          "class:E10Observe": "3e5d21e0d57970471ce740f6711ef395404e38ffa0b58dabec75e81fda62719c"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "pkg-global"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R32",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().call());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R32|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public String call(){return self().privateToken();} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "e68d72e1cdd2eafbd960081b3dac63915c7b742b52bcbb2a81367c38f87d53dc",
+          "class:Builder": "a0b9efa993aa8d16131564a9eacc8f5619be33811fb23f0971bb8b6bb1585c5e"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String gladens001.BuilderBase.privateToken()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": true,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String gladens001.BuilderBase.privateToken()",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R32",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public String call(){return self().privateToken();} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().call());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R32|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "a0b9efa993aa8d16131564a9eacc8f5619be33811fb23f0971bb8b6bb1585c5e",
+          "class:E10Observe": "944b21469414179b374d8f4e4d42d2b5c7b05fd08a5b0042bdf4dfdfeaafadea"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String gladens001.BuilderBase.privateToken()",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: String gladens001.BuilderBase.privateToken()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String gladens001.BuilderBase.privateToken()",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R33",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().pkgOnly());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R33|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.Builder {}"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "043853e1fb192a7f20819e4194b4b424b8fd6cc5d755bdb03252c54655ee861e",
+          "class:Builder": "2ac3ea38a8a3f7d425c9ad37c7b5a4fac533f50e70f3d4af08817180613095c4"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": true,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R33",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.Builder {}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().pkgOnly());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R33|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "2ac3ea38a8a3f7d425c9ad37c7b5a4fac533f50e70f3d4af08817180613095c4",
+          "class:E10Observe": "79443e43dcbcd732c35194edbbe972906709370b4f459eacc2f8b5b487682aa9"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R26",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().direct(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R26|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> direct(Integer n){return insertAll(n);} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "b2354d861e296ff09e88c694baeec4ceb68066669989e414c515c31c27ab3572",
+          "class:Builder": "197cc1f8bc9d64cbc8d369d0a988c38f24ba9479acd6bc566f022d8ba92ee355"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R26",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> direct(Integer n){return insertAll(n);} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().direct(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R26|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "197cc1f8bc9d64cbc8d369d0a988c38f24ba9479acd6bc566f022d8ba92ee355",
+          "class:E10Observe": "d83e83f2d4758a159c1b2b28b3e2396ff38d5ecf581acbc7eaa1026e6a4889d4"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R27",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R27|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> chained(Integer n){return self().insertAll(n);} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "cd28ed9f718538fc02c343d4e97321cdecca48369d431b8ce63e0d623b0da9d4",
+          "class:Builder": "a4db865a019bf8a3005f71dac9896ca5c005d0bd1723fa8a5b7b83fdf98337ef"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R27",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> chained(Integer n){return self().insertAll(n);} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R27|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "a4db865a019bf8a3005f71dac9896ca5c005d0bd1723fa8a5b7b83fdf98337ef",
+          "class:E10Observe": "6d810366f798614ee54714983546e8256a2943e64dcd7b996ad1d9880090b2cd"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R28",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().thisQualified(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R28|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> thisQualified(Integer n){return this.insertAll(n);} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "fed1173697eeac83bc7b2b5742cbc282d520ba7c87855c88411614bf9197bbce",
+          "class:Builder": "cc29043bac958a768260f96c7c4c708cc4c049e23d5110307d5cfc96364508d4"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R28",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> thisQualified(Integer n){return this.insertAll(n);} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().thisQualified(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R28|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "cc29043bac958a768260f96c7c4c708cc4c049e23d5110307d5cfc96364508d4",
+          "class:E10Observe": "348fb01a78aeff29479105e746da0183f66ff6778e7f809f87884e4130b800a7"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R29",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().superQualified(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R29|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> superQualified(Integer n){return super.insertAll(n);} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "d1e54d4e07d70b1167c4ca69474f71a554200876e36b4dadea9c50e403e58505",
+          "class:Builder": "62f10f6e2d676c0121fd841a580c2a4559468e3e1f44e74b76677648c4cea5d5"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R29",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public List<String> superQualified(Integer n){return super.insertAll(n);} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().superQualified(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R29|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "62f10f6e2d676c0121fd841a580c2a4559468e3e1f44e74b76677648c4cea5d5",
+          "class:E10Observe": "faeb5872cd3a45a9f486fbe5572f2cfda8db9fe36164483dd96476d9459d2015"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: List<String> gladens001.BuilderBase.insertAll(Integer)",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R30",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().protectedCall());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R30|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public String protectedCall(){return self().protectedToken();} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "f994ab653df361e9f97a2d4115da8714e115c1654d3b4c17ad18c048cba629f8",
+          "class:Builder": "7ea2e3d335c7d9ad95ea8306bf93b04c2096309d23612e56eab2c73f3396b362"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String gladens001.BuilderBase.protectedToken()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": false,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String gladens001.BuilderBase.protectedToken()",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R30",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public String protectedCall(){return self().protectedToken();} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().protectedCall());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R30|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "7ea2e3d335c7d9ad95ea8306bf93b04c2096309d23612e56eab2c73f3396b362",
+          "class:E10Observe": "d73931b1a1c60c27388e137de99dfb63f6241fac1bf68117c9b893480f693eb4"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String gladens001.BuilderBase.protectedToken()",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: String gladens001.BuilderBase.protectedToken()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": false,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String gladens001.BuilderBase.protectedToken()",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R31",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().globalToken());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R31|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;}  }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "5cb620244efc7cf3a60ebb7a73f111bea0bffb42cb0ffb18a0294bf31fa712fa",
+          "class:Builder": "804e7405b54db017bd90aacb370260e639e60ac89d03b464258ea65623f9cc56"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "pkg-global"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R31",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;}  }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().globalToken());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R31|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "804e7405b54db017bd90aacb370260e639e60ac89d03b464258ea65623f9cc56",
+          "class:E10Observe": "3e5d21e0d57970471ce740f6711ef395404e38ffa0b58dabec75e81fda62719c"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "pkg-global"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R32",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().call());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R32|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public String call(){return self().privateToken();} }"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "e68d72e1cdd2eafbd960081b3dac63915c7b742b52bcbb2a81367c38f87d53dc",
+          "class:Builder": "a0b9efa993aa8d16131564a9eacc8f5619be33811fb23f0971bb8b6bb1585c5e"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String gladens001.BuilderBase.privateToken()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": true,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String gladens001.BuilderBase.privateToken()",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R32",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.BuilderBase { public Builder self(){return this;} public String call(){return self().privateToken();} }",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().call());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R32|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "a0b9efa993aa8d16131564a9eacc8f5619be33811fb23f0971bb8b6bb1585c5e",
+          "class:E10Observe": "944b21469414179b374d8f4e4d42d2b5c7b05fd08a5b0042bdf4dfdfeaafadea"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Method is not visible: String gladens001.BuilderBase.privateToken()",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Method is not visible: String gladens001.BuilderBase.privateToken()",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Method is not visible: String gladens001.BuilderBase.privateToken()",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R33",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().pkgOnly());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R33|'+JSON.serialize(r));",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.Builder {}"
+        },
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "043853e1fb192a7f20819e4194b4b424b8fd6cc5d755bdb03252c54655ee861e",
+          "class:Builder": "2ac3ea38a8a3f7d425c9ad37c7b5a4fac533f50e70f3d4af08817180613095c4"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": false,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "executionAvailable": false,
+        "fixtureRejectionPlanned": true,
+        "nativeOrigin": "subscriber-fixture-deploy",
+        "outcome": "compile-rejected",
+        "requestedRoute": "anonymous"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+      "rejectUnit": "fixture",
+      "rejectClass": "Builder"
+    },
+    {
+      "id": "C154R33",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "Builder": "public class Builder extends gladens001.Builder {}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().pkgOnly());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R33|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:Builder": "2ac3ea38a8a3f7d425c9ad37c7b5a4fac533f50e70f3d4af08817180613095c4",
+          "class:E10Observe": "79443e43dcbcd732c35194edbbe972906709370b4f459eacc2f8b5b487682aa9"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "Builder",
+              "problem": "Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Builder : Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Non-virtual and non-abstract type cannot be extended: gladens001.Builder",
+      "rejectUnit": "route",
+      "rejectClass": "Builder"
+    }
+  ]
+}

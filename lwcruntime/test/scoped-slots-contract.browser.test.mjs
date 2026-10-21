@@ -1,14 +1,7 @@
 import assert from "node:assert/strict";
-import path from "node:path";
 import test from "node:test";
-import { pathToFileURL } from "node:url";
+import { chromium } from "./shared-playwright.mjs";
 import { compileShadowModeDiagnostic, startScopedSlotsServer } from "./scoped-slots-harness.mjs";
-
-const playwrightPath = process.env.GLADE_LWC_PLAYWRIGHT_MODULE;
-const playwrightModule = playwrightPath
-  ? await import(pathToFileURL(path.extname(playwrightPath) ? playwrightPath : path.join(playwrightPath, "index.mjs")).href)
-  : await import("playwright");
-const { chromium } = playwrightModule;
 
 test("API 67 compiled light-DOM child delivers scoped slot data to its parent", async () => {
   const server = await startScopedSlotsServer();

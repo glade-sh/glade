@@ -1,0 +1,2020 @@
+{
+  "basis": "Read-only source prediction. This is not a before-run result, passing-cell claim or native parity result. All fixes are proposed only.",
+  "productBase": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+  "canonicalRef": "capture-revision-054349916019843508166618914391851018464051150127345849473487090008965591022955",
+  "comparisonHead": "capture-revision-099413492656488518878939008476874651233531656159413157852776069379889436278422",
+  "owningPathsUnchangedAcrossComparison": true,
+  "predictedMismatchShapes": 36,
+  "predictedMismatchCells": 216,
+  "clusters": {
+    "describe_custom": {
+      "nativeCells": 108,
+      "predictedMismatchCells": 36,
+      "predictedMismatchRows": [
+        "C183ID_021",
+        "C183ID_022",
+        "C183ID_027",
+        "C183ID_029",
+        "C183ID_034",
+        "C183ID_035"
+      ],
+      "unexecutedOtherCells": 72
+    },
+    "populated": {
+      "nativeCells": 36,
+      "predictedMismatchCells": 0,
+      "predictedMismatchRows": [],
+      "unexecutedOtherCells": 36
+    },
+    "rejections": {
+      "nativeCells": 18,
+      "predictedMismatchCells": 12,
+      "predictedMismatchRows": [
+        "C183ID_130",
+        "C183ID_131"
+      ],
+      "unexecutedOtherCells": 6
+    },
+    "transport": {
+      "nativeCells": 12,
+      "predictedMismatchCells": 0,
+      "predictedMismatchRows": [],
+      "unexecutedOtherCells": 12
+    },
+    "keys": {
+      "nativeCells": 48,
+      "predictedMismatchCells": 24,
+      "predictedMismatchRows": [
+        "C183ID_123",
+        "C183ID_125",
+        "C183ID_127",
+        "C183ID_128"
+      ],
+      "unexecutedOtherCells": 24
+    },
+    "access": {
+      "nativeCells": 6,
+      "predictedMismatchCells": 0,
+      "predictedMismatchRows": [],
+      "unexecutedOtherCells": 6
+    },
+    "database": {
+      "nativeCells": 216,
+      "predictedMismatchCells": 42,
+      "predictedMismatchRows": [
+        "C183ID_040",
+        "C183ID_049",
+        "C183ID_054",
+        "C183ID_055",
+        "C183ID_056",
+        "C183ID_058",
+        "C183ID_066"
+      ],
+      "unexecutedOtherCells": 174
+    },
+    "null": {
+      "nativeCells": 30,
+      "predictedMismatchCells": 24,
+      "predictedMismatchRows": [
+        "C183ID_082",
+        "C183ID_083",
+        "C183ID_084",
+        "C183ID_085"
+      ],
+      "unexecutedOtherCells": 6
+    },
+    "statement": {
+      "nativeCells": 216,
+      "predictedMismatchCells": 54,
+      "predictedMismatchRows": [
+        "C183ID_087",
+        "C183ID_096",
+        "C183ID_099",
+        "C183ID_100",
+        "C183ID_101",
+        "C183ID_102",
+        "C183ID_103",
+        "C183ID_105",
+        "C183ID_113"
+      ],
+      "unexecutedOtherCells": 162
+    },
+    "describe_standard": {
+      "nativeCells": 108,
+      "predictedMismatchCells": 24,
+      "predictedMismatchRows": [
+        "C183ID_003",
+        "C183ID_007",
+        "C183ID_011",
+        "C183ID_016"
+      ],
+      "unexecutedOtherCells": 84
+    }
+  },
+  "rootCauses": [
+    {
+      "rootCause": "id_overlay",
+      "rowIDs": [
+        "C183ID_003",
+        "C183ID_007",
+        "C183ID_011",
+        "C183ID_016",
+        "C183ID_021"
+      ],
+      "predictedCells": 30,
+      "source": [
+        "internal/vm/describe_runtime.go:1590",
+        "internal/vm/describe_runtime.go:1975",
+        "internal/vm/describe_runtime.go:2038",
+        "internal/vm/describe_runtime.go:1691"
+      ],
+      "prediction": "The synthetic system Id overlay replaces the catalog field and drops IDLookup; native isIdLookup=true.",
+      "proposedFixNotApplied": "Preserve the captured metadata facets when applying the system overlay; also populate the captured ordinary synthetic Id shape. Do not infer lookup eligibility for reference fields.",
+      "cells": [
+        {
+          "id": "C183ID_003",
+          "cluster": "describe_standard",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_003",
+          "cluster": "describe_standard",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_003",
+          "cluster": "describe_standard",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_003",
+          "cluster": "describe_standard",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_003",
+          "cluster": "describe_standard",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_003",
+          "cluster": "describe_standard",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_007",
+          "cluster": "describe_standard",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_007",
+          "cluster": "describe_standard",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_007",
+          "cluster": "describe_standard",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_007",
+          "cluster": "describe_standard",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_007",
+          "cluster": "describe_standard",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_007",
+          "cluster": "describe_standard",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_011",
+          "cluster": "describe_standard",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_011",
+          "cluster": "describe_standard",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_011",
+          "cluster": "describe_standard",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_011",
+          "cluster": "describe_standard",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_011",
+          "cluster": "describe_standard",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_011",
+          "cluster": "describe_standard",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_016",
+          "cluster": "describe_standard",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_016",
+          "cluster": "describe_standard",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_016",
+          "cluster": "describe_standard",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_016",
+          "cluster": "describe_standard",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_016",
+          "cluster": "describe_standard",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_016",
+          "cluster": "describe_standard",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_021",
+          "cluster": "describe_custom",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_021",
+          "cluster": "describe_custom",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_021",
+          "cluster": "describe_custom",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_021",
+          "cluster": "describe_custom",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_021",
+          "cluster": "describe_custom",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_021",
+          "cluster": "describe_custom",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        }
+      ]
+    },
+    {
+      "rootCause": "custom_name",
+      "rowIDs": [
+        "C183ID_022"
+      ],
+      "predictedCells": 6,
+      "source": [
+        "internal/sobject/sobject.go:284"
+      ],
+      "prediction": "Custom Text Name construction sets Required=true and omits IDLookup; native Name is nillable and an IDLookup key.",
+      "proposedFixNotApplied": "Model captured custom Text Name facets in metadata conversion; keep standard Account/Contact.Name and unique-only field rejection twins unchanged.",
+      "cells": [
+        {
+          "id": "C183ID_022",
+          "cluster": "describe_custom",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_022",
+          "cluster": "describe_custom",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_022",
+          "cluster": "describe_custom",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_022",
+          "cluster": "describe_custom",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_022",
+          "cluster": "describe_custom",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_022",
+          "cluster": "describe_custom",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        }
+      ]
+    },
+    {
+      "rootCause": "unique_case",
+      "rowIDs": [
+        "C183ID_027",
+        "C183ID_029",
+        "C183ID_034",
+        "C183ID_035"
+      ],
+      "predictedCells": 24,
+      "source": [
+        "internal/schema/schema.go:844",
+        "internal/sobject/sobject.go:352",
+        "internal/vm/describe_runtime.go:1625"
+      ],
+      "prediction": "Unique Number/Email metadata has no explicit caseSensitive element; Glade copies false, native reports true.",
+      "proposedFixNotApplied": "Derive only the captured metadata/type/unique default while preserving explicit text caseSensitive settings and the externalId and unique axes.",
+      "cells": [
+        {
+          "id": "C183ID_027",
+          "cluster": "describe_custom",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_027",
+          "cluster": "describe_custom",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_027",
+          "cluster": "describe_custom",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_027",
+          "cluster": "describe_custom",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_027",
+          "cluster": "describe_custom",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_027",
+          "cluster": "describe_custom",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_029",
+          "cluster": "describe_custom",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_029",
+          "cluster": "describe_custom",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_029",
+          "cluster": "describe_custom",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_029",
+          "cluster": "describe_custom",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_029",
+          "cluster": "describe_custom",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_029",
+          "cluster": "describe_custom",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_034",
+          "cluster": "describe_custom",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_034",
+          "cluster": "describe_custom",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_034",
+          "cluster": "describe_custom",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_034",
+          "cluster": "describe_custom",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_034",
+          "cluster": "describe_custom",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_034",
+          "cluster": "describe_custom",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_035",
+          "cluster": "describe_custom",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_035",
+          "cluster": "describe_custom",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_035",
+          "cluster": "describe_custom",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_035",
+          "cluster": "describe_custom",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_035",
+          "cluster": "describe_custom",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_035",
+          "cluster": "describe_custom",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        }
+      ]
+    },
+    {
+      "rootCause": "idlookup_engine",
+      "rowIDs": [
+        "C183ID_040",
+        "C183ID_049",
+        "C183ID_054",
+        "C183ID_055",
+        "C183ID_056",
+        "C183ID_058",
+        "C183ID_082",
+        "C183ID_087",
+        "C183ID_096",
+        "C183ID_105"
+      ],
+      "predictedCells": 60,
+      "source": [
+        "internal/vm/dml_runtime.go:3122",
+        "internal/dml/delete_relationships.go:259",
+        "internal/sema/body_ir.go:1683"
+      ],
+      "prediction": "VM validation accepts IDLookup but the DML engine requires ExternalID; custom Name additionally lacks the metadata facet. Native accepts these nonexternal lookup keys.",
+      "proposedFixNotApplied": "Use the captured IDLookup eligibility consistently in selector validation and engine key matching. Preserve null keys, standard nonlookup fields and unique-only rejection boundaries. Apply the custom Name facet prerequisite rather than a field-name bypass.",
+      "cells": [
+        {
+          "id": "C183ID_040",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_040",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_040",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_040",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_040",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_040",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_049",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_049",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_049",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_049",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_049",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_049",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_054",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_054",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_054",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_054",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_054",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_054",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_055",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_055",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_055",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_055",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_055",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_055",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_056",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_056",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_056",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_056",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_056",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_056",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_058",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_058",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_058",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_058",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_058",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_058",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_082",
+          "cluster": "null",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_082",
+          "cluster": "null",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_082",
+          "cluster": "null",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_082",
+          "cluster": "null",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_082",
+          "cluster": "null",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_082",
+          "cluster": "null",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_087",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_087",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_087",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_087",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_087",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_087",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_096",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_096",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_096",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_096",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_096",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_096",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_105",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_105",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_105",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_105",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_105",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_105",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        }
+      ]
+    },
+    {
+      "rootCause": "missing_key_message",
+      "rowIDs": [
+        "C183ID_066",
+        "C183ID_083",
+        "C183ID_084",
+        "C183ID_085",
+        "C183ID_113"
+      ],
+      "predictedCells": 30,
+      "source": [
+        "internal/vm/dml_runtime.go:2854"
+      ],
+      "prediction": "Glade returns External ID was not specified; native returns the field-specific not specified message. The typed row also preserves the exact composed DmlException message on anonymous only.",
+      "proposedFixNotApplied": "Emit the captured field-specific message and preserve the empty field list/status code; verify composed DmlException and per-record catalog independently.",
+      "cells": [
+        {
+          "id": "C183ID_066",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_066",
+          "cluster": "database",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_066",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_066",
+          "cluster": "database",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_066",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_066",
+          "cluster": "database",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_083",
+          "cluster": "null",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_083",
+          "cluster": "null",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_083",
+          "cluster": "null",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_083",
+          "cluster": "null",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_083",
+          "cluster": "null",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_083",
+          "cluster": "null",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_084",
+          "cluster": "null",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_084",
+          "cluster": "null",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_084",
+          "cluster": "null",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_084",
+          "cluster": "null",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_084",
+          "cluster": "null",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_084",
+          "cluster": "null",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_085",
+          "cluster": "null",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_085",
+          "cluster": "null",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_085",
+          "cluster": "null",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_085",
+          "cluster": "null",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_085",
+          "cluster": "null",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_085",
+          "cluster": "null",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_113",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_113",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_113",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_113",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_113",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_113",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        }
+      ]
+    },
+    {
+      "rootCause": "duplicate_input",
+      "rowIDs": [
+        "C183ID_123",
+        "C183ID_125",
+        "C183ID_127"
+      ],
+      "predictedCells": 18,
+      "source": [
+        "internal/dml/dml.go:402",
+        "internal/dml/mutation_update_delete.go:330"
+      ],
+      "prediction": "Sequential matching lets a later input see an earlier mutation; native rejects both duplicate input keys before mutation.",
+      "proposedFixNotApplied": "Preflight the captured batch key duplicates using captured case sensitivity and error text, preserving result order, all errors, id presence and no writes. Do not extrapolate to unobserved batch shapes.",
+      "cells": [
+        {
+          "id": "C183ID_123",
+          "cluster": "keys",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_123",
+          "cluster": "keys",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_123",
+          "cluster": "keys",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_123",
+          "cluster": "keys",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_123",
+          "cluster": "keys",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_123",
+          "cluster": "keys",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_125",
+          "cluster": "keys",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_125",
+          "cluster": "keys",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_125",
+          "cluster": "keys",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_125",
+          "cluster": "keys",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_125",
+          "cluster": "keys",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_125",
+          "cluster": "keys",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_127",
+          "cluster": "keys",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_127",
+          "cluster": "keys",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_127",
+          "cluster": "keys",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_127",
+          "cluster": "keys",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_127",
+          "cluster": "keys",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_127",
+          "cluster": "keys",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        }
+      ]
+    },
+    {
+      "rootCause": "stored_duplicate_message",
+      "rowIDs": [
+        "C183ID_128"
+      ],
+      "predictedCells": 6,
+      "source": [
+        "internal/vm/dml_runtime.go:2867"
+      ],
+      "prediction": "Glade returns External ID matched multiple records; native includes the field label and matching IDs.",
+      "proposedFixNotApplied": "Use the exact captured error shape with matching-record IDs/field label, retaining status code and fields. Keep nonunique/unique metadata axes distinct.",
+      "cells": [
+        {
+          "id": "C183ID_128",
+          "cluster": "keys",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_128",
+          "cluster": "keys",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_128",
+          "cluster": "keys",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_128",
+          "cluster": "keys",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_128",
+          "cluster": "keys",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_128",
+          "cluster": "keys",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        }
+      ]
+    },
+    {
+      "rootCause": "field_token",
+      "rowIDs": [
+        "C183ID_130",
+        "C183ID_131"
+      ],
+      "predictedCells": 12,
+      "source": [
+        "internal/vm/dml_runtime.go:1729",
+        "internal/vm/dml_runtime.go:1732"
+      ],
+      "prediction": "Token extraction discards the owning object, and null token returns a plain Go error. Native validates the owner and returns a catchable argument-null exception.",
+      "proposedFixNotApplied": "Retain token ownership through validation and reproduce the captured API/route owner mismatch outcomes. Null argument 2 must produce the captured exception type/message. Preserve empty-list valid-key boundary132.",
+      "cells": [
+        {
+          "id": "C183ID_130",
+          "cluster": "rejections",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_130",
+          "cluster": "rejections",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_130",
+          "cluster": "rejections",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_130",
+          "cluster": "rejections",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_130",
+          "cluster": "rejections",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_130",
+          "cluster": "rejections",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_131",
+          "cluster": "rejections",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_131",
+          "cluster": "rejections",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_131",
+          "cluster": "rejections",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_131",
+          "cluster": "rejections",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_131",
+          "cluster": "rejections",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_131",
+          "cluster": "rejections",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        }
+      ]
+    },
+    {
+      "rootCause": "typed_user",
+      "rowIDs": [
+        "C183ID_099",
+        "C183ID_100",
+        "C183ID_101",
+        "C183ID_102",
+        "C183ID_103"
+      ],
+      "predictedCells": 30,
+      "source": [
+        "internal/sema/body_ir.go:1654",
+        "internal/sema/body_ir.go:1683"
+      ],
+      "prediction": "Typed User upsert lacks the native compilation rejection. Database.upsert(User rows) is a separately captured runtime shape.",
+      "proposedFixNotApplied": "Add a typed-operand upsert rejection for the captured List<User> shapes with the exact native diagnostic. Do not turn Database.upsert calls into this compile error.",
+      "cells": [
+        {
+          "id": "C183ID_099",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_099",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_099",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_099",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_099",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_099",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_100",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_100",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_100",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_100",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_100",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_100",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_101",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_101",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_101",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_101",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_101",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_101",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_102",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_102",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_102",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_102",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_102",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_102",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_103",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_103",
+          "cluster": "statement",
+          "api": "62.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_103",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_103",
+          "cluster": "statement",
+          "api": "67.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_103",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "anonymous",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        },
+        {
+          "id": "C183ID_103",
+          "cluster": "statement",
+          "api": "68.0",
+          "route": "isTest",
+          "prediction": "mismatch",
+          "basis": "source inspection; not executed"
+        }
+      ]
+    }
+  ],
+  "nativeReleaseDrift": {
+    "row": "C183ID_130",
+    "anonymous62_67_68": "System.TypeException",
+    "isTest62": "System.TypeException",
+    "isTest67_68": "failed UpsertResult / CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+    "api59": "absent; no API-68-only claim"
+  },
+  "uncertainties": [
+    "Baseline002 org record/license counts are environment evidence; its 6 local cells assert transport structure only.",
+    "Additional field visibility/standard metadata, stock-user, permissions, generated/formula field, compiler or wire-path failures remain possible before these predicted result differences are reached.",
+    "No tests/builds/org commands/probes/captures ran in this worktree.",
+    "The generic implicit-call patch on the comparison branch does not alter these owning describe/DML/sema paths. The emulation bypass masked application describe eligibility; synthetic rows use public APIs and never enter removed framework dispatch."
+  ]
+}

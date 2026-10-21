@@ -171,13 +171,13 @@ function rewriteComponentShadowReads(code, namespace) {
   return generate(ast, {}, code).code;
 }
 
-// The API-59/67 native wire/API and duplicate-wire controls report a formatted
+// The API-59/67/68 native wire/API and duplicate-wire controls report a formatted
 // source frame under this logical service filename. It is diagnostic text only:
 // no files are read or written there. Keep this compatibility path restricted to
 // the captured CurrentPageReference error classes and APIs; successful
 // compilation and other adapters keep their original diagnostics/source bytes.
 function wireDeploymentDiagnostic(error, source, filename, namespace, name, apiVersion) {
-  if (![59, 67].includes(apiVersion) || ![1095, 1105].includes(error?.code) || !error.location) return error;
+  if (![59, 67, 68].includes(apiVersion) || ![1095, 1105].includes(error?.code) || !error.location) return error;
   const ast = parse(source, {
     sourceType: "module",
     plugins: [["decorators", { decoratorsBeforeExport: true }], "classProperties", "classPrivateProperties", "classPrivateMethods"],
@@ -205,7 +205,7 @@ function wireDeploymentDiagnostic(error, source, filename, namespace, name, apiV
   if (!navigationConflict) return error;
   const { default: generate } = requireFromToolchain("@babel/generator");
   const formatted = generate(ast, {}, source).code;
-  const diagnosticFilename = `/home/sfdc/tools/sfdc-lwc-compiler/14.192.8388608/${path.basename(filename)}`;
+  const diagnosticFilename = `/home/sfdc/tools/sfdc-lwc-compiler/15.3.16010/${path.basename(filename)}`;
   try {
     transformSync(formatted, diagnosticFilename, transformOptions(namespace, name, apiVersion));
   } catch (reported) {
@@ -438,7 +438,11 @@ function stylesheetDeploymentError(error, source, filename, namespace, name, api
   // Native CSS diagnostics use a logical compiler-service filename. Re-run
   // only the rejected transform to obtain its actual diagnostic under that
   // identity; successful CSS output and original diagnostic objects stay intact.
-  const deployedFilename = `/home/sfdc/tools/sfdc-lwc-compiler/14.192.8388608/${path.basename(filename)}`;
+  // Winter '27 native captures at source APIs 59, 67 and 68 share this
+  // service version. Applying it to unprobed intermediate APIs is a
+  // generalization; the service identity is not a source-API feature gate.
+  const compilerVersion = "15.3.16010";
+  const deployedFilename = `/home/sfdc/tools/sfdc-lwc-compiler/${compilerVersion}/${path.basename(filename)}`;
   try {
     transformSync(source, deployedFilename, transformOptions(namespace, name, apiVersion));
   } catch (reported) {

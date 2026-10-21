@@ -36,13 +36,14 @@ func TestReportsOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 281 || len(data.Controls) != 140 || len(data.LocalBoundaries) != 9 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 281 || len(data.Controls) != 140 || len(data.LocalBoundaries) != 9 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle shape: rows=%d controls=%d local boundaries=%d versions=%v", len(data.Cases), len(data.Controls), len(data.LocalBoundaries), data.APIVersions)
 	}
 	rows := append(append(append([]familyCase{}, data.Cases...), data.Controls...), data.LocalBoundaries...)
 	seen := make(map[string]bool)
 	for _, tc := range rows {
-		if tc.ID == "" || seen[tc.ID] || tc.Code == "" || tc.Expected == "?" || tc.Carry != "" && tc.Owner == "" {
+		if tc.ID == "" || seen[tc.ID] || tc.Code == "" || tc.Expected == "?" || tc.Carry != "" && tc.Owner == "" ||
+			(tc.Basis != "org" && tc.Basis != "local-boundary (disposition the conditional frontier and Auth before the data layer batches)") {
 			t.Fatalf("invalid/repeated oracle row: %#v", tc)
 		}
 		seen[tc.ID] = true
@@ -109,6 +110,7 @@ func TestReportsOrgConformance(t *testing.T) {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "reports", api, "")
+			t.Logf("A45 API %s local-only boundaries: %d per route, excluded from native matches", api, len(data.LocalBoundaries))
 			root := t.TempDir()
 			names := []string{"P"}
 			declarations := map[string]string{"P": helper}
@@ -121,7 +123,11 @@ func TestReportsOrgConformance(t *testing.T) {
 			for _, name := range names {
 				path := filepath.Join(root, name+".cls")
 				writeFile(t, path, declarations[name])
-				writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
+				declarationAPI := api
+				if name == "A45LegacyJSONDTO" {
+					declarationAPI = "62.0" // The native controls deploy this fixture at API 62.
+				}
+				writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+declarationAPI+"</apiVersion></ApexClass>")
 				paths = append(paths, path)
 			}
 			buildIndex := func(extra string) typesys.Index {
@@ -185,7 +191,11 @@ func TestReportsOrgConformance(t *testing.T) {
 						t.Logf("%s carried to %s: %s; native <%s>", tc.ID, tc.Owner, tc.Carry, tc.Expected)
 						return
 					}
-					counts.Run(t, "anonymous", tc.ID, "anonymous", func(t *testing.T) {
+					kind := "exact"
+					if strings.HasPrefix(tc.Basis, "local-boundary") {
+						kind = "local-only"
+					}
+					counts.RunKind(t, "anonymous", tc.ID, "anonymous", kind, func(t *testing.T) {
 						source := body(tc)
 						if strings.HasPrefix(tc.Expected, "COMPILE_ERROR") {
 							source = rejectedSource(tc, false)
@@ -208,7 +218,7 @@ func TestReportsOrgConformance(t *testing.T) {
 							t.Fatal(err)
 						}
 					})
-					counts.Run(t, "isTest", tc.ID, "isTest", func(t *testing.T) {
+					counts.RunKind(t, "isTest", tc.ID, "isTest", kind, func(t *testing.T) {
 						if strings.HasPrefix(tc.Expected, "COMPILE_ERROR") {
 							path := filepath.Join(root, "ReportsRejected"+tc.ID+".cls")
 							writeFile(t, path, rejectedSource(tc, true))

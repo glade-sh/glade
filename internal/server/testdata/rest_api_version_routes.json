@@ -1,0 +1,1440 @@
+{
+ "apiVersions": [
+  "59.0",
+  "60.0",
+  "64.0",
+  "65.0",
+  "67.0",
+  "68.0",
+  "69.0"
+ ],
+ "floorAPIVersions": [
+  "30.0",
+  "31.0"
+ ],
+ "nativeKeyLimit": 40,
+ "windowExclusions": {
+  "versions": [
+   "31.0",
+   "59.0",
+   "64.0"
+  ],
+  "reason": "Salesforce serves these versions, but they are outside the checked local endpoint window, which rejects them explicitly."
+ },
+ "windowExclusionMessage": "unsupported API version %s",
+ "cases": [
+  {
+   "id": "rest_versions_list",
+   "path": "/services/data/",
+   "native": {
+    "68.0": {
+     "status": 200,
+     "versions": [
+      "31.0",
+      "32.0",
+      "33.0",
+      "34.0",
+      "35.0",
+      "36.0",
+      "37.0",
+      "38.0",
+      "39.0",
+      "40.0",
+      "41.0",
+      "42.0",
+      "43.0",
+      "44.0",
+      "45.0",
+      "46.0",
+      "47.0",
+      "48.0",
+      "49.0",
+      "50.0",
+      "51.0",
+      "52.0",
+      "53.0",
+      "54.0",
+      "55.0",
+      "56.0",
+      "57.0",
+      "58.0",
+      "59.0",
+      "60.0",
+      "61.0",
+      "62.0",
+      "63.0",
+      "64.0",
+      "65.0",
+      "66.0",
+      "67.0",
+      "68.0",
+      "68.0"
+     ]
+    }
+   }
+  },
+  {
+   "id": "rest_resources_root",
+   "path": "/services/data/v%s/",
+   "keyMode": "subset",
+   "gladeOnlyKeys": [
+    "apps",
+    "glade"
+   ],
+   "keyReason": "The local root lists only the namespaces it routes, plus its own glade namespace and an apps entry that the native root does not list.",
+   "owner": "REST resource body shapes vs native rows",
+   "native": {
+    "59.0": {
+     "status": 200,
+     "keys": [
+      "actions",
+      "ai",
+      "analytics",
+      "appMenu",
+      "chatter",
+      "commerce",
+      "compactLayouts",
+      "composite",
+      "connect",
+      "consent",
+      "contact-tracing",
+      "dedupe",
+      "domino",
+      "eclair",
+      "emailConnect",
+      "event",
+      "externalservices",
+      "fingerprint",
+      "folders",
+      "identity",
+      "iot",
+      "jobs",
+      "jsonxform",
+      "knowledgeManagement",
+      "licensing",
+      "limits",
+      "localizedvalue",
+      "match",
+      "metadata",
+      "mobile",
+      "nouns",
+      "parameterizedSearch",
+      "payments",
+      "prechatForms",
+      "process",
+      "query",
+      "queryAll",
+      "quickActions",
+      "recent",
+      "search"
+     ]
+    },
+    "60.0": {
+     "status": 200,
+     "keys": [
+      "actions",
+      "ai",
+      "analytics",
+      "appMenu",
+      "async",
+      "chatter",
+      "commerce",
+      "compactLayouts",
+      "composite",
+      "connect",
+      "consent",
+      "contact-tracing",
+      "dedupe",
+      "digitalwallet",
+      "domino",
+      "eclair",
+      "emailConnect",
+      "event",
+      "externalservices",
+      "fingerprint",
+      "folders",
+      "identity",
+      "iot",
+      "jobs",
+      "jsonxform",
+      "knowledgeManagement",
+      "licensing",
+      "limits",
+      "localizedvalue",
+      "match",
+      "metadata",
+      "mobile",
+      "nouns",
+      "parameterizedSearch",
+      "payments",
+      "prechatForms",
+      "process",
+      "query",
+      "queryAll",
+      "quickActions"
+     ]
+    },
+    "64.0": {
+     "status": 200,
+     "keys": [
+      "action-features",
+      "actions",
+      "ai",
+      "analytics",
+      "appMenu",
+      "async",
+      "chatter",
+      "commerce",
+      "compactLayouts",
+      "composite",
+      "connect",
+      "consent",
+      "contact-tracing",
+      "dedupe",
+      "digitalwallet",
+      "domino",
+      "eclair",
+      "emailConnect",
+      "event",
+      "externalservices",
+      "fingerprint",
+      "folders",
+      "identity",
+      "iot",
+      "jobs",
+      "jsonxform",
+      "knowledgeManagement",
+      "licensing",
+      "limits",
+      "localizedvalue",
+      "match",
+      "metadata",
+      "mobile",
+      "nouns",
+      "parameterizedSearch",
+      "payments",
+      "prechatForms",
+      "process",
+      "query",
+      "queryAll"
+     ]
+    },
+    "65.0": {
+     "status": 200,
+     "keys": [
+      "action-features",
+      "actions",
+      "ai",
+      "analytics",
+      "appMenu",
+      "async",
+      "chatter",
+      "commerce",
+      "compactLayouts",
+      "composite",
+      "connect",
+      "consent",
+      "contact-tracing",
+      "dedupe",
+      "digitalwallet",
+      "domino",
+      "eclair",
+      "emailConnect",
+      "event",
+      "externalservices",
+      "fingerprint",
+      "folders",
+      "identity",
+      "iot",
+      "jobs",
+      "jsonxform",
+      "knowledgeManagement",
+      "licensing",
+      "limits",
+      "localizedvalue",
+      "match",
+      "metadata",
+      "mobile",
+      "nouns",
+      "parameterizedSearch",
+      "payments",
+      "prechatForms",
+      "process",
+      "query",
+      "queryAll"
+     ]
+    },
+    "67.0": {
+     "status": 200,
+     "keys": [
+      "action-features",
+      "actions",
+      "ai",
+      "analytics",
+      "appMenu",
+      "async",
+      "chatter",
+      "commerce",
+      "compactLayouts",
+      "composite",
+      "connect",
+      "consent",
+      "contact-tracing",
+      "dedupe",
+      "digitalwallet",
+      "domino",
+      "eclair",
+      "emailConnect",
+      "event",
+      "externalservices",
+      "fingerprint",
+      "folders",
+      "gtma-internal",
+      "identity",
+      "invitations",
+      "iot",
+      "jobs",
+      "jsonxform",
+      "knowledgeManagement",
+      "licensing",
+      "limits",
+      "localizedvalue",
+      "match",
+      "metadata",
+      "mobile",
+      "nouns",
+      "parameterizedSearch",
+      "partnerdevelopment",
+      "payments",
+      "prechatForms"
+     ]
+    },
+    "68.0": {
+     "status": 200,
+     "keys": [
+      "action-features",
+      "actions",
+      "ai",
+      "analytics",
+      "appMenu",
+      "async",
+      "chatter",
+      "commerce",
+      "compactLayouts",
+      "composite",
+      "connect",
+      "consent",
+      "contact-tracing",
+      "dedupe",
+      "digitalwallet",
+      "domino",
+      "eclair",
+      "emailConnect",
+      "event",
+      "externalservices",
+      "fingerprint",
+      "folders",
+      "gtma-internal",
+      "identity",
+      "invitations",
+      "iot",
+      "jobs",
+      "jsonxform",
+      "knowledgeManagement",
+      "licensing",
+      "limits",
+      "localizedvalue",
+      "match",
+      "metadata",
+      "mobile",
+      "nouns",
+      "parameterizedSearch",
+      "partnerdevelopment",
+      "payments",
+      "prechatForms"
+     ]
+    },
+    "69.0": {
+     "status": 404,
+     "errorCode": "NOT_FOUND",
+     "message": "The requested resource does not exist"
+    }
+   }
+  },
+  {
+   "id": "rest_sobjects",
+   "path": "/services/data/v%s/sobjects",
+   "keyMode": "exact",
+   "native": {
+    "59.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    },
+    "60.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    },
+    "64.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    },
+    "65.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    },
+    "67.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    },
+    "68.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    },
+    "69.0": {
+     "status": 404,
+     "errorCode": "NOT_FOUND",
+     "message": "The requested resource does not exist"
+    }
+   }
+  },
+  {
+   "id": "rest_sobject_account",
+   "path": "/services/data/v%s/sobjects/Account",
+   "keyMode": "exact",
+   "native": {
+    "59.0": {
+     "status": 200,
+     "keys": [
+      "objectDescribe",
+      "recentItems"
+     ]
+    },
+    "60.0": {
+     "status": 200,
+     "keys": [
+      "objectDescribe",
+      "recentItems"
+     ]
+    },
+    "64.0": {
+     "status": 200,
+     "keys": [
+      "objectDescribe",
+      "recentItems"
+     ]
+    },
+    "65.0": {
+     "status": 200,
+     "keys": [
+      "objectDescribe",
+      "recentItems"
+     ]
+    },
+    "67.0": {
+     "status": 200,
+     "keys": [
+      "objectDescribe",
+      "recentItems"
+     ]
+    },
+    "68.0": {
+     "status": 200,
+     "keys": [
+      "objectDescribe",
+      "recentItems"
+     ]
+    },
+    "69.0": {
+     "status": 404,
+     "errorCode": "NOT_FOUND",
+     "message": "The requested resource does not exist"
+    }
+   }
+  },
+  {
+   "id": "rest_query_account",
+   "path": "/services/data/v%s/query?q=SELECT+Id+FROM+Account+LIMIT+1",
+   "keyMode": "exact",
+   "native": {
+    "59.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    },
+    "60.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    },
+    "64.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    },
+    "65.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    },
+    "67.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    },
+    "68.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    },
+    "69.0": {
+     "status": 404,
+     "errorCode": "NOT_FOUND",
+     "message": "The requested resource does not exist"
+    }
+   }
+  },
+  {
+   "id": "rest_queryall_account",
+   "path": "/services/data/v%s/queryAll?q=SELECT+Id+FROM+Account+LIMIT+1",
+   "keyMode": "exact",
+   "native": {
+    "59.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    },
+    "60.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    },
+    "64.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    },
+    "65.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    },
+    "67.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    },
+    "68.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    },
+    "69.0": {
+     "status": 404,
+     "errorCode": "NOT_FOUND",
+     "message": "The requested resource does not exist"
+    }
+   }
+  },
+  {
+   "id": "rest_tooling_query_apexclass",
+   "path": "/services/data/v%s/tooling/query?q=SELECT+Id+FROM+ApexClass+LIMIT+1",
+   "localUnsupported": {
+    "status": 501,
+    "errorCode": "UNSUPPORTED_FEATURE",
+    "reason": "Tooling query for ApexClass is not modeled locally and is rejected explicitly."
+   },
+   "owner": "REST resource body shapes vs native rows",
+   "native": {
+    "59.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "entityTypeName",
+      "queryLocator",
+      "records",
+      "size",
+      "totalSize"
+     ]
+    },
+    "60.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "entityTypeName",
+      "queryLocator",
+      "records",
+      "size",
+      "totalSize"
+     ]
+    },
+    "64.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "entityTypeName",
+      "queryLocator",
+      "records",
+      "size",
+      "totalSize"
+     ]
+    },
+    "65.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "entityTypeName",
+      "queryLocator",
+      "records",
+      "size",
+      "totalSize"
+     ]
+    },
+    "67.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "entityTypeName",
+      "queryLocator",
+      "records",
+      "size",
+      "totalSize"
+     ]
+    },
+    "68.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "entityTypeName",
+      "queryLocator",
+      "records",
+      "size",
+      "totalSize"
+     ]
+    },
+    "69.0": {
+     "status": 404,
+     "errorCode": "NOT_FOUND",
+     "message": "The requested resource does not exist"
+    }
+   }
+  },
+  {
+   "id": "rest_tooling_sobjects",
+   "path": "/services/data/v%s/tooling/sobjects",
+   "localUnsupported": {
+    "status": 501,
+    "errorCode": "UNSUPPORTED_FEATURE",
+    "reason": "Tooling sObject discovery is not implemented locally and is rejected explicitly."
+   },
+   "owner": "REST resource body shapes vs native rows",
+   "native": {
+    "59.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    },
+    "60.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    },
+    "64.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    },
+    "65.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    },
+    "67.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    },
+    "68.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    },
+    "69.0": {
+     "status": 404,
+     "errorCode": "NOT_FOUND",
+     "message": "The requested resource does not exist"
+    }
+   }
+  },
+  {
+   "id": "rest_limits",
+   "path": "/services/data/v%s/limits",
+   "keyMode": "subset",
+   "gladeOnlyKeys": [
+    "DailyBulkV2IngestJobs"
+   ],
+   "keyReason": "The local limits are a subset of the native limits, plus DailyBulkV2IngestJobs, which the native resource does not return.",
+   "owner": "REST resource body shapes vs native rows",
+   "native": {
+    "59.0": {
+     "status": 200,
+     "keys": [
+      "AnalyticsExternalDataSizeMB",
+      "CdpAiInferenceApiMonthlyLimit",
+      "ConcurrentAsyncGetReportInstances",
+      "ConcurrentEinsteinDataInsightsStoryCreation",
+      "ConcurrentEinsteinDiscoveryStoryCreation",
+      "ConcurrentSyncReportRuns",
+      "ContentDistBandwidthLimitMB",
+      "ContentDistViewLimit",
+      "ContentPublicationLimit",
+      "DailyAnalyticsDataflowJobExecutions",
+      "DailyAnalyticsUploadedFilesSizeMB",
+      "DailyApexCursorLimit",
+      "DailyApexCursorRowsLimit",
+      "DailyApexPCursorLimit",
+      "DailyApiRequests",
+      "DailyAsyncApexExecutions",
+      "DailyAsyncApexTests",
+      "DailyBulkApiBatches",
+      "DailyBulkV2QueryFileStorageMB",
+      "DailyBulkV2QueryJobs",
+      "DailyDataCloudCursorLimit",
+      "DailyDataCloudCursorRowsLimit",
+      "DailyDataCloudFlexCredits",
+      "DailyDeliveredPlatformEvents",
+      "DailyDurableGenericStreamingApiEvents",
+      "DailyDurableStreamingApiEvents",
+      "DailyEinsteinDataInsightsStoryCreation",
+      "DailyEinsteinDiscoveryOptimizationJobRuns",
+      "DailyEinsteinDiscoveryPredictAPICalls",
+      "DailyEinsteinDiscoveryPredictionsByCDC",
+      "DailyEinsteinDiscoveryStoryCreation",
+      "DailyFieldServiceAppointmentOptimization",
+      "DailyFunctionsApiCallLimit",
+      "DailyGenericStreamingApiEvents",
+      "DailyMetadataRetrievesWithDependencies",
+      "DailyServiceEmailAgentforceCalls",
+      "DailyStandardVolumePlatformEvents",
+      "DailyStreamingApiEvents",
+      "DailyWorkflowEmails",
+      "DataStorageMB"
+     ]
+    },
+    "60.0": {
+     "status": 200,
+     "keys": [
+      "AnalyticsExternalDataSizeMB",
+      "CdpAiInferenceApiMonthlyLimit",
+      "ConcurrentAsyncGetReportInstances",
+      "ConcurrentEinsteinDataInsightsStoryCreation",
+      "ConcurrentEinsteinDiscoveryStoryCreation",
+      "ConcurrentSyncReportRuns",
+      "ContentDistBandwidthLimitMB",
+      "ContentDistViewLimit",
+      "ContentPublicationLimit",
+      "DailyAnalyticsDataflowJobExecutions",
+      "DailyAnalyticsUploadedFilesSizeMB",
+      "DailyApexCursorLimit",
+      "DailyApexCursorRowsLimit",
+      "DailyApexPCursorLimit",
+      "DailyApiRequests",
+      "DailyAsyncApexExecutions",
+      "DailyAsyncApexTests",
+      "DailyBulkApiBatches",
+      "DailyBulkV2QueryFileStorageMB",
+      "DailyBulkV2QueryJobs",
+      "DailyDataCloudCursorLimit",
+      "DailyDataCloudCursorRowsLimit",
+      "DailyDataCloudFlexCredits",
+      "DailyDeliveredPlatformEvents",
+      "DailyDurableGenericStreamingApiEvents",
+      "DailyDurableStreamingApiEvents",
+      "DailyEinsteinDataInsightsStoryCreation",
+      "DailyEinsteinDiscoveryOptimizationJobRuns",
+      "DailyEinsteinDiscoveryPredictAPICalls",
+      "DailyEinsteinDiscoveryPredictionsByCDC",
+      "DailyEinsteinDiscoveryStoryCreation",
+      "DailyFieldServiceAppointmentOptimization",
+      "DailyFunctionsApiCallLimit",
+      "DailyGenericStreamingApiEvents",
+      "DailyMetadataRetrievesWithDependencies",
+      "DailyServiceEmailAgentforceCalls",
+      "DailyStandardVolumePlatformEvents",
+      "DailyStreamingApiEvents",
+      "DailyWorkflowEmails",
+      "DataStorageMB"
+     ]
+    },
+    "64.0": {
+     "status": 200,
+     "keys": [
+      "AnalyticsExternalDataSizeMB",
+      "CdpAiInferenceApiMonthlyLimit",
+      "ConcurrentAsyncGetReportInstances",
+      "ConcurrentEinsteinDataInsightsStoryCreation",
+      "ConcurrentEinsteinDiscoveryStoryCreation",
+      "ConcurrentSyncReportRuns",
+      "ContentDistBandwidthLimitMB",
+      "ContentDistViewLimit",
+      "ContentPublicationLimit",
+      "DailyAnalyticsDataflowJobExecutions",
+      "DailyAnalyticsUploadedFilesSizeMB",
+      "DailyApexCursorLimit",
+      "DailyApexCursorRowsLimit",
+      "DailyApexPCursorLimit",
+      "DailyApiRequests",
+      "DailyAsyncApexExecutions",
+      "DailyAsyncApexTests",
+      "DailyBulkApiBatches",
+      "DailyBulkV2QueryFileStorageMB",
+      "DailyBulkV2QueryJobs",
+      "DailyDataCloudCursorLimit",
+      "DailyDataCloudCursorRowsLimit",
+      "DailyDataCloudFlexCredits",
+      "DailyDeliveredPlatformEvents",
+      "DailyDurableGenericStreamingApiEvents",
+      "DailyDurableStreamingApiEvents",
+      "DailyEinsteinDataInsightsStoryCreation",
+      "DailyEinsteinDiscoveryOptimizationJobRuns",
+      "DailyEinsteinDiscoveryPredictAPICalls",
+      "DailyEinsteinDiscoveryPredictionsByCDC",
+      "DailyEinsteinDiscoveryStoryCreation",
+      "DailyFieldServiceAppointmentOptimization",
+      "DailyFunctionsApiCallLimit",
+      "DailyGenericStreamingApiEvents",
+      "DailyMetadataRetrievesWithDependencies",
+      "DailyServiceEmailAgentforceCalls",
+      "DailyStandardVolumePlatformEvents",
+      "DailyStreamingApiEvents",
+      "DailyWorkflowEmails",
+      "DataStorageMB"
+     ]
+    },
+    "65.0": {
+     "status": 200,
+     "keys": [
+      "AnalyticsExternalDataSizeMB",
+      "CdpAiInferenceApiMonthlyLimit",
+      "ConcurrentAsyncGetReportInstances",
+      "ConcurrentEinsteinDataInsightsStoryCreation",
+      "ConcurrentEinsteinDiscoveryStoryCreation",
+      "ConcurrentSyncReportRuns",
+      "ContentDistBandwidthLimitMB",
+      "ContentDistViewLimit",
+      "ContentPublicationLimit",
+      "DailyAnalyticsDataflowJobExecutions",
+      "DailyAnalyticsUploadedFilesSizeMB",
+      "DailyApexCursorLimit",
+      "DailyApexCursorRowsLimit",
+      "DailyApexPCursorLimit",
+      "DailyApiRequests",
+      "DailyAsyncApexExecutions",
+      "DailyAsyncApexTests",
+      "DailyBulkApiBatches",
+      "DailyBulkV2QueryFileStorageMB",
+      "DailyBulkV2QueryJobs",
+      "DailyDataCloudCursorLimit",
+      "DailyDataCloudCursorRowsLimit",
+      "DailyDataCloudFlexCredits",
+      "DailyDeliveredPlatformEvents",
+      "DailyDurableGenericStreamingApiEvents",
+      "DailyDurableStreamingApiEvents",
+      "DailyEinsteinDataInsightsStoryCreation",
+      "DailyEinsteinDiscoveryOptimizationJobRuns",
+      "DailyEinsteinDiscoveryPredictAPICalls",
+      "DailyEinsteinDiscoveryPredictionsByCDC",
+      "DailyEinsteinDiscoveryStoryCreation",
+      "DailyFieldServiceAppointmentOptimization",
+      "DailyFunctionsApiCallLimit",
+      "DailyGenericStreamingApiEvents",
+      "DailyMetadataRetrievesWithDependencies",
+      "DailyServiceEmailAgentforceCalls",
+      "DailyStandardVolumePlatformEvents",
+      "DailyStreamingApiEvents",
+      "DailyWorkflowEmails",
+      "DataStorageMB"
+     ]
+    },
+    "67.0": {
+     "status": 200,
+     "keys": [
+      "AnalyticsExternalDataSizeMB",
+      "CdpAiInferenceApiMonthlyLimit",
+      "ConcurrentAsyncGetReportInstances",
+      "ConcurrentEinsteinDataInsightsStoryCreation",
+      "ConcurrentEinsteinDiscoveryStoryCreation",
+      "ConcurrentSyncReportRuns",
+      "ContentDistBandwidthLimitMB",
+      "ContentDistViewLimit",
+      "ContentPublicationLimit",
+      "DailyAnalyticsDataflowJobExecutions",
+      "DailyAnalyticsUploadedFilesSizeMB",
+      "DailyApexCursorLimit",
+      "DailyApexCursorRowsLimit",
+      "DailyApexPCursorLimit",
+      "DailyApiRequests",
+      "DailyAsyncApexExecutions",
+      "DailyAsyncApexTests",
+      "DailyBulkApiBatches",
+      "DailyBulkV2QueryFileStorageMB",
+      "DailyBulkV2QueryJobs",
+      "DailyDataCloudCursorLimit",
+      "DailyDataCloudCursorRowsLimit",
+      "DailyDataCloudFlexCredits",
+      "DailyDeliveredPlatformEvents",
+      "DailyDurableGenericStreamingApiEvents",
+      "DailyDurableStreamingApiEvents",
+      "DailyEinsteinDataInsightsStoryCreation",
+      "DailyEinsteinDiscoveryOptimizationJobRuns",
+      "DailyEinsteinDiscoveryPredictAPICalls",
+      "DailyEinsteinDiscoveryPredictionsByCDC",
+      "DailyEinsteinDiscoveryStoryCreation",
+      "DailyFieldServiceAppointmentOptimization",
+      "DailyFunctionsApiCallLimit",
+      "DailyGenericStreamingApiEvents",
+      "DailyMetadataRetrievesWithDependencies",
+      "DailyServiceEmailAgentforceCalls",
+      "DailyStandardVolumePlatformEvents",
+      "DailyStreamingApiEvents",
+      "DailyWorkflowEmails",
+      "DataStorageMB"
+     ]
+    },
+    "68.0": {
+     "status": 200,
+     "keys": [
+      "AnalyticsExternalDataSizeMB",
+      "CdpAiInferenceApiMonthlyLimit",
+      "ConcurrentAsyncGetReportInstances",
+      "ConcurrentEinsteinDataInsightsStoryCreation",
+      "ConcurrentEinsteinDiscoveryStoryCreation",
+      "ConcurrentSyncReportRuns",
+      "ContentDistBandwidthLimitMB",
+      "ContentDistViewLimit",
+      "ContentPublicationLimit",
+      "DailyAnalyticsDataflowJobExecutions",
+      "DailyAnalyticsUploadedFilesSizeMB",
+      "DailyApexCursorLimit",
+      "DailyApexCursorRowsLimit",
+      "DailyApexPCursorLimit",
+      "DailyApiRequests",
+      "DailyAsyncApexExecutions",
+      "DailyAsyncApexTests",
+      "DailyBulkApiBatches",
+      "DailyBulkV2QueryFileStorageMB",
+      "DailyBulkV2QueryJobs",
+      "DailyDataCloudCursorLimit",
+      "DailyDataCloudCursorRowsLimit",
+      "DailyDataCloudFlexCredits",
+      "DailyDeliveredPlatformEvents",
+      "DailyDurableGenericStreamingApiEvents",
+      "DailyDurableStreamingApiEvents",
+      "DailyEinsteinDataInsightsStoryCreation",
+      "DailyEinsteinDiscoveryOptimizationJobRuns",
+      "DailyEinsteinDiscoveryPredictAPICalls",
+      "DailyEinsteinDiscoveryPredictionsByCDC",
+      "DailyEinsteinDiscoveryStoryCreation",
+      "DailyFieldServiceAppointmentOptimization",
+      "DailyFunctionsApiCallLimit",
+      "DailyGenericStreamingApiEvents",
+      "DailyMetadataRetrievesWithDependencies",
+      "DailyServiceEmailAgentforceCalls",
+      "DailyStandardVolumePlatformEvents",
+      "DailyStreamingApiEvents",
+      "DailyWorkflowEmails",
+      "DataStorageMB"
+     ]
+    },
+    "69.0": {
+     "status": 404,
+     "errorCode": "NOT_FOUND",
+     "message": "The requested resource does not exist"
+    }
+   }
+  },
+  {
+   "id": "rest_composite_root",
+   "path": "/services/data/v%s/composite",
+   "keyMode": "exact",
+   "native": {
+    "59.0": {
+     "status": 200,
+     "keys": [
+      "batch",
+      "graph",
+      "sobjects",
+      "tree"
+     ]
+    },
+    "60.0": {
+     "status": 200,
+     "keys": [
+      "batch",
+      "graph",
+      "sobjects",
+      "tree"
+     ]
+    },
+    "64.0": {
+     "status": 200,
+     "keys": [
+      "batch",
+      "graph",
+      "sobjects",
+      "tree"
+     ]
+    },
+    "65.0": {
+     "status": 200,
+     "keys": [
+      "batch",
+      "graph",
+      "sobjects",
+      "tree"
+     ]
+    },
+    "67.0": {
+     "status": 200,
+     "keys": [
+      "batch",
+      "graph",
+      "sobjects",
+      "tree"
+     ]
+    },
+    "68.0": {
+     "status": 200,
+     "keys": [
+      "batch",
+      "graph",
+      "sobjects",
+      "tree"
+     ]
+    },
+    "69.0": {
+     "status": 404,
+     "errorCode": "NOT_FOUND",
+     "message": "The requested resource does not exist"
+    }
+   }
+  },
+  {
+   "id": "ui_related_list_info_account",
+   "path": "/services/data/v%s/ui-api/related-list-info/Account",
+   "native": {
+    "59.0": {
+     "status": 200,
+     "keys": [
+      "eTag",
+      "parentObjectApiName",
+      "parentRecordTypeId",
+      "relatedLists"
+     ],
+     "picked": {
+      "relatedLists.0.relatedListInfoUrl": "/services/data/v59.0/ui-api/related-list-info/Account/Contacts?recordTypeId=012000000000000AAA",
+      "relatedLists.0.objectApiName": "Contact"
+     }
+    },
+    "67.0": {
+     "status": 200,
+     "keys": [
+      "eTag",
+      "parentObjectApiName",
+      "parentRecordTypeId",
+      "relatedLists"
+     ],
+     "picked": {
+      "relatedLists.0.relatedListInfoUrl": "/services/data/v67.0/ui-api/related-list-info/Account/Contacts?recordTypeId=012000000000000AAA",
+      "relatedLists.0.objectApiName": "Contact"
+     }
+    },
+    "68.0": {
+     "status": 200,
+     "keys": [
+      "eTag",
+      "parentObjectApiName",
+      "parentRecordTypeId",
+      "relatedLists"
+     ],
+     "picked": {
+      "relatedLists.0.relatedListInfoUrl": "/services/data/v68.0/ui-api/related-list-info/Account/Contacts?recordTypeId=012000000000000AAA",
+      "relatedLists.0.objectApiName": "Contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "ui_list_info_collection_account",
+   "path": "/services/data/v%s/ui-api/list-info/Account",
+   "native": {
+    "59.0": {
+     "status": 404,
+     "errorCode": "NOT_FOUND",
+     "message": "The requested resource does not exist"
+    },
+    "67.0": {
+     "status": 200,
+     "keys": [
+      "count",
+      "currentPageToken",
+      "currentPageUrl",
+      "eTag",
+      "lists",
+      "nextPageToken",
+      "nextPageUrl",
+      "objectApiName",
+      "pageSize",
+      "previousPageToken",
+      "previousPageUrl",
+      "queryString",
+      "recentListsOnly"
+     ],
+     "picked": {
+      "currentPageUrl": "/services/data/v67.0/ui-api/list-info/Account?pageSize=20&pageToken=0",
+      "lists.0.listUiUrl": null,
+      "lists.0.apiName": "__Recent"
+     }
+    },
+    "68.0": {
+     "status": 200,
+     "keys": [
+      "count",
+      "currentPageToken",
+      "currentPageUrl",
+      "eTag",
+      "lists",
+      "nextPageToken",
+      "nextPageUrl",
+      "objectApiName",
+      "pageSize",
+      "previousPageToken",
+      "previousPageUrl",
+      "queryString",
+      "recentListsOnly"
+     ],
+     "picked": {
+      "currentPageUrl": "/services/data/v68.0/ui-api/list-info/Account?pageSize=20&pageToken=0",
+      "lists.0.listUiUrl": null,
+      "lists.0.apiName": "__Recent"
+     }
+    }
+   }
+  },
+  {
+   "id": "rest_resources_root_floor",
+   "path": "/services/data/v%s/",
+   "native": {
+    "30.0": {
+     "status": 410,
+     "errorCode": "GONE",
+     "message": "The requested resource no longer exists."
+    },
+    "31.0": {
+     "status": 200,
+     "keys": [
+      "analytics",
+      "appMenu",
+      "chatter",
+      "commerce",
+      "compactLayouts",
+      "connect",
+      "dedupe",
+      "domino",
+      "eclair",
+      "folders",
+      "identity",
+      "iot",
+      "jsonxform",
+      "knowledgeManagement",
+      "licensing",
+      "limits",
+      "match",
+      "payments",
+      "prechatForms",
+      "process",
+      "query",
+      "queryAll",
+      "quickActions",
+      "recent",
+      "search",
+      "serviceTemplates",
+      "smartdatadiscovery",
+      "sobjects",
+      "tabs",
+      "theme",
+      "tokenizer",
+      "tooling",
+      "wave"
+     ]
+    }
+   }
+  },
+  {
+   "id": "rest_sobjects_floor",
+   "path": "/services/data/v%s/sobjects",
+   "native": {
+    "30.0": {
+     "status": 410,
+     "errorCode": "GONE",
+     "message": "The requested resource no longer exists."
+    },
+    "31.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    }
+   }
+  },
+  {
+   "id": "rest_sobject_account_floor",
+   "path": "/services/data/v%s/sobjects/Account",
+   "native": {
+    "30.0": {
+     "status": 410,
+     "errorCode": "GONE",
+     "message": "The requested resource no longer exists."
+    },
+    "31.0": {
+     "status": 200,
+     "keys": [
+      "objectDescribe",
+      "recentItems"
+     ]
+    }
+   }
+  },
+  {
+   "id": "rest_query_account_floor",
+   "path": "/services/data/v%s/query?q=SELECT+Id+FROM+Account+LIMIT+1",
+   "native": {
+    "30.0": {
+     "status": 410,
+     "errorCode": "GONE",
+     "message": "The requested resource no longer exists."
+    },
+    "31.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    }
+   }
+  },
+  {
+   "id": "rest_queryall_account_floor",
+   "path": "/services/data/v%s/queryAll?q=SELECT+Id+FROM+Account+LIMIT+1",
+   "native": {
+    "30.0": {
+     "status": 410,
+     "errorCode": "GONE",
+     "message": "The requested resource no longer exists."
+    },
+    "31.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "records",
+      "totalSize"
+     ]
+    }
+   }
+  },
+  {
+   "id": "rest_tooling_query_apexclass_floor",
+   "path": "/services/data/v%s/tooling/query?q=SELECT+Id+FROM+ApexClass+LIMIT+1",
+   "native": {
+    "30.0": {
+     "status": 410,
+     "errorCode": "GONE",
+     "message": "The requested resource no longer exists."
+    },
+    "31.0": {
+     "status": 200,
+     "keys": [
+      "done",
+      "entityTypeName",
+      "queryLocator",
+      "records",
+      "size",
+      "totalSize"
+     ]
+    }
+   }
+  },
+  {
+   "id": "rest_tooling_sobjects_floor",
+   "path": "/services/data/v%s/tooling/sobjects",
+   "native": {
+    "30.0": {
+     "status": 410,
+     "errorCode": "GONE",
+     "message": "The requested resource no longer exists."
+    },
+    "31.0": {
+     "status": 200,
+     "keys": [
+      "encoding",
+      "maxBatchSize",
+      "sobjects"
+     ]
+    }
+   }
+  },
+  {
+   "id": "rest_limits_floor",
+   "path": "/services/data/v%s/limits",
+   "native": {
+    "30.0": {
+     "status": 410,
+     "errorCode": "GONE",
+     "message": "The requested resource no longer exists."
+    },
+    "31.0": {
+     "status": 200,
+     "keys": [
+      "AnalyticsExternalDataSizeMB",
+      "CdpAiInferenceApiMonthlyLimit",
+      "ConcurrentAsyncGetReportInstances",
+      "ConcurrentEinsteinDataInsightsStoryCreation",
+      "ConcurrentEinsteinDiscoveryStoryCreation",
+      "ConcurrentSyncReportRuns",
+      "ContentDistBandwidthLimitMB",
+      "ContentDistViewLimit",
+      "ContentPublicationLimit",
+      "DailyAnalyticsDataflowJobExecutions",
+      "DailyAnalyticsUploadedFilesSizeMB",
+      "DailyApexCursorLimit",
+      "DailyApexCursorRowsLimit",
+      "DailyApexPCursorLimit",
+      "DailyApiRequests",
+      "DailyAsyncApexExecutions",
+      "DailyBulkApiRequests",
+      "DailyDataCloudCursorLimit",
+      "DailyDataCloudCursorRowsLimit",
+      "DailyDataCloudFlexCredits",
+      "DailyDeliveredPlatformEvents",
+      "DailyDurableGenericStreamingApiEvents",
+      "DailyDurableStreamingApiEvents",
+      "DailyEinsteinDataInsightsStoryCreation",
+      "DailyEinsteinDiscoveryOptimizationJobRuns",
+      "DailyEinsteinDiscoveryPredictAPICalls",
+      "DailyEinsteinDiscoveryPredictionsByCDC",
+      "DailyEinsteinDiscoveryStoryCreation",
+      "DailyFieldServiceAppointmentOptimization",
+      "DailyGenericStreamingApiEvents",
+      "DailyMetadataRetrievesWithDependencies",
+      "DailyServiceEmailAgentforceCalls",
+      "DailyStandardVolumePlatformEvents",
+      "DailyStreamingApiEvents",
+      "DailyWorkflowEmails",
+      "DataStorageMB",
+      "DurableStreamingApiConcurrentClients",
+      "ExternalServicesActiveObjects",
+      "ExternalServicesActiveOperations",
+      "ExternalServicesObjectProperties"
+     ]
+    }
+   }
+  },
+  {
+   "id": "rest_composite_root_floor",
+   "path": "/services/data/v%s/composite",
+   "note": "Native answers 404 NOT_FOUND at 31.0 because the composite resource did not exist yet. It matters only if the local window ever includes 31.0.",
+   "native": {
+    "30.0": {
+     "status": 410,
+     "errorCode": "GONE",
+     "message": "The requested resource no longer exists."
+    },
+    "31.0": {
+     "status": 404,
+     "errorCode": "NOT_FOUND",
+     "message": "The requested resource does not exist"
+    }
+   }
+  }
+ ]
+}

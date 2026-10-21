@@ -1,0 +1,1818 @@
+{
+  "oracle_commit": "capture-revision-084508734866408910633528319687299319270731003721417375658788978649118463368665",
+  "oracle_source": "native-capture",
+  "compile_source_sha256": {
+    "59.0": "c2b4331cd6d6e7a92e9fffd55e10261c92ceaa4581928934cbe30072afb6a4c2",
+    "67.0": "01f47e3197414f09ff01342d1f36798aa8bccf7bbf3044e97237ae90cec46d48"
+  },
+  "cases": [
+    {
+      "id": "c_review_type_custom_used",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C900V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C900V59Ctl.cls": "public with sharing class FamilyV14C900V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{V14Missing__c row; Object value=row;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C900V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C900V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C900V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C900V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C900V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C900V67Ctl.cls": "public with sharing class FamilyV14C900V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{V14Missing__c row; Object value=row;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C900V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C900V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C900V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C900V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Illegal assignment from V14Missing__c to Object"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C900V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Illegal assignment from V14Missing__c to Object"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C900V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_custom_unused",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C901V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C901V59Ctl.cls": "public with sharing class FamilyV14C901V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{V14Missing__c row; Object value='V14_DECL';return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C901V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C901V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C901V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C901V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C901V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C901V67Ctl.cls": "public with sharing class FamilyV14C901V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{V14Missing__c row; Object value='V14_DECL';return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C901V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C901V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C901V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C901V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C901V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C901V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_custom_list",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C902V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C902V59Ctl.cls": "public with sharing class FamilyV14C902V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<V14Missing__c> rows=new List<V14Missing__c>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C902V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C902V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C902V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C902V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C902V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C902V67Ctl.cls": "public with sharing class FamilyV14C902V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<V14Missing__c> rows=new List<V14Missing__c>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C902V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C902V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C902V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C902V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C902V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C902V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_custom_set",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C903V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C903V59Ctl.cls": "public with sharing class FamilyV14C903V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Set<V14Missing__c> rows=new Set<V14Missing__c>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C903V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C903V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C903V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C903V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C903V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C903V67Ctl.cls": "public with sharing class FamilyV14C903V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Set<V14Missing__c> rows=new Set<V14Missing__c>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C903V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C903V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C903V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C903V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C903V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C903V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_custom_map",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C904V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C904V59Ctl.cls": "public with sharing class FamilyV14C904V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Map<String,V14Missing__c> rows=new Map<String,V14Missing__c>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C904V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C904V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C904V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C904V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C904V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C904V67Ctl.cls": "public with sharing class FamilyV14C904V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Map<String,V14Missing__c> rows=new Map<String,V14Missing__c>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C904V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C904V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C904V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C904V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C904V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C904V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_custom_query_system",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C905V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C905V59Ctl.cls": "public with sharing class FamilyV14C905V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<V14Missing__c> rows=[SELECT Id FROM V14Missing__c]; Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C905V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C905V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C905V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C905V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C905V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C905V67Ctl.cls": "public with sharing class FamilyV14C905V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<V14Missing__c> rows=[SELECT Id FROM V14Missing__c]; Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C905V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C905V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C905V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C905V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C905V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C905V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_custom_query_user",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C906V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C906V59Ctl.cls": "public with sharing class FamilyV14C906V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<V14Missing__c> rows=[SELECT Id FROM V14Missing__c WITH USER_MODE]; Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C906V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C906V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C906V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C906V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C906V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C906V67Ctl.cls": "public with sharing class FamilyV14C906V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<V14Missing__c> rows=[SELECT Id FROM V14Missing__c WITH USER_MODE]; Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C906V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C906V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C906V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C906V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C906V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14Missing__c"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C906V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_custom_query_object",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C907V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C907V59Ctl.cls": "public with sharing class FamilyV14C907V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{ Object value=[SELECT Id FROM V14Missing__c];return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C907V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C907V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C907V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C907V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C907V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C907V67Ctl.cls": "public with sharing class FamilyV14C907V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{ Object value=[SELECT Id FROM V14Missing__c];return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C907V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C907V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C907V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C907V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: Schema.V14Missing__c"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C907V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: Schema.V14Missing__c"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C907V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_plain_used",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C908V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C908V59Ctl.cls": "public with sharing class FamilyV14C908V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{V14MissingType row; Object value=row;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C908V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C908V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C908V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C908V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C908V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C908V67Ctl.cls": "public with sharing class FamilyV14C908V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{V14MissingType row; Object value=row;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C908V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C908V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C908V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C908V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Illegal assignment from V14MissingType to Object"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C908V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Illegal assignment from V14MissingType to Object"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C908V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_plain_unused",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C909V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C909V59Ctl.cls": "public with sharing class FamilyV14C909V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{V14MissingType row; Object value='V14_DECL';return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C909V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C909V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C909V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C909V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C909V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C909V67Ctl.cls": "public with sharing class FamilyV14C909V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{V14MissingType row; Object value='V14_DECL';return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C909V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C909V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C909V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C909V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C909V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C909V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_plain_list",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C910V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C910V59Ctl.cls": "public with sharing class FamilyV14C910V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<V14MissingType> rows=new List<V14MissingType>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C910V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C910V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C910V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C910V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C910V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C910V67Ctl.cls": "public with sharing class FamilyV14C910V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<V14MissingType> rows=new List<V14MissingType>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C910V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C910V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C910V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C910V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C910V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C910V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_plain_set",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C911V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C911V59Ctl.cls": "public with sharing class FamilyV14C911V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Set<V14MissingType> rows=new Set<V14MissingType>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C911V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C911V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C911V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C911V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C911V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C911V67Ctl.cls": "public with sharing class FamilyV14C911V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Set<V14MissingType> rows=new Set<V14MissingType>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C911V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C911V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C911V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C911V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C911V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C911V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_plain_map",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C912V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C912V59Ctl.cls": "public with sharing class FamilyV14C912V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Map<String,V14MissingType> rows=new Map<String,V14MissingType>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C912V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C912V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C912V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C912V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C912V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C912V67Ctl.cls": "public with sharing class FamilyV14C912V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Map<String,V14MissingType> rows=new Map<String,V14MissingType>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C912V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C912V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C912V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C912V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C912V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C912V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_plain_query_system",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C913V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C913V59Ctl.cls": "public with sharing class FamilyV14C913V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<V14MissingType> rows=[SELECT Id FROM V14MissingType]; Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C913V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C913V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C913V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C913V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C913V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C913V67Ctl.cls": "public with sharing class FamilyV14C913V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<V14MissingType> rows=[SELECT Id FROM V14MissingType]; Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C913V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C913V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C913V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C913V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C913V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C913V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_plain_query_user",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C914V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C914V59Ctl.cls": "public with sharing class FamilyV14C914V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<V14MissingType> rows=[SELECT Id FROM V14MissingType WITH USER_MODE]; Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C914V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C914V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C914V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C914V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C914V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C914V67Ctl.cls": "public with sharing class FamilyV14C914V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<V14MissingType> rows=[SELECT Id FROM V14MissingType WITH USER_MODE]; Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C914V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C914V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C914V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C914V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C914V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: V14MissingType"
+          },
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Variable does not exist: rows"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C914V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_plain_query_object",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C915V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C915V59Ctl.cls": "public with sharing class FamilyV14C915V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{ Object value=[SELECT Id FROM V14MissingType];return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C915V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C915V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C915V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C915V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C915V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C915V67Ctl.cls": "public with sharing class FamilyV14C915V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{ Object value=[SELECT Id FROM V14MissingType];return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C915V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C915V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C915V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C915V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: Schema.V14MissingType"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C915V59Ctl' does not exist"
+          }
+        ],
+        "67.0": [
+          {
+            "resource": "ApexClass",
+            "type": "Error",
+            "message": "Invalid type: Schema.V14MissingType"
+          },
+          {
+            "resource": "ApexPage",
+            "type": "Error",
+            "message": "Apex class 'FamilyV14C915V67Ctl' does not exist"
+          }
+        ]
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_known_list_account",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C916V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C916V59Ctl.cls": "public with sharing class FamilyV14C916V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<Account> rows=new List<Account>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C916V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C916V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C916V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C916V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C916V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C916V67Ctl.cls": "public with sharing class FamilyV14C916V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<Account> rows=new List<Account>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C916V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C916V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C916V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C916V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {}
+    },
+    {
+      "id": "r_review_type_known_list_account",
+      "group": "authorized-record-projection",
+      "kind": "runtime",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14R917V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R917V59Ctl.cls": "public with sharing class FamilyV14R917V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<Account> rows=new List<Account>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R917V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R917V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R917V59Ctl\"><div id=\"v14-root\"><apex:outputText value=\"{!result}\"/></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R917V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14R917V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R917V67Ctl.cls": "public with sharing class FamilyV14R917V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<Account> rows=new List<Account>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R917V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R917V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R917V67Ctl\"><div id=\"v14-root\"><apex:outputText value=\"{!result}\"/></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R917V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"fields\":[],\"rootPresent\":true,\"text\":\"0\"}",
+        "67.0": "DOM|{\"fields\":[],\"rootPresent\":true,\"text\":\"0\"}"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_known_list_string",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C918V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C918V59Ctl.cls": "public with sharing class FamilyV14C918V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<String> rows=new List<String>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C918V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C918V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C918V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C918V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C918V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C918V67Ctl.cls": "public with sharing class FamilyV14C918V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<String> rows=new List<String>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C918V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C918V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C918V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C918V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {}
+    },
+    {
+      "id": "r_review_type_known_list_string",
+      "group": "authorized-record-projection",
+      "kind": "runtime",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14R919V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R919V59Ctl.cls": "public with sharing class FamilyV14R919V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<String> rows=new List<String>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R919V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R919V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R919V59Ctl\"><div id=\"v14-root\"><apex:outputText value=\"{!result}\"/></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R919V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14R919V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R919V67Ctl.cls": "public with sharing class FamilyV14R919V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{List<String> rows=new List<String>(); Object value=rows.size();return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R919V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R919V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R919V67Ctl\"><div id=\"v14-root\"><apex:outputText value=\"{!result}\"/></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R919V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"fields\":[],\"rootPresent\":true,\"text\":\"0\"}",
+        "67.0": "DOM|{\"fields\":[],\"rootPresent\":true,\"text\":\"0\"}"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_type_known_object",
+      "group": "authorized-record-projection",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C920V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C920V59Ctl.cls": "public with sharing class FamilyV14C920V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Account row=new Account(Name='V14_KNOWN_TYPE'); Object alias=row; Object value=((Account)alias).Name;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C920V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C920V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C920V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C920V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C920V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C920V67Ctl.cls": "public with sharing class FamilyV14C920V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Account row=new Account(Name='V14_KNOWN_TYPE'); Object alias=row; Object value=((Account)alias).Name;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C920V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C920V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C920V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C920V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {}
+    },
+    {
+      "id": "r_review_type_known_object",
+      "group": "authorized-record-projection",
+      "kind": "runtime",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14R921V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R921V59Ctl.cls": "public with sharing class FamilyV14R921V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Account row=new Account(Name='V14_KNOWN_TYPE'); Object alias=row; Object value=((Account)alias).Name;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R921V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R921V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R921V59Ctl\"><div id=\"v14-root\"><apex:outputText value=\"{!result}\"/></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R921V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14R921V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R921V67Ctl.cls": "public with sharing class FamilyV14R921V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Account row=new Account(Name='V14_KNOWN_TYPE'); Object alias=row; Object value=((Account)alias).Name;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R921V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R921V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R921V67Ctl\"><div id=\"v14-root\"><apex:outputText value=\"{!result}\"/></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R921V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"fields\":[],\"rootPresent\":true,\"text\":\"V14_KNOWN_TYPE\"}",
+        "67.0": "DOM|{\"fields\":[],\"rootPresent\":true,\"text\":\"V14_KNOWN_TYPE\"}"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_header_null_value",
+      "group": "headers-cookies-redirects",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C922V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C922V59Ctl.cls": "public with sharing class FamilyV14C922V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{String observed='UNREACHED'; try{ApexPages.currentPage().getHeaders().put('X-V14-Owned',null);Object nativeValue=ApexPages.currentPage().getHeaders().get('X-V14-Owned');observed='RETURNED|'+String.valueOf(nativeValue);}catch(Exception nativeError){observed=nativeError.getTypeName()+'|'+nativeError.getMessage();} Object value=observed;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C922V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C922V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C922V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C922V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C922V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C922V67Ctl.cls": "public with sharing class FamilyV14C922V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{String observed='UNREACHED'; try{ApexPages.currentPage().getHeaders().put('X-V14-Owned',null);Object nativeValue=ApexPages.currentPage().getHeaders().get('X-V14-Owned');observed='RETURNED|'+String.valueOf(nativeValue);}catch(Exception nativeError){observed=nativeError.getTypeName()+'|'+nativeError.getMessage();} Object value=observed;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C922V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C922V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C922V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C922V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {}
+    },
+    {
+      "id": "r_review_header_null_value",
+      "group": "headers-cookies-redirects",
+      "kind": "runtime",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14R923V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R923V59Ctl.cls": "public with sharing class FamilyV14R923V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{String observed='UNREACHED'; try{ApexPages.currentPage().getHeaders().put('X-V14-Owned',null);Object nativeValue=ApexPages.currentPage().getHeaders().get('X-V14-Owned');observed='RETURNED|'+String.valueOf(nativeValue);}catch(Exception nativeError){observed=nativeError.getTypeName()+'|'+nativeError.getMessage();} Object value=observed;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R923V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R923V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R923V59Ctl\"><div id=\"v14-root\"><apex:outputText value=\"{!result}\"/></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R923V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14R923V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R923V67Ctl.cls": "public with sharing class FamilyV14R923V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{String observed='UNREACHED'; try{ApexPages.currentPage().getHeaders().put('X-V14-Owned',null);Object nativeValue=ApexPages.currentPage().getHeaders().get('X-V14-Owned');observed='RETURNED|'+String.valueOf(nativeValue);}catch(Exception nativeError){observed=nativeError.getTypeName()+'|'+nativeError.getMessage();} Object value=observed;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R923V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R923V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R923V67Ctl\"><div id=\"v14-root\"><apex:outputText value=\"{!result}\"/></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R923V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"fields\":[],\"rootPresent\":true,\"text\":\"System.NullPointerException|Value for header 'X-V14-Owned' cannot be null.\"}",
+        "67.0": "DOM|{\"fields\":[],\"rootPresent\":true,\"text\":\"System.NullPointerException|Value for header 'X-V14-Owned' cannot be null.\"}"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_cookie_null_name",
+      "group": "headers-cookies-redirects",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C924V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C924V59Ctl.cls": "public with sharing class FamilyV14C924V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{String observed='UNREACHED'; try{Cookie owned=new Cookie(null,'V14_COOKIE','/',60,false);Object nativeValue=owned.getName()+'|'+owned.getValue()+'|'+owned.getPath()+'|'+owned.getMaxAge()+'|'+owned.isSecure();observed='RETURNED|'+String.valueOf(nativeValue);}catch(Exception nativeError){observed=nativeError.getTypeName()+'|'+nativeError.getMessage();} Object value=observed;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C924V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C924V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C924V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C924V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C924V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C924V67Ctl.cls": "public with sharing class FamilyV14C924V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{String observed='UNREACHED'; try{Cookie owned=new Cookie(null,'V14_COOKIE','/',60,false);Object nativeValue=owned.getName()+'|'+owned.getValue()+'|'+owned.getPath()+'|'+owned.getMaxAge()+'|'+owned.isSecure();observed='RETURNED|'+String.valueOf(nativeValue);}catch(Exception nativeError){observed=nativeError.getTypeName()+'|'+nativeError.getMessage();} Object value=observed;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C924V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C924V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C924V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C924V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {}
+    },
+    {
+      "id": "r_review_cookie_null_name",
+      "group": "headers-cookies-redirects",
+      "kind": "runtime",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14R925V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R925V59Ctl.cls": "public with sharing class FamilyV14R925V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{String observed='UNREACHED'; try{Cookie owned=new Cookie(null,'V14_COOKIE','/',60,false);Object nativeValue=owned.getName()+'|'+owned.getValue()+'|'+owned.getPath()+'|'+owned.getMaxAge()+'|'+owned.isSecure();observed='RETURNED|'+String.valueOf(nativeValue);}catch(Exception nativeError){observed=nativeError.getTypeName()+'|'+nativeError.getMessage();} Object value=observed;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R925V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R925V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R925V59Ctl\"><div id=\"v14-root\"><apex:outputText value=\"{!result}\"/></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R925V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14R925V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R925V67Ctl.cls": "public with sharing class FamilyV14R925V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{String observed='UNREACHED'; try{Cookie owned=new Cookie(null,'V14_COOKIE','/',60,false);Object nativeValue=owned.getName()+'|'+owned.getValue()+'|'+owned.getPath()+'|'+owned.getMaxAge()+'|'+owned.isSecure();observed='RETURNED|'+String.valueOf(nativeValue);}catch(Exception nativeError){observed=nativeError.getTypeName()+'|'+nativeError.getMessage();} Object value=observed;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R925V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R925V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R925V67Ctl\"><div id=\"v14-root\"><apex:outputText value=\"{!result}\"/></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R925V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"fields\":[],\"rootPresent\":true,\"text\":\"System.NullPointerException|Argument 1 cannot be null\"}",
+        "67.0": "DOM|{\"fields\":[],\"rootPresent\":true,\"text\":\"System.NullPointerException|Argument 1 cannot be null\"}"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_map_null_value",
+      "group": "headers-cookies-redirects",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C926V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C926V59Ctl.cls": "public with sharing class FamilyV14C926V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Map<String,String> values=new Map<String,String>(); values.put('X-V14-Owned',null); Object value=values.get('X-V14-Owned')==null;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C926V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C926V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C926V59Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C926V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C926V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C926V67Ctl.cls": "public with sharing class FamilyV14C926V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Map<String,String> values=new Map<String,String>(); values.put('X-V14-Owned',null); Object value=values.get('X-V14-Owned')==null;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C926V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C926V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C926V67Ctl\"><apex:outputText value=\"{!result}\"/></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C926V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {}
+    },
+    {
+      "id": "r_review_map_null_value",
+      "group": "headers-cookies-redirects",
+      "kind": "runtime",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14R927V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R927V59Ctl.cls": "public with sharing class FamilyV14R927V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Map<String,String> values=new Map<String,String>(); values.put('X-V14-Owned',null); Object value=values.get('X-V14-Owned')==null;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R927V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R927V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R927V59Ctl\"><div id=\"v14-root\"><apex:outputText value=\"{!result}\"/></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R927V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14R927V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R927V67Ctl.cls": "public with sharing class FamilyV14R927V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public String getResult(){try{Map<String,String> values=new Map<String,String>(); values.put('X-V14-Owned',null); Object value=values.get('X-V14-Owned')==null;return String.valueOf(value);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R927V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R927V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R927V67Ctl\"><div id=\"v14-root\"><apex:outputText value=\"{!result}\"/></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R927V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"fields\":[],\"rootPresent\":true,\"text\":\"true\"}",
+        "67.0": "DOM|{\"fields\":[],\"rootPresent\":true,\"text\":\"true\"}"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {}
+    },
+    {
+      "id": "c_review_response_header_post",
+      "group": "headers-cookies-redirects",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C928V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C928V59Ctl.cls": "public with sharing class FamilyV14C928V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().getHeaders().put('X-V14-Owned','V14_RESPONSE');} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C928V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C928V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C928V59Ctl\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\"/></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C928V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C928V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C928V67Ctl.cls": "public with sharing class FamilyV14C928V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().getHeaders().put('X-V14-Owned','V14_RESPONSE');} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C928V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C928V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C928V67Ctl\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\"/></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C928V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {
+        "interaction": "post",
+        "response_header": "X-V14-Owned",
+        "control_value_only": true,
+        "action_response": true
+      }
+    },
+    {
+      "id": "r_review_response_header_post",
+      "group": "headers-cookies-redirects",
+      "kind": "runtime",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14R929V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R929V59Ctl.cls": "public with sharing class FamilyV14R929V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().getHeaders().put('X-V14-Owned','V14_RESPONSE');} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R929V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R929V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R929V59Ctl\"><div id=\"v14-root\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\"/></apex:form></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R929V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14R929V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R929V67Ctl.cls": "public with sharing class FamilyV14R929V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().getHeaders().put('X-V14-Owned','V14_RESPONSE');} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R929V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R929V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R929V67Ctl\"><div id=\"v14-root\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\"/></apex:form></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R929V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"responseHeader\":\"V14_RESPONSE\",\"rootPresent\":true,\"text\":\"V14_RESULT|1\"}",
+        "67.0": "DOM|{\"responseHeader\":\"V14_RESPONSE\",\"rootPresent\":true,\"text\":\"V14_RESULT|1\"}"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {
+        "interaction": "post",
+        "response_header": "X-V14-Owned",
+        "control_value_only": true,
+        "action_response": true
+      }
+    },
+    {
+      "id": "c_review_response_cookie_post",
+      "group": "headers-cookies-redirects",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C930V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C930V59Ctl.cls": "public with sharing class FamilyV14C930V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().setCookies(new Cookie[]{new Cookie('V14Owned','V14_RESPONSE','/',60,false)});} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C930V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C930V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C930V59Ctl\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\"/></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C930V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C930V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C930V67Ctl.cls": "public with sharing class FamilyV14C930V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().setCookies(new Cookie[]{new Cookie('V14Owned','V14_RESPONSE','/',60,false)});} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C930V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C930V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C930V67Ctl\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\"/></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C930V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {
+        "interaction": "post",
+        "observe_cookie": true,
+        "control_value_only": true,
+        "action_response": true
+      }
+    },
+    {
+      "id": "r_review_response_cookie_post",
+      "group": "headers-cookies-redirects",
+      "kind": "runtime",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14R931V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R931V59Ctl.cls": "public with sharing class FamilyV14R931V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().setCookies(new Cookie[]{new Cookie('V14Owned','V14_RESPONSE','/',60,false)});} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R931V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R931V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R931V59Ctl\"><div id=\"v14-root\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\"/></apex:form></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R931V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14R931V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R931V67Ctl.cls": "public with sharing class FamilyV14R931V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().setCookies(new Cookie[]{new Cookie('V14Owned','V14_RESPONSE','/',60,false)});} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R931V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R931V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R931V67Ctl\"><div id=\"v14-root\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\"/></apex:form></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R931V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"cookies\":[{\"httpOnly\":false,\"name\":\"V14Owned\",\"path\":\"/\",\"secure\":false,\"value\":\"V14_RESPONSE\"}],\"rootPresent\":true,\"text\":\"V14_RESULT|1\"}",
+        "67.0": "DOM|{\"cookies\":[{\"httpOnly\":false,\"name\":\"V14Owned\",\"path\":\"/\",\"secure\":false,\"value\":\"V14_RESPONSE\"}],\"rootPresent\":true,\"text\":\"V14_RESULT|1\"}"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {
+        "interaction": "post",
+        "observe_cookie": true,
+        "control_value_only": true,
+        "action_response": true
+      }
+    },
+    {
+      "id": "c_review_response_header_ajax",
+      "group": "headers-cookies-redirects",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C932V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C932V59Ctl.cls": "public with sharing class FamilyV14C932V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().getHeaders().put('X-V14-Owned','V14_RESPONSE');} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C932V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C932V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C932V59Ctl\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\" reRender=\"v14panel\"/></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C932V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C932V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C932V67Ctl.cls": "public with sharing class FamilyV14C932V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().getHeaders().put('X-V14-Owned','V14_RESPONSE');} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C932V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C932V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C932V67Ctl\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\" reRender=\"v14panel\"/></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C932V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {
+        "interaction": "ajax",
+        "response_header": "X-V14-Owned",
+        "control_value_only": true,
+        "action_response": true
+      }
+    },
+    {
+      "id": "r_review_response_header_ajax",
+      "group": "headers-cookies-redirects",
+      "kind": "runtime",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14R933V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R933V59Ctl.cls": "public with sharing class FamilyV14R933V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().getHeaders().put('X-V14-Owned','V14_RESPONSE');} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R933V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R933V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R933V59Ctl\"><div id=\"v14-root\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\" reRender=\"v14panel\"/></apex:form></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R933V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14R933V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R933V67Ctl.cls": "public with sharing class FamilyV14R933V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().getHeaders().put('X-V14-Owned','V14_RESPONSE');} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R933V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R933V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R933V67Ctl\"><div id=\"v14-root\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\" reRender=\"v14panel\"/></apex:form></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R933V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"responseHeader\":\"V14_RESPONSE\",\"rootPresent\":true,\"text\":\"V14_RESULT|1\"}",
+        "67.0": "DOM|{\"responseHeader\":\"V14_RESPONSE\",\"rootPresent\":true,\"text\":\"V14_RESULT|1\"}"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {
+        "interaction": "ajax",
+        "response_header": "X-V14-Owned",
+        "control_value_only": true,
+        "action_response": true
+      }
+    },
+    {
+      "id": "c_review_response_cookie_ajax",
+      "group": "headers-cookies-redirects",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14C934V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C934V59Ctl.cls": "public with sharing class FamilyV14C934V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().setCookies(new Cookie[]{new Cookie('V14Owned','V14_RESPONSE','/',60,false)});} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C934V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C934V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C934V59Ctl\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\" reRender=\"v14panel\"/></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C934V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14C934V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14C934V67Ctl.cls": "public with sharing class FamilyV14C934V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().setCookies(new Cookie[]{new Cookie('V14Owned','V14_RESPONSE','/',60,false)});} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14C934V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14C934V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14C934V67Ctl\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\" reRender=\"v14panel\"/></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14C934V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {
+        "interaction": "ajax",
+        "observe_cookie": true,
+        "control_value_only": true,
+        "action_response": true
+      }
+    },
+    {
+      "id": "r_review_response_cookie_ajax",
+      "group": "headers-cookies-redirects",
+      "kind": "runtime",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV14R935V59Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R935V59Ctl.cls": "public with sharing class FamilyV14R935V59Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().setCookies(new Cookie[]{new Cookie('V14Owned','V14_RESPONSE','/',60,false)});} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R935V59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R935V59Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R935V59Ctl\"><div id=\"v14-root\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\" reRender=\"v14panel\"/></apex:form></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R935V59Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV14R935V67Page",
+          "files": {
+            "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+            "force-app/main/default/classes/FamilyV14R935V67Ctl.cls": "public with sharing class FamilyV14R935V67Ctl {private Id ownedId(){return Id.valueOf(ApexPages.currentPage().getParameters().get('ownedId'));} public Integer calls=0; public String getResult(){try{if(calls>0){ApexPages.currentPage().setCookies(new Cookie[]{new Cookie('V14Owned','V14_RESPONSE','/',60,false)});} Object value='V14_RESULT';return String.valueOf(value)+'|'+String.valueOf(calls);}catch(Exception e){return 'EXC|'+e.getTypeName();}}public PageReference invoke(){calls++;return null;}}\n",
+            "force-app/main/default/classes/FamilyV14R935V67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+            "force-app/main/default/pages/FamilyV14R935V67Page.page": "<apex:page showHeader=\"false\" sidebar=\"false\" standardStylesheets=\"false\"  controller=\"FamilyV14R935V67Ctl\"><div id=\"v14-root\"><apex:form><apex:outputPanel id=\"v14panel\"><span id=\"v14-value\"><apex:outputText value=\"{!result}\"/></span></apex:outputPanel><apex:commandButton value=\"V14_SUBMIT\" action=\"{!invoke}\" reRender=\"v14panel\"/></apex:form></div></apex:page>\n",
+            "force-app/main/default/pages/FamilyV14R935V67Page.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>V14 owned</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"cookies\":[{\"httpOnly\":false,\"name\":\"V14Owned\",\"path\":\"/\",\"secure\":false,\"value\":\"V14_RESPONSE\"}],\"rootPresent\":true,\"text\":\"V14_RESULT|1\"}",
+        "67.0": "DOM|{\"cookies\":[{\"httpOnly\":false,\"name\":\"V14Owned\",\"path\":\"/\",\"secure\":false,\"value\":\"V14_RESPONSE\"}],\"rootPresent\":true,\"text\":\"V14_RESULT|1\"}"
+      },
+      "diagnostics": {
+        "59.0": [],
+        "67.0": []
+      },
+      "observation": {
+        "interaction": "ajax",
+        "observe_cookie": true,
+        "control_value_only": true,
+        "action_response": true
+      }
+    }
+  ]
+}

@@ -18,9 +18,11 @@ import (
 
 // The oracle is exported owned Apex and Salesforce output. This test has no
 // dependency on the probe tools, an org, credentials, or a network connection.
+// API 67 and 68 retain legacy runtime assertions and categorical rejections.
 func TestIntegerLongOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected string
+		Expected68         string
 		FloorExpected      string `json:"floorExpected"`
 		Compile            bool
 		RemainingReason    string `json:"remainingReason"`
@@ -94,8 +96,8 @@ class Ov {
 		}
 		return helpers, declarations, body
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
-		t.Fatalf("oracle API versions=%v, want 62.0,67.0", data.APIVersions)
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
+		t.Fatalf("oracle API versions=%v, want 62.0,67.0,68.0", data.APIVersions)
 	}
 	nativeCompilerRows := map[string]string{}
 	for _, row := range data.Cases {
@@ -125,6 +127,10 @@ class Ov {
 					scope = "preservation"
 				}
 				for _, tc := range rows {
+					if api == "68.0" && tc.Expected68 != "" {
+						// Keep raw native wrapper coordinates without changing rejection checks.
+						tc.Expected = tc.Expected68
+					}
 					if api == "62.0" {
 						if tc.FloorExpected == "" {
 							t.Fatalf("missing floor oracle row %s", tc.ID)
@@ -185,7 +191,7 @@ class Ov {
 				path := filepath.Join(root, "IntegerLongProbe.cls")
 				writeFile(t, path, source.String())
 				writeFile(t, path+"-meta.xml", fmt.Sprintf("<ApexClass><apiVersion>%s</apiVersion></ApexClass>", api))
-				index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+				index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}, SourceAPIVersion: api}, gladeschema.Schema{})
 				if index.HasErrors() {
 					namedBatchError = fmt.Sprintf("named parser: %v", index.Diagnostics)
 					return
@@ -211,7 +217,7 @@ class Ov {
 			}
 			// Row helpers embed different expected literals. Link the unchanged platform
 			// classes once, then register only the row's source classes on a private clone.
-			base := typesys.Build(project.Project{Root: t.TempDir()}, gladeschema.Schema{})
+			base := typesys.Build(project.Project{Root: t.TempDir(), SourceAPIVersion: api}, gladeschema.Schema{})
 			runner := newConformanceRunner(t, base, conformanceRunnerOptions{LinkProject: true})
 			for _, tc := range allCases {
 				if tc.RemainingReason != "" {
@@ -222,7 +228,7 @@ class Ov {
 					helpers, declarations, body := prepare(tc.familyCase, api)
 					wantCompileError := strings.HasPrefix(tc.Expected, "COMPILE_ERROR")
 					kind := "exact"
-					if api == "67.0" {
+					if api == "67.0" || api == "68.0" {
 						kind = "legacy"
 						if wantCompileError {
 							kind = "category"
@@ -246,7 +252,7 @@ class Ov {
 							paths = append(paths, path)
 						}
 						source := body
-						index := typesys.Build(project.Project{Root: root, ApexFiles: paths}, gladeschema.Schema{})
+						index := typesys.Build(project.Project{Root: root, ApexFiles: paths, SourceAPIVersion: api}, gladeschema.Schema{})
 						analysis := sema.AnalyzeAnonymous(index, source, api)
 						program, compileErr := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
 						if wantCompileError {
@@ -291,7 +297,7 @@ class Ov {
 						source := "@IsTest private class IntegerLongProbe {\n" + helpers + declarations + "\n@IsTest static void observed() {\n" + body + "\n}\n}"
 						writeFile(t, path, source)
 						writeFile(t, path+"-meta.xml", fmt.Sprintf("<ApexClass><apiVersion>%s</apiVersion></ApexClass>", api))
-						index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+						index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}, SourceAPIVersion: api}, gladeschema.Schema{})
 						analysis := sema.Analyze(index)
 						if wantCompileError {
 							if !index.HasErrors() && !analysis.HasErrors() {

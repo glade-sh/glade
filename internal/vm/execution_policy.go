@@ -5,6 +5,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type sourceExecutionPolicy struct {
@@ -72,6 +73,89 @@ func (vm *VM) validateExplicitAccessLevel(accessLevel Value) error {
 	return nil
 }
 
+// C137_046/048/050/051/088/090/092/093 capture anonymous query and
+// countQuery SYSTEM_MODE argument rejections at 59/62/66/67/68. The access
+// boundary precedes query execution and Database.query's scalar COUNT error.
+func (vm *VM) validateSOQLAccessLevel(raw string, accessLevel Value) error {
+	if databaseAccessLevelSecurityMode(accessLevel) != "SYSTEM_MODE" || vm.testContext != nil ||
+		vm.currentClass != "" || vm.currentMethod.ClassName != "" || vm.currentTrigger ||
+		!vm.anonymousSystemModeQueryShape(raw) {
+		return nil
+	}
+	switch vm.currentMethod.APIVersion {
+	case "59.0", "62.0", "66.0", "67.0", "68.0":
+		return vm.validateExplicitAccessLevel(accessLevel)
+	default:
+		return nil
+	}
+}
+
+func (vm *VM) validateSOQLCallAccess(callee string, args []Value) error {
+	canonical, ok := canonicalBuiltinStaticCall(callee)
+	if !ok || (canonical != "Database.query" && canonical != "Database.countQuery") ||
+		!vm.shouldUseBuiltinStaticPrecedence(callee, canonical) {
+		return nil
+	}
+	if len(args) == 2 && args[0].Kind == ValueString && isDatabaseAccessLevelValue(args[1]) {
+		if canonical == "Database.countQuery" {
+			query, err := vm.parseSOQLAt(args[0].Text)
+			if err != nil || !query.Count {
+				return nil // Non-count validation has no precedence capture.
+			}
+		}
+		return vm.validateSOQLAccessLevel(args[0].Text, args[1])
+	}
+	return nil
+}
+
+// Only the captured flat Id-scoped projection/COUNT shapes opt into the early
+// boundary. Invalid syntax, missing binds and other queries keep their existing
+// validation order until their rejection twins have native answers.
+func (vm *VM) anonymousSystemModeQueryShape(raw string) bool {
+	query, err := vm.parseSOQLAt(raw)
+	if err != nil || vm.Org == nil || query.SecurityMode != "" || len(query.ChildQueries) != 0 ||
+		len(query.Typeofs) != 0 || (!query.Count && len(query.Aggregates) != 0) || len(query.GroupBy) != 0 ||
+		query.Having != nil || len(query.Order) != 0 || query.HasLimit || query.HasOffset ||
+		query.ForUpdate || query.ForView || query.ForReference || query.AllRows || query.UsingScope != "" {
+		return false
+	}
+	where := query.Where
+	if where == nil || !strings.EqualFold(where.Field, "Id") || where.Op != "=" || where.Not ||
+		len(where.And) != 0 || len(where.Or) != 0 || where.Range || where.Subquery != nil {
+		return false
+	}
+	if where.Value.Kind != storage.ValueID || !strings.HasPrefix(string(where.Value.ID), ":") {
+		return false
+	}
+	bound, err := vm.lookup(strings.TrimPrefix(string(where.Value.ID), ":"))
+	boundID := bound.Text
+	if bound.Kind == ValueObject && bound.Type == "Id" {
+		boundID, err = platformScalarText(bound, "Id")
+	} else if bound.Kind != ValueString {
+		return false
+	}
+	if err != nil || validateApexID(boundID) != nil {
+		return false // Missing, null and non-Id binds have no precedence capture.
+	}
+	objectName, ok := vm.resolveObjectName(query.Object)
+	if !ok {
+		return false
+	}
+	if !query.Count {
+		if len(query.Fields) < 1 || len(query.Fields) > 3 || !strings.EqualFold(query.Fields[0], "Id") {
+			return false
+		}
+		definition := vm.Org.Objects[objectName].Definition
+		for _, field := range query.Fields[1:] {
+			name, found := storage.ResolveFieldName(definition, vm.Org.Namespace, field)
+			if !found || definition.Fields[name].Type != storage.FieldString {
+				return false
+			}
+		}
+	}
+	return vm.validateDynamicSOQLBindSyntax(raw, query.Count) == nil && vm.validateDynamicSOQLBinds(raw, Null) == nil
+}
+
 func (vm *VM) validateDynamicQueryAccessLevel(queryText string, accessLevel Value) error {
 	if err := vm.validateExplicitAccessLevel(accessLevel); err != nil {
 		return err
@@ -89,6 +173,13 @@ func (vm *VM) validateDynamicQueryAccessLevel(queryText string, accessLevel Valu
 		}
 	}
 	return nil
+}
+
+func (vm *VM) validateUserModePermissionSetFeature() error {
+	if vm != nil && vm.Org != nil && vm.Org.HasFeature("ApexUserModeWithPermset") {
+		return nil
+	}
+	return newExceptionError("SecurityException", "Custom AccessLevel usage requires ApexUserModeWithPermset enabled in a scratch org.")
 }
 
 func (vm *VM) currentSharingMode() string {
@@ -112,6 +203,12 @@ func (vm *VM) currentSharingMode() string {
 		}
 		if apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) {
 			return "with sharing"
+		}
+		if mode, ok := vm.nearestCallStackSharingMode(); ok {
+			return mode
+		}
+		if mode := strings.TrimSpace(vm.entrySharingMode); mode != "" {
+			return mode
 		}
 		return "without sharing"
 	}
@@ -151,9 +248,6 @@ func (vm *VM) currentSharingMode() string {
 }
 
 func (vm *VM) classSharingMode(className string) (string, bool) {
-	if hasSuffixFold(className, ".withsharing") {
-		return "with sharing", true
-	}
 	seen := map[string]bool{}
 	secureDefault := false
 	for strings.TrimSpace(className) != "" && !seen[strings.ToLower(className)] {

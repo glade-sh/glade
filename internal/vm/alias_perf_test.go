@@ -157,8 +157,8 @@ func TestConstructedObjectMutationSkipsNestedScopeUntilEscape(t *testing.T) {
 	if err := machine.assignPath(updated, []string{"Name"}, String("after")); err != nil {
 		t.Fatal(err)
 	}
-	if visits := escapedRecorder.Snapshot().ScopeAlias.RecursiveVisits; visits == 0 {
-		t.Fatal("escaped object mutation did not inspect nested scope aliases")
+	if stats := escapedRecorder.Snapshot().ScopeAlias; stats.Calls != 0 || stats.RecursiveVisits != 0 || stats.ElisionFallbackWalks != 0 {
+		t.Fatalf("same-backing escaped object mutation performed scope work: %#v", stats)
 	}
 	got := machine.Globals["records"]
 	if name := got.List[len(got.List)-1].Fields["Name"]; name.Kind != ValueString || name.Text != "after" {

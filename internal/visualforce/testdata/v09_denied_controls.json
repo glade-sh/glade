@@ -1,0 +1,1007 @@
+{
+  "oracle_commit": "capture-revision-048137615117366033878447963286093391879574679956782728413088579616007998642802",
+  "source_fingerprint": "6f66cefd6aa795d5cc0d53724eff1d35b85afc40e38d5ad8a8c41f1d1c0f3920",
+  "oracle_path": "native-capture",
+  "fixtures": {
+    "59.0": {
+      "files": {
+        "force-app/main/default/classes/FamilyV09Denied59Ctl.cls": "public without sharing class FamilyV09Denied59Ctl {\n public V09FieldFixture__c getFilled(){\n  V09FieldFixture__c record=new V09FieldFixture__c(Text__c='V09 supplied & <scalar>',\n   Lookup__c=ApexPages.currentPage().getParameters().get('lookupId'));\n  record.Lookup__r=new Account(Id=ApexPages.currentPage().getParameters().get('lookupId'),\n   Name='V09 owned & <lookup>');\n  return record;\n }\n public V09FieldFixture__c getAccount(){return getFilled();}\n public String getObservedAccess(){\n  Schema.DescribeSObjectResult source=V09FieldFixture__c.SObjectType.getDescribe();\n  Schema.DescribeFieldResult textField=V09FieldFixture__c.Text__c.getDescribe();\n  Schema.DescribeFieldResult lookupField=V09FieldFixture__c.Lookup__c.getDescribe();\n  return JSON.serialize(new Map<String,Object>{\n   'actorMatches'=>String.valueOf(UserInfo.getUserId())==ApexPages.currentPage().getParameters().get('principal'),\n   'orgMatches'=>String.valueOf(UserInfo.getOrganizationId())==ApexPages.currentPage().getParameters().get('captureOrg'),\n   'accountRead'=>Account.SObjectType.getDescribe().isAccessible(),\n   'objectRead'=>source.isAccessible(),'objectCreate'=>source.isCreateable(),'objectUpdate'=>source.isUpdateable(),\n   'textRead'=>textField.isAccessible(),'textCreate'=>textField.isCreateable(),'textUpdate'=>textField.isUpdateable(),\n   'lookupRead'=>lookupField.isAccessible(),'lookupCreate'=>lookupField.isCreateable(),'lookupUpdate'=>lookupField.isUpdateable()\n  });\n }\n}\n",
+        "force-app/main/default/classes/FamilyV09Denied59Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/objects/V09FieldFixture__c/V09FieldFixture__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>V09 owned fixture</label><nameField><label>V09 fixture name</label><type>Text</type></nameField><pluralLabel>V09 owned fixtures</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+        "force-app/main/default/objects/V09FieldFixture__c/fields/Lookup__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Lookup__c</fullName><label>V09 Lookup label</label><type>Lookup</type><referenceTo>Account</referenceTo><relationshipLabel>V09 owned references</relationshipLabel><relationshipName>V09OwnedReferences</relationshipName><deleteConstraint>SetNull</deleteConstraint></CustomField>\n",
+        "force-app/main/default/objects/V09FieldFixture__c/fields/Text__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Text__c</fullName><label>V09 Text label</label><type>Text</type><length>80</length></CustomField>\n",
+        "force-app/main/default/pages/FamilyV09Denied59Context.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><span data-v09-access-context=\"true\"><apex:outputText value=\"{!observedAccess}\"/></span></apex:page>\n",
+        "force-app/main/default/pages/FamilyV09Denied59Context.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59Context</label></ApexPage>\n",
+        "glade.yml": "org:\n  domainUrl: https://offline.my.salesforce.com\n",
+        "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n"
+      },
+      "context_page": "FamilyV09Denied59Context"
+    },
+    "67.0": {
+      "files": {
+        "force-app/main/default/classes/FamilyV09Denied67Ctl.cls": "public without sharing class FamilyV09Denied67Ctl {\n public V09FieldFixture__c getFilled(){\n  V09FieldFixture__c record=new V09FieldFixture__c(Text__c='V09 supplied & <scalar>',\n   Lookup__c=ApexPages.currentPage().getParameters().get('lookupId'));\n  record.Lookup__r=new Account(Id=ApexPages.currentPage().getParameters().get('lookupId'),\n   Name='V09 owned & <lookup>');\n  return record;\n }\n public V09FieldFixture__c getAccount(){return getFilled();}\n public String getObservedAccess(){\n  Schema.DescribeSObjectResult source=V09FieldFixture__c.SObjectType.getDescribe();\n  Schema.DescribeFieldResult textField=V09FieldFixture__c.Text__c.getDescribe();\n  Schema.DescribeFieldResult lookupField=V09FieldFixture__c.Lookup__c.getDescribe();\n  return JSON.serialize(new Map<String,Object>{\n   'actorMatches'=>String.valueOf(UserInfo.getUserId())==ApexPages.currentPage().getParameters().get('principal'),\n   'orgMatches'=>String.valueOf(UserInfo.getOrganizationId())==ApexPages.currentPage().getParameters().get('captureOrg'),\n   'accountRead'=>Account.SObjectType.getDescribe().isAccessible(),\n   'objectRead'=>source.isAccessible(),'objectCreate'=>source.isCreateable(),'objectUpdate'=>source.isUpdateable(),\n   'textRead'=>textField.isAccessible(),'textCreate'=>textField.isCreateable(),'textUpdate'=>textField.isUpdateable(),\n   'lookupRead'=>lookupField.isAccessible(),'lookupCreate'=>lookupField.isCreateable(),'lookupUpdate'=>lookupField.isUpdateable()\n  });\n }\n}\n",
+        "force-app/main/default/classes/FamilyV09Denied67Ctl.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/objects/V09FieldFixture__c/V09FieldFixture__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>V09 owned fixture</label><nameField><label>V09 fixture name</label><type>Text</type></nameField><pluralLabel>V09 owned fixtures</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+        "force-app/main/default/objects/V09FieldFixture__c/fields/Lookup__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Lookup__c</fullName><label>V09 Lookup label</label><type>Lookup</type><referenceTo>Account</referenceTo><relationshipLabel>V09 owned references</relationshipLabel><relationshipName>V09OwnedReferences</relationshipName><deleteConstraint>SetNull</deleteConstraint></CustomField>\n",
+        "force-app/main/default/objects/V09FieldFixture__c/fields/Text__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Text__c</fullName><label>V09 Text label</label><type>Text</type><length>80</length></CustomField>\n",
+        "force-app/main/default/pages/FamilyV09Denied67Context.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><span data-v09-access-context=\"true\"><apex:outputText value=\"{!observedAccess}\"/></span></apex:page>\n",
+        "force-app/main/default/pages/FamilyV09Denied67Context.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67Context</label></ApexPage>\n",
+        "glade.yml": "org:\n  domainUrl: https://offline.my.salesforce.com\n",
+        "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n"
+      },
+      "context_page": "FamilyV09Denied67Context"
+    }
+  },
+  "cases": [
+    {
+      "id": "supplied_text_input_compile",
+      "kind": "compile",
+      "phase": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59TextInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59TextInput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59TextInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59TextInput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67TextInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67TextInput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67TextInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67TextInput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "access": {
+        "59.0": {},
+        "67.0": {}
+      }
+    },
+    {
+      "id": "supplied_text_input_object_denied_runtime",
+      "kind": "runtime",
+      "phase": "object_denied",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59TextInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59TextInput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59TextInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59TextInput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67TextInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67TextInput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67TextInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67TextInput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": false,
+          "objectCreate": false,
+          "objectRead": false,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": false,
+          "objectCreate": false,
+          "objectRead": false,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "supplied_text_input_fields_denied_runtime",
+      "kind": "runtime",
+      "phase": "fields_denied",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59TextInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59TextInput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59TextInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59TextInput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67TextInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67TextInput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67TextInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67TextInput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "supplied_text_input_granted_runtime",
+      "kind": "runtime",
+      "phase": "granted",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59TextInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59TextInput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59TextInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59TextInput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67TextInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67TextInput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67TextInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67TextInput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[{\"class\":\"\",\"disabled\":false,\"id\":\"owned-id-0\",\"required\":false,\"style\":\"\",\"tabindex\":null,\"tag\":\"input\",\"type\":\"text\",\"value\":\"V09 supplied & <scalar>\"}],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}",
+        "67.0": "DOM|{\"controls\":[{\"class\":\"\",\"disabled\":false,\"id\":\"owned-id-0\",\"required\":false,\"style\":\"\",\"tabindex\":null,\"tag\":\"input\",\"type\":\"text\",\"value\":\"V09 supplied & <scalar>\"}],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": true,
+          "lookupCreate": true,
+          "lookupRead": true,
+          "textUpdate": true,
+          "textCreate": true,
+          "textRead": true,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": true,
+          "lookupCreate": true,
+          "lookupRead": true,
+          "textUpdate": true,
+          "textCreate": true,
+          "textRead": true,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "supplied_text_output_compile",
+      "kind": "compile",
+      "phase": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59TextOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59TextOutput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59TextOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59TextOutput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67TextOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67TextOutput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67TextOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67TextOutput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "access": {
+        "59.0": {},
+        "67.0": {}
+      }
+    },
+    {
+      "id": "supplied_text_output_object_denied_runtime",
+      "kind": "runtime",
+      "phase": "object_denied",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59TextOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59TextOutput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59TextOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59TextOutput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67TextOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67TextOutput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67TextOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67TextOutput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": false,
+          "objectCreate": false,
+          "objectRead": false,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": false,
+          "objectCreate": false,
+          "objectRead": false,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "supplied_text_output_fields_denied_runtime",
+      "kind": "runtime",
+      "phase": "fields_denied",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59TextOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59TextOutput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59TextOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59TextOutput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67TextOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67TextOutput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67TextOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67TextOutput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "supplied_text_output_granted_runtime",
+      "kind": "runtime",
+      "phase": "granted",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59TextOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59TextOutput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59TextOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59TextOutput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67TextOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67TextOutput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67TextOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67TextOutput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[\"span\"],\"text\":\"V09 supplied & <scalar>\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[\"span\"],\"text\":\"V09 supplied & <scalar>\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": true,
+          "lookupCreate": true,
+          "lookupRead": true,
+          "textUpdate": true,
+          "textCreate": true,
+          "textRead": true,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": true,
+          "lookupCreate": true,
+          "lookupRead": true,
+          "textUpdate": true,
+          "textCreate": true,
+          "textRead": true,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "supplied_lookup_input_compile",
+      "kind": "compile",
+      "phase": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59LookupInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59LookupInput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59LookupInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59LookupInput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67LookupInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67LookupInput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67LookupInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67LookupInput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "access": {
+        "59.0": {},
+        "67.0": {}
+      }
+    },
+    {
+      "id": "supplied_lookup_input_object_denied_runtime",
+      "kind": "runtime",
+      "phase": "object_denied",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59LookupInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59LookupInput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59LookupInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59LookupInput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67LookupInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67LookupInput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67LookupInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67LookupInput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": false,
+          "objectCreate": false,
+          "objectRead": false,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": false,
+          "objectCreate": false,
+          "objectRead": false,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "supplied_lookup_input_fields_denied_runtime",
+      "kind": "runtime",
+      "phase": "fields_denied",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59LookupInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59LookupInput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59LookupInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59LookupInput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67LookupInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67LookupInput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67LookupInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67LookupInput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "supplied_lookup_input_granted_runtime",
+      "kind": "runtime",
+      "phase": "granted",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59LookupInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59LookupInput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59LookupInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59LookupInput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67LookupInput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67LookupInput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:inputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67LookupInput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67LookupInput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[{\"class\":\"\",\"disabled\":false,\"id\":\"owned-id-6\",\"required\":false,\"style\":\"\",\"tabindex\":null,\"tag\":\"input\",\"type\":\"text\",\"value\":\"OWNED_ACCOUNT_NAME\"}],\"hidden\":[{\"field\":\"owned-id-6\",\"suffix\":\"_lkid\",\"value\":\"OWNED_ACCOUNT_ID\"},{\"field\":\"owned-id-6\",\"suffix\":\"_lkold\",\"value\":\"OWNED_ACCOUNT_NAME\"},{\"field\":\"owned-id-6\",\"suffix\":\"_lktp\",\"value\":\"001\"},{\"field\":\"owned-id-6\",\"suffix\":\"_lspf\",\"value\":\"0\"},{\"field\":\"owned-id-6\",\"suffix\":\"_lspfsub\",\"value\":\"0\"},{\"field\":\"owned-id-6\",\"suffix\":\"_mod\",\"value\":\"0\"}],\"labels\":[],\"links\":[{\"href\":\"javascript:%20openLookup%28%27%2F_ui%2Fcommon%2Fdata%2FLookupPage%3Flkfm%3Dj_id0%253AownedForm%26lknm%3Dj_id0%253AownedForm%253AownedField%26lktp%3D%27%20%2B%20getElementByIdCS%28%27j_id0%3AownedForm%3AownedField_lktp%27%29.value%2C670%2C%271%27%2C%27%26lksrch%3D%27%20%2B%20escapeUTF%28getElementByIdCS%28%27j_id0%3AownedForm%3AownedField%27%29.value.substring%280%2C%2080%29%29%29\",\"text\":\"\"}],\"tags\":[\"span\",\"a\",\"img\"],\"text\":\"\"}",
+        "67.0": "DOM|{\"controls\":[{\"class\":\"\",\"disabled\":false,\"id\":\"owned-id-6\",\"required\":false,\"style\":\"\",\"tabindex\":null,\"tag\":\"input\",\"type\":\"text\",\"value\":\"OWNED_ACCOUNT_NAME\"}],\"hidden\":[{\"field\":\"owned-id-6\",\"suffix\":\"_lkid\",\"value\":\"OWNED_ACCOUNT_ID\"},{\"field\":\"owned-id-6\",\"suffix\":\"_lkold\",\"value\":\"OWNED_ACCOUNT_NAME\"},{\"field\":\"owned-id-6\",\"suffix\":\"_lktp\",\"value\":\"001\"},{\"field\":\"owned-id-6\",\"suffix\":\"_lspf\",\"value\":\"0\"},{\"field\":\"owned-id-6\",\"suffix\":\"_lspfsub\",\"value\":\"0\"},{\"field\":\"owned-id-6\",\"suffix\":\"_mod\",\"value\":\"0\"}],\"labels\":[],\"links\":[{\"href\":\"javascript:%20openLookup%28%27%2F_ui%2Fcommon%2Fdata%2FLookupPage%3Flkfm%3Dj_id0%253AownedForm%26lknm%3Dj_id0%253AownedForm%253AownedField%26lktp%3D%27%20%2B%20getElementByIdCS%28%27j_id0%3AownedForm%3AownedField_lktp%27%29.value%2C670%2C%271%27%2C%27%26lksrch%3D%27%20%2B%20escapeUTF%28getElementByIdCS%28%27j_id0%3AownedForm%3AownedField%27%29.value.substring%280%2C%2080%29%29%29\",\"text\":\"\"}],\"tags\":[\"span\",\"a\",\"img\"],\"text\":\"\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": true,
+          "lookupCreate": true,
+          "lookupRead": true,
+          "textUpdate": true,
+          "textCreate": true,
+          "textRead": true,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": true,
+          "lookupCreate": true,
+          "lookupRead": true,
+          "textUpdate": true,
+          "textCreate": true,
+          "textRead": true,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "supplied_lookup_output_compile",
+      "kind": "compile",
+      "phase": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59LookupOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59LookupOutput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59LookupOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59LookupOutput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67LookupOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67LookupOutput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67LookupOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67LookupOutput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "access": {
+        "59.0": {},
+        "67.0": {}
+      }
+    },
+    {
+      "id": "supplied_lookup_output_object_denied_runtime",
+      "kind": "runtime",
+      "phase": "object_denied",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59LookupOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59LookupOutput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59LookupOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59LookupOutput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67LookupOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67LookupOutput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67LookupOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67LookupOutput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": false,
+          "objectCreate": false,
+          "objectRead": false,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": false,
+          "objectCreate": false,
+          "objectRead": false,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "supplied_lookup_output_fields_denied_runtime",
+      "kind": "runtime",
+      "phase": "fields_denied",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59LookupOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59LookupOutput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59LookupOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59LookupOutput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67LookupOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67LookupOutput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67LookupOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67LookupOutput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "supplied_lookup_output_granted_runtime",
+      "kind": "runtime",
+      "phase": "granted",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59LookupOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59LookupOutput.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59LookupOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59LookupOutput</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67LookupOutput",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67LookupOutput.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!filled.Lookup__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67LookupOutput.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67LookupOutput</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[{\"href\":\"/OWNED_ACCOUNT_ID\",\"text\":\"OWNED_ACCOUNT_NAME\"}],\"tags\":[\"span\",\"a\"],\"text\":\"OWNED_ACCOUNT_NAME\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[{\"href\":\"/OWNED_ACCOUNT_ID\",\"text\":\"OWNED_ACCOUNT_NAME\"}],\"tags\":[\"span\",\"a\"],\"text\":\"OWNED_ACCOUNT_NAME\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": true,
+          "lookupCreate": true,
+          "lookupRead": true,
+          "textUpdate": true,
+          "textCreate": true,
+          "textRead": true,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": true,
+          "lookupCreate": true,
+          "lookupRead": true,
+          "textUpdate": true,
+          "textCreate": true,
+          "textRead": true,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "catalog_getter_collision_compile",
+      "kind": "compile",
+      "phase": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59Collision",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59Collision.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!Account.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59Collision.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59Collision</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67Collision",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67Collision.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!Account.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67Collision.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67Collision</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "access": {
+        "59.0": {},
+        "67.0": {}
+      }
+    },
+    {
+      "id": "catalog_getter_collision_object_denied_runtime",
+      "kind": "runtime",
+      "phase": "object_denied",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59Collision",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59Collision.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!Account.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59Collision.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59Collision</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67Collision",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67Collision.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!Account.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67Collision.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67Collision</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": false,
+          "objectCreate": false,
+          "objectRead": false,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": false,
+          "objectCreate": false,
+          "objectRead": false,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "catalog_getter_collision_fields_denied_runtime",
+      "kind": "runtime",
+      "phase": "fields_denied",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59Collision",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59Collision.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!Account.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59Collision.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59Collision</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67Collision",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67Collision.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!Account.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67Collision.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67Collision</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[],\"text\":\"\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": false,
+          "lookupCreate": false,
+          "lookupRead": false,
+          "textUpdate": false,
+          "textCreate": false,
+          "textRead": false,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    },
+    {
+      "id": "catalog_getter_collision_granted_runtime",
+      "kind": "runtime",
+      "phase": "granted",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV09Denied59Collision",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied59Collision.page": "<apex:page controller=\"FamilyV09Denied59Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!Account.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied59Collision.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV09Denied59Collision</label></ApexPage>\n"
+          }
+        },
+        "67.0": {
+          "name": "FamilyV09Denied67Collision",
+          "files": {
+            "force-app/main/default/pages/FamilyV09Denied67Collision.page": "<apex:page controller=\"FamilyV09Denied67Ctl\" showHeader=\"false\" sidebar=\"false\" docType=\"html-5.0\"><apex:form id=\"ownedForm\"><div data-v09-denied-row=\"true\"><apex:outputField id=\"ownedField\" value=\"{!Account.Text__c}\"/></div></apex:form></apex:page>\n",
+            "force-app/main/default/pages/FamilyV09Denied67Collision.page-meta.xml": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV09Denied67Collision</label></ApexPage>\n"
+          }
+        }
+      },
+      "expected": {
+        "59.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[\"span\"],\"text\":\"V09 supplied & <scalar>\"}",
+        "67.0": "DOM|{\"controls\":[],\"hidden\":[],\"labels\":[],\"links\":[],\"tags\":[\"span\"],\"text\":\"V09 supplied & <scalar>\"}"
+      },
+      "access": {
+        "59.0": {
+          "lookupUpdate": true,
+          "lookupCreate": true,
+          "lookupRead": true,
+          "textUpdate": true,
+          "textCreate": true,
+          "textRead": true,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        },
+        "67.0": {
+          "lookupUpdate": true,
+          "lookupCreate": true,
+          "lookupRead": true,
+          "textUpdate": true,
+          "textCreate": true,
+          "textRead": true,
+          "objectUpdate": true,
+          "objectCreate": true,
+          "objectRead": true,
+          "accountRead": true,
+          "orgMatches": true,
+          "actorMatches": true
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	accountNameQuery	{"label":"Account Name","name":"Name","count":1}
+62.0	caseNameQuery	{"label":"Case Number","name":"CaseNumber","count":1}
+62.0	describeNameControl	{"caseSubject":false,"caseNumber":true,"accountIndustry":false,"accountName":true}
+67.0	accountNameQuery	{"label":"Account Name","name":"Name","count":1}
+67.0	caseNameQuery	{"label":"Case Number","name":"CaseNumber","count":1}
+67.0	describeNameControl	{"caseSubject":false,"caseNumber":true,"accountIndustry":false,"accountName":true}

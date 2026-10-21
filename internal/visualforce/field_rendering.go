@@ -25,31 +25,31 @@ const (
 )
 
 type FieldBinding struct {
-	ObjectName string
-	FieldName  string
-	Field      storage.Field
-	Value      storage.Value
-	Kind       FieldRenderKind
-	Record     storage.Record
-	HasRecord  bool
-	Authorized bool
+	ObjectName       string
+	FieldName        string
+	Field            storage.Field
+	Value            storage.Value
+	Kind             FieldRenderKind
+	Record           storage.Record
+	HasRecord        bool
+	Authorized       bool
+	ControllerRecord bool
 }
 
-func renderFieldOutput(ctx *RenderContext, raw string) (string, bool) {
-	binding, ok := resolveFieldBinding(ctx, raw)
-	if !ok {
-		return "", false
+func renderFieldOutput(ctx *RenderContext, binding FieldBinding) string {
+	if binding.ControllerRecord {
+		return renderControllerFieldOutput(ctx, binding)
 	}
 	value, ownerTargetID := fieldOutputText(ctx, binding)
 	text := html.EscapeString(value)
 	href := fieldOutputHref(binding)
 	if ownerTargetID != "" {
-		href = "/record/User/" + url.PathEscape(string(ownerTargetID))
+		href = "/" + url.PathEscape(string(ownerTargetID))
 	}
 	if href != "" {
-		return `<a href="` + html.EscapeString(href) + `">` + text + `</a>`, true
+		return `<a href="` + html.EscapeString(href) + `">` + text + `</a>`
 	}
-	return text, true
+	return text
 }
 
 func fieldOutputHref(binding FieldBinding) string {
@@ -69,6 +69,9 @@ func renderFieldInput(ctx *RenderContext, raw string, id string, required bool) 
 	binding, ok := resolveFieldBinding(ctx, raw)
 	if !ok {
 		return "", false
+	}
+	if binding.ControllerRecord {
+		return renderControllerFieldInput(ctx, binding, id, required), true
 	}
 	name := fieldInputName(binding, "")
 	idAttr := fieldInputIDAttr(id)
@@ -283,8 +286,12 @@ func resolveFieldBinding(ctx *RenderContext, raw string) (FieldBinding, bool) {
 		return FieldBinding{}, false
 	}
 	objectKey, ok := storage.ResolveObjectName(*ctx.VM.Org, objectName)
-	if !ok {
-		return FieldBinding{}, false
+	controllerObject, standardRoot := storage.ResolveObjectName(*ctx.VM.Org, ctx.PageMeta.StandardController)
+	// Only the declared StandardController root uses the bounded projection.
+	// A custom getter may have a catalog object name while returning a different
+	// SObject; resolve its actual value and metadata instead of guessing its type.
+	if !ok || !standardRoot || !strings.EqualFold(controllerObject, objectKey) {
+		return resolveControllerFieldBinding(ctx, parts)
 	}
 	object := ctx.VM.Org.Objects[objectKey]
 	resolvedField := "Id"
@@ -299,6 +306,16 @@ func resolveFieldBinding(ctx *RenderContext, raw string) (FieldBinding, bool) {
 	}
 	binding := FieldBinding{ObjectName: objectKey, FieldName: resolvedField, Field: field, Kind: fieldRenderKind(field)}
 	if len(parts) != 2 {
+		controllerObject, matchesController := storage.ResolveObjectName(*ctx.VM.Org, ctx.PageMeta.StandardController)
+		if ctx.Expression != nil && matchesController && strings.EqualFold(controllerObject, objectKey) && strings.TrimSpace(ctx.PageMeta.RecordSetVar) == "" {
+			if reference, ok := standardControllerNameReference(object.Definition, strings.Join(parts[1:], ".")); ok {
+				path := reference.RelationshipName + ".Name"
+				if value, authorized := ctx.Expression.AuthorizedStandardFields[strings.ToLower(path)]; authorized {
+					binding.FieldName, binding.Value, binding.Kind = path, value, FieldText
+					binding.Authorized = true
+				}
+			}
+		}
 		return binding, true
 	}
 	if !strings.EqualFold(resolvedField, "Name") && !strings.EqualFold(resolvedField, "Id") {
@@ -443,7 +460,7 @@ func pageParameterString(page vm.Value, name string) (string, bool) {
 
 func fieldRenderKind(field storage.Field) FieldRenderKind {
 	switch strings.ToUpper(strings.TrimSpace(field.DisplayType)) {
-	case "TEXTAREA", "LONGTEXTAREA", "HTML":
+	case "TEXTAREA", "LONGTEXTAREA", "HTML", "RICHTEXTAREA":
 		return FieldTextarea
 	case "EMAIL":
 		return FieldEmail
@@ -476,6 +493,11 @@ func fieldRenderKind(field storage.Field) FieldRenderKind {
 	default:
 		return FieldText
 	}
+}
+
+func fieldIsRichText(field storage.Field) bool {
+	return strings.EqualFold(strings.TrimSpace(field.DisplayType), "HTML") ||
+		strings.EqualFold(strings.TrimSpace(field.DisplayType), "RICHTEXTAREA")
 }
 
 func fieldOutputText(ctx *RenderContext, binding FieldBinding) (string, storage.ID) {

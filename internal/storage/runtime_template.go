@@ -14,6 +14,7 @@ func NewRuntimeTemplate(org OrgState) RuntimeTemplate {
 func (t RuntimeTemplate) CloneRuntimeOrg() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := t.Org
+	out.Features = append([]string(nil), t.Org.Features...)
 	out.RuntimeSchemaStamp = t.RuntimeSchemaStamp
 	if t.Org.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(t.Org.Objects))

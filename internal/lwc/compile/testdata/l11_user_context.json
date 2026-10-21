@@ -12,5 +12,15 @@
       "LocaleSidKey": "en_US",
       "TimeZoneSidKey": "America/Los_Angeles"
     }
+  },
+  "68.0": {
+    "settings": {
+      "LanguageLocaleKey": "en_US",
+      "LocaleSidKey": "en_US",
+      "TimeZoneSidKey": "America/Los_Angeles"
+    },
+    "oracle": "native-capture",
+    "receipt": "native-capture",
+    "tools_sha": "capture-revision-109584815442556652111396637330596009674470668075991554283247540809399312543713"
   }
 }

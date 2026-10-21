@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	futurePath	{"after":false,"before":false}
+62.0	immediateAndFuturePath	{"afterImmediate":true,"afterScheduled":false,"beforeImmediate":true,"beforeScheduled":false}
+67.0	futurePath	{"after":false,"before":false}
+67.0	immediateAndFuturePath	{"afterImmediate":true,"afterScheduled":false,"beforeImmediate":true,"beforeScheduled":false}

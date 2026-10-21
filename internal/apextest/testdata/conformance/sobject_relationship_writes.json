@@ -1,0 +1,1775 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "shapeCount": 18,
+  "nativeObservationCount": 108,
+  "metadata": {
+    "objects/PutChild__c/PutChild__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Put Child</label><pluralLabel>Put Childs</pluralLabel><nameField><label>Put Child Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+    "objects/PutChild__c/fields/ParentLink__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>ParentLink__c</fullName><label>Parent Link</label><referenceTo>PutParent__c</referenceTo><relationshipLabel>Children</relationshipLabel><relationshipName>PutChildren</relationshipName><type>Lookup</type><deleteConstraint>SetNull</deleteConstraint></CustomField>\n",
+    "objects/PutConfig__mdt/PutConfig__mdt.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Put Config</label><pluralLabel>Put Configs</pluralLabel><visibility>Public</visibility></CustomObject>\n",
+    "objects/PutConfig__mdt/fields/Entity__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Entity__c</fullName><label>Entity</label><referenceTo>EntityDefinition</referenceTo><relationshipLabel>Put Configs</relationshipLabel><relationshipName>PutConfigs</relationshipName><type>MetadataRelationship</type></CustomField>\n",
+    "objects/PutConfig__mdt/fields/ParentConfig__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>ParentConfig__c</fullName><label>Parent Config</label><referenceTo>PutParentConfig__mdt</referenceTo><relationshipLabel>Child Configs</relationshipLabel><relationshipName>PutChildConfigs</relationshipName><type>MetadataRelationship</type></CustomField>\n",
+    "objects/PutConfig__mdt/fields/TextValue__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>TextValue__c</fullName><label>Text Value</label><length>80</length><type>Text</type></CustomField>\n",
+    "objects/PutParentConfig__mdt/PutParentConfig__mdt.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Put Parent Config</label><pluralLabel>Put Parent Configs</pluralLabel><visibility>Public</visibility></CustomObject>\n",
+    "objects/PutParentConfig__mdt/fields/TextValue__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>TextValue__c</fullName><label>Text Value</label><length>80</length><type>Text</type></CustomField>\n",
+    "objects/PutParent__c/PutParent__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Put Parent</label><pluralLabel>Put Parents</pluralLabel><nameField><label>Put Parent Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n"
+  },
+  "metadataSHA256": {
+    "objects/PutChild__c/PutChild__c.object-meta.xml": "93ec0b50e3e2e2ac19bdd6ab606cee1edb5bca10676c66d8fd975ccf91d99025",
+    "objects/PutChild__c/fields/ParentLink__c.field-meta.xml": "64d0166e03b033a7a5a1cab1ac8a0dcc36c219838f6c23ffa5eac6823befbc89",
+    "objects/PutConfig__mdt/PutConfig__mdt.object-meta.xml": "4a80217529825fb2d00e038089afeaf0aef48e4d231c2af8de5a68bb4b76bfd0",
+    "objects/PutConfig__mdt/fields/Entity__c.field-meta.xml": "e7a53a8decd9806866b3ece74dd9b6a2bf415c1ae12bfb14e0bf3b31f772441a",
+    "objects/PutConfig__mdt/fields/ParentConfig__c.field-meta.xml": "c2721b37104a4ca4421f90cb9a5275b911639f024f966b04d67f3fd46caf36fa",
+    "objects/PutConfig__mdt/fields/TextValue__c.field-meta.xml": "aea8202bae183e944e49a06194a69bd7dd4558aa6a9fcf6f3273ccbce964f1d5",
+    "objects/PutParentConfig__mdt/PutParentConfig__mdt.object-meta.xml": "a29e58864a8bf4519fa9b0fc207af9ea3784309fe6a0ee8a0761458314c3196a",
+    "objects/PutParentConfig__mdt/fields/TextValue__c.field-meta.xml": "aea8202bae183e944e49a06194a69bd7dd4558aa6a9fcf6f3273ccbce964f1d5",
+    "objects/PutParent__c/PutParent__c.object-meta.xml": "0db1b7a96541a503bbf07819b69ec8dba1fadb697bae2087b98d89bc60f953e8"
+  },
+  "fixtures": {
+    "62.0": {
+      "files": {
+        "classes/RelationshipWriteProbe62.cls": "public class RelationshipWriteProbe62 {\n    private static String view(SObject value) {\n        if (value == null) return null;\n        String kind = String.valueOf(value.getSObjectType());\n        String key = 'Name';\n        if (kind == 'User' || kind == 'Contact' || kind == 'Lead') key = 'LastName';\n        if (kind == 'EntityDefinition') key = 'QualifiedApiName';\n        if (kind == 'PutParentConfig__mdt') key = 'TextValue__c';\n        return kind + '|' + String.valueOf(value.get(key));\n    }\n    public static Map<String,Object> observe(String row) {\n        Map<String,Object> out = new Map<String,Object>{'row'=>row};\n        SObject record;\n        SObject before;\n        SObject attempted;\n        String relationshipName;\n        Schema.SObjectField fieldToken;\n        Boolean token = false;\n        Boolean metadata = row.startsWith('M');\n        String phase = 'setup';\n        try {\n            if (row == 'S01' || row == 'S02' || row == 'S03' || row == 'S04' || row == 'S10') {\n                record = new Contact(); before = new Account(Name='before');\n                relationshipName = 'Account'; fieldToken = Contact.AccountId;\n                token = row == 'S03' || row == 'S04';\n                if (row == 'S01' || row == 'S03') attempted = new User(LastName='after');\n                else if (row != 'S10') attempted = new Account(Name='after');\n            } else if (row == 'S05' || row == 'S06') {\n                record = new PutChild__c(); before = new PutParent__c(Name='before');\n                relationshipName = 'ParentLink__r';\n                if (row == 'S05') attempted = new User(LastName='after');\n                else attempted = new PutParent__c(Name='after');\n            } else if (row == 'S07' || row == 'S08' || row == 'S09') {\n                record = new Task(); before = new Contact(LastName='before'); relationshipName = 'Who';\n                if (row == 'S07') attempted = new Contact(LastName='after');\n                else if (row == 'S08') attempted = new Lead(LastName='after');\n                else attempted = new Account(Name='after');\n            } else {\n                record = new PutConfig__mdt(TextValue__c='guard');\n                relationshipName = 'Entity__r'; fieldToken = PutConfig__mdt.Entity__c;\n                token = row == 'M02';\n                if (row == 'M01' || row == 'M02') attempted = [SELECT QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName='Account' LIMIT 1];\n                if (row == 'M04') attempted = new User(LastName='after');\n                if (row == 'M07' || row == 'M08') {\n                    relationshipName = 'ParentConfig__r';\n                    if (row == 'M07') attempted = new PutParentConfig__mdt(TextValue__c='after');\n                }\n            }\n            if (before != null) record.putSObject(relationshipName, before);\n            phase = 'write';\n            SObject previous;\n            Object scalarPrevious;\n            String exceptionType;\n            String message;\n            try {\n                if (row == 'M03') scalarPrevious = record.put('Entity__c', 'Account');\n                else if (row == 'M05') scalarPrevious = record.put('TextValue__c', 'after');\n                else if (token) previous = record.putSObject(fieldToken, attempted);\n                else previous = record.putSObject(relationshipName, attempted);\n            } catch (Exception e) { exceptionType = e.getTypeName(); message = e.getMessage(); }\n            out.put('exceptionType', exceptionType); out.put('message', message);\n            if (row == 'M03' || row == 'M05') {\n                out.put('previous', scalarPrevious == null ? null : String.valueOf(scalarPrevious));\n                Object scalarAfter = record.get(row == 'M03' ? 'Entity__c' : 'TextValue__c');\n                out.put('after', scalarAfter == null ? null : String.valueOf(scalarAfter));\n            } else {\n                out.put('previous', view(previous));\n                out.put('after', view(record.getSObject(relationshipName)));\n            }\n            if (metadata) out.put('guard', record.get('TextValue__c'));\n        } catch (Exception e) { out.put('outerExceptionType', e.getTypeName()); out.put('outerMessage', e.getMessage()); }\n        out.put('phase', phase);\n        return out;\n    }\n}\n",
+        "classes/RelationshipWriteProbe62.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "classes/RelationshipWriteSpec62.cls": "@IsTest private class RelationshipWriteSpec62 {@IsTest static void rowS01(){ System.assert(false, 'SOP|S01|'+JSON.serialize(RelationshipWriteProbe62.observe('S01'))); }\n@IsTest static void rowS02(){ System.assert(false, 'SOP|S02|'+JSON.serialize(RelationshipWriteProbe62.observe('S02'))); }\n@IsTest static void rowS03(){ System.assert(false, 'SOP|S03|'+JSON.serialize(RelationshipWriteProbe62.observe('S03'))); }\n@IsTest static void rowS04(){ System.assert(false, 'SOP|S04|'+JSON.serialize(RelationshipWriteProbe62.observe('S04'))); }\n@IsTest static void rowS05(){ System.assert(false, 'SOP|S05|'+JSON.serialize(RelationshipWriteProbe62.observe('S05'))); }\n@IsTest static void rowS06(){ System.assert(false, 'SOP|S06|'+JSON.serialize(RelationshipWriteProbe62.observe('S06'))); }\n@IsTest static void rowS07(){ System.assert(false, 'SOP|S07|'+JSON.serialize(RelationshipWriteProbe62.observe('S07'))); }\n@IsTest static void rowS08(){ System.assert(false, 'SOP|S08|'+JSON.serialize(RelationshipWriteProbe62.observe('S08'))); }\n@IsTest static void rowS09(){ System.assert(false, 'SOP|S09|'+JSON.serialize(RelationshipWriteProbe62.observe('S09'))); }\n@IsTest static void rowS10(){ System.assert(false, 'SOP|S10|'+JSON.serialize(RelationshipWriteProbe62.observe('S10'))); }\n@IsTest static void rowM01(){ System.assert(false, 'SOP|M01|'+JSON.serialize(RelationshipWriteProbe62.observe('M01'))); }\n@IsTest static void rowM02(){ System.assert(false, 'SOP|M02|'+JSON.serialize(RelationshipWriteProbe62.observe('M02'))); }\n@IsTest static void rowM03(){ System.assert(false, 'SOP|M03|'+JSON.serialize(RelationshipWriteProbe62.observe('M03'))); }\n@IsTest static void rowM04(){ System.assert(false, 'SOP|M04|'+JSON.serialize(RelationshipWriteProbe62.observe('M04'))); }\n@IsTest static void rowM05(){ System.assert(false, 'SOP|M05|'+JSON.serialize(RelationshipWriteProbe62.observe('M05'))); }\n@IsTest static void rowM06(){ System.assert(false, 'SOP|M06|'+JSON.serialize(RelationshipWriteProbe62.observe('M06'))); }\n@IsTest static void rowM07(){ System.assert(false, 'SOP|M07|'+JSON.serialize(RelationshipWriteProbe62.observe('M07'))); }\n@IsTest static void rowM08(){ System.assert(false, 'SOP|M08|'+JSON.serialize(RelationshipWriteProbe62.observe('M08'))); }}\n",
+        "classes/RelationshipWriteSpec62.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "anonymous.apex": "System.debug(LoggingLevel.ERROR,'SOP|S01|'+JSON.serialize(RelationshipWriteProbe62.observe('S01')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S02|'+JSON.serialize(RelationshipWriteProbe62.observe('S02')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S03|'+JSON.serialize(RelationshipWriteProbe62.observe('S03')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S04|'+JSON.serialize(RelationshipWriteProbe62.observe('S04')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S05|'+JSON.serialize(RelationshipWriteProbe62.observe('S05')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S06|'+JSON.serialize(RelationshipWriteProbe62.observe('S06')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S07|'+JSON.serialize(RelationshipWriteProbe62.observe('S07')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S08|'+JSON.serialize(RelationshipWriteProbe62.observe('S08')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S09|'+JSON.serialize(RelationshipWriteProbe62.observe('S09')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S10|'+JSON.serialize(RelationshipWriteProbe62.observe('S10')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M01|'+JSON.serialize(RelationshipWriteProbe62.observe('M01')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M02|'+JSON.serialize(RelationshipWriteProbe62.observe('M02')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M03|'+JSON.serialize(RelationshipWriteProbe62.observe('M03')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M04|'+JSON.serialize(RelationshipWriteProbe62.observe('M04')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M05|'+JSON.serialize(RelationshipWriteProbe62.observe('M05')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M06|'+JSON.serialize(RelationshipWriteProbe62.observe('M06')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M07|'+JSON.serialize(RelationshipWriteProbe62.observe('M07')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M08|'+JSON.serialize(RelationshipWriteProbe62.observe('M08')));\n"
+      },
+      "sourceSHA256": {
+        "classes/RelationshipWriteProbe62.cls": "befb11704aa9b88d691dfb782ee493ad26362e708a4d19bea645990e085142ef",
+        "classes/RelationshipWriteProbe62.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classes/RelationshipWriteSpec62.cls": "6af2bbd5c48c43a90e5c9e40d465fbcaf4919211f5c56e4487bdf1a380f89b68",
+        "classes/RelationshipWriteSpec62.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "anonymous.apex": "9442fcf4a6789bd65601b07c7bb877e457ec8c74a08c6544838561492164cb62"
+      }
+    },
+    "67.0": {
+      "files": {
+        "classes/RelationshipWriteProbe67.cls": "public class RelationshipWriteProbe67 {\n    private static String view(SObject value) {\n        if (value == null) return null;\n        String kind = String.valueOf(value.getSObjectType());\n        String key = 'Name';\n        if (kind == 'User' || kind == 'Contact' || kind == 'Lead') key = 'LastName';\n        if (kind == 'EntityDefinition') key = 'QualifiedApiName';\n        if (kind == 'PutParentConfig__mdt') key = 'TextValue__c';\n        return kind + '|' + String.valueOf(value.get(key));\n    }\n    public static Map<String,Object> observe(String row) {\n        Map<String,Object> out = new Map<String,Object>{'row'=>row};\n        SObject record;\n        SObject before;\n        SObject attempted;\n        String relationshipName;\n        Schema.SObjectField fieldToken;\n        Boolean token = false;\n        Boolean metadata = row.startsWith('M');\n        String phase = 'setup';\n        try {\n            if (row == 'S01' || row == 'S02' || row == 'S03' || row == 'S04' || row == 'S10') {\n                record = new Contact(); before = new Account(Name='before');\n                relationshipName = 'Account'; fieldToken = Contact.AccountId;\n                token = row == 'S03' || row == 'S04';\n                if (row == 'S01' || row == 'S03') attempted = new User(LastName='after');\n                else if (row != 'S10') attempted = new Account(Name='after');\n            } else if (row == 'S05' || row == 'S06') {\n                record = new PutChild__c(); before = new PutParent__c(Name='before');\n                relationshipName = 'ParentLink__r';\n                if (row == 'S05') attempted = new User(LastName='after');\n                else attempted = new PutParent__c(Name='after');\n            } else if (row == 'S07' || row == 'S08' || row == 'S09') {\n                record = new Task(); before = new Contact(LastName='before'); relationshipName = 'Who';\n                if (row == 'S07') attempted = new Contact(LastName='after');\n                else if (row == 'S08') attempted = new Lead(LastName='after');\n                else attempted = new Account(Name='after');\n            } else {\n                record = new PutConfig__mdt(TextValue__c='guard');\n                relationshipName = 'Entity__r'; fieldToken = PutConfig__mdt.Entity__c;\n                token = row == 'M02';\n                if (row == 'M01' || row == 'M02') attempted = [SELECT QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName='Account' LIMIT 1];\n                if (row == 'M04') attempted = new User(LastName='after');\n                if (row == 'M07' || row == 'M08') {\n                    relationshipName = 'ParentConfig__r';\n                    if (row == 'M07') attempted = new PutParentConfig__mdt(TextValue__c='after');\n                }\n            }\n            if (before != null) record.putSObject(relationshipName, before);\n            phase = 'write';\n            SObject previous;\n            Object scalarPrevious;\n            String exceptionType;\n            String message;\n            try {\n                if (row == 'M03') scalarPrevious = record.put('Entity__c', 'Account');\n                else if (row == 'M05') scalarPrevious = record.put('TextValue__c', 'after');\n                else if (token) previous = record.putSObject(fieldToken, attempted);\n                else previous = record.putSObject(relationshipName, attempted);\n            } catch (Exception e) { exceptionType = e.getTypeName(); message = e.getMessage(); }\n            out.put('exceptionType', exceptionType); out.put('message', message);\n            if (row == 'M03' || row == 'M05') {\n                out.put('previous', scalarPrevious == null ? null : String.valueOf(scalarPrevious));\n                Object scalarAfter = record.get(row == 'M03' ? 'Entity__c' : 'TextValue__c');\n                out.put('after', scalarAfter == null ? null : String.valueOf(scalarAfter));\n            } else {\n                out.put('previous', view(previous));\n                out.put('after', view(record.getSObject(relationshipName)));\n            }\n            if (metadata) out.put('guard', record.get('TextValue__c'));\n        } catch (Exception e) { out.put('outerExceptionType', e.getTypeName()); out.put('outerMessage', e.getMessage()); }\n        out.put('phase', phase);\n        return out;\n    }\n}\n",
+        "classes/RelationshipWriteProbe67.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "classes/RelationshipWriteSpec67.cls": "@IsTest private class RelationshipWriteSpec67 {@IsTest static void rowS01(){ System.assert(false, 'SOP|S01|'+JSON.serialize(RelationshipWriteProbe67.observe('S01'))); }\n@IsTest static void rowS02(){ System.assert(false, 'SOP|S02|'+JSON.serialize(RelationshipWriteProbe67.observe('S02'))); }\n@IsTest static void rowS03(){ System.assert(false, 'SOP|S03|'+JSON.serialize(RelationshipWriteProbe67.observe('S03'))); }\n@IsTest static void rowS04(){ System.assert(false, 'SOP|S04|'+JSON.serialize(RelationshipWriteProbe67.observe('S04'))); }\n@IsTest static void rowS05(){ System.assert(false, 'SOP|S05|'+JSON.serialize(RelationshipWriteProbe67.observe('S05'))); }\n@IsTest static void rowS06(){ System.assert(false, 'SOP|S06|'+JSON.serialize(RelationshipWriteProbe67.observe('S06'))); }\n@IsTest static void rowS07(){ System.assert(false, 'SOP|S07|'+JSON.serialize(RelationshipWriteProbe67.observe('S07'))); }\n@IsTest static void rowS08(){ System.assert(false, 'SOP|S08|'+JSON.serialize(RelationshipWriteProbe67.observe('S08'))); }\n@IsTest static void rowS09(){ System.assert(false, 'SOP|S09|'+JSON.serialize(RelationshipWriteProbe67.observe('S09'))); }\n@IsTest static void rowS10(){ System.assert(false, 'SOP|S10|'+JSON.serialize(RelationshipWriteProbe67.observe('S10'))); }\n@IsTest static void rowM01(){ System.assert(false, 'SOP|M01|'+JSON.serialize(RelationshipWriteProbe67.observe('M01'))); }\n@IsTest static void rowM02(){ System.assert(false, 'SOP|M02|'+JSON.serialize(RelationshipWriteProbe67.observe('M02'))); }\n@IsTest static void rowM03(){ System.assert(false, 'SOP|M03|'+JSON.serialize(RelationshipWriteProbe67.observe('M03'))); }\n@IsTest static void rowM04(){ System.assert(false, 'SOP|M04|'+JSON.serialize(RelationshipWriteProbe67.observe('M04'))); }\n@IsTest static void rowM05(){ System.assert(false, 'SOP|M05|'+JSON.serialize(RelationshipWriteProbe67.observe('M05'))); }\n@IsTest static void rowM06(){ System.assert(false, 'SOP|M06|'+JSON.serialize(RelationshipWriteProbe67.observe('M06'))); }\n@IsTest static void rowM07(){ System.assert(false, 'SOP|M07|'+JSON.serialize(RelationshipWriteProbe67.observe('M07'))); }\n@IsTest static void rowM08(){ System.assert(false, 'SOP|M08|'+JSON.serialize(RelationshipWriteProbe67.observe('M08'))); }}\n",
+        "classes/RelationshipWriteSpec67.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "anonymous.apex": "System.debug(LoggingLevel.ERROR,'SOP|S01|'+JSON.serialize(RelationshipWriteProbe67.observe('S01')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S02|'+JSON.serialize(RelationshipWriteProbe67.observe('S02')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S03|'+JSON.serialize(RelationshipWriteProbe67.observe('S03')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S04|'+JSON.serialize(RelationshipWriteProbe67.observe('S04')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S05|'+JSON.serialize(RelationshipWriteProbe67.observe('S05')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S06|'+JSON.serialize(RelationshipWriteProbe67.observe('S06')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S07|'+JSON.serialize(RelationshipWriteProbe67.observe('S07')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S08|'+JSON.serialize(RelationshipWriteProbe67.observe('S08')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S09|'+JSON.serialize(RelationshipWriteProbe67.observe('S09')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S10|'+JSON.serialize(RelationshipWriteProbe67.observe('S10')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M01|'+JSON.serialize(RelationshipWriteProbe67.observe('M01')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M02|'+JSON.serialize(RelationshipWriteProbe67.observe('M02')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M03|'+JSON.serialize(RelationshipWriteProbe67.observe('M03')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M04|'+JSON.serialize(RelationshipWriteProbe67.observe('M04')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M05|'+JSON.serialize(RelationshipWriteProbe67.observe('M05')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M06|'+JSON.serialize(RelationshipWriteProbe67.observe('M06')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M07|'+JSON.serialize(RelationshipWriteProbe67.observe('M07')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M08|'+JSON.serialize(RelationshipWriteProbe67.observe('M08')));\n"
+      },
+      "sourceSHA256": {
+        "classes/RelationshipWriteProbe67.cls": "5fecce606dfcc4b72f6c2de7d58ac473b8a1620ad5831edbbd800d94f45d39bb",
+        "classes/RelationshipWriteProbe67.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classes/RelationshipWriteSpec67.cls": "1b3142f17f05b08969794305fa93150005c36e57bae4a696ce0b7f2806f104db",
+        "classes/RelationshipWriteSpec67.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "anonymous.apex": "5e920e2bdb9bf4c7188f4937a3565e6e985d847e9e0af265aaa7614095095650"
+      }
+    },
+    "68.0": {
+      "files": {
+        "classes/RelationshipWriteProbe68.cls": "public class RelationshipWriteProbe68 {\n    private static String view(SObject value) {\n        if (value == null) return null;\n        String kind = String.valueOf(value.getSObjectType());\n        String key = 'Name';\n        if (kind == 'User' || kind == 'Contact' || kind == 'Lead') key = 'LastName';\n        if (kind == 'EntityDefinition') key = 'QualifiedApiName';\n        if (kind == 'PutParentConfig__mdt') key = 'TextValue__c';\n        return kind + '|' + String.valueOf(value.get(key));\n    }\n    public static Map<String,Object> observe(String row) {\n        Map<String,Object> out = new Map<String,Object>{'row'=>row};\n        SObject record;\n        SObject before;\n        SObject attempted;\n        String relationshipName;\n        Schema.SObjectField fieldToken;\n        Boolean token = false;\n        Boolean metadata = row.startsWith('M');\n        String phase = 'setup';\n        try {\n            if (row == 'S01' || row == 'S02' || row == 'S03' || row == 'S04' || row == 'S10') {\n                record = new Contact(); before = new Account(Name='before');\n                relationshipName = 'Account'; fieldToken = Contact.AccountId;\n                token = row == 'S03' || row == 'S04';\n                if (row == 'S01' || row == 'S03') attempted = new User(LastName='after');\n                else if (row != 'S10') attempted = new Account(Name='after');\n            } else if (row == 'S05' || row == 'S06') {\n                record = new PutChild__c(); before = new PutParent__c(Name='before');\n                relationshipName = 'ParentLink__r';\n                if (row == 'S05') attempted = new User(LastName='after');\n                else attempted = new PutParent__c(Name='after');\n            } else if (row == 'S07' || row == 'S08' || row == 'S09') {\n                record = new Task(); before = new Contact(LastName='before'); relationshipName = 'Who';\n                if (row == 'S07') attempted = new Contact(LastName='after');\n                else if (row == 'S08') attempted = new Lead(LastName='after');\n                else attempted = new Account(Name='after');\n            } else {\n                record = new PutConfig__mdt(TextValue__c='guard');\n                relationshipName = 'Entity__r'; fieldToken = PutConfig__mdt.Entity__c;\n                token = row == 'M02';\n                if (row == 'M01' || row == 'M02') attempted = [SELECT QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName='Account' LIMIT 1];\n                if (row == 'M04') attempted = new User(LastName='after');\n                if (row == 'M07' || row == 'M08') {\n                    relationshipName = 'ParentConfig__r';\n                    if (row == 'M07') attempted = new PutParentConfig__mdt(TextValue__c='after');\n                }\n            }\n            if (before != null) record.putSObject(relationshipName, before);\n            phase = 'write';\n            SObject previous;\n            Object scalarPrevious;\n            String exceptionType;\n            String message;\n            try {\n                if (row == 'M03') scalarPrevious = record.put('Entity__c', 'Account');\n                else if (row == 'M05') scalarPrevious = record.put('TextValue__c', 'after');\n                else if (token) previous = record.putSObject(fieldToken, attempted);\n                else previous = record.putSObject(relationshipName, attempted);\n            } catch (Exception e) { exceptionType = e.getTypeName(); message = e.getMessage(); }\n            out.put('exceptionType', exceptionType); out.put('message', message);\n            if (row == 'M03' || row == 'M05') {\n                out.put('previous', scalarPrevious == null ? null : String.valueOf(scalarPrevious));\n                Object scalarAfter = record.get(row == 'M03' ? 'Entity__c' : 'TextValue__c');\n                out.put('after', scalarAfter == null ? null : String.valueOf(scalarAfter));\n            } else {\n                out.put('previous', view(previous));\n                out.put('after', view(record.getSObject(relationshipName)));\n            }\n            if (metadata) out.put('guard', record.get('TextValue__c'));\n        } catch (Exception e) { out.put('outerExceptionType', e.getTypeName()); out.put('outerMessage', e.getMessage()); }\n        out.put('phase', phase);\n        return out;\n    }\n}\n",
+        "classes/RelationshipWriteProbe68.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "classes/RelationshipWriteSpec68.cls": "@IsTest private class RelationshipWriteSpec68 {@IsTest static void rowS01(){ System.assert(false, 'SOP|S01|'+JSON.serialize(RelationshipWriteProbe68.observe('S01'))); }\n@IsTest static void rowS02(){ System.assert(false, 'SOP|S02|'+JSON.serialize(RelationshipWriteProbe68.observe('S02'))); }\n@IsTest static void rowS03(){ System.assert(false, 'SOP|S03|'+JSON.serialize(RelationshipWriteProbe68.observe('S03'))); }\n@IsTest static void rowS04(){ System.assert(false, 'SOP|S04|'+JSON.serialize(RelationshipWriteProbe68.observe('S04'))); }\n@IsTest static void rowS05(){ System.assert(false, 'SOP|S05|'+JSON.serialize(RelationshipWriteProbe68.observe('S05'))); }\n@IsTest static void rowS06(){ System.assert(false, 'SOP|S06|'+JSON.serialize(RelationshipWriteProbe68.observe('S06'))); }\n@IsTest static void rowS07(){ System.assert(false, 'SOP|S07|'+JSON.serialize(RelationshipWriteProbe68.observe('S07'))); }\n@IsTest static void rowS08(){ System.assert(false, 'SOP|S08|'+JSON.serialize(RelationshipWriteProbe68.observe('S08'))); }\n@IsTest static void rowS09(){ System.assert(false, 'SOP|S09|'+JSON.serialize(RelationshipWriteProbe68.observe('S09'))); }\n@IsTest static void rowS10(){ System.assert(false, 'SOP|S10|'+JSON.serialize(RelationshipWriteProbe68.observe('S10'))); }\n@IsTest static void rowM01(){ System.assert(false, 'SOP|M01|'+JSON.serialize(RelationshipWriteProbe68.observe('M01'))); }\n@IsTest static void rowM02(){ System.assert(false, 'SOP|M02|'+JSON.serialize(RelationshipWriteProbe68.observe('M02'))); }\n@IsTest static void rowM03(){ System.assert(false, 'SOP|M03|'+JSON.serialize(RelationshipWriteProbe68.observe('M03'))); }\n@IsTest static void rowM04(){ System.assert(false, 'SOP|M04|'+JSON.serialize(RelationshipWriteProbe68.observe('M04'))); }\n@IsTest static void rowM05(){ System.assert(false, 'SOP|M05|'+JSON.serialize(RelationshipWriteProbe68.observe('M05'))); }\n@IsTest static void rowM06(){ System.assert(false, 'SOP|M06|'+JSON.serialize(RelationshipWriteProbe68.observe('M06'))); }\n@IsTest static void rowM07(){ System.assert(false, 'SOP|M07|'+JSON.serialize(RelationshipWriteProbe68.observe('M07'))); }\n@IsTest static void rowM08(){ System.assert(false, 'SOP|M08|'+JSON.serialize(RelationshipWriteProbe68.observe('M08'))); }}\n",
+        "classes/RelationshipWriteSpec68.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "anonymous.apex": "System.debug(LoggingLevel.ERROR,'SOP|S01|'+JSON.serialize(RelationshipWriteProbe68.observe('S01')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S02|'+JSON.serialize(RelationshipWriteProbe68.observe('S02')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S03|'+JSON.serialize(RelationshipWriteProbe68.observe('S03')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S04|'+JSON.serialize(RelationshipWriteProbe68.observe('S04')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S05|'+JSON.serialize(RelationshipWriteProbe68.observe('S05')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S06|'+JSON.serialize(RelationshipWriteProbe68.observe('S06')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S07|'+JSON.serialize(RelationshipWriteProbe68.observe('S07')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S08|'+JSON.serialize(RelationshipWriteProbe68.observe('S08')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S09|'+JSON.serialize(RelationshipWriteProbe68.observe('S09')));\nSystem.debug(LoggingLevel.ERROR,'SOP|S10|'+JSON.serialize(RelationshipWriteProbe68.observe('S10')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M01|'+JSON.serialize(RelationshipWriteProbe68.observe('M01')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M02|'+JSON.serialize(RelationshipWriteProbe68.observe('M02')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M03|'+JSON.serialize(RelationshipWriteProbe68.observe('M03')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M04|'+JSON.serialize(RelationshipWriteProbe68.observe('M04')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M05|'+JSON.serialize(RelationshipWriteProbe68.observe('M05')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M06|'+JSON.serialize(RelationshipWriteProbe68.observe('M06')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M07|'+JSON.serialize(RelationshipWriteProbe68.observe('M07')));\nSystem.debug(LoggingLevel.ERROR,'SOP|M08|'+JSON.serialize(RelationshipWriteProbe68.observe('M08')));\n"
+      },
+      "sourceSHA256": {
+        "classes/RelationshipWriteProbe68.cls": "29c008cbb944878b34cf808318bd6c522541a307e8ce716c57226ca82c2b2add",
+        "classes/RelationshipWriteProbe68.cls-meta.xml": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classes/RelationshipWriteSpec68.cls": "aa6435797c044238634e27506617f7fb24352198e41a97da48ad1e015bba0edd",
+        "classes/RelationshipWriteSpec68.cls-meta.xml": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "anonymous.apex": "157c26bc241bc1a2274de2671975c162cb5b5a300aa1aebb56e06840ebc34fd1"
+      }
+    }
+  },
+  "rows": [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S10",
+    "M01",
+    "M02",
+    "M03",
+    "M04",
+    "M05",
+    "M06",
+    "M07",
+    "M08"
+  ],
+  "cells": [
+    {
+      "id": "S01",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Account|before",
+        "previous": null,
+        "message": "Illegal assignment from User to Contact",
+        "exceptionType": "System.SObjectException",
+        "row": "S01"
+      },
+      "nativeSHA256": "3ce02358332e479d69240783e4f7020adf6ed9c420e7486b024c54ed172b5d65",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "S02",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Account|after",
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S02"
+      },
+      "nativeSHA256": "606d7f2ffe01d1795bfa58d4df4a6b657d6d1e7c032e808ab8ca53f6a540080b",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "S03",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Account|before",
+        "previous": null,
+        "message": "Illegal assignment from User to Contact",
+        "exceptionType": "System.SObjectException",
+        "row": "S03"
+      },
+      "nativeSHA256": "7c32d14577e88fed22b995469c2f55affa55f8655b77d434bf531f347763e948",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "S04",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Account|after",
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S04"
+      },
+      "nativeSHA256": "8704b2e8c48d707c60352c78fc810f9f01df1dc593745841d7171479e1a863d6",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "S05",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "PutParent__c|before",
+        "previous": null,
+        "message": "Illegal assignment from User to PutChild__c",
+        "exceptionType": "System.SObjectException",
+        "row": "S05"
+      },
+      "nativeSHA256": "90ba678141429d7586b08dc83574d89236149ea97942842a9cfea280fcae618a",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "S06",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "PutParent__c|after",
+        "previous": "PutParent__c|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S06"
+      },
+      "nativeSHA256": "feeb36eb36e48ae70f563a510c17b54784af59e76e6ad5a7b838f0ab47cce2fd",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "S07",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Contact|after",
+        "previous": "Contact|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S07"
+      },
+      "nativeSHA256": "84ed013fca6ff09e0ecf9386b0fe61798cfe174cb65933939ebded8b5253998e",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "S08",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Lead|after",
+        "previous": "Contact|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S08"
+      },
+      "nativeSHA256": "7a3db58de02bf17060f6c7fbf02952317e4e26ce018b7ff770ca5768ee0a12b2",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "S09",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Contact|before",
+        "previous": null,
+        "message": "Illegal assignment from Account to Task",
+        "exceptionType": "System.SObjectException",
+        "row": "S09"
+      },
+      "nativeSHA256": "4c08ff7b5e4c0e9c8845dc42c4ed4b73c2263b2e853c10d16dbeb28045a94b9b",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "S10",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": null,
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S10"
+      },
+      "nativeSHA256": "162c6d19b8084ccfca564dd4ce57d21c64ee7700b4b40cbab6880201c8799ca1",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "M01",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M01"
+      },
+      "nativeSHA256": "640d7197d940281100d463613661b1bf6f45a868f1df649eccdd776731fa7858",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "M02",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M02"
+      },
+      "nativeSHA256": "03d02580c4f64f58a7aadfd159dad42a0bd6d5cb67459b9057238313de34b0be",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "M03",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": "Account",
+        "previous": null,
+        "message": null,
+        "exceptionType": null,
+        "row": "M03"
+      },
+      "nativeSHA256": "31d3cd6980e0d2d4ee7d1dc0e8084358393670f31be3122f8a1e6552fa19aba5",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "M04",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M04"
+      },
+      "nativeSHA256": "3453d0f40d6e7ee975ea2ca9d7d2baa85a94d605cc93bcbaab518a86c8bfa6e0",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "M05",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "after",
+        "after": "after",
+        "previous": "guard",
+        "message": null,
+        "exceptionType": null,
+        "row": "M05"
+      },
+      "nativeSHA256": "5067ce3de35fb4f610cd217c51125344b7eaa69fd2f8415f86859e82d32b6d57",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "M06",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M06"
+      },
+      "nativeSHA256": "3f1651c307b7e2606e4cd3466c386182dba4e70d56f489f957873812c05eb845",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "M07",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship ParentConfig__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M07"
+      },
+      "nativeSHA256": "949408e6f4e4f2b5f2f77660351abfd1bbc8dffe3482361abb00fe3297185ca6",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "M08",
+      "api": "62.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship ParentConfig__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M08"
+      },
+      "nativeSHA256": "520ad43de21249d1258c8dc2342df81d90ea65b2e6c5c1b6748fb1cdb6719b3a",
+      "rawReceiptSHA256": "8ebc27b6d58240a5ab37df38cb293cc3c849064bae5fbb84d3bd614cbca9c074"
+    },
+    {
+      "id": "S01",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Account|before",
+        "previous": null,
+        "message": "Illegal assignment from User to Contact",
+        "exceptionType": "System.SObjectException",
+        "row": "S01"
+      },
+      "nativeSHA256": "3ce02358332e479d69240783e4f7020adf6ed9c420e7486b024c54ed172b5d65",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "S02",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Account|after",
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S02"
+      },
+      "nativeSHA256": "606d7f2ffe01d1795bfa58d4df4a6b657d6d1e7c032e808ab8ca53f6a540080b",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "S03",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Account|before",
+        "previous": null,
+        "message": "Illegal assignment from User to Contact",
+        "exceptionType": "System.SObjectException",
+        "row": "S03"
+      },
+      "nativeSHA256": "7c32d14577e88fed22b995469c2f55affa55f8655b77d434bf531f347763e948",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "S04",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Account|after",
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S04"
+      },
+      "nativeSHA256": "8704b2e8c48d707c60352c78fc810f9f01df1dc593745841d7171479e1a863d6",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "S05",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "PutParent__c|before",
+        "previous": null,
+        "message": "Illegal assignment from User to PutChild__c",
+        "exceptionType": "System.SObjectException",
+        "row": "S05"
+      },
+      "nativeSHA256": "90ba678141429d7586b08dc83574d89236149ea97942842a9cfea280fcae618a",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "S06",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "PutParent__c|after",
+        "previous": "PutParent__c|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S06"
+      },
+      "nativeSHA256": "feeb36eb36e48ae70f563a510c17b54784af59e76e6ad5a7b838f0ab47cce2fd",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "S07",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Contact|after",
+        "previous": "Contact|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S07"
+      },
+      "nativeSHA256": "84ed013fca6ff09e0ecf9386b0fe61798cfe174cb65933939ebded8b5253998e",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "S08",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Lead|after",
+        "previous": "Contact|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S08"
+      },
+      "nativeSHA256": "7a3db58de02bf17060f6c7fbf02952317e4e26ce018b7ff770ca5768ee0a12b2",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "S09",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Contact|before",
+        "previous": null,
+        "message": "Illegal assignment from Account to Task",
+        "exceptionType": "System.SObjectException",
+        "row": "S09"
+      },
+      "nativeSHA256": "4c08ff7b5e4c0e9c8845dc42c4ed4b73c2263b2e853c10d16dbeb28045a94b9b",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "S10",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": null,
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S10"
+      },
+      "nativeSHA256": "162c6d19b8084ccfca564dd4ce57d21c64ee7700b4b40cbab6880201c8799ca1",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "M01",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M01"
+      },
+      "nativeSHA256": "640d7197d940281100d463613661b1bf6f45a868f1df649eccdd776731fa7858",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "M02",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M02"
+      },
+      "nativeSHA256": "03d02580c4f64f58a7aadfd159dad42a0bd6d5cb67459b9057238313de34b0be",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "M03",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": "Account",
+        "previous": null,
+        "message": null,
+        "exceptionType": null,
+        "row": "M03"
+      },
+      "nativeSHA256": "31d3cd6980e0d2d4ee7d1dc0e8084358393670f31be3122f8a1e6552fa19aba5",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "M04",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M04"
+      },
+      "nativeSHA256": "3453d0f40d6e7ee975ea2ca9d7d2baa85a94d605cc93bcbaab518a86c8bfa6e0",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "M05",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "after",
+        "after": "after",
+        "previous": "guard",
+        "message": null,
+        "exceptionType": null,
+        "row": "M05"
+      },
+      "nativeSHA256": "5067ce3de35fb4f610cd217c51125344b7eaa69fd2f8415f86859e82d32b6d57",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "M06",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M06"
+      },
+      "nativeSHA256": "3f1651c307b7e2606e4cd3466c386182dba4e70d56f489f957873812c05eb845",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "M07",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship ParentConfig__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M07"
+      },
+      "nativeSHA256": "949408e6f4e4f2b5f2f77660351abfd1bbc8dffe3482361abb00fe3297185ca6",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "M08",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship ParentConfig__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M08"
+      },
+      "nativeSHA256": "520ad43de21249d1258c8dc2342df81d90ea65b2e6c5c1b6748fb1cdb6719b3a",
+      "rawReceiptSHA256": "c3174d81dffb62eddd0e8ffb63c5926ba424f8b4e73c1d9b184f2bed6c30d22f"
+    },
+    {
+      "id": "S01",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Account|before",
+        "previous": null,
+        "message": "Illegal assignment from User to Contact",
+        "exceptionType": "System.SObjectException",
+        "row": "S01"
+      },
+      "nativeSHA256": "3ce02358332e479d69240783e4f7020adf6ed9c420e7486b024c54ed172b5d65",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "S02",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Account|after",
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S02"
+      },
+      "nativeSHA256": "606d7f2ffe01d1795bfa58d4df4a6b657d6d1e7c032e808ab8ca53f6a540080b",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "S03",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Account|before",
+        "previous": null,
+        "message": "Illegal assignment from User to Contact",
+        "exceptionType": "System.SObjectException",
+        "row": "S03"
+      },
+      "nativeSHA256": "7c32d14577e88fed22b995469c2f55affa55f8655b77d434bf531f347763e948",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "S04",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Account|after",
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S04"
+      },
+      "nativeSHA256": "8704b2e8c48d707c60352c78fc810f9f01df1dc593745841d7171479e1a863d6",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "S05",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "PutParent__c|before",
+        "previous": null,
+        "message": "Illegal assignment from User to PutChild__c",
+        "exceptionType": "System.SObjectException",
+        "row": "S05"
+      },
+      "nativeSHA256": "90ba678141429d7586b08dc83574d89236149ea97942842a9cfea280fcae618a",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "S06",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "PutParent__c|after",
+        "previous": "PutParent__c|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S06"
+      },
+      "nativeSHA256": "feeb36eb36e48ae70f563a510c17b54784af59e76e6ad5a7b838f0ab47cce2fd",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "S07",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Contact|after",
+        "previous": "Contact|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S07"
+      },
+      "nativeSHA256": "84ed013fca6ff09e0ecf9386b0fe61798cfe174cb65933939ebded8b5253998e",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "S08",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Lead|after",
+        "previous": "Contact|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S08"
+      },
+      "nativeSHA256": "7a3db58de02bf17060f6c7fbf02952317e4e26ce018b7ff770ca5768ee0a12b2",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "S09",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Contact|before",
+        "previous": null,
+        "message": "Illegal assignment from Account to Task",
+        "exceptionType": "System.SObjectException",
+        "row": "S09"
+      },
+      "nativeSHA256": "4c08ff7b5e4c0e9c8845dc42c4ed4b73c2263b2e853c10d16dbeb28045a94b9b",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "S10",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": null,
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S10"
+      },
+      "nativeSHA256": "162c6d19b8084ccfca564dd4ce57d21c64ee7700b4b40cbab6880201c8799ca1",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "M01",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M01"
+      },
+      "nativeSHA256": "640d7197d940281100d463613661b1bf6f45a868f1df649eccdd776731fa7858",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "M02",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M02"
+      },
+      "nativeSHA256": "03d02580c4f64f58a7aadfd159dad42a0bd6d5cb67459b9057238313de34b0be",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "M03",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": "Account",
+        "previous": null,
+        "message": null,
+        "exceptionType": null,
+        "row": "M03"
+      },
+      "nativeSHA256": "31d3cd6980e0d2d4ee7d1dc0e8084358393670f31be3122f8a1e6552fa19aba5",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "M04",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M04"
+      },
+      "nativeSHA256": "3453d0f40d6e7ee975ea2ca9d7d2baa85a94d605cc93bcbaab518a86c8bfa6e0",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "M05",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "after",
+        "after": "after",
+        "previous": "guard",
+        "message": null,
+        "exceptionType": null,
+        "row": "M05"
+      },
+      "nativeSHA256": "5067ce3de35fb4f610cd217c51125344b7eaa69fd2f8415f86859e82d32b6d57",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "M06",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M06"
+      },
+      "nativeSHA256": "3f1651c307b7e2606e4cd3466c386182dba4e70d56f489f957873812c05eb845",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "M07",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship ParentConfig__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M07"
+      },
+      "nativeSHA256": "949408e6f4e4f2b5f2f77660351abfd1bbc8dffe3482361abb00fe3297185ca6",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "M08",
+      "api": "67.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship ParentConfig__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M08"
+      },
+      "nativeSHA256": "520ad43de21249d1258c8dc2342df81d90ea65b2e6c5c1b6748fb1cdb6719b3a",
+      "rawReceiptSHA256": "b4c4ddba55d158b9f260ebf099d41522548bb5e5039f76f48c8ac8d75856bf3f"
+    },
+    {
+      "id": "S01",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Account|before",
+        "previous": null,
+        "message": "Illegal assignment from User to Contact",
+        "exceptionType": "System.SObjectException",
+        "row": "S01"
+      },
+      "nativeSHA256": "3ce02358332e479d69240783e4f7020adf6ed9c420e7486b024c54ed172b5d65",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "S02",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Account|after",
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S02"
+      },
+      "nativeSHA256": "606d7f2ffe01d1795bfa58d4df4a6b657d6d1e7c032e808ab8ca53f6a540080b",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "S03",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Account|before",
+        "previous": null,
+        "message": "Illegal assignment from User to Contact",
+        "exceptionType": "System.SObjectException",
+        "row": "S03"
+      },
+      "nativeSHA256": "7c32d14577e88fed22b995469c2f55affa55f8655b77d434bf531f347763e948",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "S04",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Account|after",
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S04"
+      },
+      "nativeSHA256": "8704b2e8c48d707c60352c78fc810f9f01df1dc593745841d7171479e1a863d6",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "S05",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "PutParent__c|before",
+        "previous": null,
+        "message": "Illegal assignment from User to PutChild__c",
+        "exceptionType": "System.SObjectException",
+        "row": "S05"
+      },
+      "nativeSHA256": "90ba678141429d7586b08dc83574d89236149ea97942842a9cfea280fcae618a",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "S06",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "PutParent__c|after",
+        "previous": "PutParent__c|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S06"
+      },
+      "nativeSHA256": "feeb36eb36e48ae70f563a510c17b54784af59e76e6ad5a7b838f0ab47cce2fd",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "S07",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Contact|after",
+        "previous": "Contact|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S07"
+      },
+      "nativeSHA256": "84ed013fca6ff09e0ecf9386b0fe61798cfe174cb65933939ebded8b5253998e",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "S08",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Lead|after",
+        "previous": "Contact|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S08"
+      },
+      "nativeSHA256": "7a3db58de02bf17060f6c7fbf02952317e4e26ce018b7ff770ca5768ee0a12b2",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "S09",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Contact|before",
+        "previous": null,
+        "message": "Illegal assignment from Account to Task",
+        "exceptionType": "System.SObjectException",
+        "row": "S09"
+      },
+      "nativeSHA256": "4c08ff7b5e4c0e9c8845dc42c4ed4b73c2263b2e853c10d16dbeb28045a94b9b",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "S10",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": null,
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S10"
+      },
+      "nativeSHA256": "162c6d19b8084ccfca564dd4ce57d21c64ee7700b4b40cbab6880201c8799ca1",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "M01",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M01"
+      },
+      "nativeSHA256": "640d7197d940281100d463613661b1bf6f45a868f1df649eccdd776731fa7858",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "M02",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M02"
+      },
+      "nativeSHA256": "03d02580c4f64f58a7aadfd159dad42a0bd6d5cb67459b9057238313de34b0be",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "M03",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": "Account",
+        "previous": null,
+        "message": null,
+        "exceptionType": null,
+        "row": "M03"
+      },
+      "nativeSHA256": "31d3cd6980e0d2d4ee7d1dc0e8084358393670f31be3122f8a1e6552fa19aba5",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "M04",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M04"
+      },
+      "nativeSHA256": "3453d0f40d6e7ee975ea2ca9d7d2baa85a94d605cc93bcbaab518a86c8bfa6e0",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "M05",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "after",
+        "after": "after",
+        "previous": "guard",
+        "message": null,
+        "exceptionType": null,
+        "row": "M05"
+      },
+      "nativeSHA256": "5067ce3de35fb4f610cd217c51125344b7eaa69fd2f8415f86859e82d32b6d57",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "M06",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M06"
+      },
+      "nativeSHA256": "3f1651c307b7e2606e4cd3466c386182dba4e70d56f489f957873812c05eb845",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "M07",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship ParentConfig__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M07"
+      },
+      "nativeSHA256": "949408e6f4e4f2b5f2f77660351abfd1bbc8dffe3482361abb00fe3297185ca6",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "M08",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship ParentConfig__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M08"
+      },
+      "nativeSHA256": "520ad43de21249d1258c8dc2342df81d90ea65b2e6c5c1b6748fb1cdb6719b3a",
+      "rawReceiptSHA256": "e0deb6c6617e79ca6876ff032522ec0e5b599faeb7c9f1eb53de5ec7ea30e6ac"
+    },
+    {
+      "id": "S01",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Account|before",
+        "previous": null,
+        "message": "Illegal assignment from User to Contact",
+        "exceptionType": "System.SObjectException",
+        "row": "S01"
+      },
+      "nativeSHA256": "3ce02358332e479d69240783e4f7020adf6ed9c420e7486b024c54ed172b5d65",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "S02",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Account|after",
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S02"
+      },
+      "nativeSHA256": "606d7f2ffe01d1795bfa58d4df4a6b657d6d1e7c032e808ab8ca53f6a540080b",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "S03",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Account|before",
+        "previous": null,
+        "message": "Illegal assignment from User to Contact",
+        "exceptionType": "System.SObjectException",
+        "row": "S03"
+      },
+      "nativeSHA256": "7c32d14577e88fed22b995469c2f55affa55f8655b77d434bf531f347763e948",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "S04",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Account|after",
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S04"
+      },
+      "nativeSHA256": "8704b2e8c48d707c60352c78fc810f9f01df1dc593745841d7171479e1a863d6",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "S05",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "PutParent__c|before",
+        "previous": null,
+        "message": "Illegal assignment from User to PutChild__c",
+        "exceptionType": "System.SObjectException",
+        "row": "S05"
+      },
+      "nativeSHA256": "90ba678141429d7586b08dc83574d89236149ea97942842a9cfea280fcae618a",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "S06",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "PutParent__c|after",
+        "previous": "PutParent__c|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S06"
+      },
+      "nativeSHA256": "feeb36eb36e48ae70f563a510c17b54784af59e76e6ad5a7b838f0ab47cce2fd",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "S07",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Contact|after",
+        "previous": "Contact|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S07"
+      },
+      "nativeSHA256": "84ed013fca6ff09e0ecf9386b0fe61798cfe174cb65933939ebded8b5253998e",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "S08",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Lead|after",
+        "previous": "Contact|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S08"
+      },
+      "nativeSHA256": "7a3db58de02bf17060f6c7fbf02952317e4e26ce018b7ff770ca5768ee0a12b2",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "S09",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": "Contact|before",
+        "previous": null,
+        "message": "Illegal assignment from Account to Task",
+        "exceptionType": "System.SObjectException",
+        "row": "S09"
+      },
+      "nativeSHA256": "4c08ff7b5e4c0e9c8845dc42c4ed4b73c2263b2e853c10d16dbeb28045a94b9b",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "S10",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "after": null,
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S10"
+      },
+      "nativeSHA256": "162c6d19b8084ccfca564dd4ce57d21c64ee7700b4b40cbab6880201c8799ca1",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "M01",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M01"
+      },
+      "nativeSHA256": "640d7197d940281100d463613661b1bf6f45a868f1df649eccdd776731fa7858",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "M02",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M02"
+      },
+      "nativeSHA256": "03d02580c4f64f58a7aadfd159dad42a0bd6d5cb67459b9057238313de34b0be",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "M03",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": "Account",
+        "previous": null,
+        "message": null,
+        "exceptionType": null,
+        "row": "M03"
+      },
+      "nativeSHA256": "31d3cd6980e0d2d4ee7d1dc0e8084358393670f31be3122f8a1e6552fa19aba5",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "M04",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M04"
+      },
+      "nativeSHA256": "3453d0f40d6e7ee975ea2ca9d7d2baa85a94d605cc93bcbaab518a86c8bfa6e0",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "M05",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "after",
+        "after": "after",
+        "previous": "guard",
+        "message": null,
+        "exceptionType": null,
+        "row": "M05"
+      },
+      "nativeSHA256": "5067ce3de35fb4f610cd217c51125344b7eaa69fd2f8415f86859e82d32b6d57",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "M06",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M06"
+      },
+      "nativeSHA256": "3f1651c307b7e2606e4cd3466c386182dba4e70d56f489f957873812c05eb845",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "M07",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship ParentConfig__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M07"
+      },
+      "nativeSHA256": "949408e6f4e4f2b5f2f77660351abfd1bbc8dffe3482361abb00fe3297185ca6",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "M08",
+      "api": "68.0",
+      "route": "anonymous",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship ParentConfig__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M08"
+      },
+      "nativeSHA256": "520ad43de21249d1258c8dc2342df81d90ea65b2e6c5c1b6748fb1cdb6719b3a",
+      "rawReceiptSHA256": "793018f2d48e56736823c2b84dc2d84602c32e4ec6c9b3e560a81a255f9e5def"
+    },
+    {
+      "id": "S01",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Account|before",
+        "previous": null,
+        "message": "Illegal assignment from User to Contact",
+        "exceptionType": "System.SObjectException",
+        "row": "S01"
+      },
+      "nativeSHA256": "3ce02358332e479d69240783e4f7020adf6ed9c420e7486b024c54ed172b5d65",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "S02",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Account|after",
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S02"
+      },
+      "nativeSHA256": "606d7f2ffe01d1795bfa58d4df4a6b657d6d1e7c032e808ab8ca53f6a540080b",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "S03",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Account|before",
+        "previous": null,
+        "message": "Illegal assignment from User to Contact",
+        "exceptionType": "System.SObjectException",
+        "row": "S03"
+      },
+      "nativeSHA256": "7c32d14577e88fed22b995469c2f55affa55f8655b77d434bf531f347763e948",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "S04",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Account|after",
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S04"
+      },
+      "nativeSHA256": "8704b2e8c48d707c60352c78fc810f9f01df1dc593745841d7171479e1a863d6",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "S05",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "PutParent__c|before",
+        "previous": null,
+        "message": "Illegal assignment from User to PutChild__c",
+        "exceptionType": "System.SObjectException",
+        "row": "S05"
+      },
+      "nativeSHA256": "90ba678141429d7586b08dc83574d89236149ea97942842a9cfea280fcae618a",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "S06",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "PutParent__c|after",
+        "previous": "PutParent__c|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S06"
+      },
+      "nativeSHA256": "feeb36eb36e48ae70f563a510c17b54784af59e76e6ad5a7b838f0ab47cce2fd",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "S07",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Contact|after",
+        "previous": "Contact|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S07"
+      },
+      "nativeSHA256": "84ed013fca6ff09e0ecf9386b0fe61798cfe174cb65933939ebded8b5253998e",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "S08",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Lead|after",
+        "previous": "Contact|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S08"
+      },
+      "nativeSHA256": "7a3db58de02bf17060f6c7fbf02952317e4e26ce018b7ff770ca5768ee0a12b2",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "S09",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": "Contact|before",
+        "previous": null,
+        "message": "Illegal assignment from Account to Task",
+        "exceptionType": "System.SObjectException",
+        "row": "S09"
+      },
+      "nativeSHA256": "4c08ff7b5e4c0e9c8845dc42c4ed4b73c2263b2e853c10d16dbeb28045a94b9b",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "S10",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "after": null,
+        "previous": "Account|before",
+        "message": null,
+        "exceptionType": null,
+        "row": "S10"
+      },
+      "nativeSHA256": "162c6d19b8084ccfca564dd4ce57d21c64ee7700b4b40cbab6880201c8799ca1",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "M01",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M01"
+      },
+      "nativeSHA256": "640d7197d940281100d463613661b1bf6f45a868f1df649eccdd776731fa7858",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "M02",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M02"
+      },
+      "nativeSHA256": "03d02580c4f64f58a7aadfd159dad42a0bd6d5cb67459b9057238313de34b0be",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "M03",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": "Account",
+        "previous": null,
+        "message": null,
+        "exceptionType": null,
+        "row": "M03"
+      },
+      "nativeSHA256": "31d3cd6980e0d2d4ee7d1dc0e8084358393670f31be3122f8a1e6552fa19aba5",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "M04",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M04"
+      },
+      "nativeSHA256": "3453d0f40d6e7ee975ea2ca9d7d2baa85a94d605cc93bcbaab518a86c8bfa6e0",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "M05",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "after",
+        "after": "after",
+        "previous": "guard",
+        "message": null,
+        "exceptionType": null,
+        "row": "M05"
+      },
+      "nativeSHA256": "5067ce3de35fb4f610cd217c51125344b7eaa69fd2f8415f86859e82d32b6d57",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "M06",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship Entity__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M06"
+      },
+      "nativeSHA256": "3f1651c307b7e2606e4cd3466c386182dba4e70d56f489f957873812c05eb845",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "M07",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship ParentConfig__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M07"
+      },
+      "nativeSHA256": "949408e6f4e4f2b5f2f77660351abfd1bbc8dffe3482361abb00fe3297185ca6",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    },
+    {
+      "id": "M08",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "write",
+        "guard": "guard",
+        "after": null,
+        "previous": null,
+        "message": "Relationship ParentConfig__r is not editable",
+        "exceptionType": "System.SObjectException",
+        "row": "M08"
+      },
+      "nativeSHA256": "520ad43de21249d1258c8dc2342df81d90ea65b2e6c5c1b6748fb1cdb6719b3a",
+      "rawReceiptSHA256": "ef8291f2bde47674d40e1831cc16196d19d36dde839339dbc679a8bbd86dcb0e"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+id	api	route	status	value
+assign	62.0	anonymous	OBSERVED	{"compiled":true,"success":true,"exceptionMessage":""}
+assign	67.0	anonymous	OBSERVED	{"compiled":true,"success":true,"exceptionMessage":""}
+catch_base	62.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.UnexpectedException: sample"}
+catch_base	67.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.UnexpectedException: sample"}
+catch_exact	62.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.UnexpectedException: sample"}
+catch_exact	67.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.UnexpectedException: sample"}
+message	62.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.AssertException: Assertion Failed: MESSAGE|sample"}
+message	67.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.AssertException: Assertion Failed: MESSAGE|sample"}
+throw	62.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.UnexpectedException: sample"}
+throw	67.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.UnexpectedException: sample"}

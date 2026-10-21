@@ -1,0 +1,6 @@
+id	shape	states	apis	routes
+split	MeadowWords__mdt.Words__c	absent,empty,complete	62.0,67.0	anonymous,named
+upperA	MeadowNorth__mdt.Code__c	absent,empty,complete	62.0,67.0	anonymous,named
+upperB	MeadowSouth__mdt.Code__c	absent,empty,complete	62.0,67.0	anonymous,named
+lower	MeadowClient__mdt.NameText__c	absent,empty,complete	62.0,67.0	anonymous,named
+event	MeadowPulse__e.Note__c	absent,empty,complete	62.0,67.0	anonymous,named

@@ -1,0 +1,218 @@
+[
+  {
+    "api": "62.0",
+    "control": "Passed",
+    "testsRan": 1,
+    "failing": 0
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "null",
+    "exit": 1,
+    "compiled": false,
+    "success": false,
+    "line": "12",
+    "message": "Type is not visible: KbManagement.PublishingService",
+    "exceptionMessage": ""
+  },
+  {
+    "api": "62.0",
+    "route": "isTest",
+    "id": "null",
+    "exit": 1,
+    "status": "Failed",
+    "componentErrors": 1,
+    "testErrors": 0,
+    "line": 12,
+    "message": "Type is not visible: KbManagement.PublishingService"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "missing",
+    "exit": 1,
+    "compiled": false,
+    "success": false,
+    "line": "12",
+    "message": "Type is not visible: KbManagement.PublishingService",
+    "exceptionMessage": ""
+  },
+  {
+    "api": "62.0",
+    "route": "isTest",
+    "id": "missing",
+    "exit": 1,
+    "status": "Failed",
+    "componentErrors": 1,
+    "testErrors": 0,
+    "line": 12,
+    "message": "Type is not visible: KbManagement.PublishingService"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "id": "caught-null",
+    "exit": 1,
+    "compiled": false,
+    "success": false,
+    "line": "12",
+    "message": "Type is not visible: KbManagement.PublishingService",
+    "exceptionMessage": ""
+  },
+  {
+    "api": "62.0",
+    "route": "isTest",
+    "id": "caught-null",
+    "exit": 1,
+    "status": "Failed",
+    "componentErrors": 1,
+    "testErrors": 0,
+    "line": 12,
+    "message": "Type is not visible: KbManagement.PublishingService"
+  },
+  {
+    "api": "67.0",
+    "control": "Passed",
+    "testsRan": 1,
+    "failing": 0
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "null",
+    "exit": 1,
+    "compiled": false,
+    "success": false,
+    "line": "12",
+    "message": "Type is not visible: KbManagement.PublishingService",
+    "exceptionMessage": ""
+  },
+  {
+    "api": "67.0",
+    "route": "isTest",
+    "id": "null",
+    "exit": 1,
+    "status": "Failed",
+    "componentErrors": 1,
+    "testErrors": 0,
+    "line": 12,
+    "message": "Type is not visible: KbManagement.PublishingService"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "missing",
+    "exit": 1,
+    "compiled": false,
+    "success": false,
+    "line": "12",
+    "message": "Type is not visible: KbManagement.PublishingService",
+    "exceptionMessage": ""
+  },
+  {
+    "api": "67.0",
+    "route": "isTest",
+    "id": "missing",
+    "exit": 1,
+    "status": "Failed",
+    "componentErrors": 1,
+    "testErrors": 0,
+    "line": 12,
+    "message": "Type is not visible: KbManagement.PublishingService"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "id": "caught-null",
+    "exit": 1,
+    "compiled": false,
+    "success": false,
+    "line": "12",
+    "message": "Type is not visible: KbManagement.PublishingService",
+    "exceptionMessage": ""
+  },
+  {
+    "api": "67.0",
+    "route": "isTest",
+    "id": "caught-null",
+    "exit": 1,
+    "status": "Failed",
+    "componentErrors": 1,
+    "testErrors": 0,
+    "line": 12,
+    "message": "Type is not visible: KbManagement.PublishingService"
+  },
+  {
+    "api": "68.0",
+    "control": "Passed",
+    "testsRan": 1,
+    "failing": 0
+  },
+  {
+    "api": "68.0",
+    "route": "anonymous",
+    "id": "null",
+    "exit": 1,
+    "compiled": false,
+    "success": false,
+    "line": "12",
+    "message": "Type is not visible: KbManagement.PublishingService",
+    "exceptionMessage": ""
+  },
+  {
+    "api": "68.0",
+    "route": "isTest",
+    "id": "null",
+    "exit": 1,
+    "status": "Failed",
+    "componentErrors": 1,
+    "testErrors": 0,
+    "line": 12,
+    "message": "Type is not visible: KbManagement.PublishingService"
+  },
+  {
+    "api": "68.0",
+    "route": "anonymous",
+    "id": "missing",
+    "exit": 1,
+    "compiled": false,
+    "success": false,
+    "line": "12",
+    "message": "Type is not visible: KbManagement.PublishingService",
+    "exceptionMessage": ""
+  },
+  {
+    "api": "68.0",
+    "route": "isTest",
+    "id": "missing",
+    "exit": 1,
+    "status": "Failed",
+    "componentErrors": 1,
+    "testErrors": 0,
+    "line": 12,
+    "message": "Type is not visible: KbManagement.PublishingService"
+  },
+  {
+    "api": "68.0",
+    "route": "anonymous",
+    "id": "caught-null",
+    "exit": 1,
+    "compiled": false,
+    "success": false,
+    "line": "12",
+    "message": "Type is not visible: KbManagement.PublishingService",
+    "exceptionMessage": ""
+  },
+  {
+    "api": "68.0",
+    "route": "isTest",
+    "id": "caught-null",
+    "exit": 1,
+    "status": "Failed",
+    "componentErrors": 1,
+    "testErrors": 0,
+    "line": 12,
+    "message": "Type is not visible: KbManagement.PublishingService"
+  }
+]

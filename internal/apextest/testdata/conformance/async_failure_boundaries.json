@@ -1,0 +1,779 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "carries": [
+    "Uncapped future-to-Queueable descendants were not captured; existing deferral remains.",
+    "API 68 and namespaced async variants were not captured.",
+    "Named batch effect/timing rows cover singleton stateless iterable batches at API62/67; stateful, QueryLocator, multichunk, finish-fault and namespace variants retain their prior paths."
+  ],
+  "cells": [
+    {
+      "api": "62.0",
+      "enqueue": "delete [SELECT Id FROM Account WHERE Name LIKE 'owned-native-%'];\nSystem.enqueueJob(new AsyncBoundaryProbe.FaultJob('custom'));\nSystem.enqueueJob(new AsyncBoundaryProbe.FaultJob('list'));\nSystem.enqueueJob(new AsyncBoundaryProbe.FaultJob('success'));\nAsyncBoundaryProbe.spawnFromFuture();\nDatabase.executeBatch(new AsyncBoundaryBatch(false,true),1);\nSystem.debug('NATIVE_ASYNC|A00|enqueued');\n",
+      "fixture": "62.0/anonymous",
+      "id": "A01",
+      "native": {
+        "finalizers": {
+          "owned-native-finalizer-custom": {
+            "custom": true,
+            "message": "owned custom marker",
+            "nullException": false,
+            "result": "UNHANDLED_EXCEPTION",
+            "stackNonempty": true,
+            "type": "AsyncBoundaryProbe.ProbeException"
+          },
+          "owned-native-finalizer-list": {
+            "custom": false,
+            "message": "List index out of bounds: 0",
+            "nullException": false,
+            "result": "UNHANDLED_EXCEPTION",
+            "stackNonempty": true,
+            "type": "System.ListException"
+          },
+          "owned-native-finalizer-success": {
+            "nullException": true,
+            "result": "SUCCESS"
+          }
+        },
+        "names": [
+          "owned-native-batch-event",
+          "owned-native-chain-1",
+          "owned-native-chain-2",
+          "owned-native-finalizer-custom",
+          "owned-native-finalizer-list",
+          "owned-native-finalizer-success",
+          "owned-native-signal"
+        ]
+      },
+      "readback": "List<String> names=new List<String>();Map<String,Object> finalizers=new Map<String,Object>();\nfor(Account row:[SELECT Name,Description FROM Account WHERE Name LIKE 'owned-native-%' ORDER BY Name]){\n names.add(row.Name);\n if(row.Name.startsWith('owned-native-finalizer-'))finalizers.put(row.Name,JSON.deserializeUntyped(row.Description));\n}\nSystem.debug('NATIVE_ASYNC|A01|'+JSON.serialize(new Map<String,Object>{'names'=>names,'finalizers'=>finalizers}));\n",
+      "receiptSHA256": "c7c3be5b91c69338939bfbbe9a5fe8c5a69c747ee3d6c00547f1ad99b872d334",
+      "route": "anonymous"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F01",
+      "method": "customFinalizer",
+      "native": {
+        "caughtMessage": "owned custom marker",
+        "caughtType": "AsyncBoundaryProbe.ProbeException",
+        "finalizer": {
+          "custom": true,
+          "message": "owned custom marker",
+          "nullException": false,
+          "result": "UNHANDLED_EXCEPTION",
+          "stackNonempty": true,
+          "type": "AsyncBoundaryProbe.ProbeException"
+        },
+        "rows": 1
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F02",
+      "method": "listFinalizer",
+      "native": {
+        "caughtMessage": "List index out of bounds: 0",
+        "caughtType": "System.ListException",
+        "finalizer": {
+          "custom": false,
+          "message": "List index out of bounds: 0",
+          "nullException": false,
+          "result": "UNHANDLED_EXCEPTION",
+          "stackNonempty": true,
+          "type": "System.ListException"
+        },
+        "rows": 1
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F03",
+      "method": "successFinalizer",
+      "native": {
+        "caughtMessage": null,
+        "caughtType": null,
+        "finalizer": {
+          "nullException": true,
+          "result": "SUCCESS"
+        },
+        "rows": 1
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F04",
+      "method": "futureChain",
+      "native": {
+        "caughtMessage": null,
+        "caughtType": null,
+        "names": [
+          "owned-native-chain-1",
+          "owned-native-chain-2"
+        ],
+        "runs": 2
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F05",
+      "method": "directChain",
+      "native": {
+        "caughtMessage": null,
+        "caughtType": null,
+        "names": [
+          "owned-native-chain-1",
+          "owned-native-chain-2"
+        ],
+        "runs": 2
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F06",
+      "method": "batchDeliveredFault",
+      "native": {
+        "bodyAfter": 1,
+        "bodyBefore": 1,
+        "caughtMessage": "owned batch marker",
+        "caughtType": "AsyncBoundaryProbe.ProbeException",
+        "eventAfter": 1,
+        "eventBefore": 0,
+        "signalAfter": 1,
+        "signalBefore": 1
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F07",
+      "method": "batchQueuedFault",
+      "native": {
+        "bodyAfter": 1,
+        "bodyBefore": 1,
+        "caughtMessage": "owned batch marker",
+        "caughtType": "AsyncBoundaryProbe.ProbeException",
+        "eventAfter": 1,
+        "eventBefore": 0,
+        "signalAfter": 1,
+        "signalBefore": 0
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F08",
+      "method": "batchDeliveredSuccess",
+      "native": {
+        "bodyAfter": 1,
+        "bodyBefore": 1,
+        "caughtMessage": null,
+        "caughtType": null,
+        "eventAfter": 0,
+        "eventBefore": 0,
+        "signalAfter": 1,
+        "signalBefore": 1
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F09",
+      "method": "objectBatchFault",
+      "native": {
+        "body": 1,
+        "caughtMessage": "owned batch marker",
+        "caughtType": "AsyncBoundaryProbe.ProbeException",
+        "signal": 1
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F10",
+      "method": "objectBatchSuccess",
+      "native": {
+        "body": 1,
+        "caughtMessage": null,
+        "caughtType": null,
+        "signal": 1
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F11",
+      "method": "bodyDepthResetDirect",
+      "native": {
+        "caughtMessage": "Cannot reset Maximum Queueable Stack Depth in a queueable",
+        "caughtType": "System.AsyncException",
+        "names": [
+          "owned-native-chain-1"
+        ],
+        "runs": 1
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F12",
+      "method": "bodyDepthResetFuture",
+      "native": {
+        "caughtMessage": "Cannot reset Maximum Queueable Stack Depth in a queueable",
+        "caughtType": "System.AsyncException",
+        "names": [
+          "owned-native-chain-1"
+        ],
+        "runs": 1
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F13",
+      "method": "afterCommitFault",
+      "native": {
+        "after": 1,
+        "before": 1,
+        "caughtMessage": "owned batch marker",
+        "caughtType": "AsyncBoundaryProbe.ProbeException"
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F14",
+      "method": "afterCommitSuccess",
+      "native": {
+        "after": 1,
+        "before": 1,
+        "caughtMessage": null,
+        "caughtType": null
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "62.0",
+      "fixture": "62.0/istest",
+      "id": "F15",
+      "method": "dmlOnlyFault",
+      "native": {
+        "body": 1,
+        "caughtType": "AsyncBoundaryProbe.ProbeException"
+      },
+      "receiptSHA256": "b42cdd7f434aa29c3873bd8f0bec689976262ec2f492e12a3f57306f5cd93907",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "enqueue": "delete [SELECT Id FROM Account WHERE Name LIKE 'owned-native-%'];\nSystem.enqueueJob(new AsyncBoundaryProbe.FaultJob('custom'));\nSystem.enqueueJob(new AsyncBoundaryProbe.FaultJob('list'));\nSystem.enqueueJob(new AsyncBoundaryProbe.FaultJob('success'));\nAsyncBoundaryProbe.spawnFromFuture();\nDatabase.executeBatch(new AsyncBoundaryBatch(false,true),1);\nSystem.debug('NATIVE_ASYNC|A00|enqueued');\n",
+      "fixture": "67.0/anonymous",
+      "id": "A01",
+      "native": {
+        "finalizers": {
+          "owned-native-finalizer-custom": {
+            "custom": true,
+            "message": "owned custom marker",
+            "nullException": false,
+            "result": "UNHANDLED_EXCEPTION",
+            "stackNonempty": true,
+            "type": "AsyncBoundaryProbe.ProbeException"
+          },
+          "owned-native-finalizer-list": {
+            "custom": false,
+            "message": "List index out of bounds: 0",
+            "nullException": false,
+            "result": "UNHANDLED_EXCEPTION",
+            "stackNonempty": true,
+            "type": "System.ListException"
+          },
+          "owned-native-finalizer-success": {
+            "nullException": true,
+            "result": "SUCCESS"
+          }
+        },
+        "names": [
+          "owned-native-batch-event",
+          "owned-native-chain-1",
+          "owned-native-chain-2",
+          "owned-native-finalizer-custom",
+          "owned-native-finalizer-list",
+          "owned-native-finalizer-success",
+          "owned-native-signal"
+        ]
+      },
+      "readback": "List<String> names=new List<String>();Map<String,Object> finalizers=new Map<String,Object>();\nfor(Account row:[SELECT Name,Description FROM Account WHERE Name LIKE 'owned-native-%' ORDER BY Name]){\n names.add(row.Name);\n if(row.Name.startsWith('owned-native-finalizer-'))finalizers.put(row.Name,JSON.deserializeUntyped(row.Description));\n}\nSystem.debug('NATIVE_ASYNC|A01|'+JSON.serialize(new Map<String,Object>{'names'=>names,'finalizers'=>finalizers}));\n",
+      "receiptSHA256": "688b6789c2a8095f5b29a638028784cd9b23035cbb84a4eb7227f10069bbea78",
+      "route": "anonymous"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F01",
+      "method": "customFinalizer",
+      "native": {
+        "caughtMessage": "owned custom marker",
+        "caughtType": "AsyncBoundaryProbe.ProbeException",
+        "finalizer": {
+          "custom": true,
+          "message": "owned custom marker",
+          "nullException": false,
+          "result": "UNHANDLED_EXCEPTION",
+          "stackNonempty": true,
+          "type": "AsyncBoundaryProbe.ProbeException"
+        },
+        "rows": 1
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F02",
+      "method": "listFinalizer",
+      "native": {
+        "caughtMessage": "List index out of bounds: 0",
+        "caughtType": "System.ListException",
+        "finalizer": {
+          "custom": false,
+          "message": "List index out of bounds: 0",
+          "nullException": false,
+          "result": "UNHANDLED_EXCEPTION",
+          "stackNonempty": true,
+          "type": "System.ListException"
+        },
+        "rows": 1
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F03",
+      "method": "successFinalizer",
+      "native": {
+        "caughtMessage": null,
+        "caughtType": null,
+        "finalizer": {
+          "nullException": true,
+          "result": "SUCCESS"
+        },
+        "rows": 1
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F04",
+      "method": "futureChain",
+      "native": {
+        "caughtMessage": null,
+        "caughtType": null,
+        "names": [
+          "owned-native-chain-1",
+          "owned-native-chain-2"
+        ],
+        "runs": 2
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F05",
+      "method": "directChain",
+      "native": {
+        "caughtMessage": null,
+        "caughtType": null,
+        "names": [
+          "owned-native-chain-1",
+          "owned-native-chain-2"
+        ],
+        "runs": 2
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F06",
+      "method": "batchDeliveredFault",
+      "native": {
+        "bodyAfter": 1,
+        "bodyBefore": 1,
+        "caughtMessage": "owned batch marker",
+        "caughtType": "AsyncBoundaryProbe.ProbeException",
+        "eventAfter": 1,
+        "eventBefore": 0,
+        "signalAfter": 1,
+        "signalBefore": 1
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F07",
+      "method": "batchQueuedFault",
+      "native": {
+        "bodyAfter": 1,
+        "bodyBefore": 1,
+        "caughtMessage": "owned batch marker",
+        "caughtType": "AsyncBoundaryProbe.ProbeException",
+        "eventAfter": 1,
+        "eventBefore": 0,
+        "signalAfter": 1,
+        "signalBefore": 0
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F08",
+      "method": "batchDeliveredSuccess",
+      "native": {
+        "bodyAfter": 1,
+        "bodyBefore": 1,
+        "caughtMessage": null,
+        "caughtType": null,
+        "eventAfter": 0,
+        "eventBefore": 0,
+        "signalAfter": 1,
+        "signalBefore": 1
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F09",
+      "method": "objectBatchFault",
+      "native": {
+        "body": 1,
+        "caughtMessage": "owned batch marker",
+        "caughtType": "AsyncBoundaryProbe.ProbeException",
+        "signal": 1
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F10",
+      "method": "objectBatchSuccess",
+      "native": {
+        "body": 1,
+        "caughtMessage": null,
+        "caughtType": null,
+        "signal": 1
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F11",
+      "method": "bodyDepthResetDirect",
+      "native": {
+        "caughtMessage": "Cannot reset Maximum Queueable Stack Depth in a queueable",
+        "caughtType": "System.AsyncException",
+        "names": [
+          "owned-native-chain-1"
+        ],
+        "runs": 1
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F12",
+      "method": "bodyDepthResetFuture",
+      "native": {
+        "caughtMessage": "Cannot reset Maximum Queueable Stack Depth in a queueable",
+        "caughtType": "System.AsyncException",
+        "names": [
+          "owned-native-chain-1"
+        ],
+        "runs": 1
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F13",
+      "method": "afterCommitFault",
+      "native": {
+        "after": 1,
+        "before": 1,
+        "caughtMessage": "owned batch marker",
+        "caughtType": "AsyncBoundaryProbe.ProbeException"
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F14",
+      "method": "afterCommitSuccess",
+      "native": {
+        "after": 1,
+        "before": 1,
+        "caughtMessage": null,
+        "caughtType": null
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    },
+    {
+      "api": "67.0",
+      "fixture": "67.0/istest",
+      "id": "F15",
+      "method": "dmlOnlyFault",
+      "native": {
+        "body": 1,
+        "caughtType": "AsyncBoundaryProbe.ProbeException"
+      },
+      "receiptSHA256": "8d81ead2c4a560805c4bc09de5b5b2539c29512032e360f159a13dcb24fd3e44",
+      "route": "istest"
+    }
+  ],
+  "fixtures": {
+    "62.0/anonymous": {
+      "files": {
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls": "public class AsyncBoundaryBatch implements Database.Batchable<SObject>,Database.RaisesPlatformEvents {\n  private Boolean deliverNow;\n  private Boolean fault;\n  public AsyncBoundaryBatch(Boolean d,Boolean f){deliverNow=d;fault=f;}\n  public Iterable<SObject> start(Database.BatchableContext context){return new List<SObject>{new Account(Name='owned-scope')};}\n  public void execute(Database.BatchableContext context,List<SObject> scope){\n   insert new Account(Name='owned-native-batch-body');\n   EventBus.publish(new NativeAsyncSignal__e(Value__c='owned-native-signal'));\n   if(deliverNow) Test.getEventBus().deliver();\n   if(fault) throw new AsyncBoundaryProbe.ProbeException('owned batch marker');\n  }\n  public void finish(Database.BatchableContext context){}\n }\n",
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls": "public class AsyncBoundaryObjectBatch implements Database.Batchable<Object>,Database.RaisesPlatformEvents {\n  private Boolean deliverNow;\n  private Boolean fault;\n  public AsyncBoundaryObjectBatch(Boolean d,Boolean f){deliverNow=d;fault=f;}\n  public Iterable<Object> start(Database.BatchableContext context){return new List<Object>{[SELECT Id FROM Account WHERE Name='owned-native-seed' LIMIT 1]};}\n  public void execute(Database.BatchableContext context,Iterable<Object> scope){\n   insert new Account(Name='owned-native-batch-body');\n   EventBus.publish(new NativeAsyncSignal__e(Value__c='owned-native-signal'));\n   if(deliverNow) Test.getEventBus().deliver();\n   if(fault) throw new AsyncBoundaryProbe.ProbeException('owned batch marker');\n  }\n  public void finish(Database.BatchableContext context){}\n }\n",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls": "public class AsyncBoundaryProbe {\n public static Integer runs=0;\n public class ProbeException extends Exception {}\n public class FaultJob implements Queueable, Finalizer {\n  private String mode;\n  public FaultJob(String m){mode=m;}\n  public void execute(QueueableContext context){\n   System.attachFinalizer(this);\n   if(mode=='custom') throw new ProbeException('owned custom marker');\n   if(mode=='list'){List<Integer> items=new List<Integer>();Integer ignored=items[0];}\n  }\n  public void execute(FinalizerContext context){\n   Exception error=context.getException();\n   Map<String,Object> data=new Map<String,Object>{'result'=>String.valueOf(context.getResult()),'nullException'=>error==null};\n   if(error!=null){data.put('type',error.getTypeName());data.put('message',error.getMessage());data.put('custom',error instanceof ProbeException);data.put('stackNonempty',String.isNotBlank(error.getStackTraceString()));}\n   insert new Account(Name='owned-native-finalizer-'+mode,Description=JSON.serialize(data));\n  }\n }\n public class ChainNode implements Queueable,Finalizer {\n  private Integer step;\n  public ChainNode(Integer n){step=n;}\n  public void execute(QueueableContext context){\n   System.attachFinalizer(this);\n   runs++;\n   insert new Account(Name='owned-native-chain-'+step,Description=String.valueOf(System.isQueueable()));\n  }\n  public void execute(FinalizerContext context){\n   if(step==1){AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new ChainNode(2),options);}\n  }\n }\n @future public static void spawnFromFuture(){\n  AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;\n  System.enqueueJob(new ChainNode(1),options);\n }\n}\n",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls": "@IsTest private class AsyncBoundaryProbeTest {\n private static void observeFinalizer(String mode,String id){\n  Test.startTest();System.enqueueJob(new AsyncBoundaryProbe.FaultJob(mode));\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  List<Account> rows=[SELECT Description FROM Account WHERE Name=:('owned-native-finalizer-'+mode)];\n  Map<String,Object> data=new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'rows'=>rows.size()};\n  if(!rows.isEmpty())data.put('finalizer',JSON.deserializeUntyped(rows[0].Description));\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(data));\n }\n @IsTest static void customFinalizer(){observeFinalizer('custom','F01');}\n @IsTest static void listFinalizer(){observeFinalizer('list','F02');}\n @IsTest static void successFinalizer(){observeFinalizer('success','F03');}\n private static void observeChain(Boolean futureOrigin,String id){\n  Test.startTest();\n  if(futureOrigin)AsyncBoundaryProbe.spawnFromFuture();\n  else{AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new AsyncBoundaryProbe.ChainNode(1),options);}\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  List<String> names=new List<String>();for(Account row:[SELECT Name FROM Account WHERE Name LIKE 'owned-native-chain-%' ORDER BY Name])names.add(row.Name);\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'names'=>names,'runs'=>AsyncBoundaryProbe.runs}));\n }\n @IsTest static void futureChain(){observeChain(true,'F04');}\n @IsTest static void directChain(){observeChain(false,'F05');}\n private static void observeBatch(Boolean deliverNow,Boolean fault,String id){\n  Test.startTest();Database.executeBatch(new AsyncBoundaryBatch(deliverNow,fault),1);\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  Integer bodyBefore=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  Integer signalBefore=[SELECT COUNT() FROM Account WHERE Name='owned-native-signal'];\n  Integer eventBefore=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-event'];\n  Test.getEventBus().deliver();\n  Integer bodyAfter=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  Integer signalAfter=[SELECT COUNT() FROM Account WHERE Name='owned-native-signal'];\n  Integer eventAfter=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-event'];\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'bodyBefore'=>bodyBefore,'signalBefore'=>signalBefore,'eventBefore'=>eventBefore,'bodyAfter'=>bodyAfter,'signalAfter'=>signalAfter,'eventAfter'=>eventAfter}));\n }\n @IsTest static void batchDeliveredFault(){observeBatch(true,true,'F06');}\n @IsTest static void batchQueuedFault(){observeBatch(false,true,'F07');}\n @IsTest static void batchDeliveredSuccess(){observeBatch(true,false,'F08');}\n private static void observeObjectBatch(Boolean fault,String id){\n  insert new Account(Name='owned-native-seed');\n  Test.startTest();Database.executeBatch(new AsyncBoundaryObjectBatch(true,fault),1);\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  Integer body=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  Integer signal=[SELECT COUNT() FROM Account WHERE Name='owned-native-signal'];\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'body'=>body,'signal'=>signal}));\n }\n @IsTest static void objectBatchFault(){observeObjectBatch(true,'F09');}\n @IsTest static void objectBatchSuccess(){observeObjectBatch(false,'F10');}\n}\n",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/objects/NativeAsyncSignal__e/NativeAsyncSignal__e.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>Native Async Signal</label><pluralLabel>Native Async Signals</pluralLabel><publishBehavior>PublishImmediately</publishBehavior></CustomObject>\n",
+        "force-app/main/default/objects/NativeAsyncSignal__e/fields/Value__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Value__c</fullName><label>Value</label><length>255</length><type>Text</type></CustomField>\n",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger": "trigger AsyncFaultIngress on BatchApexErrorEvent (after insert){List<Account> rows=new List<Account>();for(BatchApexErrorEvent event:Trigger.new)rows.add(new Account(Name='owned-native-batch-event',Description=event.ExceptionType));insert rows;}\n",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>\n",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger": "trigger AsyncSignalIngress on NativeAsyncSignal__e (after insert){List<Account> rows=new List<Account>();for(NativeAsyncSignal__e event:Trigger.new)rows.add(new Account(Name=event.Value__c));insert rows;}\n",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>\n",
+        "sfdx-project.json": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"sourceApiVersion\":\"62.0\"}\n"
+      },
+      "sha256": {
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls": "c6b0f6a7de43a24f33fdccd55e7915222931864b005c9889a5c7542f54352e9c",
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls": "fca51079e88f0c679024cbe1ac46b965e25410501547f7c44528d9c89497a90a",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls": "2fff77abfa611d794c4ab9a1dc27db09f4c0e35d7edcb67626b9745b9955a19f",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls": "29592d85ac891c22663119397da5449486ad7b668f8fb0e08ac5666e0dc3b8aa",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "force-app/main/default/objects/NativeAsyncSignal__e/NativeAsyncSignal__e.object-meta.xml": "977d84b9b64de888087749b226e8467ed12b25e3c108c7fe5a22499364d1c873",
+        "force-app/main/default/objects/NativeAsyncSignal__e/fields/Value__c.field-meta.xml": "02e5e57423b9d19867e5469dc2dc97d0c46adb60fd1d8499f74e92beb7f37788",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger": "9045842281afe7757ed8b0bba02f94992e23004ac62efea4945cc48b16031bb3",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger": "761f73ad52c2814388e061b04b2110f81e50e3d399f8726ce2711d1fd81898fd",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+        "sfdx-project.json": "ceec3022dd411c24f0395156e59970b102de1277358f2c5740c9b0e676b6a44c"
+      }
+    },
+    "62.0/istest": {
+      "files": {
+        "force-app/main/default/classes/AsyncAfterCommitBatch.cls": "public class AsyncAfterCommitBatch implements Database.Batchable<SObject>,Database.RaisesPlatformEvents {\n  private Boolean deliverNow;\n  private Boolean fault;\n  public AsyncAfterCommitBatch(Boolean d,Boolean f){deliverNow=d;fault=f;}\n  public Iterable<SObject> start(Database.BatchableContext context){return new List<SObject>{new Account(Name='owned-scope')};}\n  public void execute(Database.BatchableContext context,List<SObject> scope){\n   insert new Account(Name='owned-native-batch-body');\n   EventBus.publish(new NativeAsyncCommitSignal__e(Value__c='owned-native-commit-signal'));\n   if(deliverNow) Test.getEventBus().deliver();\n   if(fault) throw new AsyncBoundaryProbe.ProbeException('owned batch marker');\n  }\n  public void finish(Database.BatchableContext context){}\n }\n",
+        "force-app/main/default/classes/AsyncAfterCommitBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls": "public class AsyncBoundaryBatch implements Database.Batchable<SObject>,Database.RaisesPlatformEvents {\n  private Boolean deliverNow;\n  private Boolean fault;\n  public AsyncBoundaryBatch(Boolean d,Boolean f){deliverNow=d;fault=f;}\n  public Iterable<SObject> start(Database.BatchableContext context){return new List<SObject>{new Account(Name='owned-scope')};}\n  public void execute(Database.BatchableContext context,List<SObject> scope){\n   insert new Account(Name='owned-native-batch-body');\n   EventBus.publish(new NativeAsyncSignal__e(Value__c='owned-native-signal'));\n   if(deliverNow) Test.getEventBus().deliver();\n   if(fault) throw new AsyncBoundaryProbe.ProbeException('owned batch marker');\n  }\n  public void finish(Database.BatchableContext context){}\n }\n",
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls": "public class AsyncBoundaryObjectBatch implements Database.Batchable<Object>,Database.RaisesPlatformEvents {\n  private Boolean deliverNow;\n  private Boolean fault;\n  public AsyncBoundaryObjectBatch(Boolean d,Boolean f){deliverNow=d;fault=f;}\n  public Iterable<Object> start(Database.BatchableContext context){Account seed=[SELECT Id FROM Account WHERE Name='owned-native-seed' LIMIT 1];return new List<Object>{seed};}\n  public void execute(Database.BatchableContext context,Iterable<Object> scope){\n   insert new Account(Name='owned-native-batch-body');\n   EventBus.publish(new NativeAsyncSignal__e(Value__c='owned-native-signal'));\n   if(deliverNow) Test.getEventBus().deliver();\n   if(fault) throw new AsyncBoundaryProbe.ProbeException('owned batch marker');\n  }\n  public void finish(Database.BatchableContext context){}\n }\n",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls": "public class AsyncBoundaryProbe {\n public static Integer runs=0;\n public class ProbeException extends Exception {}\n public class FaultJob implements Queueable, Finalizer {\n  private String mode;\n  public FaultJob(String m){mode=m;}\n  public void execute(QueueableContext context){\n   System.attachFinalizer(this);\n   if(mode=='custom') throw new ProbeException('owned custom marker');\n   if(mode=='list'){List<Integer> items=new List<Integer>();Integer ignored=items[0];}\n  }\n  public void execute(FinalizerContext context){\n   Exception error=context.getException();\n   Map<String,Object> data=new Map<String,Object>{'result'=>String.valueOf(context.getResult()),'nullException'=>error==null};\n   if(error!=null){data.put('type',error.getTypeName());data.put('message',error.getMessage());data.put('custom',error instanceof ProbeException);data.put('stackNonempty',String.isNotBlank(error.getStackTraceString()));}\n   insert new Account(Name='owned-native-finalizer-'+mode,Description=JSON.serialize(data));\n  }\n }\n public class ChainNode implements Queueable,Finalizer {\n  private Integer step;\n  public ChainNode(Integer n){step=n;}\n  public void execute(QueueableContext context){\n   System.attachFinalizer(this);\n   runs++;\n   insert new Account(Name='owned-native-chain-'+step,Description=String.valueOf(System.isQueueable()));\n  }\n  public void execute(FinalizerContext context){\n   if(step==1){AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new ChainNode(2),options);}\n  }\n }\n @future public static void spawnFromFuture(){\n  AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;\n  System.enqueueJob(new ChainNode(1),options);\n }\n public class BodyChainNode implements Queueable {\n  private Integer step;\n  public BodyChainNode(Integer n){step=n;}\n  public void execute(QueueableContext context){\n   runs++;insert new Account(Name='owned-native-chain-'+step);\n   if(step==1){AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new BodyChainNode(2),options);}\n  }\n }\n @future public static void spawnBodyFromFuture(){AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new BodyChainNode(1),options);}\n}\n",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls": "@IsTest private class AsyncBoundaryProbeTest {\n private static void observeFinalizer(String mode,String id){\n  Test.startTest();System.enqueueJob(new AsyncBoundaryProbe.FaultJob(mode));\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  List<Account> rows=[SELECT Description FROM Account WHERE Name=:('owned-native-finalizer-'+mode)];\n  Map<String,Object> data=new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'rows'=>rows.size()};\n  if(!rows.isEmpty())data.put('finalizer',JSON.deserializeUntyped(rows[0].Description));\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(data));\n }\n @IsTest static void customFinalizer(){observeFinalizer('custom','F01');}\n @IsTest static void listFinalizer(){observeFinalizer('list','F02');}\n @IsTest static void successFinalizer(){observeFinalizer('success','F03');}\n private static void observeChain(Boolean futureOrigin,String id){\n  Test.startTest();\n  if(futureOrigin)AsyncBoundaryProbe.spawnFromFuture();\n  else{AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new AsyncBoundaryProbe.ChainNode(1),options);}\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  List<String> names=new List<String>();for(Account row:[SELECT Name FROM Account WHERE Name LIKE 'owned-native-chain-%' ORDER BY Name])names.add(row.Name);\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'names'=>names,'runs'=>AsyncBoundaryProbe.runs}));\n }\n @IsTest static void futureChain(){observeChain(true,'F04');}\n @IsTest static void directChain(){observeChain(false,'F05');}\n private static void observeBatch(Boolean deliverNow,Boolean fault,String id){\n  Test.startTest();Database.executeBatch(new AsyncBoundaryBatch(deliverNow,fault),1);\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  Integer bodyBefore=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  Integer signalBefore=[SELECT COUNT() FROM Account WHERE Name='owned-native-signal'];\n  Integer eventBefore=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-event'];\n  Test.getEventBus().deliver();\n  Integer bodyAfter=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  Integer signalAfter=[SELECT COUNT() FROM Account WHERE Name='owned-native-signal'];\n  Integer eventAfter=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-event'];\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'bodyBefore'=>bodyBefore,'signalBefore'=>signalBefore,'eventBefore'=>eventBefore,'bodyAfter'=>bodyAfter,'signalAfter'=>signalAfter,'eventAfter'=>eventAfter}));\n }\n @IsTest static void batchDeliveredFault(){observeBatch(true,true,'F06');}\n @IsTest static void batchQueuedFault(){observeBatch(false,true,'F07');}\n @IsTest static void batchDeliveredSuccess(){observeBatch(true,false,'F08');}\n private static void observeObjectBatch(Boolean fault,String id){\n  insert new Account(Name='owned-native-seed');\n  Test.startTest();Database.executeBatch(new AsyncBoundaryObjectBatch(true,fault),1);\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  Integer body=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  Integer signal=[SELECT COUNT() FROM Account WHERE Name='owned-native-signal'];\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'body'=>body,'signal'=>signal}));\n }\n @IsTest static void objectBatchFault(){observeObjectBatch(true,'F09');}\n @IsTest static void objectBatchSuccess(){observeObjectBatch(false,'F10');}\n private static void observeBodyChain(Boolean futureOrigin,String id){\n  Test.startTest();\n  if(futureOrigin)AsyncBoundaryProbe.spawnBodyFromFuture();\n  else{AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new AsyncBoundaryProbe.BodyChainNode(1),options);}\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  List<String> names=new List<String>();for(Account row:[SELECT Name FROM Account WHERE Name LIKE 'owned-native-chain-%' ORDER BY Name])names.add(row.Name);\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'names'=>names,'runs'=>AsyncBoundaryProbe.runs}));\n }\n @IsTest static void bodyDepthResetDirect(){observeBodyChain(false,'F11');}\n @IsTest static void bodyDepthResetFuture(){observeBodyChain(true,'F12');}\n private static void observeCommitBatch(Boolean fault,String id){\n  Test.startTest();Database.executeBatch(new AsyncAfterCommitBatch(true,fault),1);\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  Integer before=[SELECT COUNT() FROM Account WHERE Name='owned-native-commit-signal'];\n  Test.getEventBus().deliver();Integer after=[SELECT COUNT() FROM Account WHERE Name='owned-native-commit-signal'];\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'before'=>before,'after'=>after}));\n }\n @IsTest static void afterCommitFault(){observeCommitBatch(true,'F13');}\n @IsTest static void afterCommitSuccess(){observeCommitBatch(false,'F14');}\n @IsTest static void dmlOnlyFault(){\n  Test.startTest();Database.executeBatch(new AsyncDmlOnlyBatch(false,true),1);String caughtType=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();}\n  Integer body=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  System.assert(false,'NATIVE_ASYNC|F15|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'body'=>body}));\n }\n}\n",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncDmlOnlyBatch.cls": "public class AsyncDmlOnlyBatch implements Database.Batchable<SObject>,Database.RaisesPlatformEvents {\n  private Boolean deliverNow;\n  private Boolean fault;\n  public AsyncDmlOnlyBatch(Boolean d,Boolean f){deliverNow=d;fault=f;}\n  public Iterable<SObject> start(Database.BatchableContext context){return new List<SObject>{new Account(Name='owned-scope')};}\n  public void execute(Database.BatchableContext context,List<SObject> scope){\n   insert new Account(Name='owned-native-batch-body');\n   if(fault) throw new AsyncBoundaryProbe.ProbeException('owned batch marker');\n  }\n  public void finish(Database.BatchableContext context){}\n }\n",
+        "force-app/main/default/classes/AsyncDmlOnlyBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/objects/NativeAsyncCommitSignal__e/NativeAsyncCommitSignal__e.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>Native Async Commit Signal</label><pluralLabel>Native Async Commit Signals</pluralLabel><publishBehavior>PublishAfterCommit</publishBehavior></CustomObject>\n",
+        "force-app/main/default/objects/NativeAsyncCommitSignal__e/fields/Value__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Value__c</fullName><label>Value</label><length>255</length><type>Text</type></CustomField>\n",
+        "force-app/main/default/objects/NativeAsyncSignal__e/NativeAsyncSignal__e.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>Native Async Signal</label><pluralLabel>Native Async Signals</pluralLabel><publishBehavior>PublishImmediately</publishBehavior></CustomObject>\n",
+        "force-app/main/default/objects/NativeAsyncSignal__e/fields/Value__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Value__c</fullName><label>Value</label><length>255</length><type>Text</type></CustomField>\n",
+        "force-app/main/default/triggers/AsyncCommitIngress.trigger": "trigger AsyncCommitIngress on NativeAsyncCommitSignal__e (after insert){List<Account> rows=new List<Account>();for(NativeAsyncCommitSignal__e event:Trigger.new)rows.add(new Account(Name=event.Value__c));insert rows;}\n",
+        "force-app/main/default/triggers/AsyncCommitIngress.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>\n",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger": "trigger AsyncFaultIngress on BatchApexErrorEvent (after insert){List<Account> rows=new List<Account>();for(BatchApexErrorEvent event:Trigger.new)rows.add(new Account(Name='owned-native-batch-event',Description=event.ExceptionType));insert rows;}\n",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>\n",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger": "trigger AsyncSignalIngress on NativeAsyncSignal__e (after insert){List<Account> rows=new List<Account>();for(NativeAsyncSignal__e event:Trigger.new)rows.add(new Account(Name=event.Value__c));insert rows;}\n",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>\n",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}\n"
+      },
+      "sha256": {
+        "force-app/main/default/classes/AsyncAfterCommitBatch.cls": "8a8ef2c356ae82353cacbee5158519ff8cea6ff489a901e103f627c2b7418969",
+        "force-app/main/default/classes/AsyncAfterCommitBatch.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls": "c6b0f6a7de43a24f33fdccd55e7915222931864b005c9889a5c7542f54352e9c",
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls": "bb204894a84b8c7440424d6cafe6a0539fbaf1d30cfce752b86ec04703c8ec0f",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls": "c70e0e6f3e6133a48f7c5ed2e5af54e7b103343ddec3051529941daefd2a27b7",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls": "83b9e64593307edbd9f8f96338614a4cf6543d78f6b638a37e3698ef63d62d4c",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "force-app/main/default/classes/AsyncDmlOnlyBatch.cls": "bde2838f7742ad796fe946c53314828a7be6250af592ccf0d4d3c1c130ad2a0e",
+        "force-app/main/default/classes/AsyncDmlOnlyBatch.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "force-app/main/default/objects/NativeAsyncCommitSignal__e/NativeAsyncCommitSignal__e.object-meta.xml": "b4ce05c45dd4e198ac004c80ab9fbebac7a53d60077a23540b0ed839c065a17c",
+        "force-app/main/default/objects/NativeAsyncCommitSignal__e/fields/Value__c.field-meta.xml": "02e5e57423b9d19867e5469dc2dc97d0c46adb60fd1d8499f74e92beb7f37788",
+        "force-app/main/default/objects/NativeAsyncSignal__e/NativeAsyncSignal__e.object-meta.xml": "977d84b9b64de888087749b226e8467ed12b25e3c108c7fe5a22499364d1c873",
+        "force-app/main/default/objects/NativeAsyncSignal__e/fields/Value__c.field-meta.xml": "02e5e57423b9d19867e5469dc2dc97d0c46adb60fd1d8499f74e92beb7f37788",
+        "force-app/main/default/triggers/AsyncCommitIngress.trigger": "3662dc7c7d2ea2a730bfa4317abe36dcb69a52c807da3cf9d5bed4b05dff2d90",
+        "force-app/main/default/triggers/AsyncCommitIngress.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger": "9045842281afe7757ed8b0bba02f94992e23004ac62efea4945cc48b16031bb3",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger": "761f73ad52c2814388e061b04b2110f81e50e3d399f8726ce2711d1fd81898fd",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+        "sfdx-project.json": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb"
+      }
+    },
+    "67.0/anonymous": {
+      "files": {
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls": "public class AsyncBoundaryBatch implements Database.Batchable<SObject>,Database.RaisesPlatformEvents {\n  private Boolean deliverNow;\n  private Boolean fault;\n  public AsyncBoundaryBatch(Boolean d,Boolean f){deliverNow=d;fault=f;}\n  public Iterable<SObject> start(Database.BatchableContext context){return new List<SObject>{new Account(Name='owned-scope')};}\n  public void execute(Database.BatchableContext context,List<SObject> scope){\n   insert new Account(Name='owned-native-batch-body');\n   EventBus.publish(new NativeAsyncSignal__e(Value__c='owned-native-signal'));\n   if(deliverNow) Test.getEventBus().deliver();\n   if(fault) throw new AsyncBoundaryProbe.ProbeException('owned batch marker');\n  }\n  public void finish(Database.BatchableContext context){}\n }\n",
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls": "public class AsyncBoundaryObjectBatch implements Database.Batchable<Object>,Database.RaisesPlatformEvents {\n  private Boolean deliverNow;\n  private Boolean fault;\n  public AsyncBoundaryObjectBatch(Boolean d,Boolean f){deliverNow=d;fault=f;}\n  public Iterable<Object> start(Database.BatchableContext context){return new List<Object>{[SELECT Id FROM Account WHERE Name='owned-native-seed' LIMIT 1]};}\n  public void execute(Database.BatchableContext context,Iterable<Object> scope){\n   insert new Account(Name='owned-native-batch-body');\n   EventBus.publish(new NativeAsyncSignal__e(Value__c='owned-native-signal'));\n   if(deliverNow) Test.getEventBus().deliver();\n   if(fault) throw new AsyncBoundaryProbe.ProbeException('owned batch marker');\n  }\n  public void finish(Database.BatchableContext context){}\n }\n",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls": "public class AsyncBoundaryProbe {\n public static Integer runs=0;\n public class ProbeException extends Exception {}\n public class FaultJob implements Queueable, Finalizer {\n  private String mode;\n  public FaultJob(String m){mode=m;}\n  public void execute(QueueableContext context){\n   System.attachFinalizer(this);\n   if(mode=='custom') throw new ProbeException('owned custom marker');\n   if(mode=='list'){List<Integer> items=new List<Integer>();Integer ignored=items[0];}\n  }\n  public void execute(FinalizerContext context){\n   Exception error=context.getException();\n   Map<String,Object> data=new Map<String,Object>{'result'=>String.valueOf(context.getResult()),'nullException'=>error==null};\n   if(error!=null){data.put('type',error.getTypeName());data.put('message',error.getMessage());data.put('custom',error instanceof ProbeException);data.put('stackNonempty',String.isNotBlank(error.getStackTraceString()));}\n   insert new Account(Name='owned-native-finalizer-'+mode,Description=JSON.serialize(data));\n  }\n }\n public class ChainNode implements Queueable,Finalizer {\n  private Integer step;\n  public ChainNode(Integer n){step=n;}\n  public void execute(QueueableContext context){\n   System.attachFinalizer(this);\n   runs++;\n   insert new Account(Name='owned-native-chain-'+step,Description=String.valueOf(System.isQueueable()));\n  }\n  public void execute(FinalizerContext context){\n   if(step==1){AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new ChainNode(2),options);}\n  }\n }\n @future public static void spawnFromFuture(){\n  AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;\n  System.enqueueJob(new ChainNode(1),options);\n }\n}\n",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls": "@IsTest private class AsyncBoundaryProbeTest {\n private static void observeFinalizer(String mode,String id){\n  Test.startTest();System.enqueueJob(new AsyncBoundaryProbe.FaultJob(mode));\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  List<Account> rows=[SELECT Description FROM Account WHERE Name=:('owned-native-finalizer-'+mode)];\n  Map<String,Object> data=new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'rows'=>rows.size()};\n  if(!rows.isEmpty())data.put('finalizer',JSON.deserializeUntyped(rows[0].Description));\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(data));\n }\n @IsTest static void customFinalizer(){observeFinalizer('custom','F01');}\n @IsTest static void listFinalizer(){observeFinalizer('list','F02');}\n @IsTest static void successFinalizer(){observeFinalizer('success','F03');}\n private static void observeChain(Boolean futureOrigin,String id){\n  Test.startTest();\n  if(futureOrigin)AsyncBoundaryProbe.spawnFromFuture();\n  else{AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new AsyncBoundaryProbe.ChainNode(1),options);}\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  List<String> names=new List<String>();for(Account row:[SELECT Name FROM Account WHERE Name LIKE 'owned-native-chain-%' ORDER BY Name])names.add(row.Name);\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'names'=>names,'runs'=>AsyncBoundaryProbe.runs}));\n }\n @IsTest static void futureChain(){observeChain(true,'F04');}\n @IsTest static void directChain(){observeChain(false,'F05');}\n private static void observeBatch(Boolean deliverNow,Boolean fault,String id){\n  Test.startTest();Database.executeBatch(new AsyncBoundaryBatch(deliverNow,fault),1);\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  Integer bodyBefore=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  Integer signalBefore=[SELECT COUNT() FROM Account WHERE Name='owned-native-signal'];\n  Integer eventBefore=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-event'];\n  Test.getEventBus().deliver();\n  Integer bodyAfter=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  Integer signalAfter=[SELECT COUNT() FROM Account WHERE Name='owned-native-signal'];\n  Integer eventAfter=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-event'];\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'bodyBefore'=>bodyBefore,'signalBefore'=>signalBefore,'eventBefore'=>eventBefore,'bodyAfter'=>bodyAfter,'signalAfter'=>signalAfter,'eventAfter'=>eventAfter}));\n }\n @IsTest static void batchDeliveredFault(){observeBatch(true,true,'F06');}\n @IsTest static void batchQueuedFault(){observeBatch(false,true,'F07');}\n @IsTest static void batchDeliveredSuccess(){observeBatch(true,false,'F08');}\n private static void observeObjectBatch(Boolean fault,String id){\n  insert new Account(Name='owned-native-seed');\n  Test.startTest();Database.executeBatch(new AsyncBoundaryObjectBatch(true,fault),1);\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  Integer body=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  Integer signal=[SELECT COUNT() FROM Account WHERE Name='owned-native-signal'];\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'body'=>body,'signal'=>signal}));\n }\n @IsTest static void objectBatchFault(){observeObjectBatch(true,'F09');}\n @IsTest static void objectBatchSuccess(){observeObjectBatch(false,'F10');}\n}\n",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/objects/NativeAsyncSignal__e/NativeAsyncSignal__e.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>Native Async Signal</label><pluralLabel>Native Async Signals</pluralLabel><publishBehavior>PublishImmediately</publishBehavior></CustomObject>\n",
+        "force-app/main/default/objects/NativeAsyncSignal__e/fields/Value__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Value__c</fullName><label>Value</label><length>255</length><type>Text</type></CustomField>\n",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger": "trigger AsyncFaultIngress on BatchApexErrorEvent (after insert){List<Account> rows=new List<Account>();for(BatchApexErrorEvent event:Trigger.new)rows.add(new Account(Name='owned-native-batch-event',Description=event.ExceptionType));insert rows;}\n",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexTrigger>\n",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger": "trigger AsyncSignalIngress on NativeAsyncSignal__e (after insert){List<Account> rows=new List<Account>();for(NativeAsyncSignal__e event:Trigger.new)rows.add(new Account(Name=event.Value__c));insert rows;}\n",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexTrigger>\n",
+        "sfdx-project.json": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"sourceApiVersion\":\"67.0\"}\n"
+      },
+      "sha256": {
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls": "c6b0f6a7de43a24f33fdccd55e7915222931864b005c9889a5c7542f54352e9c",
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls": "fca51079e88f0c679024cbe1ac46b965e25410501547f7c44528d9c89497a90a",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls": "2fff77abfa611d794c4ab9a1dc27db09f4c0e35d7edcb67626b9745b9955a19f",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls": "29592d85ac891c22663119397da5449486ad7b668f8fb0e08ac5666e0dc3b8aa",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "force-app/main/default/objects/NativeAsyncSignal__e/NativeAsyncSignal__e.object-meta.xml": "977d84b9b64de888087749b226e8467ed12b25e3c108c7fe5a22499364d1c873",
+        "force-app/main/default/objects/NativeAsyncSignal__e/fields/Value__c.field-meta.xml": "02e5e57423b9d19867e5469dc2dc97d0c46adb60fd1d8499f74e92beb7f37788",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger": "9045842281afe7757ed8b0bba02f94992e23004ac62efea4945cc48b16031bb3",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger-meta.xml": "14ea83a9ae4d9213280344a2f60a06fbc2c2888c4f63029ebc6d1487970cba40",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger": "761f73ad52c2814388e061b04b2110f81e50e3d399f8726ce2711d1fd81898fd",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger-meta.xml": "14ea83a9ae4d9213280344a2f60a06fbc2c2888c4f63029ebc6d1487970cba40",
+        "sfdx-project.json": "56c1e46f31f129abbece0bcc865a52734e61c5312ef2c6ec4305cc61f3eca62d"
+      }
+    },
+    "67.0/istest": {
+      "files": {
+        "force-app/main/default/classes/AsyncAfterCommitBatch.cls": "public class AsyncAfterCommitBatch implements Database.Batchable<SObject>,Database.RaisesPlatformEvents {\n  private Boolean deliverNow;\n  private Boolean fault;\n  public AsyncAfterCommitBatch(Boolean d,Boolean f){deliverNow=d;fault=f;}\n  public Iterable<SObject> start(Database.BatchableContext context){return new List<SObject>{new Account(Name='owned-scope')};}\n  public void execute(Database.BatchableContext context,List<SObject> scope){\n   insert new Account(Name='owned-native-batch-body');\n   EventBus.publish(new NativeAsyncCommitSignal__e(Value__c='owned-native-commit-signal'));\n   if(deliverNow) Test.getEventBus().deliver();\n   if(fault) throw new AsyncBoundaryProbe.ProbeException('owned batch marker');\n  }\n  public void finish(Database.BatchableContext context){}\n }\n",
+        "force-app/main/default/classes/AsyncAfterCommitBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls": "public class AsyncBoundaryBatch implements Database.Batchable<SObject>,Database.RaisesPlatformEvents {\n  private Boolean deliverNow;\n  private Boolean fault;\n  public AsyncBoundaryBatch(Boolean d,Boolean f){deliverNow=d;fault=f;}\n  public Iterable<SObject> start(Database.BatchableContext context){return new List<SObject>{new Account(Name='owned-scope')};}\n  public void execute(Database.BatchableContext context,List<SObject> scope){\n   insert new Account(Name='owned-native-batch-body');\n   EventBus.publish(new NativeAsyncSignal__e(Value__c='owned-native-signal'));\n   if(deliverNow) Test.getEventBus().deliver();\n   if(fault) throw new AsyncBoundaryProbe.ProbeException('owned batch marker');\n  }\n  public void finish(Database.BatchableContext context){}\n }\n",
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls": "public class AsyncBoundaryObjectBatch implements Database.Batchable<Object>,Database.RaisesPlatformEvents {\n  private Boolean deliverNow;\n  private Boolean fault;\n  public AsyncBoundaryObjectBatch(Boolean d,Boolean f){deliverNow=d;fault=f;}\n  public Iterable<Object> start(Database.BatchableContext context){Account seed=[SELECT Id FROM Account WHERE Name='owned-native-seed' LIMIT 1];return new List<Object>{seed};}\n  public void execute(Database.BatchableContext context,Iterable<Object> scope){\n   insert new Account(Name='owned-native-batch-body');\n   EventBus.publish(new NativeAsyncSignal__e(Value__c='owned-native-signal'));\n   if(deliverNow) Test.getEventBus().deliver();\n   if(fault) throw new AsyncBoundaryProbe.ProbeException('owned batch marker');\n  }\n  public void finish(Database.BatchableContext context){}\n }\n",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls": "public class AsyncBoundaryProbe {\n public static Integer runs=0;\n public class ProbeException extends Exception {}\n public class FaultJob implements Queueable, Finalizer {\n  private String mode;\n  public FaultJob(String m){mode=m;}\n  public void execute(QueueableContext context){\n   System.attachFinalizer(this);\n   if(mode=='custom') throw new ProbeException('owned custom marker');\n   if(mode=='list'){List<Integer> items=new List<Integer>();Integer ignored=items[0];}\n  }\n  public void execute(FinalizerContext context){\n   Exception error=context.getException();\n   Map<String,Object> data=new Map<String,Object>{'result'=>String.valueOf(context.getResult()),'nullException'=>error==null};\n   if(error!=null){data.put('type',error.getTypeName());data.put('message',error.getMessage());data.put('custom',error instanceof ProbeException);data.put('stackNonempty',String.isNotBlank(error.getStackTraceString()));}\n   insert new Account(Name='owned-native-finalizer-'+mode,Description=JSON.serialize(data));\n  }\n }\n public class ChainNode implements Queueable,Finalizer {\n  private Integer step;\n  public ChainNode(Integer n){step=n;}\n  public void execute(QueueableContext context){\n   System.attachFinalizer(this);\n   runs++;\n   insert new Account(Name='owned-native-chain-'+step,Description=String.valueOf(System.isQueueable()));\n  }\n  public void execute(FinalizerContext context){\n   if(step==1){AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new ChainNode(2),options);}\n  }\n }\n @future public static void spawnFromFuture(){\n  AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;\n  System.enqueueJob(new ChainNode(1),options);\n }\n public class BodyChainNode implements Queueable {\n  private Integer step;\n  public BodyChainNode(Integer n){step=n;}\n  public void execute(QueueableContext context){\n   runs++;insert new Account(Name='owned-native-chain-'+step);\n   if(step==1){AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new BodyChainNode(2),options);}\n  }\n }\n @future public static void spawnBodyFromFuture(){AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new BodyChainNode(1),options);}\n}\n",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls": "@IsTest private class AsyncBoundaryProbeTest {\n private static void observeFinalizer(String mode,String id){\n  Test.startTest();System.enqueueJob(new AsyncBoundaryProbe.FaultJob(mode));\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  List<Account> rows=[SELECT Description FROM Account WHERE Name=:('owned-native-finalizer-'+mode)];\n  Map<String,Object> data=new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'rows'=>rows.size()};\n  if(!rows.isEmpty())data.put('finalizer',JSON.deserializeUntyped(rows[0].Description));\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(data));\n }\n @IsTest static void customFinalizer(){observeFinalizer('custom','F01');}\n @IsTest static void listFinalizer(){observeFinalizer('list','F02');}\n @IsTest static void successFinalizer(){observeFinalizer('success','F03');}\n private static void observeChain(Boolean futureOrigin,String id){\n  Test.startTest();\n  if(futureOrigin)AsyncBoundaryProbe.spawnFromFuture();\n  else{AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new AsyncBoundaryProbe.ChainNode(1),options);}\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  List<String> names=new List<String>();for(Account row:[SELECT Name FROM Account WHERE Name LIKE 'owned-native-chain-%' ORDER BY Name])names.add(row.Name);\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'names'=>names,'runs'=>AsyncBoundaryProbe.runs}));\n }\n @IsTest static void futureChain(){observeChain(true,'F04');}\n @IsTest static void directChain(){observeChain(false,'F05');}\n private static void observeBatch(Boolean deliverNow,Boolean fault,String id){\n  Test.startTest();Database.executeBatch(new AsyncBoundaryBatch(deliverNow,fault),1);\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  Integer bodyBefore=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  Integer signalBefore=[SELECT COUNT() FROM Account WHERE Name='owned-native-signal'];\n  Integer eventBefore=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-event'];\n  Test.getEventBus().deliver();\n  Integer bodyAfter=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  Integer signalAfter=[SELECT COUNT() FROM Account WHERE Name='owned-native-signal'];\n  Integer eventAfter=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-event'];\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'bodyBefore'=>bodyBefore,'signalBefore'=>signalBefore,'eventBefore'=>eventBefore,'bodyAfter'=>bodyAfter,'signalAfter'=>signalAfter,'eventAfter'=>eventAfter}));\n }\n @IsTest static void batchDeliveredFault(){observeBatch(true,true,'F06');}\n @IsTest static void batchQueuedFault(){observeBatch(false,true,'F07');}\n @IsTest static void batchDeliveredSuccess(){observeBatch(true,false,'F08');}\n private static void observeObjectBatch(Boolean fault,String id){\n  insert new Account(Name='owned-native-seed');\n  Test.startTest();Database.executeBatch(new AsyncBoundaryObjectBatch(true,fault),1);\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  Integer body=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  Integer signal=[SELECT COUNT() FROM Account WHERE Name='owned-native-signal'];\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'body'=>body,'signal'=>signal}));\n }\n @IsTest static void objectBatchFault(){observeObjectBatch(true,'F09');}\n @IsTest static void objectBatchSuccess(){observeObjectBatch(false,'F10');}\n private static void observeBodyChain(Boolean futureOrigin,String id){\n  Test.startTest();\n  if(futureOrigin)AsyncBoundaryProbe.spawnBodyFromFuture();\n  else{AsyncOptions options=new AsyncOptions();options.MaximumQueueableStackDepth=2;System.enqueueJob(new AsyncBoundaryProbe.BodyChainNode(1),options);}\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  List<String> names=new List<String>();for(Account row:[SELECT Name FROM Account WHERE Name LIKE 'owned-native-chain-%' ORDER BY Name])names.add(row.Name);\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'names'=>names,'runs'=>AsyncBoundaryProbe.runs}));\n }\n @IsTest static void bodyDepthResetDirect(){observeBodyChain(false,'F11');}\n @IsTest static void bodyDepthResetFuture(){observeBodyChain(true,'F12');}\n private static void observeCommitBatch(Boolean fault,String id){\n  Test.startTest();Database.executeBatch(new AsyncAfterCommitBatch(true,fault),1);\n  String caughtType=null;String caughtMessage=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();caughtMessage=error.getMessage();}\n  Integer before=[SELECT COUNT() FROM Account WHERE Name='owned-native-commit-signal'];\n  Test.getEventBus().deliver();Integer after=[SELECT COUNT() FROM Account WHERE Name='owned-native-commit-signal'];\n  System.assert(false,'NATIVE_ASYNC|'+id+'|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'caughtMessage'=>caughtMessage,'before'=>before,'after'=>after}));\n }\n @IsTest static void afterCommitFault(){observeCommitBatch(true,'F13');}\n @IsTest static void afterCommitSuccess(){observeCommitBatch(false,'F14');}\n @IsTest static void dmlOnlyFault(){\n  Test.startTest();Database.executeBatch(new AsyncDmlOnlyBatch(false,true),1);String caughtType=null;\n  try{Test.stopTest();}catch(Exception error){caughtType=error.getTypeName();}\n  Integer body=[SELECT COUNT() FROM Account WHERE Name='owned-native-batch-body'];\n  System.assert(false,'NATIVE_ASYNC|F15|'+JSON.serialize(new Map<String,Object>{'caughtType'=>caughtType,'body'=>body}));\n }\n}\n",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/AsyncDmlOnlyBatch.cls": "public class AsyncDmlOnlyBatch implements Database.Batchable<SObject>,Database.RaisesPlatformEvents {\n  private Boolean deliverNow;\n  private Boolean fault;\n  public AsyncDmlOnlyBatch(Boolean d,Boolean f){deliverNow=d;fault=f;}\n  public Iterable<SObject> start(Database.BatchableContext context){return new List<SObject>{new Account(Name='owned-scope')};}\n  public void execute(Database.BatchableContext context,List<SObject> scope){\n   insert new Account(Name='owned-native-batch-body');\n   if(fault) throw new AsyncBoundaryProbe.ProbeException('owned batch marker');\n  }\n  public void finish(Database.BatchableContext context){}\n }\n",
+        "force-app/main/default/classes/AsyncDmlOnlyBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/objects/NativeAsyncCommitSignal__e/NativeAsyncCommitSignal__e.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>Native Async Commit Signal</label><pluralLabel>Native Async Commit Signals</pluralLabel><publishBehavior>PublishAfterCommit</publishBehavior></CustomObject>\n",
+        "force-app/main/default/objects/NativeAsyncCommitSignal__e/fields/Value__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Value__c</fullName><label>Value</label><length>255</length><type>Text</type></CustomField>\n",
+        "force-app/main/default/objects/NativeAsyncSignal__e/NativeAsyncSignal__e.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>Native Async Signal</label><pluralLabel>Native Async Signals</pluralLabel><publishBehavior>PublishImmediately</publishBehavior></CustomObject>\n",
+        "force-app/main/default/objects/NativeAsyncSignal__e/fields/Value__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Value__c</fullName><label>Value</label><length>255</length><type>Text</type></CustomField>\n",
+        "force-app/main/default/triggers/AsyncCommitIngress.trigger": "trigger AsyncCommitIngress on NativeAsyncCommitSignal__e (after insert){List<Account> rows=new List<Account>();for(NativeAsyncCommitSignal__e event:Trigger.new)rows.add(new Account(Name=event.Value__c));insert rows;}\n",
+        "force-app/main/default/triggers/AsyncCommitIngress.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexTrigger>\n",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger": "trigger AsyncFaultIngress on BatchApexErrorEvent (after insert){List<Account> rows=new List<Account>();for(BatchApexErrorEvent event:Trigger.new)rows.add(new Account(Name='owned-native-batch-event',Description=event.ExceptionType));insert rows;}\n",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexTrigger>\n",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger": "trigger AsyncSignalIngress on NativeAsyncSignal__e (after insert){List<Account> rows=new List<Account>();for(NativeAsyncSignal__e event:Trigger.new)rows.add(new Account(Name=event.Value__c));insert rows;}\n",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexTrigger>\n",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"67.0\"}\n"
+      },
+      "sha256": {
+        "force-app/main/default/classes/AsyncAfterCommitBatch.cls": "8a8ef2c356ae82353cacbee5158519ff8cea6ff489a901e103f627c2b7418969",
+        "force-app/main/default/classes/AsyncAfterCommitBatch.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls": "c6b0f6a7de43a24f33fdccd55e7915222931864b005c9889a5c7542f54352e9c",
+        "force-app/main/default/classes/AsyncBoundaryBatch.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls": "bb204894a84b8c7440424d6cafe6a0539fbaf1d30cfce752b86ec04703c8ec0f",
+        "force-app/main/default/classes/AsyncBoundaryObjectBatch.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls": "c70e0e6f3e6133a48f7c5ed2e5af54e7b103343ddec3051529941daefd2a27b7",
+        "force-app/main/default/classes/AsyncBoundaryProbe.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls": "83b9e64593307edbd9f8f96338614a4cf6543d78f6b638a37e3698ef63d62d4c",
+        "force-app/main/default/classes/AsyncBoundaryProbeTest.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "force-app/main/default/classes/AsyncDmlOnlyBatch.cls": "bde2838f7742ad796fe946c53314828a7be6250af592ccf0d4d3c1c130ad2a0e",
+        "force-app/main/default/classes/AsyncDmlOnlyBatch.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "force-app/main/default/objects/NativeAsyncCommitSignal__e/NativeAsyncCommitSignal__e.object-meta.xml": "b4ce05c45dd4e198ac004c80ab9fbebac7a53d60077a23540b0ed839c065a17c",
+        "force-app/main/default/objects/NativeAsyncCommitSignal__e/fields/Value__c.field-meta.xml": "02e5e57423b9d19867e5469dc2dc97d0c46adb60fd1d8499f74e92beb7f37788",
+        "force-app/main/default/objects/NativeAsyncSignal__e/NativeAsyncSignal__e.object-meta.xml": "977d84b9b64de888087749b226e8467ed12b25e3c108c7fe5a22499364d1c873",
+        "force-app/main/default/objects/NativeAsyncSignal__e/fields/Value__c.field-meta.xml": "02e5e57423b9d19867e5469dc2dc97d0c46adb60fd1d8499f74e92beb7f37788",
+        "force-app/main/default/triggers/AsyncCommitIngress.trigger": "3662dc7c7d2ea2a730bfa4317abe36dcb69a52c807da3cf9d5bed4b05dff2d90",
+        "force-app/main/default/triggers/AsyncCommitIngress.trigger-meta.xml": "14ea83a9ae4d9213280344a2f60a06fbc2c2888c4f63029ebc6d1487970cba40",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger": "9045842281afe7757ed8b0bba02f94992e23004ac62efea4945cc48b16031bb3",
+        "force-app/main/default/triggers/AsyncFaultIngress.trigger-meta.xml": "14ea83a9ae4d9213280344a2f60a06fbc2c2888c4f63029ebc6d1487970cba40",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger": "761f73ad52c2814388e061b04b2110f81e50e3d399f8726ce2711d1fd81898fd",
+        "force-app/main/default/triggers/AsyncSignalIngress.trigger-meta.xml": "14ea83a9ae4d9213280344a2f60a06fbc2c2888c4f63029ebc6d1487970cba40",
+        "sfdx-project.json": "5b7b79fe9ddb6530eeadb5d1bbb09f96b0737b4785616bf2fd317262bcd69554"
+      }
+    }
+  },
+  "provenance": {
+    "capturedAt": "2026-10-15",
+    "orgIdSHA256": "0e0bd56ee2be6ba4a6c635af7ce8daa57f8b88e0477469cc0a37eb72eb646f51",
+    "primarySources": [
+      "https://developer.salesforce.com/docs/platform/platform-events/guide/platform-events-considerations-decoupled-processes.html",
+      "https://developer.salesforce.com/docs/platform/platform-events/guide/platform-events-subscribe-apex.html"
+    ],
+    "transport": "owned synthetic named assertion and anonymous debug readback"
+  },
+  "schemaVersion": 1
+}

@@ -1,0 +1,2879 @@
+{
+  "group": "metadata",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "shapeCount": 3,
+  "nativeObservationCount": 18,
+  "recoveredObservationCount": 0,
+  "notes": [
+    "Synthetic source-only project metadata, helper classes and triggers use the ordinary project loader.",
+    "Both independently captured routes compare complete reassembled payloads; named chunk envelopes are transport only.",
+    "Same-release APIs62/67/68; API59 has no rows.",
+    "API67/68 SOAP guide anchors compare by stable message parts; no org URL is produced or compared.",
+    "Rejected global-null metadata compares loader rejection plus the accepted modern runtime twin."
+  ],
+  "rows": [
+    {
+      "id": "C187METADATA_001",
+      "label": "Upper plus unchanged modern lowercase empty-value twin",
+      "config": {
+        "variant": "Upper"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA62UpperObserver.direct('E32BA62Name','record')};payload.put('alternative',E32BA62UpperObserver.direct('E32BA62Upper','Record'));payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true && ((Map<String,Object>)payload.get('alternative')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_001|'+encoded);",
+              "operationSHA256": "bea950624033d4ddd61c7f23988c99da456f66df6480cc272fcd3208ad2d139b",
+              "captureSourceSHA256": {
+                "anonymous": "bea950624033d4ddd61c7f23988c99da456f66df6480cc272fcd3208ad2d139b"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "alternative": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "Record",
+                      "fired"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  },
+                  "modern": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  }
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA62UpperObserver.direct('E32BA62Name','record')};payload.put('alternative',E32BA62UpperObserver.direct('E32BA62Upper','Record'));payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true && ((Map<String,Object>)payload.get('alternative')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_001|'+encoded);",
+              "operationSHA256": "bea950624033d4ddd61c7f23988c99da456f66df6480cc272fcd3208ad2d139b",
+              "captureSourceSHA256": {
+                "E32BA62C187METADATA001": "a46890d7be2337ba08a45031e24407db0b3c158cf8ac82655af26366fdcde7e3"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "alternative": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "Record",
+                      "fired"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  },
+                  "modern": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  }
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA67UpperObserver.direct('E32BA67Name','record')};payload.put('alternative',E32BA67UpperObserver.direct('E32BA67Upper','Record'));payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true && ((Map<String,Object>)payload.get('alternative')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_001|'+encoded);",
+              "operationSHA256": "563fa61a7c7ece832a363498782467f6d53ac3e9ae47b805c673ede901e2267b",
+              "captureSourceSHA256": {
+                "anonymous": "563fa61a7c7ece832a363498782467f6d53ac3e9ae47b805c673ede901e2267b"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "alternative": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "Record",
+                      "fired"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  },
+                  "modern": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  }
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA67UpperObserver.direct('E32BA67Name','record')};payload.put('alternative',E32BA67UpperObserver.direct('E32BA67Upper','Record'));payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true && ((Map<String,Object>)payload.get('alternative')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_001|'+encoded);",
+              "operationSHA256": "563fa61a7c7ece832a363498782467f6d53ac3e9ae47b805c673ede901e2267b",
+              "captureSourceSHA256": {
+                "E32BA67C187METADATA001": "01be2cf95e4ee38726a53e4a7bab6cb7440fffe03a242c969c88a3f5c6a8535f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "alternative": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "Record",
+                      "fired"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  },
+                  "modern": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  }
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA68UpperObserver.direct('E32BA68Name','record')};payload.put('alternative',E32BA68UpperObserver.direct('E32BA68Upper','Record'));payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true && ((Map<String,Object>)payload.get('alternative')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_001|'+encoded);",
+              "operationSHA256": "4e6537464945d5efc805f97bbf7f1b559c3bd3dbc662efa07d11dd1976aced4a",
+              "captureSourceSHA256": {
+                "anonymous": "4e6537464945d5efc805f97bbf7f1b559c3bd3dbc662efa07d11dd1976aced4a"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "alternative": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "Record",
+                      "fired"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  },
+                  "modern": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  }
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA68UpperObserver.direct('E32BA68Name','record')};payload.put('alternative',E32BA68UpperObserver.direct('E32BA68Upper','Record'));payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true && ((Map<String,Object>)payload.get('alternative')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_001|'+encoded);",
+              "operationSHA256": "4e6537464945d5efc805f97bbf7f1b559c3bd3dbc662efa07d11dd1976aced4a",
+              "captureSourceSHA256": {
+                "E32BA68C187METADATA001": "81e0bdce5edc0f022fae134a60a346bd22d3fd23db041052e4da5c23405feb5c"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "alternative": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "Record",
+                      "fired"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  },
+                  "modern": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  }
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187METADATA_002",
+      "label": "Legacy plus unchanged modern lowercase empty-value twin",
+      "config": {
+        "variant": "Legacy"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA62LegacyObserver.direct('E32BA62Name','record')};payload.put('alternative',E32BA62LegacyObserver.direct('E32BA62Legacy','record'));payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true && ((Map<String,Object>)payload.get('alternative')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_002|'+encoded);",
+              "operationSHA256": "6d550f56f97d95b618ac4a0bc727be3c8dcc0a107ac39ea0d6f48ede572cecfd",
+              "captureSourceSHA256": {
+                "anonymous": "6d550f56f97d95b618ac4a0bc727be3c8dcc0a107ac39ea0d6f48ede572cecfd"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "alternative": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  },
+                  "modern": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  }
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA62LegacyObserver.direct('E32BA62Name','record')};payload.put('alternative',E32BA62LegacyObserver.direct('E32BA62Legacy','record'));payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true && ((Map<String,Object>)payload.get('alternative')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_002|'+encoded);",
+              "operationSHA256": "6d550f56f97d95b618ac4a0bc727be3c8dcc0a107ac39ea0d6f48ede572cecfd",
+              "captureSourceSHA256": {
+                "E32BA62C187METADATA002": "a934db7e2330ee865b1bbcbbf26ad77299cf46611d06f5387939e238e9baf7fa"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "alternative": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  },
+                  "modern": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  }
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA67LegacyObserver.direct('E32BA67Name','record')};payload.put('alternative',E32BA67LegacyObserver.direct('E32BA67Legacy','record'));payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true && ((Map<String,Object>)payload.get('alternative')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_002|'+encoded);",
+              "operationSHA256": "2ed04b0b196292492cc74f40a9504189a22e51f2d371250f768296198e7d26f9",
+              "captureSourceSHA256": {
+                "anonymous": "2ed04b0b196292492cc74f40a9504189a22e51f2d371250f768296198e7d26f9"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "alternative": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  },
+                  "modern": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  }
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA67LegacyObserver.direct('E32BA67Name','record')};payload.put('alternative',E32BA67LegacyObserver.direct('E32BA67Legacy','record'));payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true && ((Map<String,Object>)payload.get('alternative')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_002|'+encoded);",
+              "operationSHA256": "2ed04b0b196292492cc74f40a9504189a22e51f2d371250f768296198e7d26f9",
+              "captureSourceSHA256": {
+                "E32BA67C187METADATA002": "ddc60b0057993c4f0b5c30b7f58dac760ad9d0529e55bc19f6dc47f6b1192699"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "alternative": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  },
+                  "modern": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  }
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA68LegacyObserver.direct('E32BA68Name','record')};payload.put('alternative',E32BA68LegacyObserver.direct('E32BA68Legacy','record'));payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true && ((Map<String,Object>)payload.get('alternative')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_002|'+encoded);",
+              "operationSHA256": "1754f2142d5f31d5d7aee72b6a8ae95c0550b22c3b9c7ef1cdf3070d00f1e907",
+              "captureSourceSHA256": {
+                "anonymous": "1754f2142d5f31d5d7aee72b6a8ae95c0550b22c3b9c7ef1cdf3070d00f1e907"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "alternative": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  },
+                  "modern": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  }
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA68LegacyObserver.direct('E32BA68Name','record')};payload.put('alternative',E32BA68LegacyObserver.direct('E32BA68Legacy','record'));payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true && ((Map<String,Object>)payload.get('alternative')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_002|'+encoded);",
+              "operationSHA256": "1754f2142d5f31d5d7aee72b6a8ae95c0550b22c3b9c7ef1cdf3070d00f1e907",
+              "captureSourceSHA256": {
+                "E32BA68C187METADATA002": "d65b79fc58aaba5a49f9c8eb8c1c8f2768a14b9f4a59e9cd303e99967c7df257"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "alternative": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  },
+                  "modern": {
+                    "databaseAfterWriteBack": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "writeBackSuccess": true,
+                    "writeBackAttempted": true,
+                    "databaseBeforeWriteBack": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfterCaller": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "inputAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "originalAfter": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "fired": true,
+                    "output": [
+                      "same",
+                      "Foo",
+                      null,
+                      "Technology"
+                    ],
+                    "outputKeys": [
+                      "Flow__InterviewGuid",
+                      "Flow__InterviewStatus",
+                      "fired",
+                      "record"
+                    ],
+                    "outputPresent": true,
+                    "errors": [],
+                    "isSuccess": true,
+                    "resultCount": 1,
+                    "inputBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ],
+                    "flowFired": true,
+                    "originalBefore": [
+                      "same",
+                      "E32 Original",
+                      "E32 seed",
+                      "Technology"
+                    ]
+                  }
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187METADATA_003",
+      "label": "GlobalNull plus unchanged modern lowercase empty-value twin",
+      "config": {
+        "variant": "GlobalNull"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA62GlobalNullObserver.direct('E32BA62Name','record')};payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_003|'+encoded);",
+              "operationSHA256": "3f7786366b0af85ad56e2ad31cd0f599f4197fb77f428d5a9a91946eeb669095",
+              "captureSourceSHA256": {
+                "anonymous": "3f7786366b0af85ad56e2ad31cd0f599f4197fb77f428d5a9a91946eeb669095"
+              },
+              "expected": {
+                "primary": "field integrity exception: unknown (The assignment using the Equals operator uses a reference to \"$GlobalConstant.Null\", which doesn't exist.)",
+                "native": {
+                  "outcome": "flow-deploy-rejected",
+                  "diagnostics": [
+                    {
+                      "name": "E32BA62GlobalNull",
+                      "native": {
+                        "status": "Failed",
+                        "success": false,
+                        "done": true,
+                        "checkOnly": false,
+                        "code": null,
+                        "transport_failures": [],
+                        "attempt_count": 1,
+                        "elapsed": 2.580379,
+                        "compile": [
+                          {
+                            "name": "E32BA62GlobalNull",
+                            "type": "Flow",
+                            "line": null,
+                            "problem": "field integrity exception: unknown (The assignment using the Equals operator uses a reference to \"$GlobalConstant.Null\", which doesn't exist.)"
+                          }
+                        ],
+                        "testFailures": [],
+                        "testPasses": [],
+                        "coverageWarnings": []
+                      }
+                    }
+                  ],
+                  "modern_twin": {
+                    "outcome": "runtime",
+                    "value": {
+                      "flowFired": true,
+                      "modern": {
+                        "databaseAfterWriteBack": [
+                          "same",
+                          "Foo",
+                          null,
+                          "Technology"
+                        ],
+                        "writeBackSuccess": true,
+                        "writeBackAttempted": true,
+                        "databaseBeforeWriteBack": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "originalAfterCaller": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "inputAfter": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "originalAfter": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "fired": true,
+                        "output": [
+                          "same",
+                          "Foo",
+                          null,
+                          "Technology"
+                        ],
+                        "outputKeys": [
+                          "Flow__InterviewGuid",
+                          "Flow__InterviewStatus",
+                          "fired",
+                          "record"
+                        ],
+                        "outputPresent": true,
+                        "errors": [],
+                        "isSuccess": true,
+                        "resultCount": 1,
+                        "inputBefore": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "flowFired": true,
+                        "originalBefore": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "outcome": "flow-deploy-rejected",
+                "modernTwin": {
+                  "outcome": "runtime",
+                  "value": {
+                    "flowFired": true,
+                    "modern": {
+                      "databaseAfterWriteBack": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "writeBackSuccess": true,
+                      "writeBackAttempted": true,
+                      "databaseBeforeWriteBack": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  }
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA62GlobalNullObserver.direct('E32BA62Name','record')};payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_003|'+encoded);",
+              "operationSHA256": "3f7786366b0af85ad56e2ad31cd0f599f4197fb77f428d5a9a91946eeb669095",
+              "captureSourceSHA256": {
+                "E32BA62C187METADATA003": "5cb1878d1345bc39081ed52857dc4f3c4a8c9a499a02e57dc2afd732e0578213"
+              },
+              "expected": {
+                "primary": "field integrity exception: unknown (The assignment using the Equals operator uses a reference to \"$GlobalConstant.Null\", which doesn't exist.)",
+                "native": {
+                  "outcome": "flow-deploy-rejected",
+                  "diagnostics": [
+                    {
+                      "name": "E32BA62GlobalNull",
+                      "native": {
+                        "status": "Failed",
+                        "success": false,
+                        "done": true,
+                        "checkOnly": false,
+                        "code": null,
+                        "transport_failures": [],
+                        "attempt_count": 1,
+                        "elapsed": 2.580379,
+                        "compile": [
+                          {
+                            "name": "E32BA62GlobalNull",
+                            "type": "Flow",
+                            "line": null,
+                            "problem": "field integrity exception: unknown (The assignment using the Equals operator uses a reference to \"$GlobalConstant.Null\", which doesn't exist.)"
+                          }
+                        ],
+                        "testFailures": [],
+                        "testPasses": [],
+                        "coverageWarnings": []
+                      }
+                    }
+                  ],
+                  "modern_twin": {
+                    "outcome": "runtime",
+                    "value": {
+                      "flowFired": true,
+                      "modern": {
+                        "databaseAfterWriteBack": [
+                          "same",
+                          "Foo",
+                          null,
+                          "Technology"
+                        ],
+                        "writeBackSuccess": true,
+                        "writeBackAttempted": true,
+                        "databaseBeforeWriteBack": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "originalAfterCaller": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "inputAfter": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "originalAfter": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "fired": true,
+                        "output": [
+                          "same",
+                          "Foo",
+                          null,
+                          "Technology"
+                        ],
+                        "outputKeys": [
+                          "Flow__InterviewGuid",
+                          "Flow__InterviewStatus",
+                          "fired",
+                          "record"
+                        ],
+                        "outputPresent": true,
+                        "errors": [],
+                        "isSuccess": true,
+                        "resultCount": 1,
+                        "inputBefore": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "flowFired": true,
+                        "originalBefore": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "outcome": "flow-deploy-rejected",
+                "modernTwin": {
+                  "outcome": "runtime",
+                  "value": {
+                    "flowFired": true,
+                    "modern": {
+                      "databaseAfterWriteBack": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "writeBackSuccess": true,
+                      "writeBackAttempted": true,
+                      "databaseBeforeWriteBack": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  }
+                }
+              },
+              "admission": "observed"
+            }
+          },
+          "rejectedFile": "rejected/flows/E32BA62GlobalNull.flow-meta.xml",
+          "rejectedDestination": "force-app/main/default/flows/E32BA62GlobalNull.flow-meta.xml"
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA67GlobalNullObserver.direct('E32BA67Name','record')};payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_003|'+encoded);",
+              "operationSHA256": "ed0a011223bef7e31943fb7b5be3e30b36f6ef90eb165f07822462415d9e6b5d",
+              "captureSourceSHA256": {
+                "anonymous": "ed0a011223bef7e31943fb7b5be3e30b36f6ef90eb165f07822462415d9e6b5d"
+              },
+              "expected": {
+                "primary": "field integrity exception: unknown (The assignment using the Equals operator uses a reference to \"$GlobalConstant.Null\", which doesn't exist.)",
+                "native": {
+                  "outcome": "flow-deploy-rejected",
+                  "diagnostics": [
+                    {
+                      "name": "E32BA67GlobalNull",
+                      "native": {
+                        "status": "Failed",
+                        "success": false,
+                        "done": true,
+                        "checkOnly": false,
+                        "code": null,
+                        "transport_failures": [],
+                        "attempt_count": 1,
+                        "elapsed": 2.598627,
+                        "compile": [
+                          {
+                            "name": "E32BA67GlobalNull",
+                            "type": "Flow",
+                            "line": null,
+                            "problem": "field integrity exception: unknown (The assignment using the Equals operator uses a reference to \"$GlobalConstant.Null\", which doesn't exist.)"
+                          }
+                        ],
+                        "testFailures": [],
+                        "testPasses": [],
+                        "coverageWarnings": []
+                      }
+                    }
+                  ],
+                  "modern_twin": {
+                    "outcome": "runtime",
+                    "value": {
+                      "flowFired": true,
+                      "modern": {
+                        "databaseAfterWriteBack": [
+                          "same",
+                          "Foo",
+                          null,
+                          "Technology"
+                        ],
+                        "writeBackSuccess": true,
+                        "writeBackAttempted": true,
+                        "databaseBeforeWriteBack": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "originalAfterCaller": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "inputAfter": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "originalAfter": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "fired": true,
+                        "output": [
+                          "same",
+                          "Foo",
+                          null,
+                          "Technology"
+                        ],
+                        "outputKeys": [
+                          "Flow__InterviewGuid",
+                          "Flow__InterviewStatus",
+                          "fired",
+                          "record"
+                        ],
+                        "outputPresent": true,
+                        "errors": [],
+                        "isSuccess": true,
+                        "resultCount": 1,
+                        "inputBefore": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "flowFired": true,
+                        "originalBefore": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "outcome": "flow-deploy-rejected",
+                "modernTwin": {
+                  "outcome": "runtime",
+                  "value": {
+                    "flowFired": true,
+                    "modern": {
+                      "databaseAfterWriteBack": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "writeBackSuccess": true,
+                      "writeBackAttempted": true,
+                      "databaseBeforeWriteBack": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  }
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA67GlobalNullObserver.direct('E32BA67Name','record')};payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_003|'+encoded);",
+              "operationSHA256": "ed0a011223bef7e31943fb7b5be3e30b36f6ef90eb165f07822462415d9e6b5d",
+              "captureSourceSHA256": {
+                "E32BA67C187METADATA003": "2acb529912d1a22ffe321d4854d2a6a2eabff2de0cbee0f5086f0ab3a8967f2e"
+              },
+              "expected": {
+                "primary": "field integrity exception: unknown (The assignment using the Equals operator uses a reference to \"$GlobalConstant.Null\", which doesn't exist.)",
+                "native": {
+                  "outcome": "flow-deploy-rejected",
+                  "diagnostics": [
+                    {
+                      "name": "E32BA67GlobalNull",
+                      "native": {
+                        "status": "Failed",
+                        "success": false,
+                        "done": true,
+                        "checkOnly": false,
+                        "code": null,
+                        "transport_failures": [],
+                        "attempt_count": 1,
+                        "elapsed": 2.598627,
+                        "compile": [
+                          {
+                            "name": "E32BA67GlobalNull",
+                            "type": "Flow",
+                            "line": null,
+                            "problem": "field integrity exception: unknown (The assignment using the Equals operator uses a reference to \"$GlobalConstant.Null\", which doesn't exist.)"
+                          }
+                        ],
+                        "testFailures": [],
+                        "testPasses": [],
+                        "coverageWarnings": []
+                      }
+                    }
+                  ],
+                  "modern_twin": {
+                    "outcome": "runtime",
+                    "value": {
+                      "flowFired": true,
+                      "modern": {
+                        "databaseAfterWriteBack": [
+                          "same",
+                          "Foo",
+                          null,
+                          "Technology"
+                        ],
+                        "writeBackSuccess": true,
+                        "writeBackAttempted": true,
+                        "databaseBeforeWriteBack": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "originalAfterCaller": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "inputAfter": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "originalAfter": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "fired": true,
+                        "output": [
+                          "same",
+                          "Foo",
+                          null,
+                          "Technology"
+                        ],
+                        "outputKeys": [
+                          "Flow__InterviewGuid",
+                          "Flow__InterviewStatus",
+                          "fired",
+                          "record"
+                        ],
+                        "outputPresent": true,
+                        "errors": [],
+                        "isSuccess": true,
+                        "resultCount": 1,
+                        "inputBefore": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "flowFired": true,
+                        "originalBefore": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "outcome": "flow-deploy-rejected",
+                "modernTwin": {
+                  "outcome": "runtime",
+                  "value": {
+                    "flowFired": true,
+                    "modern": {
+                      "databaseAfterWriteBack": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "writeBackSuccess": true,
+                      "writeBackAttempted": true,
+                      "databaseBeforeWriteBack": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  }
+                }
+              },
+              "admission": "observed"
+            }
+          },
+          "rejectedFile": "rejected/flows/E32BA67GlobalNull.flow-meta.xml",
+          "rejectedDestination": "force-app/main/default/flows/E32BA67GlobalNull.flow-meta.xml"
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA68GlobalNullObserver.direct('E32BA68Name','record')};payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_003|'+encoded);",
+              "operationSHA256": "f5693a463d43c70a7400a9e41ac357f92b647f99c581004de169cce3faaf6368",
+              "captureSourceSHA256": {
+                "anonymous": "f5693a463d43c70a7400a9e41ac357f92b647f99c581004de169cce3faaf6368"
+              },
+              "expected": {
+                "primary": "field integrity exception: unknown (The assignment using the Equals operator uses a reference to \"$GlobalConstant.Null\", which doesn't exist.)",
+                "native": {
+                  "outcome": "flow-deploy-rejected",
+                  "diagnostics": [
+                    {
+                      "name": "E32BA68GlobalNull",
+                      "native": {
+                        "status": "Failed",
+                        "success": false,
+                        "done": true,
+                        "checkOnly": false,
+                        "code": null,
+                        "transport_failures": [],
+                        "attempt_count": 1,
+                        "elapsed": 2.825062,
+                        "compile": [
+                          {
+                            "name": "E32BA68GlobalNull",
+                            "type": "Flow",
+                            "line": null,
+                            "problem": "field integrity exception: unknown (The assignment using the Equals operator uses a reference to \"$GlobalConstant.Null\", which doesn't exist.)"
+                          }
+                        ],
+                        "testFailures": [],
+                        "testPasses": [],
+                        "coverageWarnings": []
+                      }
+                    }
+                  ],
+                  "modern_twin": {
+                    "outcome": "runtime",
+                    "value": {
+                      "flowFired": true,
+                      "modern": {
+                        "databaseAfterWriteBack": [
+                          "same",
+                          "Foo",
+                          null,
+                          "Technology"
+                        ],
+                        "writeBackSuccess": true,
+                        "writeBackAttempted": true,
+                        "databaseBeforeWriteBack": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "originalAfterCaller": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "inputAfter": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "originalAfter": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "fired": true,
+                        "output": [
+                          "same",
+                          "Foo",
+                          null,
+                          "Technology"
+                        ],
+                        "outputKeys": [
+                          "Flow__InterviewGuid",
+                          "Flow__InterviewStatus",
+                          "fired",
+                          "record"
+                        ],
+                        "outputPresent": true,
+                        "errors": [],
+                        "isSuccess": true,
+                        "resultCount": 1,
+                        "inputBefore": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "flowFired": true,
+                        "originalBefore": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "outcome": "flow-deploy-rejected",
+                "modernTwin": {
+                  "outcome": "runtime",
+                  "value": {
+                    "flowFired": true,
+                    "modern": {
+                      "databaseAfterWriteBack": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "writeBackSuccess": true,
+                      "writeBackAttempted": true,
+                      "databaseBeforeWriteBack": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  }
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'modern'=>E32BA68GlobalNullObserver.direct('E32BA68Name','record')};payload.put('flowFired',((Map<String,Object>)payload.get('modern')).get('flowFired')==true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187METADATA_003|'+encoded);",
+              "operationSHA256": "f5693a463d43c70a7400a9e41ac357f92b647f99c581004de169cce3faaf6368",
+              "captureSourceSHA256": {
+                "E32BA68C187METADATA003": "20e7d4c9fa0fe4f1ec1845ebd796dc132d118b25f8826c511130e0eb47f649f6"
+              },
+              "expected": {
+                "primary": "field integrity exception: unknown (The assignment using the Equals operator uses a reference to \"$GlobalConstant.Null\", which doesn't exist.)",
+                "native": {
+                  "outcome": "flow-deploy-rejected",
+                  "diagnostics": [
+                    {
+                      "name": "E32BA68GlobalNull",
+                      "native": {
+                        "status": "Failed",
+                        "success": false,
+                        "done": true,
+                        "checkOnly": false,
+                        "code": null,
+                        "transport_failures": [],
+                        "attempt_count": 1,
+                        "elapsed": 2.825062,
+                        "compile": [
+                          {
+                            "name": "E32BA68GlobalNull",
+                            "type": "Flow",
+                            "line": null,
+                            "problem": "field integrity exception: unknown (The assignment using the Equals operator uses a reference to \"$GlobalConstant.Null\", which doesn't exist.)"
+                          }
+                        ],
+                        "testFailures": [],
+                        "testPasses": [],
+                        "coverageWarnings": []
+                      }
+                    }
+                  ],
+                  "modern_twin": {
+                    "outcome": "runtime",
+                    "value": {
+                      "flowFired": true,
+                      "modern": {
+                        "databaseAfterWriteBack": [
+                          "same",
+                          "Foo",
+                          null,
+                          "Technology"
+                        ],
+                        "writeBackSuccess": true,
+                        "writeBackAttempted": true,
+                        "databaseBeforeWriteBack": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "originalAfterCaller": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "inputAfter": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "originalAfter": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "fired": true,
+                        "output": [
+                          "same",
+                          "Foo",
+                          null,
+                          "Technology"
+                        ],
+                        "outputKeys": [
+                          "Flow__InterviewGuid",
+                          "Flow__InterviewStatus",
+                          "fired",
+                          "record"
+                        ],
+                        "outputPresent": true,
+                        "errors": [],
+                        "isSuccess": true,
+                        "resultCount": 1,
+                        "inputBefore": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ],
+                        "flowFired": true,
+                        "originalBefore": [
+                          "same",
+                          "E32 Original",
+                          "E32 seed",
+                          "Technology"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "outcome": "flow-deploy-rejected",
+                "modernTwin": {
+                  "outcome": "runtime",
+                  "value": {
+                    "flowFired": true,
+                    "modern": {
+                      "databaseAfterWriteBack": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "writeBackSuccess": true,
+                      "writeBackAttempted": true,
+                      "databaseBeforeWriteBack": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  }
+                }
+              },
+              "admission": "observed"
+            }
+          },
+          "rejectedFile": "rejected/flows/E32BA68GlobalNull.flow-meta.xml",
+          "rejectedDestination": "force-app/main/default/flows/E32BA68GlobalNull.flow-meta.xml"
+        }
+      }
+    }
+  ]
+}

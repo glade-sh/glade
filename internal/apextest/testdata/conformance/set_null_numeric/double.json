@@ -1,0 +1,1628 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "double",
+  "shapeCount": 9,
+  "nativeObservationCount": 54,
+  "apiDifferenceCount": 0,
+  "rows": [
+    {
+      "id": "E23N008",
+      "label": "Double null duplicates constructor",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "4f386b645ab13c2d5b7d0b4a1354fb9ec65b18dff57c3e33f67685baed5f8356"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>(new List<Double>{null,1,1,null,2});List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N008|'+packetJson);",
+          "classes": {}
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:ObserveE23N008Test": "df24fd662e1afe890825de4978043fb43e8a5f3688c178720ccf3ba42342d818"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            }
+          },
+          "classes": {
+            "ObserveE23N008Test": "@IsTest private class ObserveE23N008Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>(new List<Double>{null,1,1,null,2});List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N008|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23N008Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23N009",
+      "label": "Double null duplicates helper",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "f5bf14ad0bf3ae77752c4d5e82692ee86a837f814459ac056494346def669c33",
+            "class:SetHelper": "088f4c0a0c91a8d43ce5d221fe551b1a64b0836eaa668aa701c7f0cf14cfc4ce"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new SetHelper().asSet(new List<Double>{null,1,1,null,2});List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N009|'+packetJson);",
+          "classes": {
+            "SetHelper": "public class SetHelper {public Set<Double> asSet(List<Double> input){Set<Double> result=new Set<Double>();for(Double v:input){result.add(v);}return result;}}"
+          }
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:SetHelper": "088f4c0a0c91a8d43ce5d221fe551b1a64b0836eaa668aa701c7f0cf14cfc4ce",
+            "class:ObserveE23N009Test": "572f22300ba9b10061583b43d23e76a2684551fe1506c20e9ebe507d6fe17999"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            }
+          },
+          "classes": {
+            "SetHelper": "public class SetHelper {public Set<Double> asSet(List<Double> input){Set<Double> result=new Set<Double>();for(Double v:input){result.add(v);}return result;}}",
+            "ObserveE23N009Test": "@IsTest private class ObserveE23N009Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new SetHelper().asSet(new List<Double>{null,1,1,null,2});List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N009|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23N009Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23N010",
+      "label": "Double null duplicates addAll",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "d504b9afa1ae1988515a4be82b12ee3e7ab2d0d7da83fdb66534dfa96e357cec"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "changed": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"changed\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "changed": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"changed\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "changed": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"changed\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>();payload.put('changed',s.addAll(new List<Double>{null,1,1,null,2}));List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N010|'+packetJson);",
+          "classes": {}
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:ObserveE23N010Test": "eb41d429cc8a2746759046c9764f0f401a95066d3193c67b96a54eb6f29f5ab9"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "changed": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"changed\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "changed": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"changed\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "changed": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"changed\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            }
+          },
+          "classes": {
+            "ObserveE23N010Test": "@IsTest private class ObserveE23N010Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>();payload.put('changed',s.addAll(new List<Double>{null,1,1,null,2}));List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N010|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23N010Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23N011",
+      "label": "Double null duplicates removeNull",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "6221e51992d6bd2c6120d51457b54be91012add1bdde5628e40675bd716aa6b3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "afterRemove": {
+                    "afterOrder": [
+                      1.0,
+                      2.0
+                    ],
+                    "null": false,
+                    "one": true,
+                    "oneScale": true,
+                    "size": 2,
+                    "two": true
+                  },
+                  "removed": true,
+                  "removedAgain": false,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"afterRemove\":{\"afterOrder\":[1.0,2.0],\"null\":false,\"one\":true,\"oneScale\":true,\"size\":2,\"two\":true},\"removed\":true,\"removedAgain\":false,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "afterRemove": {
+                    "afterOrder": [
+                      1.0,
+                      2.0
+                    ],
+                    "null": false,
+                    "one": true,
+                    "oneScale": true,
+                    "size": 2,
+                    "two": true
+                  },
+                  "removed": true,
+                  "removedAgain": false,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"afterRemove\":{\"afterOrder\":[1.0,2.0],\"null\":false,\"one\":true,\"oneScale\":true,\"size\":2,\"two\":true},\"removed\":true,\"removedAgain\":false,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "afterRemove": {
+                    "afterOrder": [
+                      1.0,
+                      2.0
+                    ],
+                    "null": false,
+                    "one": true,
+                    "oneScale": true,
+                    "size": 2,
+                    "two": true
+                  },
+                  "removed": true,
+                  "removedAgain": false,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"afterRemove\":{\"afterOrder\":[1.0,2.0],\"null\":false,\"one\":true,\"oneScale\":true,\"size\":2,\"two\":true},\"removed\":true,\"removedAgain\":false,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>(new List<Double>{null,1,1,null,2});List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});payload.put('removed',s.remove(null));payload.put('removedAgain',s.remove(null));List<Object> afterOrder=new List<Object>();for(Double v:s){afterOrder.add(v);}payload.put('afterRemove',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'afterOrder'=>afterOrder});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N011|'+packetJson);",
+          "classes": {}
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:ObserveE23N011Test": "4af6ce8d15f3b3a37cc218b4058b0cde4528d0eeadb20a02ad461b3f4aa8c921"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "afterRemove": {
+                    "afterOrder": [
+                      1.0,
+                      2.0
+                    ],
+                    "null": false,
+                    "one": true,
+                    "oneScale": true,
+                    "size": 2,
+                    "two": true
+                  },
+                  "removed": true,
+                  "removedAgain": false,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"afterRemove\":{\"afterOrder\":[1.0,2.0],\"null\":false,\"one\":true,\"oneScale\":true,\"size\":2,\"two\":true},\"removed\":true,\"removedAgain\":false,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "afterRemove": {
+                    "afterOrder": [
+                      1.0,
+                      2.0
+                    ],
+                    "null": false,
+                    "one": true,
+                    "oneScale": true,
+                    "size": 2,
+                    "two": true
+                  },
+                  "removed": true,
+                  "removedAgain": false,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"afterRemove\":{\"afterOrder\":[1.0,2.0],\"null\":false,\"one\":true,\"oneScale\":true,\"size\":2,\"two\":true},\"removed\":true,\"removedAgain\":false,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "afterRemove": {
+                    "afterOrder": [
+                      1.0,
+                      2.0
+                    ],
+                    "null": false,
+                    "one": true,
+                    "oneScale": true,
+                    "size": 2,
+                    "two": true
+                  },
+                  "removed": true,
+                  "removedAgain": false,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"afterRemove\":{\"afterOrder\":[1.0,2.0],\"null\":false,\"one\":true,\"oneScale\":true,\"size\":2,\"two\":true},\"removed\":true,\"removedAgain\":false,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            }
+          },
+          "classes": {
+            "ObserveE23N011Test": "@IsTest private class ObserveE23N011Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>(new List<Double>{null,1,1,null,2});List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});payload.put('removed',s.remove(null));payload.put('removedAgain',s.remove(null));List<Object> afterOrder=new List<Object>();for(Double v:s){afterOrder.add(v);}payload.put('afterRemove',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'afterOrder'=>afterOrder});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N011|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23N011Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23N012",
+      "label": "Double null duplicates retainAll",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "3ffb197f1a3dd3a564557432253b3dd4b6e74aaa7d3758e0f793efffd23e1378"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "afterRetain": {
+                    "afterOrder": [
+                      null,
+                      2.0
+                    ],
+                    "null": true,
+                    "one": false,
+                    "oneScale": false,
+                    "size": 2,
+                    "two": true
+                  },
+                  "changed": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"afterRetain\":{\"afterOrder\":[null,2.0],\"null\":true,\"one\":false,\"oneScale\":false,\"size\":2,\"two\":true},\"changed\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "afterRetain": {
+                    "afterOrder": [
+                      null,
+                      2.0
+                    ],
+                    "null": true,
+                    "one": false,
+                    "oneScale": false,
+                    "size": 2,
+                    "two": true
+                  },
+                  "changed": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"afterRetain\":{\"afterOrder\":[null,2.0],\"null\":true,\"one\":false,\"oneScale\":false,\"size\":2,\"two\":true},\"changed\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "afterRetain": {
+                    "afterOrder": [
+                      null,
+                      2.0
+                    ],
+                    "null": true,
+                    "one": false,
+                    "oneScale": false,
+                    "size": 2,
+                    "two": true
+                  },
+                  "changed": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"afterRetain\":{\"afterOrder\":[null,2.0],\"null\":true,\"one\":false,\"oneScale\":false,\"size\":2,\"two\":true},\"changed\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>(new List<Double>{null,1,1,null,2});List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});payload.put('changed',s.retainAll(new Set<Double>{null,2}));List<Object> afterOrder=new List<Object>();for(Double v:s){afterOrder.add(v);}payload.put('afterRetain',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'afterOrder'=>afterOrder});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N012|'+packetJson);",
+          "classes": {}
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:ObserveE23N012Test": "deabfc3ece08c9742b511aab11092db7be942c9eaa763023c240b2892715f5c2"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "afterRetain": {
+                    "afterOrder": [
+                      null,
+                      2.0
+                    ],
+                    "null": true,
+                    "one": false,
+                    "oneScale": false,
+                    "size": 2,
+                    "two": true
+                  },
+                  "changed": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"afterRetain\":{\"afterOrder\":[null,2.0],\"null\":true,\"one\":false,\"oneScale\":false,\"size\":2,\"two\":true},\"changed\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "afterRetain": {
+                    "afterOrder": [
+                      null,
+                      2.0
+                    ],
+                    "null": true,
+                    "one": false,
+                    "oneScale": false,
+                    "size": 2,
+                    "two": true
+                  },
+                  "changed": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"afterRetain\":{\"afterOrder\":[null,2.0],\"null\":true,\"one\":false,\"oneScale\":false,\"size\":2,\"two\":true},\"changed\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "afterRetain": {
+                    "afterOrder": [
+                      null,
+                      2.0
+                    ],
+                    "null": true,
+                    "one": false,
+                    "oneScale": false,
+                    "size": 2,
+                    "two": true
+                  },
+                  "changed": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"afterRetain\":{\"afterOrder\":[null,2.0],\"null\":true,\"one\":false,\"oneScale\":false,\"size\":2,\"two\":true},\"changed\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true}}"
+            }
+          },
+          "classes": {
+            "ObserveE23N012Test": "@IsTest private class ObserveE23N012Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>(new List<Double>{null,1,1,null,2});List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});payload.put('changed',s.retainAll(new Set<Double>{null,2}));List<Object> afterOrder=new List<Object>();for(Double v:s){afterOrder.add(v);}payload.put('afterRetain',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'afterOrder'=>afterOrder});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N012|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23N012Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23N013",
+      "label": "Double null duplicates containsAll",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "181e73d43bfd16ef4f32dfd1d78afcec75e2ef4abc33610dce28bf4663dbc492"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "allPresent": true,
+                  "empty": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  },
+                  "withMissing": false
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"allPresent\":true,\"empty\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true},\"withMissing\":false}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "allPresent": true,
+                  "empty": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  },
+                  "withMissing": false
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"allPresent\":true,\"empty\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true},\"withMissing\":false}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "allPresent": true,
+                  "empty": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  },
+                  "withMissing": false
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"allPresent\":true,\"empty\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true},\"withMissing\":false}"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>(new List<Double>{null,1,1,null,2});List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});payload.put('allPresent',s.containsAll(new Set<Double>{null,1,2}));payload.put('withMissing',s.containsAll(new Set<Double>{null,3}));payload.put('empty',s.containsAll(new Set<Double>()));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N013|'+packetJson);",
+          "classes": {}
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:ObserveE23N013Test": "1b9715f8dc15e86e278077df9ba8902bf117d23c57b6410b21ebd4c6b377a060"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "allPresent": true,
+                  "empty": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  },
+                  "withMissing": false
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"allPresent\":true,\"empty\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true},\"withMissing\":false}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "allPresent": true,
+                  "empty": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  },
+                  "withMissing": false
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"allPresent\":true,\"empty\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true},\"withMissing\":false}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "allPresent": true,
+                  "empty": true,
+                  "snapshot": {
+                    "null": true,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      null,
+                      1.0,
+                      2.0
+                    ],
+                    "size": 3,
+                    "two": true
+                  },
+                  "withMissing": false
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"allPresent\":true,\"empty\":true,\"snapshot\":{\"null\":true,\"one\":true,\"oneScale\":true,\"order\":[null,1.0,2.0],\"size\":3,\"two\":true},\"withMissing\":false}"
+            }
+          },
+          "classes": {
+            "ObserveE23N013Test": "@IsTest private class ObserveE23N013Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>(new List<Double>{null,1,1,null,2});List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});payload.put('allPresent',s.containsAll(new Set<Double>{null,1,2}));payload.put('withMissing',s.containsAll(new Set<Double>{null,3}));payload.put('empty',s.containsAll(new Set<Double>()));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N013|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23N013Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23N014",
+      "label": "Double empty and null-only boundary",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "e4b461c381ffbfd668f1074a71b1d98b5795492162c2be03848270e8fc7e9450"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "firstNull": true,
+                  "nullOnly": {
+                    "null": true,
+                    "nullOrder": [
+                      null
+                    ],
+                    "one": false,
+                    "oneScale": false,
+                    "size": 1,
+                    "two": false
+                  },
+                  "secondNull": false,
+                  "snapshot": {
+                    "null": false,
+                    "one": false,
+                    "oneScale": false,
+                    "order": [],
+                    "size": 0,
+                    "two": false
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"firstNull\":true,\"nullOnly\":{\"null\":true,\"nullOrder\":[null],\"one\":false,\"oneScale\":false,\"size\":1,\"two\":false},\"secondNull\":false,\"snapshot\":{\"null\":false,\"one\":false,\"oneScale\":false,\"order\":[],\"size\":0,\"two\":false}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "firstNull": true,
+                  "nullOnly": {
+                    "null": true,
+                    "nullOrder": [
+                      null
+                    ],
+                    "one": false,
+                    "oneScale": false,
+                    "size": 1,
+                    "two": false
+                  },
+                  "secondNull": false,
+                  "snapshot": {
+                    "null": false,
+                    "one": false,
+                    "oneScale": false,
+                    "order": [],
+                    "size": 0,
+                    "two": false
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"firstNull\":true,\"nullOnly\":{\"null\":true,\"nullOrder\":[null],\"one\":false,\"oneScale\":false,\"size\":1,\"two\":false},\"secondNull\":false,\"snapshot\":{\"null\":false,\"one\":false,\"oneScale\":false,\"order\":[],\"size\":0,\"two\":false}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "firstNull": true,
+                  "nullOnly": {
+                    "null": true,
+                    "nullOrder": [
+                      null
+                    ],
+                    "one": false,
+                    "oneScale": false,
+                    "size": 1,
+                    "two": false
+                  },
+                  "secondNull": false,
+                  "snapshot": {
+                    "null": false,
+                    "one": false,
+                    "oneScale": false,
+                    "order": [],
+                    "size": 0,
+                    "two": false
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"firstNull\":true,\"nullOnly\":{\"null\":true,\"nullOrder\":[null],\"one\":false,\"oneScale\":false,\"size\":1,\"two\":false},\"secondNull\":false,\"snapshot\":{\"null\":false,\"one\":false,\"oneScale\":false,\"order\":[],\"size\":0,\"two\":false}}"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>();List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});payload.put('firstNull',s.add(null));payload.put('secondNull',s.add(null));List<Object> nullOrder=new List<Object>();for(Double v:s){nullOrder.add(v);}payload.put('nullOnly',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'nullOrder'=>nullOrder});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N014|'+packetJson);",
+          "classes": {}
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:ObserveE23N014Test": "79f15ee697d4370e82ee4a3184b6372f4c376d3002640daf878e703d9ce34921"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "firstNull": true,
+                  "nullOnly": {
+                    "null": true,
+                    "nullOrder": [
+                      null
+                    ],
+                    "one": false,
+                    "oneScale": false,
+                    "size": 1,
+                    "two": false
+                  },
+                  "secondNull": false,
+                  "snapshot": {
+                    "null": false,
+                    "one": false,
+                    "oneScale": false,
+                    "order": [],
+                    "size": 0,
+                    "two": false
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"firstNull\":true,\"nullOnly\":{\"null\":true,\"nullOrder\":[null],\"one\":false,\"oneScale\":false,\"size\":1,\"two\":false},\"secondNull\":false,\"snapshot\":{\"null\":false,\"one\":false,\"oneScale\":false,\"order\":[],\"size\":0,\"two\":false}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "firstNull": true,
+                  "nullOnly": {
+                    "null": true,
+                    "nullOrder": [
+                      null
+                    ],
+                    "one": false,
+                    "oneScale": false,
+                    "size": 1,
+                    "two": false
+                  },
+                  "secondNull": false,
+                  "snapshot": {
+                    "null": false,
+                    "one": false,
+                    "oneScale": false,
+                    "order": [],
+                    "size": 0,
+                    "two": false
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"firstNull\":true,\"nullOnly\":{\"null\":true,\"nullOrder\":[null],\"one\":false,\"oneScale\":false,\"size\":1,\"two\":false},\"secondNull\":false,\"snapshot\":{\"null\":false,\"one\":false,\"oneScale\":false,\"order\":[],\"size\":0,\"two\":false}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "firstNull": true,
+                  "nullOnly": {
+                    "null": true,
+                    "nullOrder": [
+                      null
+                    ],
+                    "one": false,
+                    "oneScale": false,
+                    "size": 1,
+                    "two": false
+                  },
+                  "secondNull": false,
+                  "snapshot": {
+                    "null": false,
+                    "one": false,
+                    "oneScale": false,
+                    "order": [],
+                    "size": 0,
+                    "two": false
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"firstNull\":true,\"nullOnly\":{\"null\":true,\"nullOrder\":[null],\"one\":false,\"oneScale\":false,\"size\":1,\"two\":false},\"secondNull\":false,\"snapshot\":{\"null\":false,\"one\":false,\"oneScale\":false,\"order\":[],\"size\":0,\"two\":false}}"
+            }
+          },
+          "classes": {
+            "ObserveE23N014Test": "@IsTest private class ObserveE23N014Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>();List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});payload.put('firstNull',s.add(null));payload.put('secondNull',s.add(null));List<Object> nullOrder=new List<Object>();for(Double v:s){nullOrder.add(v);}payload.put('nullOnly',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'nullOrder'=>nullOrder});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N014|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23N014Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23N031",
+      "label": "Double literal 1 versus 1.0",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "1cb9ed727123267b34cf9649de3290d47a4479da571d4e1ba5f055e7e082d104"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": false,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      1.0
+                    ],
+                    "size": 1,
+                    "two": false
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":false,\"one\":true,\"oneScale\":true,\"order\":[1.0],\"size\":1,\"two\":false}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": false,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      1.0
+                    ],
+                    "size": 1,
+                    "two": false
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":false,\"one\":true,\"oneScale\":true,\"order\":[1.0],\"size\":1,\"two\":false}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": false,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      1.0
+                    ],
+                    "size": 1,
+                    "two": false
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":false,\"one\":true,\"oneScale\":true,\"order\":[1.0],\"size\":1,\"two\":false}}"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>{1,1.0};List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N031|'+packetJson);",
+          "classes": {}
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:ObserveE23N031Test": "303787c10ad0c64e3b632e649da2ad9a2f7c9f94f8b18ba5dcbdcb22e3de20c3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": false,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      1.0
+                    ],
+                    "size": 1,
+                    "two": false
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":false,\"one\":true,\"oneScale\":true,\"order\":[1.0],\"size\":1,\"two\":false}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": false,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      1.0
+                    ],
+                    "size": 1,
+                    "two": false
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":false,\"one\":true,\"oneScale\":true,\"order\":[1.0],\"size\":1,\"two\":false}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "snapshot": {
+                    "null": false,
+                    "one": true,
+                    "oneScale": true,
+                    "order": [
+                      1.0
+                    ],
+                    "size": 1,
+                    "two": false
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"snapshot\":{\"null\":false,\"one\":true,\"oneScale\":true,\"order\":[1.0],\"size\":1,\"two\":false}}"
+            }
+          },
+          "classes": {
+            "ObserveE23N031Test": "@IsTest private class ObserveE23N031Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>{1,1.0};List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N031|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23N031Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23N032",
+      "label": "Double wrong element rejection",
+      "role": "rejection-twin",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "5b34295d27e712b8c01db81736b9ceede0c46fcd880021b419b6e70daaa591b6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "diagnostics": {
+                  "column": 71,
+                  "compileProblem": "Invalid initializer type List<String> found for Set<Double>: expected a List or a Set of type: Double",
+                  "compiled": false,
+                  "exceptionMessage": null,
+                  "line": 1,
+                  "success": false
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Invalid initializer type List<String> found for Set<Double>: expected a List or a Set of type: Double"
+            },
+            "67.0": {
+              "native": {
+                "diagnostics": {
+                  "column": 71,
+                  "compileProblem": "Invalid initializer type List<String> found for Set<Double>: expected a List or a Set of type: Double",
+                  "compiled": false,
+                  "exceptionMessage": null,
+                  "line": 1,
+                  "success": false
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Invalid initializer type List<String> found for Set<Double>: expected a List or a Set of type: Double"
+            },
+            "68.0": {
+              "native": {
+                "diagnostics": {
+                  "column": 71,
+                  "compileProblem": "Invalid initializer type List<String> found for Set<Double>: expected a List or a Set of type: Double",
+                  "compiled": false,
+                  "exceptionMessage": null,
+                  "line": 1,
+                  "success": false
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Invalid initializer type List<String> found for Set<Double>: expected a List or a Set of type: Double"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>(new List<String>{'1'});List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N032|'+packetJson);",
+          "classes": {}
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:ObserveE23N032Test": "1d7fa6087d0ea2d0607b7244d2aecae2bf51ee79b936400b8f437bf571d7df2f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "diagnostics": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "PE23N032V62ObserveE23N032Test",
+                      "problem": "Invalid initializer type List<String> found for Set<Double>: expected a List or a Set of type: Double",
+                      "problemType": "Error",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "coverageWarnings": [],
+                  "done": true,
+                  "errorMessage": null,
+                  "numberComponentErrors": 1,
+                  "status": "Failed",
+                  "success": false,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Invalid initializer type List<String> found for Set<Double>: expected a List or a Set of type: Double"
+            },
+            "67.0": {
+              "native": {
+                "diagnostics": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "PE23N032V67ObserveE23N032Test",
+                      "problem": "Invalid initializer type List<String> found for Set<Double>: expected a List or a Set of type: Double",
+                      "problemType": "Error",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "coverageWarnings": [],
+                  "done": true,
+                  "errorMessage": null,
+                  "numberComponentErrors": 1,
+                  "status": "Failed",
+                  "success": false,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Invalid initializer type List<String> found for Set<Double>: expected a List or a Set of type: Double"
+            },
+            "68.0": {
+              "native": {
+                "diagnostics": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "PE23N032V68ObserveE23N032Test",
+                      "problem": "Invalid initializer type List<String> found for Set<Double>: expected a List or a Set of type: Double",
+                      "problemType": "Error",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "coverageWarnings": [],
+                  "done": true,
+                  "errorMessage": null,
+                  "numberComponentErrors": 1,
+                  "status": "Failed",
+                  "success": false,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Invalid initializer type List<String> found for Set<Double>: expected a List or a Set of type: Double"
+            }
+          },
+          "classes": {
+            "ObserveE23N032Test": "@IsTest private class ObserveE23N032Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Set<Double> s=new Set<Double>(new List<String>{'1'});List<Object> order=new List<Object>();for(Double v:s){order.add(v);}payload.put('snapshot',new Map<String,Object>{'size'=>s.size(),'null'=>s.contains(null),'one'=>s.contains(1),'oneScale'=>s.contains(1.0),'two'=>s.contains(2),'order'=>order});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23N032|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23N032Test"
+          ]
+        }
+      }
+    }
+  ],
+  "assertedObservationCount": 54,
+  "carriedObservationCount": 0
+}

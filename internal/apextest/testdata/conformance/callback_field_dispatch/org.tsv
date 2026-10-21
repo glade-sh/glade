@@ -1,0 +1,7 @@
+source_api	method	outcome
+62.0	asynchronous	Pass
+62.0	direct	Pass
+62.0	reentrant	Pass
+67.0	asynchronous	Pass
+67.0	direct	Pass
+67.0	reentrant	Pass

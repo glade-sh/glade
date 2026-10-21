@@ -1,0 +1,6 @@
+source_api	method	observation
+62.0	visibility	{"exceptionType":"System.QueryException","inside":0,"message":"List has no rows for assignment to SObject","outside":1,"withoutSharing":1}
+65.0	visibility	{"exceptionType":"System.QueryException","inside":0,"message":"List has no rows for assignment to SObject","outside":1,"withoutSharing":1}
+66.0	visibility	{"exceptionType":"System.QueryException","inside":0,"message":"List has no rows for assignment to SObject","outside":1,"withoutSharing":1}
+67.0	visibility	{"exceptionType":"System.QueryException","inside":0,"message":"List has no rows for assignment to SObject","outside":1,"withoutSharing":0}
+68.0	visibility	{"exceptionType":"System.QueryException","inside":0,"message":"List has no rows for assignment to SObject","outside":1,"withoutSharing":0}

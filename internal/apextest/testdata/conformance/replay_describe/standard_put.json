@@ -1,0 +1,1367 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "standard_put",
+  "shapeCount": 8,
+  "nativeObservationCount": 64,
+  "assertedObservationCount": 64,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C168RP_080",
+      "group": "standard-put",
+      "role": "standard-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('ReplayId');s.put('ReplayId','1');v=new Map<String,Object>{'before'=>before,'after'=>s.get('ReplayId'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('ReplayId')=='1'};",
+          "originalApexSha256": "f9f93cc7c34d83c396260b30155179773656530830713b4ee900b7348592bb97",
+          "sourceSha256": {
+            "anonymous": "0a1bccf8f6f89e3a74160f420646db51c5aed2c51acb6360112e9c6236cfb31a"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('ReplayId');s.put('ReplayId','1');v=new Map<String,Object>{'before'=>before,'after'=>s.get('ReplayId'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('ReplayId')=='1'};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_080');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('ReplayId');s.put('ReplayId','1');v=new Map<String,Object>{'before'=>before,'after'=>s.get('ReplayId'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('ReplayId')=='1'};",
+          "originalApexSha256": "f9f93cc7c34d83c396260b30155179773656530830713b4ee900b7348592bb97",
+          "sourceSha256": {
+            "class:C168C168RP080Test": "3d4747528e5b2057e36287fc942c600877e37dbaa4785fd47e8d3c5b20087355"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP080Test": "@IsTest private class C168C168RP080Test{@IsTest static void observe(){Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('ReplayId');s.put('ReplayId','1');v=new Map<String,Object>{'before'=>before,'after'=>s.get('ReplayId'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('ReplayId')=='1'};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_080');}}"
+          },
+          "tests": [
+            "C168C168RP080Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_081",
+      "group": "standard-put",
+      "role": "standard-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('ReplayId');s.put('ReplayId',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('ReplayId'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('ReplayId')==null};",
+          "originalApexSha256": "62579b67e4922bef5fa3cab631c1e90e4f414a024df266c1db970055f7233b20",
+          "sourceSha256": {
+            "anonymous": "0834f390c217db1e549c2f7960e0111486715335bc7e1c917dcdf4acacac54a2"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('ReplayId');s.put('ReplayId',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('ReplayId'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('ReplayId')==null};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_081');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('ReplayId');s.put('ReplayId',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('ReplayId'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('ReplayId')==null};",
+          "originalApexSha256": "62579b67e4922bef5fa3cab631c1e90e4f414a024df266c1db970055f7233b20",
+          "sourceSha256": {
+            "class:C168C168RP081Test": "7399a593c044de6b8215f49d1d5ee4fbd0761389a2b7c766e6de4c9a604c8d6f"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP081Test": "@IsTest private class C168C168RP081Test{@IsTest static void observe(){Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('ReplayId');s.put('ReplayId',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('ReplayId'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('ReplayId')==null};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_081');}}"
+          },
+          "tests": [
+            "C168C168RP081Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_084",
+      "group": "standard-put",
+      "role": "standard-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('EventUuid');s.put('EventUuid','00000000-0000-4000-8000-000000000001');v=new Map<String,Object>{'before'=>before,'after'=>s.get('EventUuid'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('EventUuid')=='00000000-0000-4000-8000-000000000001'};",
+          "originalApexSha256": "12a48ad17c8f66202941e6fed231335015e9e9844f1bfb383e6c595bb8a3b535",
+          "sourceSha256": {
+            "anonymous": "985892d167b99bc1259f6b7947ccd31ae8827a110aea80df3d34ccc90394a800"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('EventUuid');s.put('EventUuid','00000000-0000-4000-8000-000000000001');v=new Map<String,Object>{'before'=>before,'after'=>s.get('EventUuid'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('EventUuid')=='00000000-0000-4000-8000-000000000001'};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_084');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('EventUuid');s.put('EventUuid','00000000-0000-4000-8000-000000000001');v=new Map<String,Object>{'before'=>before,'after'=>s.get('EventUuid'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('EventUuid')=='00000000-0000-4000-8000-000000000001'};",
+          "originalApexSha256": "12a48ad17c8f66202941e6fed231335015e9e9844f1bfb383e6c595bb8a3b535",
+          "sourceSha256": {
+            "class:C168C168RP084Test": "9c862fc79e60f1383d910ddb9673c98a759694ce921526b0a3925519db88d51f"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP084Test": "@IsTest private class C168C168RP084Test{@IsTest static void observe(){Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('EventUuid');s.put('EventUuid','00000000-0000-4000-8000-000000000001');v=new Map<String,Object>{'before'=>before,'after'=>s.get('EventUuid'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('EventUuid')=='00000000-0000-4000-8000-000000000001'};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_084');}}"
+          },
+          "tests": [
+            "C168C168RP084Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_085",
+      "group": "standard-put",
+      "role": "standard-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('EventUuid');s.put('EventUuid',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('EventUuid'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('EventUuid')==null};",
+          "originalApexSha256": "750f9b9e1a118d1dc9b9e9d0fba4f8e8c4d9a320279c795f8f16fdb58e71cf7b",
+          "sourceSha256": {
+            "anonymous": "7a92f15fab53381366ffa0d72525e9a4ea7feffad112394c1a4979d43fe69304"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('EventUuid');s.put('EventUuid',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('EventUuid'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('EventUuid')==null};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_085');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('EventUuid');s.put('EventUuid',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('EventUuid'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('EventUuid')==null};",
+          "originalApexSha256": "750f9b9e1a118d1dc9b9e9d0fba4f8e8c4d9a320279c795f8f16fdb58e71cf7b",
+          "sourceSha256": {
+            "class:C168C168RP085Test": "10212e99b76e242de43193891228b6c80197b4c5aa34b15237b5eb3f0e5be542"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP085Test": "@IsTest private class C168C168RP085Test{@IsTest static void observe(){Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('EventUuid');s.put('EventUuid',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('EventUuid'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('EventUuid')==null};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_085');}}"
+          },
+          "tests": [
+            "C168C168RP085Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_088",
+      "group": "standard-put",
+      "role": "standard-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedDate');s.put('CreatedDate',Datetime.newInstanceGmt(2024,1,15,12,0,0));v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedDate'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedDate')==Datetime.newInstanceGmt(2024,1,15,12,0,0)};",
+          "originalApexSha256": "4d569f02bb9806bcab2ee1dde5d317f0833f9d0c3c27cdb71c19f192569acc48",
+          "sourceSha256": {
+            "anonymous": "cb3844df26e7c529c99be536a589269cd125b5964f6b871a00e27804fd11b71a"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedDate');s.put('CreatedDate',Datetime.newInstanceGmt(2024,1,15,12,0,0));v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedDate'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedDate')==Datetime.newInstanceGmt(2024,1,15,12,0,0)};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_088');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedDate');s.put('CreatedDate',Datetime.newInstanceGmt(2024,1,15,12,0,0));v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedDate'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedDate')==Datetime.newInstanceGmt(2024,1,15,12,0,0)};",
+          "originalApexSha256": "4d569f02bb9806bcab2ee1dde5d317f0833f9d0c3c27cdb71c19f192569acc48",
+          "sourceSha256": {
+            "class:C168C168RP088Test": "1ac695cda0d0f2167fd4e401cf9fb3e427865a0b7004e54abee1ef3a8e82643c"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP088Test": "@IsTest private class C168C168RP088Test{@IsTest static void observe(){Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedDate');s.put('CreatedDate',Datetime.newInstanceGmt(2024,1,15,12,0,0));v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedDate'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedDate')==Datetime.newInstanceGmt(2024,1,15,12,0,0)};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_088');}}"
+          },
+          "tests": [
+            "C168C168RP088Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_089",
+      "group": "standard-put",
+      "role": "standard-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedDate');s.put('CreatedDate',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedDate'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedDate')==null};",
+          "originalApexSha256": "56c657739ad73a7d272a1594437f171fd346c8dbb6f5e59d34c37fed8d247b29",
+          "sourceSha256": {
+            "anonymous": "55d308a9a0babeb007f9b7f158e71f1bd43fc324ac0b08ca54790a3f82c50a00"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedDate');s.put('CreatedDate',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedDate'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedDate')==null};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_089');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedDate');s.put('CreatedDate',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedDate'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedDate')==null};",
+          "originalApexSha256": "56c657739ad73a7d272a1594437f171fd346c8dbb6f5e59d34c37fed8d247b29",
+          "sourceSha256": {
+            "class:C168C168RP089Test": "f23bd30e62eb9a4fb50828f511b1f2252b538171f772049870070f49b9241d44"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP089Test": "@IsTest private class C168C168RP089Test{@IsTest static void observe(){Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedDate');s.put('CreatedDate',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedDate'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedDate')==null};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_089');}}"
+          },
+          "tests": [
+            "C168C168RP089Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_092",
+      "group": "standard-put",
+      "role": "standard-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedById');s.put('CreatedById',UserInfo.getUserId());v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedById'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedById')==UserInfo.getUserId()};",
+          "originalApexSha256": "bd18fdc5dd89cf4bb6a73c3819b98876aeba93380cb5d895ab4569b3cf6cc8d3",
+          "sourceSha256": {
+            "anonymous": "bad709c03417bfda69bb7b96822b143b7effbca4d46ba41c2f193e50ef108e15"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedById');s.put('CreatedById',UserInfo.getUserId());v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedById'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedById')==UserInfo.getUserId()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_092');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedById');s.put('CreatedById',UserInfo.getUserId());v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedById'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedById')==UserInfo.getUserId()};",
+          "originalApexSha256": "bd18fdc5dd89cf4bb6a73c3819b98876aeba93380cb5d895ab4569b3cf6cc8d3",
+          "sourceSha256": {
+            "class:C168C168RP092Test": "575ecf8ca9400e18fe86deaa437c8751159758c8a388deb61addb524462ca469"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP092Test": "@IsTest private class C168C168RP092Test{@IsTest static void observe(){Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedById');s.put('CreatedById',UserInfo.getUserId());v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedById'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedById')==UserInfo.getUserId()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_092');}}"
+          },
+          "tests": [
+            "C168C168RP092Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_093",
+      "group": "standard-put",
+      "role": "standard-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedById');s.put('CreatedById',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedById'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedById')==null};",
+          "originalApexSha256": "1d82e342aebe817d0555687939879b7770dd266b097998faeb789efd3bcef694",
+          "sourceSha256": {
+            "anonymous": "14fe0b14763626e5366d716154b9510a8d2094e171cf2443e374ed7adb534367"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedById');s.put('CreatedById',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedById'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedById')==null};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_093');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedById');s.put('CreatedById',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedById'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedById')==null};",
+          "originalApexSha256": "1d82e342aebe817d0555687939879b7770dd266b097998faeb789efd3bcef694",
+          "sourceSha256": {
+            "class:C168C168RP093Test": "d929bab84af80e135294af1d927d217b71498b19ad4f0a26f89e99e2b95b0050"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP093Test": "@IsTest private class C168C168RP093Test{@IsTest static void observe(){Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Object before=s.get('CreatedById');s.put('CreatedById',null);v=new Map<String,Object>{'before'=>before,'after'=>s.get('CreatedById'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('CreatedById')==null};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_093');}}"
+          },
+          "tests": [
+            "C168C168RP093Test"
+          ]
+        }
+      }
+    }
+  ]
+}

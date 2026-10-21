@@ -1775,7 +1775,7 @@ func runtimePatchCompiledAPIVersionFingerprint(methods map[string]vm.Method) (st
 	h := sha256.New()
 	for _, key := range keys {
 		method := methods[key]
-		for _, value := range []string{key, method.ClassName, method.File, method.APIVersion} {
+		for _, value := range []string{key, method.ClassName, method.File, method.APIVersion, method.SourceUnit} {
 			_, _ = h.Write([]byte(value))
 			_, _ = h.Write([]byte{0})
 		}

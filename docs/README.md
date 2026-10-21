@@ -2,6 +2,11 @@
 
 This map keeps first-use docs in one place.
 
+The v0.3.0 support window is Apex 62.0-68.0, LWC and Visualforce 59.0-68.0.
+Apex source API below 62.0 is unsupported. DataWeave, ConnectApi, and Slack
+are excluded and unsupported. See [RELEASE_POLICY.md](RELEASE_POLICY.md#salesforce-api-versions)
+for endpoint versions and Execute Anonymous eligibility.
+
 ## If You Want To Use Glade
 
 1. Start and install: [INSTALL.md](INSTALL.md)
@@ -41,8 +46,13 @@ Base `glade` consumes or publishes them; it does not regenerate them.
   coverage.
 - [LWC_SUPPORT.md](LWC_SUPPORT.md) — local LWC support boundary.
 - [PRIVATE_CORPUS_ASSURANCE.md](PRIVATE_CORPUS_ASSURANCE.md) — published v0.2.11
-  surface snapshot and tagged v0.2.12 validation.
+  surface snapshot and tagged v0.2.12 validation (historical; not v0.3.0 qualification).
 - [RELEASE_NOTES.md](RELEASE_NOTES.md) — stable and unreleased product changes.
+
+Generated gap, standard-object, and method inventories are snapshots maintained
+by the compat plugin. Read their scope alongside the hand-maintained
+[compatibility matrix](COMPATIBILITY.md#initial-matrix); their counts and status
+labels do not establish fresh release validation.
 
 ## If You Want To Contribute
 

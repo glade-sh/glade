@@ -1,0 +1,127 @@
+{
+  "orgIdSha256": "82ee14240638594a3644acb6899f96bfb31278832225b9957fa8e25361e724c6",
+  "contexts": [
+    {
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "values": [
+        "Authored_Audit__c",
+        "Audit & review",
+        true,
+        "Authored_Audit__c",
+        "Manual",
+        "Manual Sharing"
+      ]
+    },
+    {
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "values": [
+        "Authored_Audit__c",
+        "Audit & review",
+        true,
+        "Authored_Audit__c",
+        "Manual",
+        "Manual Sharing"
+      ]
+    },
+    {
+      "sourceApi": "66.0",
+      "transportApi": "66.0",
+      "route": "istest",
+      "values": [
+        "Authored_Audit__c",
+        "Audit & review",
+        true,
+        "Authored_Audit__c",
+        "Manual",
+        "Manual Sharing"
+      ]
+    },
+    {
+      "sourceApi": "66.0",
+      "transportApi": "66.0",
+      "route": "anonymous",
+      "values": [
+        "Authored_Audit__c",
+        "Audit & review",
+        true,
+        "Authored_Audit__c",
+        "Manual",
+        "Manual Sharing"
+      ]
+    },
+    {
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "route": "istest",
+      "values": [
+        "Authored_Audit__c",
+        "Audit & review",
+        true,
+        "Authored_Audit__c",
+        "Manual",
+        "Manual Sharing"
+      ]
+    },
+    {
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "values": [
+        "Authored_Audit__c",
+        "Audit & review",
+        true,
+        "Authored_Audit__c",
+        "Manual",
+        "Manual Sharing"
+      ]
+    },
+    {
+      "sourceApi": "68.0",
+      "transportApi": "68.0",
+      "route": "istest",
+      "values": [
+        "Authored_Audit__c",
+        "Audit & review",
+        true,
+        "Authored_Audit__c",
+        "Manual",
+        "Manual Sharing"
+      ]
+    },
+    {
+      "sourceApi": "68.0",
+      "transportApi": "68.0",
+      "route": "anonymous",
+      "values": [
+        "Authored_Audit__c",
+        "Audit & review",
+        true,
+        "Authored_Audit__c",
+        "Manual",
+        "Manual Sharing"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "project/force-app/main/default/classes/SharingReasonLabelObservation.cls",
+      "sha256": "55facd85c0601f6bf5cdc64188c9f9283725e61d21a844a3455215a74c3a8fe3"
+    },
+    {
+      "path": "project/force-app/main/default/classes/SharingReasonLabelObservationTest.cls",
+      "sha256": "4ae81201fefc403dce4a74e7f0310ae7d034668b4bfd3835038d6bb2bb70ebf1"
+    },
+    {
+      "path": "project/force-app/main/default/objects/ArchiveItem__c/ArchiveItem__c.object-meta.xml",
+      "sha256": "661805b68e2b006e91eebeca682216f55bf9356c15cc66fee73cc1eb9bb60cdc"
+    },
+    {
+      "path": "project/force-app/main/default/objects/ArchiveItem__c/sharingReasons/Authored_Audit__c.sharingReason-meta.xml",
+      "sha256": "71efcb241040055bc72c8ef1f9eb6ba751b3905709217f115ee15590c3273669"
+    }
+  ]
+}

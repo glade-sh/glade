@@ -1,0 +1,4 @@
+id	group	route	status	value
+P01	FLOW_LOOKUP_SOURCE_ASSIGNMENT	istest	runtime	{"description":"P01","phone":"5550100"}
+P02	FLOW_LOOKUP_SOURCE_ASSIGNMENT	istest	runtime	{"description":"P02","phone":null}
+P03	FLOW_LOOKUP_SOURCE_ASSIGNMENT	istest	runtime	{"description":"P03","phone":"5550100"}

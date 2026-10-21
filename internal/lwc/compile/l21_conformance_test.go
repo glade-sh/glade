@@ -63,15 +63,17 @@ type l21NativeDiagnostic struct {
 }
 
 // TestL21SalesforceConformance compares the exact exported org.tsv text at
-// source API 59/67. The committed native oracle has 260 rows at each endpoint:
+// source API 59/67/68. The committed native oracle has 260 rows at each API:
 // 53 compiler/metadata outcomes and 207 full native DOM observations.
+// Thirty main DOM answers use the retained Winter 27 floor captures; their
+// historical answers remain in superseded_expected. Control captures are separate.
 // GLADE_L21_CAPTURE=1 records the unchanged product's before behavior without
 // failing mismatches; GLADE_L21_REPORT selects its per-row TSV destination.
 // Compiler rows compare their native COMPILE_OK/COMPILE_ERROR verdicts. Every
 // rejection also compares the exact native diagnostic in separate report fields;
 // compiler bisection evidence remains in the export.
-// The isolated API 59/67 unknown-target control supersedes the original failed
-// deployment batch's component-success entry; both observations remain exported.
+// Isolated unknown-target controls at API 59/67/68 supersede the respective
+// batch component-success entries; the native diagnostics remain separate.
 func TestL21SalesforceConformance(t *testing.T) {
 	// Expose the browser dependency in the subtest selector used for retries.
 	t.Run("BrowserRuntime", func(t *testing.T) {
@@ -85,7 +87,7 @@ func TestL21SalesforceConformance(t *testing.T) {
 
 // Replay the exact captured legacy fixtures separately, preserving the original
 // 260-row denominator. The complete DOM, event order, flags and actions are
-// compared at both endpoints, including canceled menu/navigation interactions.
+// compared at all three APIs, including canceled menu/navigation interactions.
 func l21LegacyControls(t *testing.T) {
 	l21CapturedControls(t, "legacy", "familyL21LegacyRuntime", 3, true)
 }
@@ -137,15 +139,37 @@ func l21CapturedControls(t *testing.T, name, bundlePrefix string, count int, act
 	}
 	capture := os.Getenv("GLADE_L21_CAPTURE") == "1"
 	var report strings.Builder
-	for _, api := range []string{"59.0", "67.0"} {
+	versions := []string{"59.0", "67.0", "68.0"}
+	parallel := browserAPIParallelism(len(versions))
+	var observations []l21DOMObservation
+	if parallel > 1 {
+		// Install any missing shared toolchain once, before concurrent compiles
+		// read it (the compile step otherwise races on a cold user-share root).
+		if _, err := gladehome.EnsureRoot(); err != nil {
+			t.Fatal(err)
+		}
+		observations = runBrowserPasses(len(versions), parallel, func(pass int) l21DOMObservation {
+			return l21ObserveDOM(t, table, versions[pass], dependencyRoot)
+		})
+	}
+	for pass, api := range versions {
 		bundle := table.RuntimeBundles[api]
 		if bundle.Name != bundlePrefix+api[:2] || bundle.JS == "" || bundle.Template == "" || bundle.Metadata == "" {
 			t.Fatalf("missing native %s runtime bundle at API %s", name, api)
 		}
-		values, errors, compileErr := l21ObserveDOM(t, table, api, dependencyRoot)
-		if compileErr != nil {
-			t.Fatal(compileErr)
+		var observation l21DOMObservation
+		if parallel == 1 {
+			observation = l21ObserveDOM(t, table, api, dependencyRoot)
+		} else {
+			observation = observations[pass]
 		}
+		if observation.Err != nil {
+			t.Fatal(observation.Err)
+		}
+		if observation.CompileErr != nil {
+			t.Fatal(observation.CompileErr)
+		}
+		values, errors := observation.Values, observation.Errors
 		matches := 0
 		for _, c := range table.Cases {
 			want := c.Expected[api]
@@ -245,7 +269,7 @@ func l21SalesforceConformance(t *testing.T) {
 	if err := json.Unmarshal(data, &table); err != nil {
 		t.Fatal(err)
 	}
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
 	seen, groups := map[string]bool{}, map[string]bool{}
 	compileCount, runtimeCount := 0, 0
 	for _, c := range table.Cases {
@@ -311,9 +335,34 @@ func l21SalesforceConformance(t *testing.T) {
 	var report strings.Builder
 	report.WriteString("api\tid\tkind\tstatus\tactual\texpected\treason\tdiagnostic_status\tdiagnostic_actual\tdiagnostic_expected\n")
 	matches, total := 0, 0
-	for _, api := range versions {
-		compiled := l21CompileCases(t, table.Cases, api)
-		dom, domErrors, runtimeCompileErr := l21ObserveDOM(t, table, api, dependencyRoot)
+	// Keep the original first compile serial: it also initializes any missing
+	// shared toolchain before concurrent runtime compiles read those assets.
+	firstCompiled := l21CompileCases(t, table.Cases, versions[0])
+	// Each pass owns its temp project/output, org, mux, ephemeral server port and
+	// Node/browser process. The table and dependency assets are read-only; only
+	// this goroutine compares rows, reports errors and writes the ordered TSV.
+	parallel := browserAPIParallelism(len(versions))
+	var observations []l21DOMObservation
+	if parallel > 1 {
+		observations = runBrowserPasses(len(versions), parallel, func(pass int) l21DOMObservation {
+			return l21ObserveDOM(t, table, versions[pass], dependencyRoot)
+		})
+	}
+	for pass, api := range versions {
+		compiled := firstCompiled
+		if pass != 0 {
+			compiled = l21CompileCases(t, table.Cases, api)
+		}
+		var observation l21DOMObservation
+		if parallel == 1 {
+			observation = l21ObserveDOM(t, table, api, dependencyRoot)
+		} else {
+			observation = observations[pass]
+		}
+		if observation.Err != nil {
+			t.Fatal(observation.Err)
+		}
+		dom, domErrors, runtimeCompileErr := observation.Values, observation.Errors, observation.CompileErr
 		nativeDiagnostics := map[string]string{}
 		for _, diagnostic := range table.NativeDiagnostics[api] {
 			if !seen[diagnostic.ID] || diagnostic.Message == "" || nativeDiagnostics[diagnostic.ID] != "" {
@@ -428,20 +477,34 @@ func l21CompileDiagnostic(result compile.BundleResult) string {
 
 func l21Write(t *testing.T, path, text string) {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(path, []byte(text), 0600); err != nil {
+	if err := l21WriteFile(path, text); err != nil {
 		t.Fatal(err)
 	}
 }
 
+func l21WriteFile(path, text string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(text), 0600)
+}
+
 func l21WriteBundle(t *testing.T, root string, bundle l21Bundle) {
 	t.Helper()
+	if err := l21WriteBundleFiles(root, bundle); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func l21WriteBundleFiles(root string, bundle l21Bundle) error {
 	path := filepath.Join(root, "force-app", "main", "default", "lwc", bundle.Name, bundle.Name)
-	l21Write(t, path+".js", bundle.JS)
-	l21Write(t, path+".html", bundle.Template)
-	l21Write(t, path+".js-meta.xml", bundle.Metadata)
+	if err := l21WriteFile(path+".js", bundle.JS); err != nil {
+		return err
+	}
+	if err := l21WriteFile(path+".html", bundle.Template); err != nil {
+		return err
+	}
+	return l21WriteFile(path+".js-meta.xml", bundle.Metadata)
 }
 
 func l21CompileCases(t *testing.T, cases []l21Case, api string) map[string]compile.BundleResult {
@@ -486,42 +549,53 @@ func l21CompileCases(t *testing.T, cases []l21Case, api string) map[string]compi
 	return results
 }
 
-func l21ObserveDOM(t *testing.T, table l21Table, api, dependencyRoot string) (map[string]json.RawMessage, map[string]string, error) {
+type l21DOMObservation struct {
+	Values     map[string]json.RawMessage
+	Errors     map[string]string
+	CompileErr error
+	Err        error
+}
+
+func l21ObserveDOM(t *testing.T, table l21Table, api, dependencyRoot string) l21DOMObservation {
 	t.Helper()
 	root := t.TempDir()
 	bundle := table.RuntimeBundles[api]
-	l21WriteBundle(t, root, bundle)
-	l21Write(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"","sourceApiVersion":"`+api+`"}`)
+	if err := l21WriteBundleFiles(root, bundle); err != nil {
+		return l21DOMObservation{Err: err}
+	}
+	if err := l21WriteFile(filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"","sourceApiVersion":"`+api+`"}`); err != nil {
+		return l21DOMObservation{Err: err}
+	}
 	p, err := project.Load(root)
 	if err != nil {
-		t.Fatal(err)
+		return l21DOMObservation{Err: err}
 	}
 	compiled, err := compile.Compile(p, compile.Options{OutDir: filepath.Join(root, "dist")})
 	if err != nil {
-		return nil, nil, err
+		return l21DOMObservation{CompileErr: err}
 	}
 	entry, present := compiled.Modules["c:"+bundle.Name]
 	if !present {
-		t.Fatalf("missing L21 runtime entry for API %s", api)
+		return l21DOMObservation{Err: fmt.Errorf("missing L21 runtime entry for API %s", api)}
 	}
 	imports := lwcbrowser.SalesforceImportMap()
 	imports["lwc"], imports["@lwc/synthetic-shadow"] = "/engine.js", "/shadow.js"
 	for _, module := range compiled.Modules {
 		rel, err := filepath.Rel(compiled.OutDir, module.File)
 		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-			t.Fatalf("L21 compiled module escapes its output: %s", module.File)
+			return l21DOMObservation{Err: fmt.Errorf("L21 compiled module escapes its output: %s", module.File)}
 		}
 		imports[module.ModuleKey] = "/modules/" + filepath.ToSlash(rel)
 	}
 	importMap, err := json.Marshal(map[string]any{"imports": imports})
 	if err != nil {
-		t.Fatal(err)
+		return l21DOMObservation{Err: err}
 	}
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
 	registry, err := resource.LoadProject(p)
 	if err != nil {
-		t.Fatal(err)
+		return l21DOMObservation{Err: err}
 	}
 	org.Metadata = registry
 	product := server.NewWithSource(&org, server.SourceMetadata{Project: p})
@@ -568,11 +642,11 @@ func l21ObserveDOM(t *testing.T, table l21Table, api, dependencyRoot string) (ma
 	}
 	config, err := json.Marshal(map[string]any{"url": local.URL, "rows": rows, "actionTargetText": table.ActionTargetText, "observationAttributes": table.ObservationAttributes, "playwrightModule": playwright, "executablePath": os.Getenv("GLADE_LWC_BROWSER_EXECUTABLE")})
 	if err != nil {
-		t.Fatal(err)
+		return l21DOMObservation{Err: err}
 	}
 	observer, err := filepath.Abs("testdata/l21_browser.mjs")
 	if err != nil {
-		t.Fatal(err)
+		return l21DOMObservation{Err: err}
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
@@ -581,14 +655,14 @@ func l21ObserveDOM(t *testing.T, table l21Table, api, dependencyRoot string) (ma
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	if err := cmd.Run(); err != nil {
-		t.Fatalf("L21 local browser environment: %v: %s", err, l21Cell(stderr.String()))
+		return l21DOMObservation{Err: fmt.Errorf("L21 local browser environment: %v: %s", err, l21Cell(stderr.String()))}
 	}
 	var observation struct {
 		Values map[string]json.RawMessage `json:"values"`
 		Errors map[string]string          `json:"errors"`
 	}
 	if err := json.Unmarshal(stdout.Bytes(), &observation); err != nil {
-		t.Fatal(err)
+		return l21DOMObservation{Err: err}
 	}
 	known := map[string]bool{}
 	for _, c := range table.Cases {
@@ -599,7 +673,7 @@ func l21ObserveDOM(t *testing.T, table l21Table, api, dependencyRoot string) (ma
 	for _, ids := range []map[string]bool{l21ObservedIDs(observation.Values), l21ObservedIDs(observation.Errors)} {
 		for id := range ids {
 			if !known[id] {
-				t.Fatalf("unexpected L21 browser row %s", id)
+				return l21DOMObservation{Err: fmt.Errorf("unexpected L21 browser row %s", id)}
 			}
 		}
 	}
@@ -607,10 +681,10 @@ func l21ObserveDOM(t *testing.T, table l21Table, api, dependencyRoot string) (ma
 		_, valuePresent := observation.Values[id]
 		_, errorPresent := observation.Errors[id]
 		if valuePresent == errorPresent {
-			t.Fatalf("L21 browser must return one value or error for %s", id)
+			return l21DOMObservation{Err: fmt.Errorf("L21 browser must return one value or error for %s", id)}
 		}
 	}
-	return observation.Values, observation.Errors, nil
+	return l21DOMObservation{Values: observation.Values, Errors: observation.Errors}
 }
 
 func l21ObservedIDs[T any](rows map[string]T) map[string]bool {

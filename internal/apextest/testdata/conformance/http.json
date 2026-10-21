@@ -1,9 +1,10 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
-  "source": "Owned HTTP observations at API 62.0 and 67.0.",
+  "source": "Owned HTTP observations at API 62.0, 67.0 and 68.0; 298 asserted API 68 primary answers are unchanged.",
   "declarations": {
     "A40HttpMock": "public class A40HttpMock implements HttpCalloutMock {\n public HttpResponse respond(HttpRequest req) {\n  HttpResponse res=new HttpResponse(); res.setStatusCode(207);\n  res.setStatus('Multi-Status'); res.setHeader('X-A40',req.getMethod());\n  res.setBody(String.valueOf(req.getEndpoint())+'|'+String.valueOf(req.getBody()));\n  return res;\n }\n}",
     "A40ThrowMock": "public class A40ThrowMock implements HttpCalloutMock {\n public HttpResponse respond(HttpRequest req) { throw new CalloutException('A40 mock failure'); }\n}",
@@ -3097,10 +3098,10 @@
       "isolated": true
     }
   ],
-  "controlsSource": "Owned HTTP controls at API 62.0 and 67.0.",
-  "reviewControlsSource": "Owned HTTP review controls at API 62.0 and 67.0.",
-  "retryControlsSource": "Owned HTTP retry controls K006/K007 at API 62.0 and 67.0.",
-  "conformanceControlsSource": "Owned HTTP conformance controls at API 62.0 and 67.0.",
-  "mapControlSource": "Owned HTTP map controls at API 62.0 and 67.0.",
-  "shadowControlsSource": "Owned anonymous and named HTTP shadow controls at API 62.0 and 67.0; exported SH001-SH022 map to observed S001-S022."
+  "controlsSource": "Owned HTTP controls at API 62.0, 67.0 and 68.0.",
+  "reviewControlsSource": "Owned HTTP review controls at API 62.0, 67.0 and 68.0.",
+  "retryControlsSource": "Owned HTTP retry controls K006/K007 at API 62.0, 67.0 and 68.0.",
+  "conformanceControlsSource": "Owned HTTP conformance controls at API 62.0, 67.0 and 68.0.",
+  "mapControlSource": "Owned HTTP map controls at API 62.0, 67.0 and 68.0.",
+  "shadowControlsSource": "Owned anonymous and named HTTP shadow controls at API 62.0, 67.0 and 68.0; exported SH001-SH022 map to observed S001-S022."
 }

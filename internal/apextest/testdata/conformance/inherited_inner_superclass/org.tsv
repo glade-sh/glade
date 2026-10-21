@@ -1,0 +1,13 @@
+source_api	method	observation
+62.0	added	"{""value"":""1""}"
+62.0	empty	"{""value"":""true""}"
+62.0	populated	"{""value"":""false""}"
+62.0	qualified	"{""value"":""false""}"
+67.0	added	"{""value"":""1""}"
+67.0	empty	"{""value"":""true""}"
+67.0	populated	"{""value"":""false""}"
+67.0	qualified	"{""value"":""false""}"
+68.0	added	"{""value"":""1""}"
+68.0	empty	"{""value"":""true""}"
+68.0	populated	"{""value"":""false""}"
+68.0	qualified	"{""value"":""false""}"

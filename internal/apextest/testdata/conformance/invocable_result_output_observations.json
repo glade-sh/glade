@@ -1,0 +1,119 @@
+{
+  "provenance": "Owned check-only named-test observations, 2026-10-15. Three intentional observation failures per validation, no component/other failures. Both validations checkOnly=true and rollbackOnError=true.",
+  "captures": [
+    {
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "deployId": "0AfEc00000p1ZEUKA2",
+      "checkOnly": true,
+      "rollbackOnError": true,
+      "sourceSHA256": {
+        "ResultOutputObservation": "d9b0f2b44c7fd5ba44b8304096fbcc982fc3080a26e4eb8b0545d0380b32ebf0"
+      },
+      "classes": {
+        "ResultOutputObservation": "@IsTest(SeeAllData=false) private class ResultOutputObservation{\n@IsTest static void rdto01(){Map<String,Object> payload=new Map<String,Object>();try{Invocable.Action.Result dto=(Invocable.Action.Result)JSON.deserialize('{\"action\":null,\"errors\":null,\"success\":true,\"outputParameters\":{}}',Invocable.Action.Result.class);payload.put('success',dto.isSuccess());Map<String,Object> held=dto.getOutputParameters();payload.put('initialEmpty',held.isEmpty());Account input=new Account(Name='initial',Description='retained');dto.getOutputParameters().putAll(new Map<String,Object>{'entry'=>input});Invocable.Action.Result alias=dto;List<Invocable.Action.Result> results=new List<Invocable.Action.Result>{dto};Account output=(Account)results[0].getOutputParameters().get('entry');payload.put('sameResult',alias===dto);payload.put('sameMap',held===alias.getOutputParameters());payload.put('sameRecord',input===output);input.Name='changed';input.Description=null;payload.put('name',output.Name);payload.put('descriptionNull',output.Description==null);held.put('nil',null);payload.put('nullKeyPresent',alias.getOutputParameters().containsKey('nil'));payload.put('nullValue',alias.getOutputParameters().get('nil')==null);alias.getOutputParameters().clear();payload.put('clearShared',held.isEmpty());payload.put('otherFieldsNull',dto.getErrors()==null&&dto.getAction()==null&&dto.getInvocationParameters()==null);}catch(Exception fault){payload.put('exceptionType',fault.getTypeName());payload.put('exceptionMessage',fault.getMessage());}System.assert(false,'RESULT_DTO_RESULT|RDTO01|'+JSON.serialize(payload));}\n@IsTest static void rdto02(){Map<String,Object> payload=new Map<String,Object>();try{Invocable.Action.Result dto=(Invocable.Action.Result)JSON.deserialize('{\"action\":null,\"errors\":[{\"code\":\"SYNTHETIC\",\"message\":\"declined\"}],\"success\":false,\"outputParameters\":{}}',Invocable.Action.Result.class);payload.put('success',dto.isSuccess());payload.put('outputsEmpty',dto.getOutputParameters().isEmpty());payload.put('errorCount',dto.getErrors().size());payload.put('code',dto.getErrors()[0].getCode());payload.put('message',dto.getErrors()[0].getMessage());Invocable.Action.Error item=(Invocable.Action.Error)JSON.deserialize('{\"code\":\"SECOND\",\"message\":\"second detail\"}',Invocable.Action.Error.class);payload.put('standaloneCode',item.getCode());payload.put('standaloneMessage',item.getMessage());payload.put('otherFieldsNull',dto.getAction()==null&&dto.getInvocationParameters()==null);}catch(Exception fault){payload.put('exceptionType',fault.getTypeName());payload.put('exceptionMessage',fault.getMessage());}System.assert(false,'RESULT_DTO_RESULT|RDTO02|'+JSON.serialize(payload));}\n@IsTest static void rdto03(){Map<String,Object> payload=new Map<String,Object>();try{Invocable.Action.Result empty=(Invocable.Action.Result)JSON.deserialize('{}',Invocable.Action.Result.class);payload.put('successNull',empty.isSuccess()==null);payload.put('outputsNull',empty.getOutputParameters()==null);payload.put('errorsNull',empty.getErrors()==null);payload.put('invocationNull',empty.getInvocationParameters()==null);payload.put('actionNull',empty.getAction()==null);try{Invocable.Action.Result rejected=(Invocable.Action.Result)JSON.deserialize('{\"success\":true,\"outputParameters\":{\"value\":7}}',Invocable.Action.Result.class);payload.put('populatedAccepted',true);}catch(Exception fault){payload.put('rejectType',fault.getTypeName());payload.put('rejectMessage',fault.getMessage());}}catch(Exception fault){payload.put('exceptionType',fault.getTypeName());payload.put('exceptionMessage',fault.getMessage());}System.assert(false,'RESULT_DTO_RESULT|RDTO03|'+JSON.serialize(payload));}\n}"
+      },
+      "metadata": {
+        "ResultOutputObservation.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>"
+      },
+      "metadataSHA256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+      "observations": {
+        "RDTO01": {
+          "clearShared": true,
+          "descriptionNull": true,
+          "initialEmpty": true,
+          "name": "changed",
+          "nullKeyPresent": true,
+          "nullValue": true,
+          "otherFieldsNull": true,
+          "sameMap": true,
+          "sameRecord": true,
+          "sameResult": true,
+          "success": true
+        },
+        "RDTO02": {
+          "code": "SYNTHETIC",
+          "errorCount": 1,
+          "message": "declined",
+          "otherFieldsNull": true,
+          "outputsEmpty": true,
+          "standaloneCode": "SECOND",
+          "standaloneMessage": "second detail",
+          "success": false
+        },
+        "RDTO03": {
+          "actionNull": true,
+          "errorsNull": true,
+          "invocationNull": true,
+          "outputsNull": true,
+          "rejectMessage": "Apex Type unsupported in JSON: Object",
+          "rejectType": "System.JSONException",
+          "successNull": true
+        }
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "route": "istest",
+      "deployId": "0AfEc00000p1ecLKAQ",
+      "checkOnly": true,
+      "rollbackOnError": true,
+      "sourceSHA256": {
+        "ResultOutputObservation": "d9b0f2b44c7fd5ba44b8304096fbcc982fc3080a26e4eb8b0545d0380b32ebf0"
+      },
+      "classes": {
+        "ResultOutputObservation": "@IsTest(SeeAllData=false) private class ResultOutputObservation{\n@IsTest static void rdto01(){Map<String,Object> payload=new Map<String,Object>();try{Invocable.Action.Result dto=(Invocable.Action.Result)JSON.deserialize('{\"action\":null,\"errors\":null,\"success\":true,\"outputParameters\":{}}',Invocable.Action.Result.class);payload.put('success',dto.isSuccess());Map<String,Object> held=dto.getOutputParameters();payload.put('initialEmpty',held.isEmpty());Account input=new Account(Name='initial',Description='retained');dto.getOutputParameters().putAll(new Map<String,Object>{'entry'=>input});Invocable.Action.Result alias=dto;List<Invocable.Action.Result> results=new List<Invocable.Action.Result>{dto};Account output=(Account)results[0].getOutputParameters().get('entry');payload.put('sameResult',alias===dto);payload.put('sameMap',held===alias.getOutputParameters());payload.put('sameRecord',input===output);input.Name='changed';input.Description=null;payload.put('name',output.Name);payload.put('descriptionNull',output.Description==null);held.put('nil',null);payload.put('nullKeyPresent',alias.getOutputParameters().containsKey('nil'));payload.put('nullValue',alias.getOutputParameters().get('nil')==null);alias.getOutputParameters().clear();payload.put('clearShared',held.isEmpty());payload.put('otherFieldsNull',dto.getErrors()==null&&dto.getAction()==null&&dto.getInvocationParameters()==null);}catch(Exception fault){payload.put('exceptionType',fault.getTypeName());payload.put('exceptionMessage',fault.getMessage());}System.assert(false,'RESULT_DTO_RESULT|RDTO01|'+JSON.serialize(payload));}\n@IsTest static void rdto02(){Map<String,Object> payload=new Map<String,Object>();try{Invocable.Action.Result dto=(Invocable.Action.Result)JSON.deserialize('{\"action\":null,\"errors\":[{\"code\":\"SYNTHETIC\",\"message\":\"declined\"}],\"success\":false,\"outputParameters\":{}}',Invocable.Action.Result.class);payload.put('success',dto.isSuccess());payload.put('outputsEmpty',dto.getOutputParameters().isEmpty());payload.put('errorCount',dto.getErrors().size());payload.put('code',dto.getErrors()[0].getCode());payload.put('message',dto.getErrors()[0].getMessage());Invocable.Action.Error item=(Invocable.Action.Error)JSON.deserialize('{\"code\":\"SECOND\",\"message\":\"second detail\"}',Invocable.Action.Error.class);payload.put('standaloneCode',item.getCode());payload.put('standaloneMessage',item.getMessage());payload.put('otherFieldsNull',dto.getAction()==null&&dto.getInvocationParameters()==null);}catch(Exception fault){payload.put('exceptionType',fault.getTypeName());payload.put('exceptionMessage',fault.getMessage());}System.assert(false,'RESULT_DTO_RESULT|RDTO02|'+JSON.serialize(payload));}\n@IsTest static void rdto03(){Map<String,Object> payload=new Map<String,Object>();try{Invocable.Action.Result empty=(Invocable.Action.Result)JSON.deserialize('{}',Invocable.Action.Result.class);payload.put('successNull',empty.isSuccess()==null);payload.put('outputsNull',empty.getOutputParameters()==null);payload.put('errorsNull',empty.getErrors()==null);payload.put('invocationNull',empty.getInvocationParameters()==null);payload.put('actionNull',empty.getAction()==null);try{Invocable.Action.Result rejected=(Invocable.Action.Result)JSON.deserialize('{\"success\":true,\"outputParameters\":{\"value\":7}}',Invocable.Action.Result.class);payload.put('populatedAccepted',true);}catch(Exception fault){payload.put('rejectType',fault.getTypeName());payload.put('rejectMessage',fault.getMessage());}}catch(Exception fault){payload.put('exceptionType',fault.getTypeName());payload.put('exceptionMessage',fault.getMessage());}System.assert(false,'RESULT_DTO_RESULT|RDTO03|'+JSON.serialize(payload));}\n}"
+      },
+      "metadata": {
+        "ResultOutputObservation.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>"
+      },
+      "metadataSHA256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+      "observations": {
+        "RDTO01": {
+          "clearShared": true,
+          "descriptionNull": true,
+          "initialEmpty": true,
+          "name": "changed",
+          "nullKeyPresent": true,
+          "nullValue": true,
+          "otherFieldsNull": true,
+          "sameMap": true,
+          "sameRecord": true,
+          "sameResult": true,
+          "success": true
+        },
+        "RDTO02": {
+          "code": "SYNTHETIC",
+          "errorCount": 1,
+          "message": "declined",
+          "otherFieldsNull": true,
+          "outputsEmpty": true,
+          "standaloneCode": "SECOND",
+          "standaloneMessage": "second detail",
+          "success": false
+        },
+        "RDTO03": {
+          "actionNull": true,
+          "errorsNull": true,
+          "invocationNull": true,
+          "outputsNull": true,
+          "rejectMessage": "Apex Type unsupported in JSON: Object",
+          "rejectType": "System.JSONException",
+          "successNull": true
+        }
+      }
+    }
+  ],
+  "uncaptured": [
+    {
+      "scope": "API61/API68 and anonymous routes",
+      "reason": "Not captured by this bounded named62/67 DTO follow-through."
+    },
+    {
+      "scope": "Hosted Flow execution, non-null Action DTO JSON and strict/unknown-field variants",
+      "reason": "The captured rows measure Result/Error hydration and output-map aliases only; no engine or other JSON behavior is inferred."
+    }
+  ]
+}

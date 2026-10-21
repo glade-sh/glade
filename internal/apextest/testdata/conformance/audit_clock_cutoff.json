@@ -1,0 +1,344 @@
+{
+  "nativeObservationCount": 12,
+  "sourceAPIs": [
+    "62.0",
+    "65.0",
+    "67.0"
+  ],
+  "mixedVersionScope": "Transport65 group: anonymous source65/project66; every named test method source66/project66, with batch helper source65. Other groups source/project/test match transport62 or67.",
+  "rows": [
+    {
+      "id": "sequential",
+      "sourceApi": "62.0",
+      "projectApi": "62.0",
+      "transportApi": "62.0",
+      "context": "anonymous",
+      "value": {
+        "olderThreshold": 0,
+        "modifiedByCutoff": 4,
+        "createdByCutoff": 4
+      },
+      "nativeMessage": "Execution failed at this code:\n\nSystem.AssertException: Assertion Failed: AUDIT_CUTOFF_OBSERVATION: Expected: AUDIT_CUTOFF_OBSERVATION, Actual: {\"olderThreshold\":0,\"modifiedByCutoff\":4,\"createdByCutoff\":4}",
+      "sources": {},
+      "sourceAPIs": {},
+      "anonymous": "Set<Id> ids=new Set<Id>();\nfor(Integer i=0;i<4;i++){Account a=new Account(Name='Owned audit '+i);insert a;ids.add(a.Id);}\nDatetime cutoff=System.now().addHours(0);Datetime earlier=cutoff.addHours(-1);\nMap<String,Object> observation=new Map<String,Object>{\n'createdByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff],\n'modifiedByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND LastModifiedDate<=:cutoff],\n'olderThreshold'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:earlier]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n",
+      "rawSHA256": "029e38542468904d86e5ce8dbcd4c9b5006989d1c56159e87e0e7404eac01d23",
+      "orgIdHash": "9b654fb73c9777fd75e5fd2d25f7fc7e207828c4122f22b3f41713c327fed5da",
+      "sourceSHA256": {},
+      "anonymousSHA256": "94fe6dc32b2e9e11764d04dbc517620195bd9d7a9aefd519ce36c7d2099b7ae9"
+    },
+    {
+      "id": "batch",
+      "sourceApi": "62.0",
+      "testApi": "62.0",
+      "projectApi": "62.0",
+      "transportApi": "62.0",
+      "context": "isTest",
+      "test": "AuditClockProbe62",
+      "method": "batch",
+      "value": {
+        "remainingAfterBatch": 0
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: AUDIT_CUTOFF_OBSERVATION: Expected: AUDIT_CUTOFF_OBSERVATION, Actual: {\"remainingAfterBatch\":0}",
+      "sources": {
+        "AuditCutoffBatch62": "public class AuditCutoffBatch62 implements Database.Batchable<SObject>,Database.Stateful {\n private Set<Id> ids;public AuditCutoffBatch62(Set<Id> keys){ids=keys;}\n public Database.QueryLocator start(Database.BatchableContext context){Datetime cutoff=System.now().addHours(0);return Database.getQueryLocator('SELECT Id FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff');}\n public void execute(Database.BatchableContext context,List<SObject> scope){delete scope;}\n public void finish(Database.BatchableContext context){}\n}\n",
+        "AuditClockProbe62": "@IsTest private class AuditClockProbe62 {\n@IsTest static void sequential(){\nSet<Id> ids=new Set<Id>();\nfor(Integer i=0;i<4;i++){Account a=new Account(Name='Owned audit '+i);insert a;ids.add(a.Id);}\nDatetime cutoff=System.now().addHours(0);Datetime earlier=cutoff.addHours(-1);\nMap<String,Object> observation=new Map<String,Object>{\n'createdByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff],\n'modifiedByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND LastModifiedDate<=:cutoff],\n'olderThreshold'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:earlier]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void batch(){\nAccount one=new Account(Name='Owned first');insert one;Account two=new Account(Name='Owned second');insert two;\nSet<Id> ids=new Set<Id>{one.Id,two.Id};Test.startTest();Database.executeBatch(new AuditCutoffBatch62(ids),200);Test.stopTest();\nMap<String,Object> observation=new Map<String,Object>{'remainingAfterBatch'=>[SELECT COUNT() FROM Account WHERE Id IN :ids]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void future(){\nAccount a=new Account(Name='Owned future audit');insert a;Id key=a.Id;\nDatetime future=System.now().addDays(1);Test.setCreatedDate(key,future);Datetime cutoff=System.now();\nDatetime stored=[SELECT CreatedDate FROM Account WHERE Id=:key].CreatedDate;\nMap<String,Object> observation=new Map<String,Object>{'futureByCutoff'=>[SELECT COUNT() FROM Account WHERE Id=:key AND CreatedDate<=:cutoff],'clockBeforeFuture'=>cutoff<future,'futureStillStored'=>stored>cutoff};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n}\n"
+      },
+      "sourceAPIs": {
+        "AuditCutoffBatch62": "62.0",
+        "AuditClockProbe62": "62.0"
+      },
+      "deploymentId": "0AfVA00000MCt0t0AD",
+      "rawSHA256": "38fb508aad8d48535383490aaf90c90d0e537b8261bff7a96be76accd6ccf065",
+      "orgIdHash": "9b654fb73c9777fd75e5fd2d25f7fc7e207828c4122f22b3f41713c327fed5da",
+      "sourceSHA256": {
+        "AuditCutoffBatch62": "c91531d10ae52958fef82db1536935ffe98cb6d6c3866ca4c8c989b4d88409dd",
+        "AuditClockProbe62": "52801825ad391a3fd992327ad2530e858fc25e43dac008ed91690d11955f9a27"
+      }
+    },
+    {
+      "id": "future",
+      "sourceApi": "62.0",
+      "testApi": "62.0",
+      "projectApi": "62.0",
+      "transportApi": "62.0",
+      "context": "isTest",
+      "test": "AuditClockProbe62",
+      "method": "future",
+      "value": {
+        "futureStillStored": true,
+        "clockBeforeFuture": true,
+        "futureByCutoff": 0
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: AUDIT_CUTOFF_OBSERVATION: Expected: AUDIT_CUTOFF_OBSERVATION, Actual: {\"futureStillStored\":true,\"clockBeforeFuture\":true,\"futureByCutoff\":0}",
+      "sources": {
+        "AuditCutoffBatch62": "public class AuditCutoffBatch62 implements Database.Batchable<SObject>,Database.Stateful {\n private Set<Id> ids;public AuditCutoffBatch62(Set<Id> keys){ids=keys;}\n public Database.QueryLocator start(Database.BatchableContext context){Datetime cutoff=System.now().addHours(0);return Database.getQueryLocator('SELECT Id FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff');}\n public void execute(Database.BatchableContext context,List<SObject> scope){delete scope;}\n public void finish(Database.BatchableContext context){}\n}\n",
+        "AuditClockProbe62": "@IsTest private class AuditClockProbe62 {\n@IsTest static void sequential(){\nSet<Id> ids=new Set<Id>();\nfor(Integer i=0;i<4;i++){Account a=new Account(Name='Owned audit '+i);insert a;ids.add(a.Id);}\nDatetime cutoff=System.now().addHours(0);Datetime earlier=cutoff.addHours(-1);\nMap<String,Object> observation=new Map<String,Object>{\n'createdByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff],\n'modifiedByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND LastModifiedDate<=:cutoff],\n'olderThreshold'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:earlier]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void batch(){\nAccount one=new Account(Name='Owned first');insert one;Account two=new Account(Name='Owned second');insert two;\nSet<Id> ids=new Set<Id>{one.Id,two.Id};Test.startTest();Database.executeBatch(new AuditCutoffBatch62(ids),200);Test.stopTest();\nMap<String,Object> observation=new Map<String,Object>{'remainingAfterBatch'=>[SELECT COUNT() FROM Account WHERE Id IN :ids]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void future(){\nAccount a=new Account(Name='Owned future audit');insert a;Id key=a.Id;\nDatetime future=System.now().addDays(1);Test.setCreatedDate(key,future);Datetime cutoff=System.now();\nDatetime stored=[SELECT CreatedDate FROM Account WHERE Id=:key].CreatedDate;\nMap<String,Object> observation=new Map<String,Object>{'futureByCutoff'=>[SELECT COUNT() FROM Account WHERE Id=:key AND CreatedDate<=:cutoff],'clockBeforeFuture'=>cutoff<future,'futureStillStored'=>stored>cutoff};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n}\n"
+      },
+      "sourceAPIs": {
+        "AuditCutoffBatch62": "62.0",
+        "AuditClockProbe62": "62.0"
+      },
+      "deploymentId": "0AfVA00000MCt0t0AD",
+      "rawSHA256": "38fb508aad8d48535383490aaf90c90d0e537b8261bff7a96be76accd6ccf065",
+      "orgIdHash": "9b654fb73c9777fd75e5fd2d25f7fc7e207828c4122f22b3f41713c327fed5da",
+      "sourceSHA256": {
+        "AuditCutoffBatch62": "c91531d10ae52958fef82db1536935ffe98cb6d6c3866ca4c8c989b4d88409dd",
+        "AuditClockProbe62": "52801825ad391a3fd992327ad2530e858fc25e43dac008ed91690d11955f9a27"
+      }
+    },
+    {
+      "id": "sequential",
+      "sourceApi": "62.0",
+      "testApi": "62.0",
+      "projectApi": "62.0",
+      "transportApi": "62.0",
+      "context": "isTest",
+      "test": "AuditClockProbe62",
+      "method": "sequential",
+      "value": {
+        "olderThreshold": 0,
+        "modifiedByCutoff": 4,
+        "createdByCutoff": 4
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: AUDIT_CUTOFF_OBSERVATION: Expected: AUDIT_CUTOFF_OBSERVATION, Actual: {\"olderThreshold\":0,\"modifiedByCutoff\":4,\"createdByCutoff\":4}",
+      "sources": {
+        "AuditCutoffBatch62": "public class AuditCutoffBatch62 implements Database.Batchable<SObject>,Database.Stateful {\n private Set<Id> ids;public AuditCutoffBatch62(Set<Id> keys){ids=keys;}\n public Database.QueryLocator start(Database.BatchableContext context){Datetime cutoff=System.now().addHours(0);return Database.getQueryLocator('SELECT Id FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff');}\n public void execute(Database.BatchableContext context,List<SObject> scope){delete scope;}\n public void finish(Database.BatchableContext context){}\n}\n",
+        "AuditClockProbe62": "@IsTest private class AuditClockProbe62 {\n@IsTest static void sequential(){\nSet<Id> ids=new Set<Id>();\nfor(Integer i=0;i<4;i++){Account a=new Account(Name='Owned audit '+i);insert a;ids.add(a.Id);}\nDatetime cutoff=System.now().addHours(0);Datetime earlier=cutoff.addHours(-1);\nMap<String,Object> observation=new Map<String,Object>{\n'createdByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff],\n'modifiedByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND LastModifiedDate<=:cutoff],\n'olderThreshold'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:earlier]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void batch(){\nAccount one=new Account(Name='Owned first');insert one;Account two=new Account(Name='Owned second');insert two;\nSet<Id> ids=new Set<Id>{one.Id,two.Id};Test.startTest();Database.executeBatch(new AuditCutoffBatch62(ids),200);Test.stopTest();\nMap<String,Object> observation=new Map<String,Object>{'remainingAfterBatch'=>[SELECT COUNT() FROM Account WHERE Id IN :ids]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void future(){\nAccount a=new Account(Name='Owned future audit');insert a;Id key=a.Id;\nDatetime future=System.now().addDays(1);Test.setCreatedDate(key,future);Datetime cutoff=System.now();\nDatetime stored=[SELECT CreatedDate FROM Account WHERE Id=:key].CreatedDate;\nMap<String,Object> observation=new Map<String,Object>{'futureByCutoff'=>[SELECT COUNT() FROM Account WHERE Id=:key AND CreatedDate<=:cutoff],'clockBeforeFuture'=>cutoff<future,'futureStillStored'=>stored>cutoff};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n}\n"
+      },
+      "sourceAPIs": {
+        "AuditCutoffBatch62": "62.0",
+        "AuditClockProbe62": "62.0"
+      },
+      "deploymentId": "0AfVA00000MCt0t0AD",
+      "rawSHA256": "38fb508aad8d48535383490aaf90c90d0e537b8261bff7a96be76accd6ccf065",
+      "orgIdHash": "9b654fb73c9777fd75e5fd2d25f7fc7e207828c4122f22b3f41713c327fed5da",
+      "sourceSHA256": {
+        "AuditCutoffBatch62": "c91531d10ae52958fef82db1536935ffe98cb6d6c3866ca4c8c989b4d88409dd",
+        "AuditClockProbe62": "52801825ad391a3fd992327ad2530e858fc25e43dac008ed91690d11955f9a27"
+      }
+    },
+    {
+      "id": "sequential",
+      "sourceApi": "65.0",
+      "projectApi": "66.0",
+      "transportApi": "65.0",
+      "context": "anonymous",
+      "value": {
+        "olderThreshold": 0,
+        "modifiedByCutoff": 4,
+        "createdByCutoff": 4
+      },
+      "nativeMessage": "Execution failed at this code:\n\nSystem.AssertException: Assertion Failed: AUDIT_CUTOFF_OBSERVATION: Expected: AUDIT_CUTOFF_OBSERVATION, Actual: {\"olderThreshold\":0,\"modifiedByCutoff\":4,\"createdByCutoff\":4}",
+      "sources": {},
+      "sourceAPIs": {},
+      "anonymous": "Set<Id> ids=new Set<Id>();\nfor(Integer i=0;i<4;i++){Account a=new Account(Name='Owned audit '+i);insert a;ids.add(a.Id);}\nDatetime cutoff=System.now().addHours(0);Datetime earlier=cutoff.addHours(-1);\nMap<String,Object> observation=new Map<String,Object>{\n'createdByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff],\n'modifiedByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND LastModifiedDate<=:cutoff],\n'olderThreshold'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:earlier]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n",
+      "rawSHA256": "8b69255d9814973acabd3b6e15428057be32e4a6494be864a046c5418ae41a76",
+      "orgIdHash": "9b654fb73c9777fd75e5fd2d25f7fc7e207828c4122f22b3f41713c327fed5da",
+      "sourceSHA256": {},
+      "anonymousSHA256": "94fe6dc32b2e9e11764d04dbc517620195bd9d7a9aefd519ce36c7d2099b7ae9"
+    },
+    {
+      "id": "batch",
+      "sourceApi": "65.0",
+      "testApi": "66.0",
+      "projectApi": "66.0",
+      "transportApi": "65.0",
+      "context": "isTest",
+      "test": "AuditClockProbe65",
+      "method": "batch",
+      "value": {
+        "remainingAfterBatch": 0
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: AUDIT_CUTOFF_OBSERVATION: Expected: AUDIT_CUTOFF_OBSERVATION, Actual: {\"remainingAfterBatch\":0}",
+      "sources": {
+        "AuditCutoffBatch65": "public class AuditCutoffBatch65 implements Database.Batchable<SObject>,Database.Stateful {\n private Set<Id> ids;public AuditCutoffBatch65(Set<Id> keys){ids=keys;}\n public Database.QueryLocator start(Database.BatchableContext context){Datetime cutoff=System.now().addHours(0);return Database.getQueryLocator('SELECT Id FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff');}\n public void execute(Database.BatchableContext context,List<SObject> scope){delete scope;}\n public void finish(Database.BatchableContext context){}\n}\n",
+        "AuditClockProbe65": "@IsTest private class AuditClockProbe65 {\n@IsTest static void sequential(){\nSet<Id> ids=new Set<Id>();\nfor(Integer i=0;i<4;i++){Account a=new Account(Name='Owned audit '+i);insert a;ids.add(a.Id);}\nDatetime cutoff=System.now().addHours(0);Datetime earlier=cutoff.addHours(-1);\nMap<String,Object> observation=new Map<String,Object>{\n'createdByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff],\n'modifiedByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND LastModifiedDate<=:cutoff],\n'olderThreshold'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:earlier]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void batch(){\nAccount one=new Account(Name='Owned first');insert one;Account two=new Account(Name='Owned second');insert two;\nSet<Id> ids=new Set<Id>{one.Id,two.Id};Test.startTest();Database.executeBatch(new AuditCutoffBatch65(ids),200);Test.stopTest();\nMap<String,Object> observation=new Map<String,Object>{'remainingAfterBatch'=>[SELECT COUNT() FROM Account WHERE Id IN :ids]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void future(){\nAccount a=new Account(Name='Owned future audit');insert a;Id key=a.Id;\nDatetime future=System.now().addDays(1);Test.setCreatedDate(key,future);Datetime cutoff=System.now();\nDatetime stored=[SELECT CreatedDate FROM Account WHERE Id=:key].CreatedDate;\nMap<String,Object> observation=new Map<String,Object>{'futureByCutoff'=>[SELECT COUNT() FROM Account WHERE Id=:key AND CreatedDate<=:cutoff],'clockBeforeFuture'=>cutoff<future,'futureStillStored'=>stored>cutoff};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n}\n"
+      },
+      "sourceAPIs": {
+        "AuditCutoffBatch65": "65.0",
+        "AuditClockProbe65": "66.0"
+      },
+      "deploymentId": "0AfVA00000MCuOL0A1",
+      "rawSHA256": "17f69d0d4b6214799e19e30acecb1a78ec988602dd4f3dc861d95bfafa3b6b1e",
+      "orgIdHash": "9b654fb73c9777fd75e5fd2d25f7fc7e207828c4122f22b3f41713c327fed5da",
+      "sourceSHA256": {
+        "AuditCutoffBatch65": "151705c20984e4f51b3f0acc520b6f477a84d449614a280935565516e439909f",
+        "AuditClockProbe65": "4f2262028cec5b35238d66f4d15dc24f94922d805053102e047e26023247a9a1"
+      }
+    },
+    {
+      "id": "future",
+      "sourceApi": "65.0",
+      "testApi": "66.0",
+      "projectApi": "66.0",
+      "transportApi": "65.0",
+      "context": "isTest",
+      "test": "AuditClockProbe65",
+      "method": "future",
+      "value": {
+        "futureStillStored": true,
+        "clockBeforeFuture": true,
+        "futureByCutoff": 0
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: AUDIT_CUTOFF_OBSERVATION: Expected: AUDIT_CUTOFF_OBSERVATION, Actual: {\"futureStillStored\":true,\"clockBeforeFuture\":true,\"futureByCutoff\":0}",
+      "sources": {
+        "AuditCutoffBatch65": "public class AuditCutoffBatch65 implements Database.Batchable<SObject>,Database.Stateful {\n private Set<Id> ids;public AuditCutoffBatch65(Set<Id> keys){ids=keys;}\n public Database.QueryLocator start(Database.BatchableContext context){Datetime cutoff=System.now().addHours(0);return Database.getQueryLocator('SELECT Id FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff');}\n public void execute(Database.BatchableContext context,List<SObject> scope){delete scope;}\n public void finish(Database.BatchableContext context){}\n}\n",
+        "AuditClockProbe65": "@IsTest private class AuditClockProbe65 {\n@IsTest static void sequential(){\nSet<Id> ids=new Set<Id>();\nfor(Integer i=0;i<4;i++){Account a=new Account(Name='Owned audit '+i);insert a;ids.add(a.Id);}\nDatetime cutoff=System.now().addHours(0);Datetime earlier=cutoff.addHours(-1);\nMap<String,Object> observation=new Map<String,Object>{\n'createdByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff],\n'modifiedByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND LastModifiedDate<=:cutoff],\n'olderThreshold'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:earlier]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void batch(){\nAccount one=new Account(Name='Owned first');insert one;Account two=new Account(Name='Owned second');insert two;\nSet<Id> ids=new Set<Id>{one.Id,two.Id};Test.startTest();Database.executeBatch(new AuditCutoffBatch65(ids),200);Test.stopTest();\nMap<String,Object> observation=new Map<String,Object>{'remainingAfterBatch'=>[SELECT COUNT() FROM Account WHERE Id IN :ids]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void future(){\nAccount a=new Account(Name='Owned future audit');insert a;Id key=a.Id;\nDatetime future=System.now().addDays(1);Test.setCreatedDate(key,future);Datetime cutoff=System.now();\nDatetime stored=[SELECT CreatedDate FROM Account WHERE Id=:key].CreatedDate;\nMap<String,Object> observation=new Map<String,Object>{'futureByCutoff'=>[SELECT COUNT() FROM Account WHERE Id=:key AND CreatedDate<=:cutoff],'clockBeforeFuture'=>cutoff<future,'futureStillStored'=>stored>cutoff};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n}\n"
+      },
+      "sourceAPIs": {
+        "AuditCutoffBatch65": "65.0",
+        "AuditClockProbe65": "66.0"
+      },
+      "deploymentId": "0AfVA00000MCuOL0A1",
+      "rawSHA256": "17f69d0d4b6214799e19e30acecb1a78ec988602dd4f3dc861d95bfafa3b6b1e",
+      "orgIdHash": "9b654fb73c9777fd75e5fd2d25f7fc7e207828c4122f22b3f41713c327fed5da",
+      "sourceSHA256": {
+        "AuditCutoffBatch65": "151705c20984e4f51b3f0acc520b6f477a84d449614a280935565516e439909f",
+        "AuditClockProbe65": "4f2262028cec5b35238d66f4d15dc24f94922d805053102e047e26023247a9a1"
+      }
+    },
+    {
+      "id": "sequential",
+      "sourceApi": "65.0",
+      "testApi": "66.0",
+      "projectApi": "66.0",
+      "transportApi": "65.0",
+      "context": "isTest",
+      "test": "AuditClockProbe65",
+      "method": "sequential",
+      "value": {
+        "olderThreshold": 0,
+        "modifiedByCutoff": 4,
+        "createdByCutoff": 4
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: AUDIT_CUTOFF_OBSERVATION: Expected: AUDIT_CUTOFF_OBSERVATION, Actual: {\"olderThreshold\":0,\"modifiedByCutoff\":4,\"createdByCutoff\":4}",
+      "sources": {
+        "AuditCutoffBatch65": "public class AuditCutoffBatch65 implements Database.Batchable<SObject>,Database.Stateful {\n private Set<Id> ids;public AuditCutoffBatch65(Set<Id> keys){ids=keys;}\n public Database.QueryLocator start(Database.BatchableContext context){Datetime cutoff=System.now().addHours(0);return Database.getQueryLocator('SELECT Id FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff');}\n public void execute(Database.BatchableContext context,List<SObject> scope){delete scope;}\n public void finish(Database.BatchableContext context){}\n}\n",
+        "AuditClockProbe65": "@IsTest private class AuditClockProbe65 {\n@IsTest static void sequential(){\nSet<Id> ids=new Set<Id>();\nfor(Integer i=0;i<4;i++){Account a=new Account(Name='Owned audit '+i);insert a;ids.add(a.Id);}\nDatetime cutoff=System.now().addHours(0);Datetime earlier=cutoff.addHours(-1);\nMap<String,Object> observation=new Map<String,Object>{\n'createdByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff],\n'modifiedByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND LastModifiedDate<=:cutoff],\n'olderThreshold'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:earlier]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void batch(){\nAccount one=new Account(Name='Owned first');insert one;Account two=new Account(Name='Owned second');insert two;\nSet<Id> ids=new Set<Id>{one.Id,two.Id};Test.startTest();Database.executeBatch(new AuditCutoffBatch65(ids),200);Test.stopTest();\nMap<String,Object> observation=new Map<String,Object>{'remainingAfterBatch'=>[SELECT COUNT() FROM Account WHERE Id IN :ids]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void future(){\nAccount a=new Account(Name='Owned future audit');insert a;Id key=a.Id;\nDatetime future=System.now().addDays(1);Test.setCreatedDate(key,future);Datetime cutoff=System.now();\nDatetime stored=[SELECT CreatedDate FROM Account WHERE Id=:key].CreatedDate;\nMap<String,Object> observation=new Map<String,Object>{'futureByCutoff'=>[SELECT COUNT() FROM Account WHERE Id=:key AND CreatedDate<=:cutoff],'clockBeforeFuture'=>cutoff<future,'futureStillStored'=>stored>cutoff};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n}\n"
+      },
+      "sourceAPIs": {
+        "AuditCutoffBatch65": "65.0",
+        "AuditClockProbe65": "66.0"
+      },
+      "deploymentId": "0AfVA00000MCuOL0A1",
+      "rawSHA256": "17f69d0d4b6214799e19e30acecb1a78ec988602dd4f3dc861d95bfafa3b6b1e",
+      "orgIdHash": "9b654fb73c9777fd75e5fd2d25f7fc7e207828c4122f22b3f41713c327fed5da",
+      "sourceSHA256": {
+        "AuditCutoffBatch65": "151705c20984e4f51b3f0acc520b6f477a84d449614a280935565516e439909f",
+        "AuditClockProbe65": "4f2262028cec5b35238d66f4d15dc24f94922d805053102e047e26023247a9a1"
+      }
+    },
+    {
+      "id": "sequential",
+      "sourceApi": "67.0",
+      "projectApi": "67.0",
+      "transportApi": "67.0",
+      "context": "anonymous",
+      "value": {
+        "olderThreshold": 0,
+        "modifiedByCutoff": 4,
+        "createdByCutoff": 4
+      },
+      "nativeMessage": "Execution failed at this code:\n\nSystem.AssertException: Assertion Failed: AUDIT_CUTOFF_OBSERVATION: Expected: AUDIT_CUTOFF_OBSERVATION, Actual: {\"olderThreshold\":0,\"modifiedByCutoff\":4,\"createdByCutoff\":4}",
+      "sources": {},
+      "sourceAPIs": {},
+      "anonymous": "Set<Id> ids=new Set<Id>();\nfor(Integer i=0;i<4;i++){Account a=new Account(Name='Owned audit '+i);insert a;ids.add(a.Id);}\nDatetime cutoff=System.now().addHours(0);Datetime earlier=cutoff.addHours(-1);\nMap<String,Object> observation=new Map<String,Object>{\n'createdByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff],\n'modifiedByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND LastModifiedDate<=:cutoff],\n'olderThreshold'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:earlier]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n",
+      "rawSHA256": "d512dbdecdcaafdc4b24aa38994356a87065efdc5ef4b2be1361fd02e4e9bcfc",
+      "orgIdHash": "9b654fb73c9777fd75e5fd2d25f7fc7e207828c4122f22b3f41713c327fed5da",
+      "sourceSHA256": {},
+      "anonymousSHA256": "94fe6dc32b2e9e11764d04dbc517620195bd9d7a9aefd519ce36c7d2099b7ae9"
+    },
+    {
+      "id": "batch",
+      "sourceApi": "67.0",
+      "testApi": "67.0",
+      "projectApi": "67.0",
+      "transportApi": "67.0",
+      "context": "isTest",
+      "test": "AuditClockProbe67",
+      "method": "batch",
+      "value": {
+        "remainingAfterBatch": 0
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: AUDIT_CUTOFF_OBSERVATION: Expected: AUDIT_CUTOFF_OBSERVATION, Actual: {\"remainingAfterBatch\":0}",
+      "sources": {
+        "AuditCutoffBatch67": "public class AuditCutoffBatch67 implements Database.Batchable<SObject>,Database.Stateful {\n private Set<Id> ids;public AuditCutoffBatch67(Set<Id> keys){ids=keys;}\n public Database.QueryLocator start(Database.BatchableContext context){Datetime cutoff=System.now().addHours(0);return Database.getQueryLocator('SELECT Id FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff');}\n public void execute(Database.BatchableContext context,List<SObject> scope){delete scope;}\n public void finish(Database.BatchableContext context){}\n}\n",
+        "AuditClockProbe67": "@IsTest private class AuditClockProbe67 {\n@IsTest static void sequential(){\nSet<Id> ids=new Set<Id>();\nfor(Integer i=0;i<4;i++){Account a=new Account(Name='Owned audit '+i);insert a;ids.add(a.Id);}\nDatetime cutoff=System.now().addHours(0);Datetime earlier=cutoff.addHours(-1);\nMap<String,Object> observation=new Map<String,Object>{\n'createdByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff],\n'modifiedByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND LastModifiedDate<=:cutoff],\n'olderThreshold'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:earlier]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void batch(){\nAccount one=new Account(Name='Owned first');insert one;Account two=new Account(Name='Owned second');insert two;\nSet<Id> ids=new Set<Id>{one.Id,two.Id};Test.startTest();Database.executeBatch(new AuditCutoffBatch67(ids),200);Test.stopTest();\nMap<String,Object> observation=new Map<String,Object>{'remainingAfterBatch'=>[SELECT COUNT() FROM Account WHERE Id IN :ids]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void future(){\nAccount a=new Account(Name='Owned future audit');insert a;Id key=a.Id;\nDatetime future=System.now().addDays(1);Test.setCreatedDate(key,future);Datetime cutoff=System.now();\nDatetime stored=[SELECT CreatedDate FROM Account WHERE Id=:key].CreatedDate;\nMap<String,Object> observation=new Map<String,Object>{'futureByCutoff'=>[SELECT COUNT() FROM Account WHERE Id=:key AND CreatedDate<=:cutoff],'clockBeforeFuture'=>cutoff<future,'futureStillStored'=>stored>cutoff};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n}\n"
+      },
+      "sourceAPIs": {
+        "AuditCutoffBatch67": "67.0",
+        "AuditClockProbe67": "67.0"
+      },
+      "deploymentId": "0AfVA00000MCuTB0A1",
+      "rawSHA256": "32667d8c2a9d3b9943ff85d14bf1534c277153725b7cc3a41993c6783a4f2f8b",
+      "orgIdHash": "9b654fb73c9777fd75e5fd2d25f7fc7e207828c4122f22b3f41713c327fed5da",
+      "sourceSHA256": {
+        "AuditCutoffBatch67": "6bddc15be661de14a275ec97f3bbfb603e401bb504be5dd910bf2b196ee9dd77",
+        "AuditClockProbe67": "b11d912d1a60f405b5c88d5ef21bafd4617217e603b3a9f1225aceef9bacb566"
+      }
+    },
+    {
+      "id": "future",
+      "sourceApi": "67.0",
+      "testApi": "67.0",
+      "projectApi": "67.0",
+      "transportApi": "67.0",
+      "context": "isTest",
+      "test": "AuditClockProbe67",
+      "method": "future",
+      "value": {
+        "futureStillStored": true,
+        "clockBeforeFuture": true,
+        "futureByCutoff": 0
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: AUDIT_CUTOFF_OBSERVATION: Expected: AUDIT_CUTOFF_OBSERVATION, Actual: {\"futureStillStored\":true,\"clockBeforeFuture\":true,\"futureByCutoff\":0}",
+      "sources": {
+        "AuditCutoffBatch67": "public class AuditCutoffBatch67 implements Database.Batchable<SObject>,Database.Stateful {\n private Set<Id> ids;public AuditCutoffBatch67(Set<Id> keys){ids=keys;}\n public Database.QueryLocator start(Database.BatchableContext context){Datetime cutoff=System.now().addHours(0);return Database.getQueryLocator('SELECT Id FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff');}\n public void execute(Database.BatchableContext context,List<SObject> scope){delete scope;}\n public void finish(Database.BatchableContext context){}\n}\n",
+        "AuditClockProbe67": "@IsTest private class AuditClockProbe67 {\n@IsTest static void sequential(){\nSet<Id> ids=new Set<Id>();\nfor(Integer i=0;i<4;i++){Account a=new Account(Name='Owned audit '+i);insert a;ids.add(a.Id);}\nDatetime cutoff=System.now().addHours(0);Datetime earlier=cutoff.addHours(-1);\nMap<String,Object> observation=new Map<String,Object>{\n'createdByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff],\n'modifiedByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND LastModifiedDate<=:cutoff],\n'olderThreshold'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:earlier]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void batch(){\nAccount one=new Account(Name='Owned first');insert one;Account two=new Account(Name='Owned second');insert two;\nSet<Id> ids=new Set<Id>{one.Id,two.Id};Test.startTest();Database.executeBatch(new AuditCutoffBatch67(ids),200);Test.stopTest();\nMap<String,Object> observation=new Map<String,Object>{'remainingAfterBatch'=>[SELECT COUNT() FROM Account WHERE Id IN :ids]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void future(){\nAccount a=new Account(Name='Owned future audit');insert a;Id key=a.Id;\nDatetime future=System.now().addDays(1);Test.setCreatedDate(key,future);Datetime cutoff=System.now();\nDatetime stored=[SELECT CreatedDate FROM Account WHERE Id=:key].CreatedDate;\nMap<String,Object> observation=new Map<String,Object>{'futureByCutoff'=>[SELECT COUNT() FROM Account WHERE Id=:key AND CreatedDate<=:cutoff],'clockBeforeFuture'=>cutoff<future,'futureStillStored'=>stored>cutoff};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n}\n"
+      },
+      "sourceAPIs": {
+        "AuditCutoffBatch67": "67.0",
+        "AuditClockProbe67": "67.0"
+      },
+      "deploymentId": "0AfVA00000MCuTB0A1",
+      "rawSHA256": "32667d8c2a9d3b9943ff85d14bf1534c277153725b7cc3a41993c6783a4f2f8b",
+      "orgIdHash": "9b654fb73c9777fd75e5fd2d25f7fc7e207828c4122f22b3f41713c327fed5da",
+      "sourceSHA256": {
+        "AuditCutoffBatch67": "6bddc15be661de14a275ec97f3bbfb603e401bb504be5dd910bf2b196ee9dd77",
+        "AuditClockProbe67": "b11d912d1a60f405b5c88d5ef21bafd4617217e603b3a9f1225aceef9bacb566"
+      }
+    },
+    {
+      "id": "sequential",
+      "sourceApi": "67.0",
+      "testApi": "67.0",
+      "projectApi": "67.0",
+      "transportApi": "67.0",
+      "context": "isTest",
+      "test": "AuditClockProbe67",
+      "method": "sequential",
+      "value": {
+        "olderThreshold": 0,
+        "modifiedByCutoff": 4,
+        "createdByCutoff": 4
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: AUDIT_CUTOFF_OBSERVATION: Expected: AUDIT_CUTOFF_OBSERVATION, Actual: {\"olderThreshold\":0,\"modifiedByCutoff\":4,\"createdByCutoff\":4}",
+      "sources": {
+        "AuditCutoffBatch67": "public class AuditCutoffBatch67 implements Database.Batchable<SObject>,Database.Stateful {\n private Set<Id> ids;public AuditCutoffBatch67(Set<Id> keys){ids=keys;}\n public Database.QueryLocator start(Database.BatchableContext context){Datetime cutoff=System.now().addHours(0);return Database.getQueryLocator('SELECT Id FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff');}\n public void execute(Database.BatchableContext context,List<SObject> scope){delete scope;}\n public void finish(Database.BatchableContext context){}\n}\n",
+        "AuditClockProbe67": "@IsTest private class AuditClockProbe67 {\n@IsTest static void sequential(){\nSet<Id> ids=new Set<Id>();\nfor(Integer i=0;i<4;i++){Account a=new Account(Name='Owned audit '+i);insert a;ids.add(a.Id);}\nDatetime cutoff=System.now().addHours(0);Datetime earlier=cutoff.addHours(-1);\nMap<String,Object> observation=new Map<String,Object>{\n'createdByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:cutoff],\n'modifiedByCutoff'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND LastModifiedDate<=:cutoff],\n'olderThreshold'=>[SELECT COUNT() FROM Account WHERE Id IN :ids AND CreatedDate<=:earlier]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void batch(){\nAccount one=new Account(Name='Owned first');insert one;Account two=new Account(Name='Owned second');insert two;\nSet<Id> ids=new Set<Id>{one.Id,two.Id};Test.startTest();Database.executeBatch(new AuditCutoffBatch67(ids),200);Test.stopTest();\nMap<String,Object> observation=new Map<String,Object>{'remainingAfterBatch'=>[SELECT COUNT() FROM Account WHERE Id IN :ids]};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n@IsTest static void future(){\nAccount a=new Account(Name='Owned future audit');insert a;Id key=a.Id;\nDatetime future=System.now().addDays(1);Test.setCreatedDate(key,future);Datetime cutoff=System.now();\nDatetime stored=[SELECT CreatedDate FROM Account WHERE Id=:key].CreatedDate;\nMap<String,Object> observation=new Map<String,Object>{'futureByCutoff'=>[SELECT COUNT() FROM Account WHERE Id=:key AND CreatedDate<=:cutoff],'clockBeforeFuture'=>cutoff<future,'futureStillStored'=>stored>cutoff};\nSystem.assertEquals('AUDIT_CUTOFF_OBSERVATION',JSON.serialize(observation),'AUDIT_CUTOFF_OBSERVATION');\n}\n}\n"
+      },
+      "sourceAPIs": {
+        "AuditCutoffBatch67": "67.0",
+        "AuditClockProbe67": "67.0"
+      },
+      "deploymentId": "0AfVA00000MCuTB0A1",
+      "rawSHA256": "32667d8c2a9d3b9943ff85d14bf1534c277153725b7cc3a41993c6783a4f2f8b",
+      "orgIdHash": "9b654fb73c9777fd75e5fd2d25f7fc7e207828c4122f22b3f41713c327fed5da",
+      "sourceSHA256": {
+        "AuditCutoffBatch67": "6bddc15be661de14a275ec97f3bbfb603e401bb504be5dd910bf2b196ee9dd77",
+        "AuditClockProbe67": "b11d912d1a60f405b5c88d5ef21bafd4617217e603b3a9f1225aceef9bacb566"
+      }
+    }
+  ]
+}

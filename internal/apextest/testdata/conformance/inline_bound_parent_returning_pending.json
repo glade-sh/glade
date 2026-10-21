@@ -1,0 +1,48 @@
+{
+  "disposition": "PENDING-ROWS",
+  "scope": "Bound two-object inline ALL/NAME searches with adjacent parent field tokens; source-spaced anddynamiccontrols; candidateonlysourceAPI62..68.",
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "contexts": [
+    "anonymous",
+    "@IsTest(SeeAllData=false)"
+  ],
+  "metadata": "Matchedhelper/caller62/67/68. Namedroute seedAccount+Contact withvalidAccountId, then setFixedSearchResults toContactId. Anonymousroute records empty/resultcardinality independently; useowned schema fixture when recordingnonemptyrows.",
+  "record": [
+    "compile outcome",
+    "stage",
+    "returned payload",
+    "caught exception type and exact message",
+    "uncaught result",
+    "source metadata",
+    "native release and timezone"
+  ],
+  "controls": [
+    "Integer value=17;",
+    "caught and uncaught empty List<Integer> indexed at0"
+  ],
+  "envelope": "Map<String,Object> payload=new Map<String,Object>();try{BODY}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'PROBE|ID|'+JSON.serialize(payload));",
+  "rows": [
+    {
+      "id": "ALL",
+      "body": "String term='Parent';List<List<SObject>> rows=[FIND :term IN ALL FIELDS RETURNING account(name),contact(lastname,account.Name)];payload.put('groups',rows.size());payload.put('contacts',rows[1].size());"
+    },
+    {
+      "id": "NAME",
+      "body": "String term='Parent';List<List<SObject>> rows=[FIND :term IN NAME FIELDS RETURNING account(name),contact(lastname,account.Name)];payload.put('groups',rows.size());payload.put('contacts',rows[1].size());"
+    },
+    {
+      "id": "SPACED_CONTROL",
+      "body": "String term='Parent';List<List<SObject>> rows=[FIND :term IN ALL FIELDS RETURNING account(name),contact(lastname,account . Name)];payload.put('groups',rows.size());"
+    },
+    {
+      "id": "DYNAMIC_CONTROL",
+      "body": "List<List<SObject>> rows=Search.query('FIND {Parent} IN ALL FIELDS RETURNING account(name),contact(lastname,account.Name)');payload.put('groups',rows.size());"
+    }
+  ],
+  "expectedNative": "UNKNOWN; do not infer native answers from local candidates.",
+  "nonemptyObservation": "On named nonemptyrows, record returnedContact parentrelationship Name aswell ascounts. UsegetSObject('Account').get('Name') andnull flags; do notinvent native expected values."
+}

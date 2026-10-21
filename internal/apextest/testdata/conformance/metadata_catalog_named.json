@@ -1,0 +1,2446 @@
+{
+  "description": "Owned named metadata catalog formula flags and selected/omitted child relationship observations. capturedNative preserves each complete native payload. Asserted native projections exclude DataType; catalogDataTypes retains its exact value. Source 67/68 catalog omissions are carried independently from matching getter observations. Named tests intentionally terminate with an assertion carrying their observer payload. No anonymous outcome is inferred.",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "files": {
+    "classes/CatalogFormulaProbe.cls": "public class CatalogFormulaProbe { public static String observedSourceApi(){return '{{API}}';}\n    public static Map<String, Object> observe(String row) {\n        Map<String, Object> out = new Map<String, Object>{'row' => row};\n        try {\n            out.put('fixtureCalculated', Ledger__c.LeafText__c.getDescribe().isCalculated());\n            out.put('fixtureFormula', Ledger__c.LeafText__c.getDescribe().getCalculatedFormula());\n            if (row == 'MC01' || row == 'MC02') {\n                String catalog = row == 'MC01' ? 'FieldDefinition' : 'EntityParticle';\n                List<SObject> fields = Database.query('SELECT QualifiedApiName, IsCalculated FROM ' + catalog +\n                    ' WHERE EntityDefinition.QualifiedApiName = \\'Ledger__c\\' ORDER BY QualifiedApiName');\n                List<Object> flags = new List<Object>();\n                for (SObject field : fields) {\n                    flags.add(new Map<String, Object>{'name' => field.get('QualifiedApiName'), 'calculated' => field.get('IsCalculated')});\n                }\n                out.put('fields', flags);\n            } else if (row == 'MC09') {\n                out.put('ordinaryCalculated', Ledger__c.PlainText__c.getDescribe().isCalculated());\n                out.put('ordinaryFormula', Ledger__c.PlainText__c.getDescribe().getCalculatedFormula());\n                out.put('standardCalculated', Account.Name.getDescribe().isCalculated());\n            } else if (row == 'MC10') {\n                Account populated = new Account(Name = 'Populated'); insert populated;\n                Account empty = new Account(Name = 'Empty'); insert empty;\n                insert new Contact(LastName = 'Child', AccountId = populated.Id);\n                Account selected = [SELECT Id, (SELECT LastName FROM Contacts) FROM Account WHERE Id = :populated.Id];\n                out.put('populatedSize', selected.getSObjects('Contacts').size());\n                selected = [SELECT Id, (SELECT LastName FROM Contacts) FROM Account WHERE Id = :empty.Id];\n                out.put('emptyDynamicNull', selected.getSObjects('Contacts') == null);\n                out.put('emptyTypedSize', selected.Contacts.size());\n                selected = [SELECT Id FROM Account WHERE Id = :populated.Id];\n                try {\n                    out.put('unselected', selected.getSObjects('Contacts'));\n                } catch (Exception e) {\n                    out.put('unselectedExceptionType', e.getTypeName());\n                    out.put('unselectedExceptionMessage', e.getMessage());\n                }\n            } else {\n                Boolean particles = row == 'MC04' || row == 'MC06' || row == 'MC08';\n                Boolean omitted = row == 'MC07' || row == 'MC08';\n                Boolean empty = row == 'MC05' || row == 'MC06';\n                String relationship = particles ? 'Particles' : 'Fields';\n                String selection = omitted ? '' : ', (SELECT DeveloperName, DataType FROM ' + relationship +\n                    ' WHERE IsCalculated = true)';\n                String parentFilter = empty ? 'QualifiedApiName = \\'BareLedger__c\\'' :\n                    'QualifiedApiName IN (\\'Ledger__c\\', \\'BareLedger__c\\')';\n                List<SObject> parents = Database.query('SELECT QualifiedApiName' + selection +\n                    ' FROM EntityDefinition WHERE ' + parentFilter + ' ORDER BY QualifiedApiName');\n                out.put('parentSize', parents.size());\n                List<Object> observations = new List<Object>();\n                for (SObject parent : parents) {\n                    Map<String, Object> observation = new Map<String, Object>{\n                        'parent' => parent.get('QualifiedApiName'), 'relationship' => relationship, 'selected' => !omitted\n                    };\n                    observations.add(observation);\n                    try {\n                        List<SObject> children = parent.getSObjects(relationship);\n                        observation.put('dynamicNull', children == null);\n                        observation.put('dynamicSize', children == null ? null : children.size());\n                        List<Object> names = new List<Object>();\n                        observation.put('children', names);\n                        // Deliberately iterate without a null guard: record the\n                        // reduced query's outcome separately for every parent.\n                        for (SObject field : children) {\n                            names.add(new Map<String, Object>{'developerName' => field.get('DeveloperName'), 'dataType' => field.get('DataType')});\n                        }\n                        observation.put('iterationCompleted', true);\n                    } catch (Exception e) {\n                        observation.put('exceptionType', e.getTypeName());\n                        observation.put('exceptionMessage', e.getMessage());\n                    }\n                }\n                out.put('parents', observations);\n            }\n        } catch (Exception e) {\n            out.put('exceptionType', e.getTypeName());\n            out.put('exceptionMessage', e.getMessage());\n        }\n        return out;\n    }\n}\n",
+    "classes/CatalogFormulaProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexClass>",
+    "objects/Ledger__c/Ledger__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Ledger</label><pluralLabel>Ledgers</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+    "objects/Ledger__c/fields/LeafText__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>LeafText__c</fullName><label>Leaf Text</label><type>Text</type><formula>&quot;leaf&quot;</formula><formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs></CustomField>\n",
+    "objects/Ledger__c/fields/PlainText__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>PlainText__c</fullName><label>Plain Text</label><type>Text</type><length>80</length></CustomField>\n",
+    "objects/BareLedger__c/BareLedger__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Bare Ledger</label><pluralLabel>Bare Ledgers</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n"
+  },
+  "rows": [
+    {
+      "id": "MC01",
+      "code": "p.putAll(CatalogFormulaProbe.observe('MC01'));for(Object item:(List<Object>)p.get('fields')){Map<String,Object> field=(Map<String,Object>)item;if(field.get('name')=='LeafText__c')p.put('formulaFieldCalculated',field.get('calculated'));if(field.get('name')=='PlainText__c')p.put('ordinaryFieldCalculated',field.get('calculated'));}",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "fields": [
+              {
+                "calculated": false,
+                "name": "CreatedById"
+              },
+              {
+                "calculated": false,
+                "name": "CreatedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Id"
+              },
+              {
+                "calculated": false,
+                "name": "IsDeleted"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedById"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedDate"
+              },
+              {
+                "calculated": true,
+                "name": "LeafText__c"
+              },
+              {
+                "calculated": false,
+                "name": "Name"
+              },
+              {
+                "calculated": false,
+                "name": "OwnerId"
+              },
+              {
+                "calculated": false,
+                "name": "PlainText__c"
+              },
+              {
+                "calculated": false,
+                "name": "SystemModstamp"
+              },
+              {
+                "calculated": false,
+                "name": "UserRecordAccessId"
+              }
+            ],
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC01",
+            "formulaFieldCalculated": true,
+            "ordinaryFieldCalculated": false
+          },
+          "expected": {
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC01",
+            "formulaFieldCalculated": true,
+            "ordinaryFieldCalculated": false
+          },
+          "carriedFields": {
+            "fields": "The complete standard-field inventory is org-dependent; only the owned formula and ordinary field flags are asserted at source 62."
+          },
+          "capturedNative": {
+            "fields": [
+              {
+                "calculated": false,
+                "name": "CreatedById"
+              },
+              {
+                "calculated": false,
+                "name": "CreatedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Id"
+              },
+              {
+                "calculated": false,
+                "name": "IsDeleted"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedById"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedDate"
+              },
+              {
+                "calculated": true,
+                "name": "LeafText__c"
+              },
+              {
+                "calculated": false,
+                "name": "Name"
+              },
+              {
+                "calculated": false,
+                "name": "OwnerId"
+              },
+              {
+                "calculated": false,
+                "name": "PlainText__c"
+              },
+              {
+                "calculated": false,
+                "name": "SystemModstamp"
+              },
+              {
+                "calculated": false,
+                "name": "UserRecordAccessId"
+              }
+            ],
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC01"
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "fields": [
+              {
+                "calculated": false,
+                "name": "CreatedById"
+              },
+              {
+                "calculated": false,
+                "name": "CreatedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Id"
+              },
+              {
+                "calculated": false,
+                "name": "IsDeleted"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedById"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Name"
+              },
+              {
+                "calculated": false,
+                "name": "OwnerId"
+              },
+              {
+                "calculated": false,
+                "name": "SystemModstamp"
+              },
+              {
+                "calculated": false,
+                "name": "UserRecordAccessId"
+              }
+            ],
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC01"
+          },
+          "expected": {
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC01"
+          },
+          "carriedFields": {
+            "fields": "Native source 67/68 catalog inventory omits both owned custom fields despite fixtureCalculated=true and fixtureFormula=\"leaf\". Catalog access/index visibility is outside this scope; no missing flag value is inferred."
+          },
+          "capturedNative": {
+            "fields": [
+              {
+                "calculated": false,
+                "name": "CreatedById"
+              },
+              {
+                "calculated": false,
+                "name": "CreatedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Id"
+              },
+              {
+                "calculated": false,
+                "name": "IsDeleted"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedById"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Name"
+              },
+              {
+                "calculated": false,
+                "name": "OwnerId"
+              },
+              {
+                "calculated": false,
+                "name": "SystemModstamp"
+              },
+              {
+                "calculated": false,
+                "name": "UserRecordAccessId"
+              }
+            ],
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC01"
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "fields": [
+              {
+                "calculated": false,
+                "name": "CreatedById"
+              },
+              {
+                "calculated": false,
+                "name": "CreatedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Id"
+              },
+              {
+                "calculated": false,
+                "name": "IsDeleted"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedById"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Name"
+              },
+              {
+                "calculated": false,
+                "name": "OwnerId"
+              },
+              {
+                "calculated": false,
+                "name": "SystemModstamp"
+              },
+              {
+                "calculated": false,
+                "name": "UserRecordAccessId"
+              }
+            ],
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC01"
+          },
+          "expected": {
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC01"
+          },
+          "carriedFields": {
+            "fields": "Native source 67/68 catalog inventory omits both owned custom fields despite fixtureCalculated=true and fixtureFormula=\"leaf\". Catalog access/index visibility is outside this scope; no missing flag value is inferred."
+          },
+          "capturedNative": {
+            "fields": [
+              {
+                "calculated": false,
+                "name": "CreatedById"
+              },
+              {
+                "calculated": false,
+                "name": "CreatedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Id"
+              },
+              {
+                "calculated": false,
+                "name": "IsDeleted"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedById"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Name"
+              },
+              {
+                "calculated": false,
+                "name": "OwnerId"
+              },
+              {
+                "calculated": false,
+                "name": "SystemModstamp"
+              },
+              {
+                "calculated": false,
+                "name": "UserRecordAccessId"
+              }
+            ],
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC01"
+          }
+        }
+      }
+    },
+    {
+      "id": "MC02",
+      "code": "p.putAll(CatalogFormulaProbe.observe('MC02'));for(Object item:(List<Object>)p.get('fields')){Map<String,Object> field=(Map<String,Object>)item;if(field.get('name')=='LeafText__c')p.put('formulaFieldCalculated',field.get('calculated'));if(field.get('name')=='PlainText__c')p.put('ordinaryFieldCalculated',field.get('calculated'));}",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "fields": [
+              {
+                "calculated": false,
+                "name": "CreatedById"
+              },
+              {
+                "calculated": false,
+                "name": "CreatedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Id"
+              },
+              {
+                "calculated": false,
+                "name": "IsDeleted"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedById"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedDate"
+              },
+              {
+                "calculated": true,
+                "name": "LeafText__c"
+              },
+              {
+                "calculated": false,
+                "name": "Name"
+              },
+              {
+                "calculated": false,
+                "name": "OwnerId"
+              },
+              {
+                "calculated": false,
+                "name": "PlainText__c"
+              },
+              {
+                "calculated": false,
+                "name": "SystemModstamp"
+              }
+            ],
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC02",
+            "formulaFieldCalculated": true,
+            "ordinaryFieldCalculated": false
+          },
+          "expected": {
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC02",
+            "formulaFieldCalculated": true,
+            "ordinaryFieldCalculated": false
+          },
+          "carriedFields": {
+            "fields": "The complete standard-field inventory is org-dependent; only the owned formula and ordinary field flags are asserted at source 62."
+          },
+          "capturedNative": {
+            "fields": [
+              {
+                "calculated": false,
+                "name": "CreatedById"
+              },
+              {
+                "calculated": false,
+                "name": "CreatedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Id"
+              },
+              {
+                "calculated": false,
+                "name": "IsDeleted"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedById"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedDate"
+              },
+              {
+                "calculated": true,
+                "name": "LeafText__c"
+              },
+              {
+                "calculated": false,
+                "name": "Name"
+              },
+              {
+                "calculated": false,
+                "name": "OwnerId"
+              },
+              {
+                "calculated": false,
+                "name": "PlainText__c"
+              },
+              {
+                "calculated": false,
+                "name": "SystemModstamp"
+              }
+            ],
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC02"
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "fields": [
+              {
+                "calculated": false,
+                "name": "CreatedById"
+              },
+              {
+                "calculated": false,
+                "name": "CreatedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Id"
+              },
+              {
+                "calculated": false,
+                "name": "IsDeleted"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedById"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Name"
+              },
+              {
+                "calculated": false,
+                "name": "OwnerId"
+              },
+              {
+                "calculated": false,
+                "name": "SystemModstamp"
+              }
+            ],
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC02"
+          },
+          "expected": {
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC02"
+          },
+          "carriedFields": {
+            "fields": "Native source 67/68 catalog inventory omits both owned custom fields despite fixtureCalculated=true and fixtureFormula=\"leaf\". Catalog access/index visibility is outside this scope; no missing flag value is inferred."
+          },
+          "capturedNative": {
+            "fields": [
+              {
+                "calculated": false,
+                "name": "CreatedById"
+              },
+              {
+                "calculated": false,
+                "name": "CreatedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Id"
+              },
+              {
+                "calculated": false,
+                "name": "IsDeleted"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedById"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Name"
+              },
+              {
+                "calculated": false,
+                "name": "OwnerId"
+              },
+              {
+                "calculated": false,
+                "name": "SystemModstamp"
+              }
+            ],
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC02"
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "fields": [
+              {
+                "calculated": false,
+                "name": "CreatedById"
+              },
+              {
+                "calculated": false,
+                "name": "CreatedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Id"
+              },
+              {
+                "calculated": false,
+                "name": "IsDeleted"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedById"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Name"
+              },
+              {
+                "calculated": false,
+                "name": "OwnerId"
+              },
+              {
+                "calculated": false,
+                "name": "SystemModstamp"
+              }
+            ],
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC02"
+          },
+          "expected": {
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC02"
+          },
+          "carriedFields": {
+            "fields": "Native source 67/68 catalog inventory omits both owned custom fields despite fixtureCalculated=true and fixtureFormula=\"leaf\". Catalog access/index visibility is outside this scope; no missing flag value is inferred."
+          },
+          "capturedNative": {
+            "fields": [
+              {
+                "calculated": false,
+                "name": "CreatedById"
+              },
+              {
+                "calculated": false,
+                "name": "CreatedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Id"
+              },
+              {
+                "calculated": false,
+                "name": "IsDeleted"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedById"
+              },
+              {
+                "calculated": false,
+                "name": "LastModifiedDate"
+              },
+              {
+                "calculated": false,
+                "name": "Name"
+              },
+              {
+                "calculated": false,
+                "name": "OwnerId"
+              },
+              {
+                "calculated": false,
+                "name": "SystemModstamp"
+              }
+            ],
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC02"
+          }
+        }
+      }
+    },
+    {
+      "id": "MC03",
+      "code": "p.putAll(CatalogFormulaProbe.observe('MC03'));if(CatalogFormulaProbe.observedSourceApi()!='62.0'){List<Object> assertedParents=new List<Object>();for(Object item:(List<Object>)p.get('parents')){if(((Map<String,Object>)item).get('parent')=='BareLedger__c')assertedParents.add(item);}p.put('parents',assertedParents);}for(Object item:(List<Object>)p.get('parents')){Map<String,Object> parent=(Map<String,Object>)item;if(parent.containsKey('children')){for(Object child:(List<Object>)parent.get('children'))((Map<String,Object>)child).remove('dataType');}}",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "iterationCompleted": true,
+                "children": [
+                  {
+                    "developerName": "LeafText"
+                  }
+                ],
+                "dynamicSize": 1,
+                "dynamicNull": false,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC03",
+            "catalogDataTypes": [
+              {
+                "parent": "Ledger__c",
+                "developerName": "LeafText",
+                "dataType": "Formula (Text)"
+              }
+            ]
+          },
+          "expected": {
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC03",
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "iterationCompleted": true,
+                "children": [
+                  {
+                    "developerName": "LeafText"
+                  }
+                ],
+                "dynamicSize": 1,
+                "dynamicNull": false,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ]
+          },
+          "carriedFields": {
+            "catalogDataTypes": "Native catalog display DataType values are retained as evidence. Their schema-wide mapping is outside this relationship/flag scope."
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "iterationCompleted": true,
+                "children": [
+                  {
+                    "dataType": "Formula (Text)",
+                    "developerName": "LeafText"
+                  }
+                ],
+                "dynamicSize": 1,
+                "dynamicNull": false,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC03"
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC03",
+            "unassertedParents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ]
+          },
+          "expected": {
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC03",
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ]
+          },
+          "carriedFields": {
+            "unassertedParents": "Native source 67/68 formula parent has an empty catalog relationship despite formula describe=true. This agrees with its missing catalog inventory; access/index visibility is outside this scope. The owned formula parent is asserted only at source 62."
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC03"
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC03",
+            "unassertedParents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ]
+          },
+          "expected": {
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC03",
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ]
+          },
+          "carriedFields": {
+            "unassertedParents": "Native source 67/68 formula parent has an empty catalog relationship despite formula describe=true. This agrees with its missing catalog inventory; access/index visibility is outside this scope. The owned formula parent is asserted only at source 62."
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC03"
+          }
+        }
+      }
+    },
+    {
+      "id": "MC04",
+      "code": "p.putAll(CatalogFormulaProbe.observe('MC04'));if(CatalogFormulaProbe.observedSourceApi()!='62.0'){List<Object> assertedParents=new List<Object>();for(Object item:(List<Object>)p.get('parents')){if(((Map<String,Object>)item).get('parent')=='BareLedger__c')assertedParents.add(item);}p.put('parents',assertedParents);}for(Object item:(List<Object>)p.get('parents')){Map<String,Object> parent=(Map<String,Object>)item;if(parent.containsKey('children')){for(Object child:(List<Object>)parent.get('children'))((Map<String,Object>)child).remove('dataType');}}",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "iterationCompleted": true,
+                "children": [
+                  {
+                    "developerName": "LeafText"
+                  }
+                ],
+                "dynamicSize": 1,
+                "dynamicNull": false,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC04",
+            "catalogDataTypes": [
+              {
+                "parent": "Ledger__c",
+                "developerName": "LeafText",
+                "dataType": "string"
+              }
+            ]
+          },
+          "expected": {
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC04",
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "iterationCompleted": true,
+                "children": [
+                  {
+                    "developerName": "LeafText"
+                  }
+                ],
+                "dynamicSize": 1,
+                "dynamicNull": false,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ]
+          },
+          "carriedFields": {
+            "catalogDataTypes": "Native catalog display DataType values are retained as evidence. Their schema-wide mapping is outside this relationship/flag scope."
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "iterationCompleted": true,
+                "children": [
+                  {
+                    "dataType": "string",
+                    "developerName": "LeafText"
+                  }
+                ],
+                "dynamicSize": 1,
+                "dynamicNull": false,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC04"
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC04",
+            "unassertedParents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ]
+          },
+          "expected": {
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC04",
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ]
+          },
+          "carriedFields": {
+            "unassertedParents": "Native source 67/68 formula parent has an empty catalog relationship despite formula describe=true. This agrees with its missing catalog inventory; access/index visibility is outside this scope. The owned formula parent is asserted only at source 62."
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC04"
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC04",
+            "unassertedParents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ]
+          },
+          "expected": {
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC04",
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ]
+          },
+          "carriedFields": {
+            "unassertedParents": "Native source 67/68 formula parent has an empty catalog relationship despite formula describe=true. This agrees with its missing catalog inventory; access/index visibility is outside this scope. The owned formula parent is asserted only at source 62."
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC04"
+          }
+        }
+      }
+    },
+    {
+      "id": "MC05",
+      "code": "p.putAll(CatalogFormulaProbe.observe('MC05'));for(Object item:(List<Object>)p.get('parents')){Map<String,Object> parent=(Map<String,Object>)item;if(parent.containsKey('children')){for(Object child:(List<Object>)parent.get('children'))((Map<String,Object>)child).remove('dataType');}}",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC05"
+          },
+          "expected": {
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC05",
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ]
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC05"
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC05"
+          },
+          "expected": {
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC05",
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ]
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC05"
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC05"
+          },
+          "expected": {
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC05",
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ]
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC05"
+          }
+        }
+      }
+    },
+    {
+      "id": "MC06",
+      "code": "p.putAll(CatalogFormulaProbe.observe('MC06'));for(Object item:(List<Object>)p.get('parents')){Map<String,Object> parent=(Map<String,Object>)item;if(parent.containsKey('children')){for(Object child:(List<Object>)parent.get('children'))((Map<String,Object>)child).remove('dataType');}}",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC06"
+          },
+          "expected": {
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC06",
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ]
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC06"
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC06"
+          },
+          "expected": {
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC06",
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ]
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC06"
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC06"
+          },
+          "expected": {
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC06",
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ]
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "children": [],
+                "dynamicSize": null,
+                "dynamicNull": true,
+                "selected": true,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              }
+            ],
+            "parentSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC06"
+          }
+        }
+      }
+    },
+    {
+      "id": "MC07",
+      "code": "p.putAll(CatalogFormulaProbe.observe('MC07'));for(Object item:(List<Object>)p.get('parents')){Map<String,Object> parent=(Map<String,Object>)item;if(parent.containsKey('children')){for(Object child:(List<Object>)parent.get('children'))((Map<String,Object>)child).remove('dataType');}}",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC07"
+          },
+          "expected": {
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC07",
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ]
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC07"
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC07"
+          },
+          "expected": {
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC07",
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ]
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC07"
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC07"
+          },
+          "expected": {
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC07",
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ]
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Fields",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Fields",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC07"
+          }
+        }
+      }
+    },
+    {
+      "id": "MC08",
+      "code": "p.putAll(CatalogFormulaProbe.observe('MC08'));for(Object item:(List<Object>)p.get('parents')){Map<String,Object> parent=(Map<String,Object>)item;if(parent.containsKey('children')){for(Object child:(List<Object>)parent.get('children'))((Map<String,Object>)child).remove('dataType');}}",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC08"
+          },
+          "expected": {
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC08",
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ]
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC08"
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC08"
+          },
+          "expected": {
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC08",
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ]
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC08"
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC08"
+          },
+          "expected": {
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC08",
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ]
+          },
+          "capturedNative": {
+            "parents": [
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "BareLedger__c"
+              },
+              {
+                "exceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: EntityDefinition.Particles",
+                "exceptionType": "System.SObjectException",
+                "selected": false,
+                "relationship": "Particles",
+                "parent": "Ledger__c"
+              }
+            ],
+            "parentSize": 2,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC08"
+          }
+        }
+      }
+    },
+    {
+      "id": "MC09",
+      "code": "p.putAll(CatalogFormulaProbe.observe('MC09'));",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "standardCalculated": false,
+            "ordinaryFormula": null,
+            "ordinaryCalculated": false,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC09"
+          },
+          "expected": {
+            "standardCalculated": false,
+            "ordinaryFormula": null,
+            "ordinaryCalculated": false,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC09"
+          },
+          "capturedNative": {
+            "standardCalculated": false,
+            "ordinaryFormula": null,
+            "ordinaryCalculated": false,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC09"
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "standardCalculated": false,
+            "ordinaryFormula": null,
+            "ordinaryCalculated": false,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC09"
+          },
+          "expected": {
+            "standardCalculated": false,
+            "ordinaryFormula": null,
+            "ordinaryCalculated": false,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC09"
+          },
+          "capturedNative": {
+            "standardCalculated": false,
+            "ordinaryFormula": null,
+            "ordinaryCalculated": false,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC09"
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "standardCalculated": false,
+            "ordinaryFormula": null,
+            "ordinaryCalculated": false,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC09"
+          },
+          "expected": {
+            "standardCalculated": false,
+            "ordinaryFormula": null,
+            "ordinaryCalculated": false,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC09"
+          },
+          "capturedNative": {
+            "standardCalculated": false,
+            "ordinaryFormula": null,
+            "ordinaryCalculated": false,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC09"
+          }
+        }
+      }
+    },
+    {
+      "id": "MC10",
+      "code": "p.putAll(CatalogFormulaProbe.observe('MC10'));",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "unselectedExceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: Account.Contacts",
+            "unselectedExceptionType": "System.SObjectException",
+            "emptyTypedSize": 0,
+            "emptyDynamicNull": true,
+            "populatedSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC10"
+          },
+          "expected": {
+            "unselectedExceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: Account.Contacts",
+            "unselectedExceptionType": "System.SObjectException",
+            "emptyTypedSize": 0,
+            "emptyDynamicNull": true,
+            "populatedSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC10"
+          },
+          "capturedNative": {
+            "unselectedExceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: Account.Contacts",
+            "unselectedExceptionType": "System.SObjectException",
+            "emptyTypedSize": 0,
+            "emptyDynamicNull": true,
+            "populatedSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC10"
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "unselectedExceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: Account.Contacts",
+            "unselectedExceptionType": "System.SObjectException",
+            "emptyTypedSize": 0,
+            "emptyDynamicNull": true,
+            "populatedSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC10"
+          },
+          "expected": {
+            "unselectedExceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: Account.Contacts",
+            "unselectedExceptionType": "System.SObjectException",
+            "emptyTypedSize": 0,
+            "emptyDynamicNull": true,
+            "populatedSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC10"
+          },
+          "capturedNative": {
+            "unselectedExceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: Account.Contacts",
+            "unselectedExceptionType": "System.SObjectException",
+            "emptyTypedSize": 0,
+            "emptyDynamicNull": true,
+            "populatedSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC10"
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "unselectedExceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: Account.Contacts",
+            "unselectedExceptionType": "System.SObjectException",
+            "emptyTypedSize": 0,
+            "emptyDynamicNull": true,
+            "populatedSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC10"
+          },
+          "expected": {
+            "unselectedExceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: Account.Contacts",
+            "unselectedExceptionType": "System.SObjectException",
+            "emptyTypedSize": 0,
+            "emptyDynamicNull": true,
+            "populatedSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC10"
+          },
+          "capturedNative": {
+            "unselectedExceptionMessage": "SObject row was retrieved via SOQL without querying the requested field: Account.Contacts",
+            "unselectedExceptionType": "System.SObjectException",
+            "emptyTypedSize": 0,
+            "emptyDynamicNull": true,
+            "populatedSize": 1,
+            "fixtureFormula": "\"leaf\"",
+            "fixtureCalculated": true,
+            "row": "MC10"
+          }
+        }
+      }
+    }
+  ]
+}

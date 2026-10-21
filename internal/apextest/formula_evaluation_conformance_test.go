@@ -16,7 +16,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// The owned API 62/67 oracle is exported verbatim; CI needs neither an org nor
+// The owned API 62/67/68 oracle is exported verbatim; CI needs neither an org nor
 // glade-tools. Domain-abort rows assert construction only, as captured natively.
 func TestFormulaEvaluationOrgConformance(t *testing.T) {
 	type familyCase struct {
@@ -37,7 +37,7 @@ func TestFormulaEvaluationOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 295 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 295 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle rows=%d versions=%v", len(data.Cases), data.APIVersions)
 	}
 	if strings.Join(data.BuildOnlyRows, ",") != "R028,R031,R044,R097" {

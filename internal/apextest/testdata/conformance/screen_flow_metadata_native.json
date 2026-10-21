@@ -1,0 +1,42 @@
+{
+  "captures": [
+    {
+      "api": "62.0",
+      "terminal": "observation_assertion",
+      "componentErrors": 0,
+      "testErrors": 1,
+      "observed": {
+        "screenStart": "System.FlowException",
+        "screenCreate": "returned",
+        "screenTriggerType": null,
+        "screenProcessType": "Flow",
+        "screenRows": 1
+      },
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"namespace\": \"\", \"sourceApiVersion\": \"62.0\"}",
+        "force-app/main/default/flows/OwnedDiscoveryScreen.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><interviewLabel>Owned Discovery {!$Flow.CurrentDateTime}</interviewLabel><label>Owned Discovery</label><processType>Flow</processType><screens><name>OwnedScreen</name><label>Owned Screen</label><locationX>0</locationX><locationY>0</locationY><allowBack>true</allowBack><allowFinish>true</allowFinish><allowPause>true</allowPause><fields><name>OwnedText</name><fieldText>Owned screen</fieldText><fieldType>DisplayText</fieldType></fields><showFooter>true</showFooter><showHeader>true</showHeader></screens><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>OwnedScreen</targetReference></connector></start><status>Active</status></Flow>",
+        "force-app/main/default/classes/OwnedScreenCatalogTest.cls": "@IsTest private class OwnedScreenCatalogTest {\n @IsTest static void screenMetadata() {\n  List<FlowDefinitionView> rows=[SELECT ApiName,ProcessType,TriggerType FROM FlowDefinitionView WHERE ApiName='OwnedDiscoveryScreen' WITH SYSTEM_MODE];\n  System.assertEquals(1,rows.size());System.assertEquals('Flow',rows[0].ProcessType);System.assertEquals(null,rows[0].TriggerType);\n  Flow.Interview interview=Flow.Interview.createInterview('OwnedDiscoveryScreen',new Map<String,Object>());System.assertNotEquals(null,interview);\n  Boolean rejected=false;try{interview.start();}catch(System.FlowException expected){rejected=true;}System.assertEquals(true,rejected);\n }\n}",
+        "force-app/main/default/classes/OwnedScreenCatalogTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>"
+      }
+    },
+    {
+      "api": "67.0",
+      "terminal": "observation_assertion",
+      "componentErrors": 0,
+      "testErrors": 1,
+      "observed": {
+        "screenStart": "System.FlowException",
+        "screenCreate": "returned",
+        "screenTriggerType": null,
+        "screenProcessType": "Flow",
+        "screenRows": 1
+      },
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"namespace\": \"\", \"sourceApiVersion\": \"67.0\"}",
+        "force-app/main/default/flows/OwnedDiscoveryScreen.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><interviewLabel>Owned Discovery {!$Flow.CurrentDateTime}</interviewLabel><label>Owned Discovery</label><processType>Flow</processType><screens><name>OwnedScreen</name><label>Owned Screen</label><locationX>0</locationX><locationY>0</locationY><allowBack>true</allowBack><allowFinish>true</allowFinish><allowPause>true</allowPause><fields><name>OwnedText</name><fieldText>Owned screen</fieldText><fieldType>DisplayText</fieldType></fields><showFooter>true</showFooter><showHeader>true</showHeader></screens><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>OwnedScreen</targetReference></connector></start><status>Active</status></Flow>",
+        "force-app/main/default/classes/OwnedScreenCatalogTest.cls": "@IsTest private class OwnedScreenCatalogTest {\n @IsTest static void screenMetadata() {\n  List<FlowDefinitionView> rows=[SELECT ApiName,ProcessType,TriggerType FROM FlowDefinitionView WHERE ApiName='OwnedDiscoveryScreen' WITH SYSTEM_MODE];\n  System.assertEquals(1,rows.size());System.assertEquals('Flow',rows[0].ProcessType);System.assertEquals(null,rows[0].TriggerType);\n  Flow.Interview interview=Flow.Interview.createInterview('OwnedDiscoveryScreen',new Map<String,Object>());System.assertNotEquals(null,interview);\n  Boolean rejected=false;try{interview.start();}catch(System.FlowException expected){rejected=true;}System.assertEquals(true,rejected);\n }\n}",
+        "force-app/main/default/classes/OwnedScreenCatalogTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>"
+      }
+    }
+  ]
+}

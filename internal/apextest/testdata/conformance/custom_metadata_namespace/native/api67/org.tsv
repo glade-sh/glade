@@ -1,0 +1,29 @@
+R001	LocalSeed|null|LocalSeed|true
+R002	ProviderSeed|gladens001|gladens001__ProviderSeed|true
+R003	1
+R004	0
+R005	1
+R006	0
+R007	0
+R008	1
+R009	0
+R010	1
+R011	0
+R012	false
+R013	false
+R014	0
+R015	LocalSeed|null|LocalSeed|false
+R016	LocalSeed|null|LocalSeed|true
+R017	MISSING
+R018	MISSING
+R019	ProviderSeed|gladens001|gladens001__ProviderSeed|true
+R020	MISSING
+R021	MISSING
+R022	LocalDefault:LocalDefault|null|LocalDefault;LocalOff:LocalOff|null|LocalOff;LocalSeed:LocalSeed|null|LocalSeed;ProviderSeed:ProviderSeed|gladens001|gladens001__ProviderSeed
+R023	LocalDefault|null|LocalDefault;LocalOff|null|LocalOff;LocalSeed|null|LocalSeed;ProviderSeed|gladens001|gladens001__ProviderSeed
+R024	gladens001__Ns113bFlag__mdt
+R025	gladens001__Enabled__c
+R026	true|false
+R027	gladens001__Ns113bFlag.DtoOnly|gladens001__Enabled__c|true
+E001	"ASYNC|{\"deployment\": {\"checkOnly\": false, \"componentFailures\": [], \"numberComponentErrors\": 0, \"status\": \"Succeeded\", \"success\": true}, \"records\": [{\"DeveloperName\": \"Apex67\", \"NamespacePrefix\": null, \"QualifiedApiName\": \"Apex67\", \"gladens001__Enabled__c\": true}]}"
+E002	"ASYNC|{\"deployment\": {\"checkOnly\": false, \"componentFailures\": [{\"changed\": false, \"componentType\": \"CustomMetadata\", \"created\": false, \"createdDate\": \"2026-10-12T19:03:10.000Z\", \"deleted\": false, \"fileName\": \"customMetadata/ns113wrong__Ns113bAbsent.Apex67.md\", \"fullName\": \"ns113wrong__Ns113bAbsent.Apex67\", \"problem\": \"Custom metadata type ns113wrong__Ns113bAbsent__mdt is not available in this organization.\", \"problemType\": \"Error\", \"success\": false}], \"numberComponentErrors\": 1, \"status\": \"Failed\", \"success\": false}, \"records\": [{\"DeveloperName\": \"Apex67\", \"NamespacePrefix\": null, \"QualifiedApiName\": \"Apex67\", \"gladens001__Enabled__c\": true}]}"

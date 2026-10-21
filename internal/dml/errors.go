@@ -8,6 +8,8 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+var errUpdateRequiresID = errors.New("dml: update requires id")
+
 func storageValuesEqual(field storage.Field, left, right storage.Value) bool {
 	if left.Kind == storage.ValueString && right.Kind == storage.ValueString && !field.CaseSensitive {
 		return strings.EqualFold(left.String, right.String)
@@ -83,7 +85,7 @@ func resultFromError(id storage.ID, err error) Result {
 		code = "MISSING_ARGUMENT"
 		fields = []string{"Id"}
 		if contains(msg, "update requires id") {
-			msg = "Id not specified in an update call:"
+			msg = "Id not specified in an update call"
 		}
 	case contains(msg, "does not exist"):
 		code = "ENTITY_IS_DELETED"
@@ -153,12 +155,20 @@ func maxSequences(left, right map[string]uint64) map[string]uint64 {
 	}
 	return out
 }
-func formulaDefaultShouldEvaluate(field storage.Field, rawDefault string) bool {
+
+// FormulaDefaultShouldEvaluate identifies defaults that need formula evaluation
+// before storage's literal-default fallback.
+func FormulaDefaultShouldEvaluate(field storage.Field, rawDefault string) bool {
 	if rawDefault == "" {
 		return false
 	}
 	switch field.Type {
 	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist, storage.FieldDate, storage.FieldDateTime, storage.FieldTime, storage.FieldAny:
+		if rawDefault[0] == '"' || rawDefault[0] == '\'' {
+			// Tokenize so an ampersand inside a single literal stays text.
+			tokens := tokenizeFormula(rawDefault)
+			return len(tokens) > 2 && tokens[1].typ == formulaTokenSymbol && tokens[1].text == "&"
+		}
 		return defaultLooksLikeFormulaCall(rawDefault)
 	default:
 		return false

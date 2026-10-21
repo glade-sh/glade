@@ -1,0 +1,936 @@
+{
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "files": {
+    "classes/DeliveryBatch.cls": "public class DeliveryBatch implements Database.Batchable<SObject> {\n public Database.QueryLocator start(Database.BatchableContext context) {return Database.getQueryLocator([SELECT Id FROM Account WHERE Name='batch seed']);}\n public void execute(Database.BatchableContext context,List<SObject> scope) {}\n public void finish(Database.BatchableContext context) {DeliveryProbe.publishOne();}\n}",
+    "classes/DeliveryBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+    "classes/DeliveryProbe.cls": "public class DeliveryProbe {\n public static Integer seed=0;\n public static Integer flight=0;\n public static Integer hits=0;\n public static Integer count(String phase) {return [SELECT COUNT() FROM Account WHERE Name=:phase];}\n public static void save(String phase,Integer value) {insert new Account(Name=phase,NumberOfEmployees=value);}\n public static Integer value(String phase) {List<Account> rows=[SELECT NumberOfEmployees FROM Account WHERE Name=:phase];return rows.isEmpty()?-1:Integer.valueOf(rows[0].NumberOfEmployees);}\n public static void publishOne() {\n  save('publisher seed',seed);\n  flight=1;\n  Database.SaveResult published=EventBus.publish(new DeliverySignal__e(Note__c='signal'));\n  save('publish success',published.isSuccess()?1:0);\n  save('publish errors',published.getErrors().size());\n  save('publisher saw trigger',count('trigger'));\n  flight=0;\n  save('publisher after',1);\n }\n @future public static void publishFuture() {publishOne();}\n public static void receive() {\n  save('trigger',1);\n  save('trigger seed',seed);\n  save('trigger flight',flight);\n  save('trigger saw after',count('publisher after'));\n  hits++;\n }\n public static Map<String,Integer> observe(String mode,String delivery) {\n  seed=7;\n  Map<String,Integer> result=new Map<String,Integer>();\n  if(mode=='batch') insert new Account(Name='batch seed');\n  Test.startTest();\n  if(mode=='direct') publishOne();\n  if(mode=='queue') System.enqueueJob(new DeliveryQueue());\n  if(mode=='future') publishFuture();\n  if(mode=='batch') Database.executeBatch(new DeliveryBatch(),1);\n  result.put('beforeStop',count('trigger'));\n  if(delivery=='before' || delivery=='both') Test.getEventBus().deliver();\n  result.put('afterPreDeliver',count('trigger'));\n  Test.stopTest();\n  result.put('afterStop',count('trigger'));\n  if(delivery=='after' || delivery=='both') Test.getEventBus().deliver();\n  result.put('afterPostDeliver',count('trigger'));\n  result.put('triggerSeed',value('trigger seed'));\n  result.put('triggerFlight',value('trigger flight'));\n  result.put('triggerSawAfter',value('trigger saw after'));\n  result.put('publisherSawTrigger',value('publisher saw trigger'));\n  result.put('publisherSeed',value('publisher seed'));\n  result.put('publishSuccess',value('publish success'));\n  result.put('publishErrors',value('publish errors'));\n  result.put('testHits',hits);\n  result.put('testSeed',seed);\n  return result;\n }\n}",
+    "classes/DeliveryProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+    "classes/DeliveryProbeTest.cls": "@IsTest private class DeliveryProbeTest {\n@IsTest static void direct_stop() {System.assert(false,'DELIVERY|direct_stop|'+JSON.serialize(DeliveryProbe.observe('direct','stop')));}\n@IsTest static void direct_before() {System.assert(false,'DELIVERY|direct_before|'+JSON.serialize(DeliveryProbe.observe('direct','before')));}\n@IsTest static void direct_after() {System.assert(false,'DELIVERY|direct_after|'+JSON.serialize(DeliveryProbe.observe('direct','after')));}\n@IsTest static void direct_both() {System.assert(false,'DELIVERY|direct_both|'+JSON.serialize(DeliveryProbe.observe('direct','both')));}\n@IsTest static void queue_stop() {System.assert(false,'DELIVERY|queue_stop|'+JSON.serialize(DeliveryProbe.observe('queue','stop')));}\n@IsTest static void queue_before() {System.assert(false,'DELIVERY|queue_before|'+JSON.serialize(DeliveryProbe.observe('queue','before')));}\n@IsTest static void queue_after() {System.assert(false,'DELIVERY|queue_after|'+JSON.serialize(DeliveryProbe.observe('queue','after')));}\n@IsTest static void queue_both() {System.assert(false,'DELIVERY|queue_both|'+JSON.serialize(DeliveryProbe.observe('queue','both')));}\n@IsTest static void future_stop() {System.assert(false,'DELIVERY|future_stop|'+JSON.serialize(DeliveryProbe.observe('future','stop')));}\n@IsTest static void future_before() {System.assert(false,'DELIVERY|future_before|'+JSON.serialize(DeliveryProbe.observe('future','before')));}\n@IsTest static void future_after() {System.assert(false,'DELIVERY|future_after|'+JSON.serialize(DeliveryProbe.observe('future','after')));}\n@IsTest static void future_both() {System.assert(false,'DELIVERY|future_both|'+JSON.serialize(DeliveryProbe.observe('future','both')));}\n@IsTest static void batch_stop() {System.assert(false,'DELIVERY|batch_stop|'+JSON.serialize(DeliveryProbe.observe('batch','stop')));}\n@IsTest static void batch_before() {System.assert(false,'DELIVERY|batch_before|'+JSON.serialize(DeliveryProbe.observe('batch','before')));}\n@IsTest static void batch_after() {System.assert(false,'DELIVERY|batch_after|'+JSON.serialize(DeliveryProbe.observe('batch','after')));}\n@IsTest static void batch_both() {System.assert(false,'DELIVERY|batch_both|'+JSON.serialize(DeliveryProbe.observe('batch','both')));}\n}",
+    "classes/DeliveryProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+    "classes/DeliveryQueue.cls": "public class DeliveryQueue implements Queueable {\n public void execute(QueueableContext context) {DeliveryProbe.publishOne();}\n}",
+    "classes/DeliveryQueue.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+    "objects/DeliverySignal__e/DeliverySignal__e.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>Delivery Signal</label><pluralLabel>Delivery Signals</pluralLabel><publishBehavior>PublishImmediately</publishBehavior></CustomObject>",
+    "objects/DeliverySignal__e/fields/Note__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Note__c</fullName><label>Note</label><length>80</length><type>Text</type></CustomField>",
+    "triggers/DeliverySignalTrigger.trigger": "trigger DeliverySignalTrigger on DeliverySignal__e (after insert) {DeliveryProbe.receive();}",
+    "triggers/DeliverySignalTrigger.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>"
+  },
+  "oracleSHA256": "066c595bf23d4e868b9669793e2a220103e4549a8b5af67dfd1db235c72842f2",
+  "rows": [
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_after"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_before"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_both"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_stop"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_after"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 1,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_before"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 1,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_both"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_stop"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_after"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_before"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_both"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_stop"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_after"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_before"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_both"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_stop"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_after"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_before"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_both"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_stop"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_after"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 1,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_before"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 1,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_both"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_stop"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_after"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_before"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_both"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_stop"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_after"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_before"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_both"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_stop"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_after"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_before"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_both"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_stop"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_after"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 1,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_before"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 1,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_both"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_stop"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_after"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_before"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_both"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_stop"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_after"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_before"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_both"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterPostDeliver": 1,
+        "afterPreDeliver": 0,
+        "afterStop": 1,
+        "beforeStop": 0,
+        "publishErrors": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": 0,
+        "publisherSeed": 7,
+        "testHits": 1,
+        "testSeed": 7,
+        "triggerFlight": 0,
+        "triggerSawAfter": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_stop"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+<BusinessProcess xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Observation</fullName><isActive>true</isActive><values><fullName>New</fullName><default>true</default></values><values><fullName>Closed</fullName><default>false</default></values></BusinessProcess>

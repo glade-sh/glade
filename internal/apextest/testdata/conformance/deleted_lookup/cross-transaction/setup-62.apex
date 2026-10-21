@@ -1,0 +1,10 @@
+String parentName='Owned cross transaction parent API62';
+String childName='Owned cross transaction child API62';
+System.assertEquals(0,[SELECT COUNT() FROM ChildMemo__c WHERE Name=:childName],'Owned setup already exists');
+ParentMemo__c parent=new ParentMemo__c(Name=parentName);
+insert parent;
+ChildMemo__c child=new ChildMemo__c(Name=childName,Parent__c=parent.Id);
+insert child;
+delete parent;
+List<ChildMemo__c> stored=[SELECT Parent__c FROM ChildMemo__c WHERE Id=:child.Id];
+System.debug(LoggingLevel.ERROR,'OBSERVED|crossSetup62|'+JSON.serialize(new Map<String,Object>{'children'=>stored.size(),'lookupCleared'=>stored[0].Parent__c==null}));

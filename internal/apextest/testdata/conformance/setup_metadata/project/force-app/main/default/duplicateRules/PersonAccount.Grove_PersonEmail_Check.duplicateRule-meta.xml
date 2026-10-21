@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DuplicateRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionOnInsert>Allow</actionOnInsert>
+    <actionOnUpdate>Allow</actionOnUpdate>
+    <duplicateRuleMatchRules>
+        <matchRuleSObjectType>PersonAccount</matchRuleSObjectType>
+        <matchingRule>Grove_Exact_PersonEmail</matchingRule>
+    </duplicateRuleMatchRules>
+    <isActive>true</isActive>
+    <masterLabel>Grove Person Email Check</masterLabel>
+    <operationsOnInsert>Report</operationsOnInsert>
+    <operationsOnUpdate>Report</operationsOnUpdate>
+    <securityOption>BypassSharingRules</securityOption>
+    <sortOrder>2</sortOrder>
+</DuplicateRule>

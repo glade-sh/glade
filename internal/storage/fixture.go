@@ -17,10 +17,11 @@ type Fixture struct {
 }
 
 type FixtureOrg struct {
-	OrgID      string `json:"orgId,omitempty"`
-	APIVersion string `json:"apiVersion,omitempty"`
-	Namespace  string `json:"namespace,omitempty"`
-	DomainURL  string `json:"domainUrl,omitempty"`
+	OrgID      string   `json:"orgId,omitempty"`
+	APIVersion string   `json:"apiVersion,omitempty"`
+	Namespace  string   `json:"namespace,omitempty"`
+	DomainURL  string   `json:"domainUrl,omitempty"`
+	Features   []string `json:"features,omitempty"`
 }
 
 type FixtureObject struct {
@@ -89,6 +90,7 @@ func FixtureFromOrg(org OrgState) Fixture {
 			APIVersion: org.APIVersion,
 			Namespace:  org.Namespace,
 			DomainURL:  org.DomainURL,
+			Features:   append([]string(nil), org.Features...),
 		},
 		IDSequences: copySequences(org.IDSequences),
 	}
@@ -143,6 +145,9 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 	}
 	if fixture.Org.Namespace != "" {
 		org.Namespace = fixture.Org.Namespace
+	}
+	if fixture.Org.Features != nil {
+		ApplyOrgShape(org, fixture.Org.Features)
 	}
 	aliases := make(map[string]fixtureAlias)
 	assignedIDs := make([][]ID, len(fixture.Objects))
@@ -234,6 +239,11 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 		}
 	}
 	org.IDSequences = copySequences(generator.Sequences)
+	if fixture.Org.Features == nil {
+		org.restoreLegacyFeatureProfile()
+	} else {
+		clearOrganizationFeatureFlagRecords(org)
+	}
 	return nil
 }
 
@@ -291,6 +301,12 @@ func containsString(values []string, want string) bool {
 }
 
 func ApplyOrgShape(org *OrgState, features []string) {
+	if org == nil {
+		return
+	}
+	org.ensureFeatureProfile()
+	org.setFeatureProfile(append(append([]string(nil), org.Features...), features...))
+	clearOrganizationFeatureFlagRecords(org)
 	for _, f := range features {
 		switch canonicalFeatureName(f) {
 		case "PersonAccounts":
@@ -308,24 +324,11 @@ func ApplyOrgShape(org *OrgState, features []string) {
 			applyContactsToMultipleAccounts(org)
 		case "PlatformCache":
 			applyPlatformCache(org)
-		case "EnableSetPasswordInApi":
-			setOrganizationFlag(org, "IsSetPasswordInApiEnabled", true)
 		case "AddCustomApps":
 			applyAddCustomApps(org, featureArgumentInt(f, 0))
-		case "AnalyticsAdminPerms":
-			setOrganizationFlag(org, "HasAnalyticsAdminPerms", true)
-		case "HealthCloud":
-			setOrganizationFlag(org, "IsHealthCloudEnabled", true)
-		case "LightningExperience":
-			setOrganizationFlag(org, "IsLightningExperienceEnabled", true)
-		case "Chatter":
-			setOrganizationFlag(org, "IsChatterEnabled", true)
 		}
 	}
-	for name, obj := range org.Objects {
-		EnsureStandardObjectFieldsForFeatures(&obj.Definition, features)
-		org.Objects[name] = obj
-	}
+	refreshOrgFeatureFields(org)
 	if _, ok := org.Objects["RecordType"]; ok {
 		ensureRecordTypeRecords(org)
 	}
@@ -343,47 +346,22 @@ func featureArgumentInt(feature string, fallback int) int {
 	return n
 }
 
-func setOrganizationFlag(org *OrgState, fieldName string, enabled bool) {
-	if org == nil {
-		return
-	}
-	if org.Objects == nil {
-		org.Objects = make(map[string]ObjectState)
-	}
-	ensureObject(org, "Organization", "00D", map[string]Field{
-		"Name": {APIName: "Name", Type: FieldString},
-	})
-	object := org.Objects["Organization"]
-	if object.Definition.Fields == nil {
-		object.Definition.Fields = make(map[string]Field)
-	}
-	orgID := strings.TrimSpace(org.OrgID)
-	if orgID == "" {
-		orgID = "00D000000000001"
-	}
-	if len(object.Records) == 0 {
-		object.Records[ID(orgID)] = Record{
-			ID:     ID(orgID),
-			Object: "Organization",
-			Fields: map[string]Value{"Name": StringValue("GLADE Local Org")},
+func refreshOrgFeatureFields(org *OrgState) {
+	signature := canonicalFeatureSignature(org.Features)
+	for name, object := range org.Objects {
+		if !standardObjectFieldsNeedWrite(object.Definition, signature) {
+			continue
 		}
+		object.Definition = object.Definition.Clone()
+		EnsureStandardObjectFieldsForFeatures(&object.Definition, org.Features)
+		org.Objects[name] = object
 	}
-	object.Definition.Fields[fieldName] = Field{APIName: fieldName, Type: FieldBoolean}
-	for id, record := range object.Records {
-		if record.Fields == nil {
-			record.Fields = make(map[string]Value)
-		}
-		record.Fields[fieldName] = BooleanValue(enabled)
-		object.Records[id] = record
-	}
-	org.Objects["Organization"] = object
+	org.ClearRuntimeSchemaStamp()
 }
 
 func applyStandardFeature(org *OrgState, feature string) {
-	for name, obj := range org.Objects {
-		EnsureStandardObjectFieldsForFeatures(&obj.Definition, []string{feature})
-		org.Objects[name] = obj
-	}
+	org.enableFeature(feature)
+	refreshOrgFeatureFields(org)
 }
 
 func applyPersonAccounts(org *OrgState) {
@@ -400,7 +378,7 @@ func applyPersonAccounts(org *OrgState) {
 }
 
 func applyMultiCurrency(org *OrgState) {
-	setOrganizationFlag(org, "IsMultiCurrencyEnabled", true)
+	org.enableFeature("MultiCurrency")
 	EnsureStandardObject(org, "CurrencyType")
 	putSeedRecord(org, "CurrencyType", Record{
 		ID:     "01L000000000001",
@@ -434,6 +412,7 @@ func applyMultiCurrency(org *OrgState) {
 		if !multiCurrencyObjectSupportsCurrencyISOCode(obj.Definition) {
 			continue
 		}
+		obj.Definition = obj.Definition.Clone()
 		if obj.Definition.Fields == nil {
 			obj.Definition.Fields = make(map[string]Field)
 		}
@@ -642,7 +621,10 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	})
 	ensureObject(org, "UserLicense", "100", map[string]Field{
 		"Name":                 {APIName: "Name", Type: FieldString, Required: true},
+		"Status":               {APIName: "Status", Type: FieldPicklist, DisplayType: "PICKLIST", Nillable: BoolFlag(false)},
+		"MasterLabel":          {APIName: "MasterLabel", Type: FieldString},
 		"LicenseDefinitionKey": {APIName: "LicenseDefinitionKey", Type: FieldString},
+		"TotalLicenses":        {APIName: "TotalLicenses", Type: FieldInteger},
 	})
 	ensureObject(org, "Network", "0DB", map[string]Field{
 		"Name": {APIName: "Name", Type: FieldString, Required: true},
@@ -736,7 +718,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	})
 	ensureObject(org, "ObjectPermissions", "110", map[string]Field{
 		"ParentId":                    {APIName: "ParentId", Type: FieldReference, ReferenceTo: []string{"PermissionSet", "Profile"}, RelationshipName: "Parent"},
-		"SObjectType":                 {APIName: "SObjectType", Type: FieldString, Required: true},
+		"SobjectType":                 {APIName: "SobjectType", Type: FieldString, Required: true},
 		"PermissionsRead":             {APIName: "PermissionsRead", Type: FieldBoolean},
 		"PermissionsCreate":           {APIName: "PermissionsCreate", Type: FieldBoolean},
 		"PermissionsEdit":             {APIName: "PermissionsEdit", Type: FieldBoolean},
@@ -746,7 +728,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	})
 	ensureObject(org, "FieldPermissions", "0FP", map[string]Field{
 		"ParentId":        {APIName: "ParentId", Type: FieldReference, ReferenceTo: []string{"PermissionSet", "Profile"}, RelationshipName: "Parent"},
-		"SObjectType":     {APIName: "SObjectType", Type: FieldString, Required: true},
+		"SobjectType":     {APIName: "SobjectType", Type: FieldString, Required: true},
 		"Field":           {APIName: "Field", Type: FieldString, Required: true},
 		"PermissionsRead": {APIName: "PermissionsRead", Type: FieldBoolean},
 		"PermissionsEdit": {APIName: "PermissionsEdit", Type: FieldBoolean},
@@ -809,7 +791,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"Website": {APIName: "Website", Type: FieldString},
 		"Phone":   {APIName: "Phone", Type: FieldString},
 	})
-	for _, objectName := range []string{"Account", "Contact", "Opportunity", "Pricebook2", "Product2"} {
+	for _, objectName := range []string{"Account", "Contact", "Opportunity", "Pricebook2", "Product2", "Case", "Event", "Campaign", "Order", "Contract", "Asset"} {
 		existing := append([]RecordTypeInfo(nil), org.Objects[objectName].Definition.RecordTypes...)
 		EnsureStandardObject(org, objectName)
 		if len(existing) > 0 {
@@ -821,9 +803,9 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 
 	orgID := ID(strings.TrimSpace(org.OrgID))
 	if orgID == "" {
-		orgID = ID("00D000000000001")
+		orgID = ID(DefaultOrgID)
 	}
-	profileID := ID("00e000000000001")
+	profileID := ID(DefaultProfileID)
 	minimumAccessProfileID := ID("00e000000000002")
 	chatterExternalProfileID := ID("00e000000000003")
 	standardPlatformUserProfileID := ID("00e000000000004")
@@ -831,11 +813,14 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	marketingUserProfileID := ID("00e000000000006")
 	guestProfileID := ID("00e000000000007")
 	customerCommunityLoginProfileID := ID("00e000000000008")
+	automatedProcessProfileID := ID("00e000000000009")
+	chatterFreeProfileID := ID("00e000000000011")
 	salesforceLicenseID := ID("100000000000001")
 	chatterExternalLicenseID := ID("100000000000002")
+	chatterFreeLicenseID := ID("100000000000005")
 	roleID := ID("00E000000000001")
-	userID := ID("005000000000001")
-	automatedProcessUserID := ID("005000000000002")
+	userID := ID(DefaultUserID)
+	automatedProcessUserID := existingAutomatedProcessUserID(*org)
 	permissionSetID := ID("0PS000000000001")
 	assignmentID := ID("0Pa000000000001")
 	putSeedRecord(org, "Pricebook2", Record{
@@ -861,7 +846,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"InstanceName":         StringValue("LOCAL"),
 			"IsSandbox":            BooleanValue(true),
 			"DefaultLocaleSidKey":  StringValue("en_US"),
-			"TimeZoneSidKey":       StringValue("UTC"),
+			"TimeZoneSidKey":       StringValue("America/Los_Angeles"),
 			"LanguageLocaleKey":    StringValue("en_US"),
 			"OrganizationType":     StringValue("Developer Edition"),
 			"FiscalYearStartMonth": IntegerValue(1),
@@ -872,7 +857,10 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Object: "UserLicense",
 		Fields: map[string]Value{
 			"Name":                 StringValue("Salesforce"),
+			"Status":               StringValue("Active"),
+			"MasterLabel":          StringValue("Salesforce"),
 			"LicenseDefinitionKey": StringValue("SFDC"),
+			"TotalLicenses":        IntegerValue(2),
 		},
 	})
 	putSeedRecord(org, "UserLicense", Record{
@@ -881,6 +869,25 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Fields: map[string]Value{
 			"Name":                 StringValue("Chatter External"),
 			"LicenseDefinitionKey": StringValue("PID_Customer_Community_Login"),
+		},
+	})
+	// Owned API62/64/67 observations establish this built-in profile and
+	// linked license. Their permission records were not captured.
+	putSeedRecord(org, "UserLicense", Record{
+		ID:     chatterFreeLicenseID,
+		Object: "UserLicense",
+		Fields: map[string]Value{
+			"Name":                 StringValue("Chatter Free"),
+			"LicenseDefinitionKey": StringValue("CSN_User"),
+		},
+	})
+	putSeedRecord(org, "Profile", Record{
+		ID:     chatterFreeProfileID,
+		Object: "Profile",
+		Fields: map[string]Value{
+			"Name":          StringValue("Chatter Free User"),
+			"UserType":      StringValue("CsnOnly"),
+			"UserLicenseId": IDValue(chatterFreeLicenseID),
 		},
 	})
 	putSeedRecord(org, "Profile", Record{
@@ -958,7 +965,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"UserType":          StringValue("Standard"),
 			"LocaleSidKey":      StringValue("en_US"),
 			"LanguageLocaleKey": StringValue("en_US"),
-			"TimeZoneSidKey":    StringValue("UTC"),
+			"TimeZoneSidKey":    StringValue("America/Los_Angeles"),
 			"EmailEncodingKey":  StringValue("UTF-8"),
 		},
 	})
@@ -972,7 +979,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"Name":              StringValue("Automated Process"),
 			"Alias":             StringValue("autoproc"),
 			"Email":             StringValue("automated-process@example.invalid"),
-			"ProfileId":         IDValue(standardUserProfileID),
+			"ProfileId":         IDValue(automatedProcessProfileID),
 			"IsActive":          BooleanValue(true),
 			"UserType":          StringValue("AutomatedProcess"),
 			"LocaleSidKey":      StringValue("en_US"),
@@ -1052,6 +1059,15 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	seedProfileOwnedPermissionSet(ID("0PS000000000008"), "Marketing User", marketingUserProfileID)
 	seedProfileOwnedPermissionSet(ID("0PS000000000009"), "Customer Community Guest User", guestProfileID)
 	seedProfileOwnedPermissionSet(ID("0PS000000000010"), "Customer Community Login User", customerCommunityLoginProfileID)
+	putSeedRecord(org, "PermissionSet", Record{
+		ID:     ID("0PS000000000011"),
+		Object: "PermissionSet",
+		Fields: map[string]Value{
+			"Name":             StringValue("CommerceUser"),
+			"Label":            StringValue("Shopper"),
+			"IsOwnedByProfile": BooleanValue(false),
+		},
+	})
 	putSeedRecord(org, "PermissionSetAssignment", Record{
 		ID:     assignmentID,
 		Object: "PermissionSetAssignment",
@@ -1065,7 +1081,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Object: "ObjectPermissions",
 		Fields: map[string]Value{
 			"ParentId":          IDValue(marketingUserProfileID),
-			"SObjectType":       StringValue("Account"),
+			"SobjectType":       StringValue("Account"),
 			"PermissionsRead":   BooleanValue(true),
 			"PermissionsCreate": BooleanValue(true),
 			"PermissionsEdit":   BooleanValue(true),
@@ -1077,7 +1093,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Object: "ObjectPermissions",
 		Fields: map[string]Value{
 			"ParentId":          IDValue(marketingUserProfileID),
-			"SObjectType":       StringValue("Case"),
+			"SobjectType":       StringValue("Case"),
 			"PermissionsRead":   BooleanValue(true),
 			"PermissionsCreate": BooleanValue(true),
 			"PermissionsEdit":   BooleanValue(true),
@@ -1090,7 +1106,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			Object: "ObjectPermissions",
 			Fields: map[string]Value{
 				"ParentId":          IDValue(parentID),
-				"SObjectType":       StringValue(objectName),
+				"SobjectType":       StringValue(objectName),
 				"PermissionsRead":   BooleanValue(read),
 				"PermissionsCreate": BooleanValue(create),
 				"PermissionsEdit":   BooleanValue(edit),
@@ -1107,7 +1123,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Object: "FieldPermissions",
 		Fields: map[string]Value{
 			"ParentId":        IDValue(marketingUserProfileID),
-			"SObjectType":     StringValue("Account"),
+			"SobjectType":     StringValue("Account"),
 			"Field":           StringValue("Account.Name"),
 			"PermissionsRead": BooleanValue(true),
 			"PermissionsEdit": BooleanValue(true),
@@ -1119,11 +1135,11 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	}
 	for object, sequence := range map[string]uint64{
 		"Organization":            1,
-		"Profile":                 8,
-		"UserLicense":             2,
+		"Profile":                 11,
+		"UserLicense":             5,
 		"UserRole":                1,
 		"User":                    2,
-		"PermissionSet":           10,
+		"PermissionSet":           11,
 		"PermissionSetAssignment": 1,
 		"FieldPermissions":        1,
 		"ObjectPermissions":       6,
@@ -1136,6 +1152,8 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			org.IDSequences[object] = sequence
 		}
 	}
+	ensureDefaultCommunityLicense(org)
+	ensureDefaultPackageLicenses(org)
 }
 
 func displayOrgID(id string) string {
@@ -1420,7 +1438,7 @@ func ensureSitesGuestProfiles(org *OrgState) {
 }
 
 func ensureLocalSiteRecords(org *OrgState) {
-	userID := ID("005000000000001")
+	userID := ID(DefaultUserID)
 	guestID := ID("005000000000G01")
 	if _, ok := org.Objects["User"]; ok {
 		putSeedRecord(org, "User", Record{
@@ -1561,6 +1579,11 @@ func ensureRecordTypeRecordsForObjectWithContext(org *OrgState, objectName strin
 	object, ok := org.Objects[objectName]
 	if !ok {
 		return
+	}
+	// Record-type IDs, defaults and the lookup field are written below.
+	// Runtime seeds can share this definition with other orgs.
+	if len(object.Definition.RecordTypes) != 0 || objectName == "Account" {
+		object.Definition = object.Definition.Clone()
 	}
 	if len(object.Definition.RecordTypes) == 0 && objectName == "Account" {
 		object.Definition.RecordTypes = []RecordTypeInfo{{
@@ -1725,7 +1748,7 @@ func ResetPlatformData(org *OrgState) {
 
 func IsPlatformObject(name string) bool {
 	switch name {
-	case "Organization", "Profile", "UserRole", "User", "UserLogin", "PermissionSet", "PermissionSetAssignment", "FieldPermissions", "ObjectPermissions", "SetupEntityAccess", "RecordType", "Site", "Network", "NetworkMember", "PlatformCachePartition", "OpportunityStage", "LeadStatus", "TaskStatus", "TaskPriority":
+	case "Organization", "Profile", "UserLicense", "PermissionSetLicense", "UserRole", "User", "UserLogin", "PermissionSet", "PermissionSetAssignment", "FieldPermissions", "ObjectPermissions", "SetupEntityAccess", "RecordType", "Site", "Network", "NetworkMember", "PlatformCachePartition", "OpportunityStage", "LeadStatus", "TaskStatus", "TaskPriority":
 		return true
 	default:
 		return false
@@ -1775,6 +1798,7 @@ func objectNamesFromOrg(org OrgState) []string {
 
 func ensureObject(org *OrgState, name, prefix string, fields map[string]Field) {
 	object := org.Objects[name]
+	object.Definition = object.Definition.Clone()
 	if object.Definition.APIName == "" {
 		object.Definition.APIName = name
 	}
@@ -1839,6 +1863,28 @@ func hasParentRelationship(relations []Relationship, name string) bool {
 	return false
 }
 
+// defaultAutomatedProcessUserID keeps the seeded platform user out of the
+// zero-padded decimal Ids that test code fabricates for records it never
+// inserts. Org user Ids are not sequential, so a fabricated User Id matches
+// no user.
+const defaultAutomatedProcessUserID = ID("005000000000lo1")
+
+// existingAutomatedProcessUserID reuses an existing or imported automated
+// process user so reseeding never creates a second one.
+func existingAutomatedProcessUserID(org OrgState) ID {
+	ids := make([]ID, 0, 1)
+	for id, record := range org.Objects["User"].Records {
+		if value, ok := record.Fields["UserType"]; ok && strings.EqualFold(value.String, "AutomatedProcess") {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return defaultAutomatedProcessUserID
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	return ids[0]
+}
+
 func putSeedRecord(org *OrgState, objectName string, record Record) {
 	object := org.Objects[objectName]
 	if object.Records == nil {
@@ -1864,10 +1910,7 @@ func putSeedRecord(org *OrgState, objectName string, record Record) {
 	org.Objects[objectName] = object
 }
 
-const (
-	deterministicSeedSystemTimestamp = "2000-01-01T00:00:00Z"
-	deterministicSeedSystemUserID    = ID("005000000000001")
-)
+const deterministicSeedSystemTimestamp = "2000-01-01T00:00:00Z"
 
 func stampSeedSystemFields(record *Record) {
 	if record == nil {
@@ -1883,10 +1926,10 @@ func stampSeedSystemFields(record *Record) {
 		record.System.SystemModstamp = seedSystemDateTime(record, "SystemModstamp")
 	}
 	if record.System.CreatedByID == "" {
-		record.System.CreatedByID = deterministicSeedSystemUserID
+		record.System.CreatedByID = ID(DefaultUserID)
 	}
 	if record.System.LastModifiedByID == "" {
-		record.System.LastModifiedByID = deterministicSeedSystemUserID
+		record.System.LastModifiedByID = ID(DefaultUserID)
 	}
 }
 
@@ -1925,7 +1968,7 @@ func copySequences(in map[string]uint64) map[string]uint64 {
 // Supplied rule rows and nondefault org identities remain authoritative. These
 // rows support manual duplicate sets; they do not enable automatic matching.
 func ensureDefaultContactDuplicateRules(org *OrgState) {
-	if len(org.Objects["DuplicateRule"].Records) != 0 || (org.OrgID != "" && !IDsEqual(ID(org.OrgID), "00D000000000001")) {
+	if len(org.Objects["DuplicateRule"].Records) != 0 || (org.OrgID != "" && !IDsEqual(ID(org.OrgID), DefaultOrgID)) {
 		return
 	}
 	EnsureStandardObject(org, "DuplicateRule")

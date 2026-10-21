@@ -1,0 +1,10 @@
+[
+  {
+    "id": "missing",
+    "body": "AuthSession e = new AuthSession(); Id u = e.UserId;"
+  },
+  {
+    "id": "present",
+    "body": "AuthSession e = new AuthSession(); Id u = e.UsersId;"
+  }
+]

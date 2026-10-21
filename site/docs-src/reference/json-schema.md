@@ -40,15 +40,30 @@ Priority commands write a versioned JSON envelope.
 | `suggestions` | array | Next commands to run. |
 | `tests` | array | Flat test rows for `glade test`. |
 | `data` | object | Command-specific detail during migration. |
+| `excludedClasses` | array | Invalid classes, their dependents, and excluded triggers for `glade test`. |
+
+## Test exclusions
+
+`summary.excludedClasses` counts exclusions, including non-test classes and
+triggers. Each `excludedClasses` entry has `className`, `file`, `line`,
+`dependsOn`, `root`, and `message`. A root with multiple errors may include
+`problems`, an array of line/message pairs. Excluded tests appear as
+`compile_error` test rows. Any exclusion makes the command exit `1`.
+
+## Doctor JSON
+
+`glade doctor --json` has its own schema version `1.1`, with fields such as
+`parserOK`, `parserStatus`, and toolchain/project status. It does not use the
+example envelope above. Inspect command-specific schemas before parsing them.
 
 ## Doctor object
 
-`glade doctor --json` in the Unreleased source tree uses a flattened `1.1`
+In v0.3.0, `glade doctor --json` uses a flattened `1.1`
 object because its fields predate the shared envelope. Version `1.1` makes the
 Apex readiness scope explicit and treats LWC-toolchain and local-data health as
-independent workflow advisories. The v0.2.15 stable binary emits schema `1.0`;
-consumers must not require the fields below until a release containing doctor
-`1.1` is published. Important fields are:
+independent workflow advisories. Older v0.2.15 binaries emit schema `1.0`;
+consumers must select fields according to the installed schema version.
+Important fields are:
 
 | Field | Type | Notes |
 | --- | --- | --- |
@@ -59,7 +74,7 @@ consumers must not require the fields below until a release containing doctor
 | `configOK` / `configMissing` | boolean | Distinguish an invalid config from an absent one. |
 | `configStatus` | string | Parse or validation detail for an invalid config. |
 | `sourceApiVersion` | string | Project Apex API default; individual class metadata can override it. |
-| `sourceApiInCheckedWindow` | boolean | The default is in the current `65.0`, `66.0`, `67.0` checked window. This does not mean Salesforce was queried during this run. |
+| `sourceApiInCheckedWindow` | boolean | The default is in the 62.0 through 68.0 checked window. This does not mean Salesforce was queried during this run. |
 | `parserOK` | boolean | The binary passed a real Apex parser self-check. |
 | `toolchainOK` | boolean | LWC compiler/runtime assets were found. This is advisory for Apex check and test. |
 | `localData` | object | Project-local DB state and schema binding when present; a failed state is advisory for Apex and blocks DB-backed confidence. |

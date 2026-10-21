@@ -38,11 +38,14 @@ Choose one route below.
 
 ## Route A: Try the sample {#sample-project}
 
-Use this route for a disposable, known test. These commands create a minimal
-Salesforce DX project using commands available in the current stable release.
+::: info Stable sample
+The corrected bundled test below first shipped in v0.2.14 and is included
+in the v0.3.0 release. Do not
+treat a playground Pass with source errors as successful validation.
+:::
 
 The bundled `RefinementServiceTest` first shipped in v0.2.14 and is included in
-the v0.2.15 stable release. You can open that larger browser example after the
+the v0.3.0 release. You can open that larger browser example after the
 terminal-only first run below.
 
 ### 2A. Create the sample project
@@ -106,9 +109,8 @@ GLADE_EXAMPLE_DIR="$(mktemp -d)"
 glade playground --data-root "$GLADE_EXAMPLE_DIR/playground" --db "$GLADE_EXAMPLE_DIR/org.sqlite" --example refinement-service --open
 ```
 
-Stop the browser workbench with Ctrl-C. The next Glade release adds a
-no-server project materializer. Until that binary is published, keep using the
-stable `--open` route above.
+Stop the browser workbench with Ctrl-C. v0.3.0 also includes a no-server
+project materializer; see the [playground CLI reference](/reference/cli#glade-playground).
 
 ## Route B: Use my Salesforce DX project
 
@@ -155,16 +157,18 @@ glade test --project .
 
 | Version axis | Current local contract |
 | --- | --- |
-| Apex project default and per-class source metadata | `65.0`, `66.0`, and `67.0` are checked. Well-formed historical versions are preserved, not silently upgraded, but preservation is not a correctness or parity claim. |
-| Execute Anonymous | Uses the checked Apex source-version window. |
-| LWC bundle metadata | Each bundle must declare an exact checked version: `65.0`, `66.0`, or `67.0`. |
-| Local HTTP endpoints | `60.0`, `65.0`, `66.0`, and `67.0` are available; the default is `65.0`. |
+| Apex source | 62.0-68.0 |
+| Historical Apex source below 62.0 | Unsupported, even if a well-formed version is preserved by the loader |
+| Execute Anonymous | 65.0, 66.0, 67.0, 68.0 |
+| LWC bundles | 59.0-68.0; explicit whole versions required when declared; unversioned compiler default 68.0 |
+| Visualforce | 59.0-68.0 |
+| Local HTTP endpoints | 60.0, 65.0, 66.0, 67.0, 68.0; default 65.0 |
 
-These axes do not change together. A historical Apex project can load while an
-Execute Anonymous, LWC, or HTTP request is ineligible. Do not raise project or
-component metadata merely to turn a Glade result green. Keep the original
-version, report the mismatch, and use an authorized Salesforce validation path
-for the behavior you need.
+The v0.3.0 support window is Apex 62.0-68.0, LWC and Visualforce 59.0-68.0.
+A clean check or test on an older project does not make Execute Anonymous
+eligible at that version. An HTTP endpoint version does not change source
+semantics. Do not bump project metadata merely to obtain a green result.
+Use the [support map](/guide/support-map) for behavior-specific limits.
 
 ## What the local result proves
 

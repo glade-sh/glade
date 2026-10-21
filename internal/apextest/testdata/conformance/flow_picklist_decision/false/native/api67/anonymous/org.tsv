@@ -1,0 +1,6 @@
+id	group	route	status	value
+D01	FLOW_CHANGE_DECISION	anonymous	runtime	{"outcome":"runtime","value":"Keep"}
+D02	FLOW_CHANGE_DECISION	anonymous	runtime	{"outcome":"runtime","value":"Selected"}
+D03	FLOW_CHANGE_DECISION	anonymous	runtime	{"outcome":"runtime","value":"Keep"}
+D04	FLOW_CHANGE_DECISION	anonymous	runtime	{"outcome":"runtime","value":"Selected"}
+D05	FLOW_CHANGE_DECISION	anonymous	runtime	{"outcome":"runtime","value":"Keep"}

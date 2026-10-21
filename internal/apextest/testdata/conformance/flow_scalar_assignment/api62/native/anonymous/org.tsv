@@ -1,0 +1,12 @@
+id	group	route	status	value
+A01	FLOW_SCALAR_ASSIGNMENT	anonymous	runtime	{"datePreserved":true,"description":"leaf & punctuation","exception":null}
+A02	FLOW_SCALAR_ASSIGNMENT	anonymous	runtime	{"datePreserved":true,"description":"Web","exception":null}
+A03	FLOW_SCALAR_ASSIGNMENT	anonymous	runtime	{"datePreserved":true,"description":"parent & punctuation","exception":null}
+A04	FLOW_SCALAR_ASSIGNMENT	anonymous	runtime	{"datePreserved":true,"description":"seed:leaf & punctuation/A04","exception":null}
+A05	FLOW_SCALAR_ASSIGNMENT	anonymous	runtime	{"datePreserved":true,"description":"date control","exception":null}
+A06	FLOW_SCALAR_ASSIGNMENT	anonymous	runtime	{"datePreserved":true,"description":"tail","exception":null}
+A07	FLOW_SCALAR_ASSIGNMENT	anonymous	runtime	{"datePreserved":true,"description":"seed","exception":null}
+A08	FLOW_SCALAR_ASSIGNMENT	anonymous	runtime	{"datePreserved":true,"description":"leaf & punctuation/A08","exception":null}
+A09	FLOW_SCALAR_ASSIGNMENT	anonymous	runtime	{"datePreserved":true,"description":null,"exception":null}
+A10	FLOW_SCALAR_ASSIGNMENT	anonymous	runtime	{"datePreserved":true,"description":null,"exception":null}
+A11	FLOW_SCALAR_ASSIGNMENT	anonymous	runtime	{"datePreserved":true,"description":null,"exception":null}

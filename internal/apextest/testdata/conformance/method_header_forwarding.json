@@ -1,0 +1,89 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "nativeObservationCount": 6,
+  "packetRowsSha256": "7ea5c81a5545618820466f2581c99ae28695543e3834161dbaa4c1a7046e190d",
+  "nativeObservations": [
+    {
+      "apiVersion": "62.0",
+      "context": "anonymous",
+      "outcome": "runtime",
+      "value": "count=1;text=first:routed;empty=0;null=0;ping=pong"
+    },
+    {
+      "apiVersion": "62.0",
+      "context": "istest",
+      "outcome": "runtime",
+      "value": "count=1;text=first:routed;empty=0;null=0;ping=pong"
+    },
+    {
+      "apiVersion": "67.0",
+      "context": "anonymous",
+      "outcome": "runtime",
+      "value": "count=1;text=first:routed;empty=0;null=0;ping=pong"
+    },
+    {
+      "apiVersion": "67.0",
+      "context": "istest",
+      "outcome": "runtime",
+      "value": "count=1;text=first:routed;empty=0;null=0;ping=pong"
+    },
+    {
+      "apiVersion": "68.0",
+      "context": "anonymous",
+      "outcome": "runtime",
+      "value": "count=1;text=first:routed;empty=0;null=0;ping=pong"
+    },
+    {
+      "apiVersion": "68.0",
+      "context": "istest",
+      "outcome": "runtime",
+      "value": "count=1;text=first:routed;empty=0;null=0;ping=pong"
+    }
+  ],
+  "rows": [
+    {
+      "id": "methodHeaderForwarding",
+      "expected": {
+        "outcome": "runtime",
+        "value": "count=1;text=first:routed;empty=0;null=0;ping=pong"
+      },
+      "routes": {
+        "anonymous": {
+          "id": "HeaderForwardAnonymous",
+          "anonymous": "HeaderEntry.Request request = new HeaderEntry.Request();\nrequest.text = 'first';\nList<HeaderEntry.Request> requests = new List<HeaderEntry.Request>{request};\nList<HeaderEntry.Response> results = HeaderEntry.dispatch(requests);\nString observed = 'count=' + results.size() + ';text=' + results[0].text\n  + ';empty=' + HeaderEntry.dispatch(new List<HeaderEntry.Request>()).size()\n  + ';null=' + HeaderEntry.dispatch(null).size() + ';ping=' + HeaderEntry.ping();\nSystem.assert(false, 'P|HeaderForwardAnonymous|' + observed);\n",
+          "setupClasses": {
+            "HeaderEntry": "public inherited sharing class HeaderEntry {\n  public class Request { @InvocableVariable public String text; }\n  public class Response { @InvocableVariable public String text; }\n  @InvocableMethod(label='Dispatch Items' description='Values {label} and (text)')\n  /** Delegates (after validation) to {@link HeaderRouter}. */\n  // The characters { and (here are comments too.\n  public static List<Response> dispatch(List<Request> requests) {\n    if (requests == null || requests.isEmpty()) return new List<Response>();\n    return HeaderRouter.route(requests);\n  }\n  public static String ping() { return 'pong'; }\n}\n",
+            "HeaderRouter": "public inherited sharing class HeaderRouter {\n  public static List<HeaderEntry.Response> route(List<HeaderEntry.Request> requests) {\n    List<HeaderEntry.Response> responses = new List<HeaderEntry.Response>();\n    for (HeaderEntry.Request request : requests) {\n      HeaderEntry.Response response = new HeaderEntry.Response();\n      response.text = request.text + ':routed';\n      responses.add(response);\n    }\n    return responses;\n  }\n}\n"
+          },
+          "stage": "runtime",
+          "sourceSha256": {
+            "anonymous": "7cf2b6c9b37ed1a2b41221eb03deea4f112a0e25ba717014c46589fdd9764cb8",
+            "setupClass:HeaderEntry": "c1e4e9058138a762cf92f1bbb314ca264a983526098c8912a7adf3ad2770cecd",
+            "setupClass:HeaderRouter": "c2630d3bbc7cf19bfee4696e830f89a226f83b720ee18cf7daa03ca644bd65a6"
+          }
+        },
+        "isTest": {
+          "id": "HeaderForwardTest",
+          "classes": {
+            "HeaderEntry": "public inherited sharing class HeaderEntry {\n  public class Request { @InvocableVariable public String text; }\n  public class Response { @InvocableVariable public String text; }\n  @InvocableMethod(label='Dispatch Items' description='Values {label} and (text)')\n  /** Delegates (after validation) to {@link HeaderRouter}. */\n  // The characters { and (here are comments too.\n  public static List<Response> dispatch(List<Request> requests) {\n    if (requests == null || requests.isEmpty()) return new List<Response>();\n    return HeaderRouter.route(requests);\n  }\n  public static String ping() { return 'pong'; }\n}\n",
+            "HeaderEntryTest": "@IsTest private class HeaderEntryTest {\n  @IsTest static void observe() {\nHeaderEntry.Request request = new HeaderEntry.Request();\nrequest.text = 'first';\nList<HeaderEntry.Request> requests = new List<HeaderEntry.Request>{request};\nList<HeaderEntry.Response> results = HeaderEntry.dispatch(requests);\nString observed = 'count=' + results.size() + ';text=' + results[0].text\n  + ';empty=' + HeaderEntry.dispatch(new List<HeaderEntry.Request>()).size()\n  + ';null=' + HeaderEntry.dispatch(null).size() + ';ping=' + HeaderEntry.ping();\nSystem.assert(false, 'P|HeaderForwardTest|' + observed);\n  }\n}\n",
+            "HeaderRouter": "public inherited sharing class HeaderRouter {\n  public static List<HeaderEntry.Response> route(List<HeaderEntry.Request> requests) {\n    List<HeaderEntry.Response> responses = new List<HeaderEntry.Response>();\n    for (HeaderEntry.Request request : requests) {\n      HeaderEntry.Response response = new HeaderEntry.Response();\n      response.text = request.text + ':routed';\n      responses.add(response);\n    }\n    return responses;\n  }\n}\n"
+          },
+          "tests": [
+            "HeaderEntryTest"
+          ],
+          "stage": "runtime",
+          "sourceSha256": {
+            "class:HeaderEntry": "c1e4e9058138a762cf92f1bbb314ca264a983526098c8912a7adf3ad2770cecd",
+            "class:HeaderEntryTest": "e5e5b238b229e21472500f8224486563582c2c820857681522f2ec82d5e35660",
+            "class:HeaderRouter": "c2630d3bbc7cf19bfee4696e830f89a226f83b720ee18cf7daa03ca644bd65a6"
+          }
+        }
+      }
+    }
+  ]
+}

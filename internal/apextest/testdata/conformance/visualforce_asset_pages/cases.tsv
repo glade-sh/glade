@@ -1,0 +1,5 @@
+case	shape
+asset_page	valid SLDS URLFOR in sibling component
+plain_page	independent sibling page registration
+missing_asset	unknown asset deployment control
+nested_asset	unknown asset property deployment control

@@ -1076,7 +1076,7 @@ func UserModuleJS(property, userID string) string {
 	switch property {
 	case "Id":
 		if strings.TrimSpace(userID) == "" {
-			userID = "005000000000001"
+			userID = storage.DefaultUserID
 		}
 		return defaultExportJS(salesforceUserID(userID))
 	case "isGuest":

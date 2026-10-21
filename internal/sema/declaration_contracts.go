@@ -21,7 +21,7 @@ func (a *Analyzer) checkDeclarationContracts(index typesys.Index) []diagnostic.D
 		diagnostics = append(diagnostics, declarationIdentityDiagnostics(typ)...)
 		if declarationFromParsedSource(typ) {
 			diagnostics = append(diagnostics, declarationModifierDiagnostics(typ)...)
-			diagnostics = append(diagnostics, memberModifierDiagnostics(typ)...)
+			diagnostics = append(diagnostics, capturedAbstractRedeclarationDiagnostics(index, typ, memberModifierDiagnostics(typ))...)
 			diagnostics = append(diagnostics, lifecycleGlobalFieldDiagnostics(index, typ)...)
 		}
 		diagnostics = append(diagnostics, memberIdentityDiagnostics(typ)...)
@@ -68,8 +68,13 @@ func declarationModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnos
 		// Apex top-level declarations require public or global visibility. @IsTest
 		// private declarations remain the one documented exception.
 		if !typ.IsTest && (!hasAnyAccessModifier(mods) || hasPrivate || hasProtected) {
+			message := fmt.Sprintf("top-level %s %q must be public or global", typ.Kind, typ.Name)
+			if typ.Kind == apexast.DeclarationClass && hasPrivate {
+				// Native authorization and request context access_controller_private at API 59/67.
+				message = "Top-level type must have public or global visibility"
+			}
 			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range,
-				fmt.Sprintf("top-level %s %q must be public or global", typ.Kind, typ.Name)))
+				message))
 		}
 	}
 	if typ.NestingDepth > 1 && (typ.Kind == apexast.DeclarationClass || typ.Kind == apexast.DeclarationInterface || typ.Kind == apexast.DeclarationEnum) {
@@ -123,6 +128,10 @@ func memberIdentityDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
 			key := memberSignatureKey(member)
 			if previous, ok := methodKeys[key]; ok {
 				diagnostics = append(diagnostics, remoteActionDuplicateMethodDiagnostic(typ, member, previous))
+				continue
+			}
+			if d, duplicate := capturedIteratorDuplicate(typ, member, methodKeys); duplicate {
+				diagnostics = append(diagnostics, d)
 				continue
 			}
 			methodKeys[key] = member
@@ -210,9 +219,16 @@ func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymb
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
 			fmt.Sprintf("method %q cannot explicitly declare final", member.Name)))
 	}
-	if (abstract || override) && typeUsesAPIVersionAtLeast(typ, 65) && !hasAnyAccessModifier(mods) {
-		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
-			fmt.Sprintf("%s method %q requires an explicit protected, public, or global access modifier in API version 65.0 or later", methodModifierKind(abstract), member.Name)))
+	// A class's private override reports this after its inheritance errors
+	// (AOL rows), in checkInheritanceContractsWithView.
+	if (abstract || override) && typeUsesAPIVersionAtLeast(typ, 65) && !hasAnyAccessModifier(mods) && !semaPrivateClassOverride(typ, member) {
+		access := declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("%s method %q requires an explicit protected, public, or global access modifier in API version 65.0 or later", methodModifierKind(abstract), member.Name))
+		if abstract {
+			// Native AO R006/C006/R010/C010, API 65.0-68.0, both routes.
+			access.NativeMessage = "abstract methods require at least one of the following global, public, protected"
+		}
+		diagnostics = append(diagnostics, access)
 	}
 	if len(member.Parameters) > maxApexParameters {
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
@@ -221,9 +237,15 @@ func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymb
 
 	switch typ.Kind {
 	case apexast.DeclarationInterface:
-		if hasModifier(typ.Modifiers, "global") && hasModifier(mods, "public") {
-			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
-				fmt.Sprintf("method %q cannot explicitly declare public in a global interface", member.Name)))
+		if hasModifier(typ.Modifiers, "global") {
+			for _, access := range []string{"public", "global"} {
+				if hasModifier(mods, access) {
+					accessError := declarationContractDiagnostic(typ, member.Range,
+						fmt.Sprintf("method %q cannot explicitly declare %s in a global interface", member.Name, access))
+					accessError.NativeMessage = fmt.Sprintf("Expecting '}' but was: '%s'", access)
+					diagnostics = append(diagnostics, accessError)
+				}
+			}
 		}
 		if member.HasBody {
 			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
@@ -391,7 +413,7 @@ func lifecycleGlobalFieldDiagnostics(index typesys.Index, typ typesys.TypeSymbol
 	for owner := typ.OwnerName; global && owner != ""; {
 		found := false
 		for _, parent := range index.Types {
-			if strings.EqualFold(parent.Name, owner) {
+			if parent.File == typ.File && strings.EqualFold(parent.Namespace, typ.Namespace) && strings.EqualFold(parent.Name, owner) {
 				global = hasModifier(parent.Modifiers, "global")
 				owner = parent.OwnerName
 				found = true

@@ -1,0 +1,105 @@
+{
+  "nativeObservationCount": 4,
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "rows": [
+    {
+      "id": "constructor",
+      "api": "62.0",
+      "context": "isTest",
+      "outcome": "runtime",
+      "value": {
+        "controlCaught": "owned standard message",
+        "controlDirect": "owned standard message",
+        "defaultMessage": "Script-thrown exception",
+        "setMessage": "changed cache message",
+        "caughtMessage": "owned cache message",
+        "type": "cache.CacheException",
+        "directMessage": "owned cache message"
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: CACHE_EXCEPTION_OBSERVATION: Expected: CACHE_EXCEPTION_OBSERVATION, Actual: {\"controlCaught\":\"owned standard message\",\"controlDirect\":\"owned standard message\",\"defaultMessage\":\"Script-thrown exception\",\"setMessage\":\"changed cache message\",\"caughtMessage\":\"owned cache message\",\"type\":\"cache.CacheException\",\"directMessage\":\"owned cache message\"}",
+      "sources": {
+        "CacheExceptionObservation62": "@IsTest private class CacheExceptionObservation62 { @IsTest static void observe(){\nMap<String,Object> result = new Map<String,Object>();\nCache.CacheException value = new Cache.CacheException('owned cache message');\nresult.put('directMessage', value.getMessage());\nresult.put('type', value.getTypeName());\ntry { throw value; } catch (Cache.CacheException caught) { result.put('caughtMessage', caught.getMessage()); }\nvalue.setMessage('changed cache message');\nresult.put('setMessage', value.getMessage());\nresult.put('defaultMessage', new Cache.CacheException().getMessage());\nIllegalArgumentException control = new IllegalArgumentException('owned standard message');\nresult.put('controlDirect', control.getMessage());\ntry { throw control; } catch (Exception caught) { result.put('controlCaught', caught.getMessage()); }\nSystem.assertEquals('CACHE_EXCEPTION_OBSERVATION',JSON.serialize(result),'CACHE_EXCEPTION_OBSERVATION');\n} }\n"
+      },
+      "test": "CacheExceptionObservation62",
+      "deploymentId": "0Afhs000000igbSCAQ",
+      "rawSHA256": "1412704d3463eb126b4ec5ab811c71beed598b79e65b997c4c6834a549e284c5",
+      "orgIdHash": "3039d376742a5a13d49ecfded43a0568fb6ffa9e04c11b6f2fcfb2ee7fe41026",
+      "sourceSHA256": {
+        "CacheExceptionObservation62": "1c787fabbb87e0bf682eaf49b8f8e233f6017c2de8d3e4086b65ff0fdfa7a45e"
+      }
+    },
+    {
+      "id": "constructor",
+      "api": "62.0",
+      "context": "anonymous",
+      "outcome": "runtime",
+      "value": {
+        "controlCaught": "owned standard message",
+        "controlDirect": "owned standard message",
+        "defaultMessage": "Script-thrown exception",
+        "setMessage": "changed cache message",
+        "caughtMessage": "owned cache message",
+        "type": "cache.CacheException",
+        "directMessage": "owned cache message"
+      },
+      "nativeMessage": "Execution failed at this code:\n\nSystem.AssertException: Assertion Failed: CACHE_EXCEPTION_OBSERVATION: Expected: CACHE_EXCEPTION_OBSERVATION, Actual: {\"controlCaught\":\"owned standard message\",\"controlDirect\":\"owned standard message\",\"defaultMessage\":\"Script-thrown exception\",\"setMessage\":\"changed cache message\",\"caughtMessage\":\"owned cache message\",\"type\":\"cache.CacheException\",\"directMessage\":\"owned cache message\"}",
+      "sources": {},
+      "anonymous": "Map<String,Object> result = new Map<String,Object>();\nCache.CacheException value = new Cache.CacheException('owned cache message');\nresult.put('directMessage', value.getMessage());\nresult.put('type', value.getTypeName());\ntry { throw value; } catch (Cache.CacheException caught) { result.put('caughtMessage', caught.getMessage()); }\nvalue.setMessage('changed cache message');\nresult.put('setMessage', value.getMessage());\nresult.put('defaultMessage', new Cache.CacheException().getMessage());\nIllegalArgumentException control = new IllegalArgumentException('owned standard message');\nresult.put('controlDirect', control.getMessage());\ntry { throw control; } catch (Exception caught) { result.put('controlCaught', caught.getMessage()); }\nSystem.assertEquals('CACHE_EXCEPTION_OBSERVATION',JSON.serialize(result),'CACHE_EXCEPTION_OBSERVATION');\n",
+      "rawSHA256": "c530403486c593ab9bedf0db45b3761c0a65db2b1fe7695a22a9aa62139098c8",
+      "orgIdHash": "3039d376742a5a13d49ecfded43a0568fb6ffa9e04c11b6f2fcfb2ee7fe41026",
+      "sourceSHA256": {},
+      "anonymousSHA256": "be51a5f6a555015e3b201ceba8280a85d258a0c3dac64569d574699ea6c4a898"
+    },
+    {
+      "id": "constructor",
+      "api": "67.0",
+      "context": "isTest",
+      "outcome": "runtime",
+      "value": {
+        "controlCaught": "owned standard message",
+        "controlDirect": "owned standard message",
+        "defaultMessage": "Script-thrown exception",
+        "setMessage": "changed cache message",
+        "caughtMessage": "owned cache message",
+        "type": "cache.CacheException",
+        "directMessage": "owned cache message"
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: CACHE_EXCEPTION_OBSERVATION: Expected: CACHE_EXCEPTION_OBSERVATION, Actual: {\"controlCaught\":\"owned standard message\",\"controlDirect\":\"owned standard message\",\"defaultMessage\":\"Script-thrown exception\",\"setMessage\":\"changed cache message\",\"caughtMessage\":\"owned cache message\",\"type\":\"cache.CacheException\",\"directMessage\":\"owned cache message\"}",
+      "sources": {
+        "CacheExceptionObservation67": "@IsTest private class CacheExceptionObservation67 { @IsTest static void observe(){\nMap<String,Object> result = new Map<String,Object>();\nCache.CacheException value = new Cache.CacheException('owned cache message');\nresult.put('directMessage', value.getMessage());\nresult.put('type', value.getTypeName());\ntry { throw value; } catch (Cache.CacheException caught) { result.put('caughtMessage', caught.getMessage()); }\nvalue.setMessage('changed cache message');\nresult.put('setMessage', value.getMessage());\nresult.put('defaultMessage', new Cache.CacheException().getMessage());\nIllegalArgumentException control = new IllegalArgumentException('owned standard message');\nresult.put('controlDirect', control.getMessage());\ntry { throw control; } catch (Exception caught) { result.put('controlCaught', caught.getMessage()); }\nSystem.assertEquals('CACHE_EXCEPTION_OBSERVATION',JSON.serialize(result),'CACHE_EXCEPTION_OBSERVATION');\n} }\n"
+      },
+      "test": "CacheExceptionObservation67",
+      "deploymentId": "0Afhs000000iWdmCAE",
+      "rawSHA256": "58d85ff612a42f2d372908c3778ff471f17471f14eebc79295951f3160a8ca0f",
+      "orgIdHash": "3039d376742a5a13d49ecfded43a0568fb6ffa9e04c11b6f2fcfb2ee7fe41026",
+      "sourceSHA256": {
+        "CacheExceptionObservation67": "dbe7adaf0469d6c001ce8df7a9e23ad694c72c9fbc91690d48c50cabf3c1abba"
+      }
+    },
+    {
+      "id": "constructor",
+      "api": "67.0",
+      "context": "anonymous",
+      "outcome": "runtime",
+      "value": {
+        "controlCaught": "owned standard message",
+        "controlDirect": "owned standard message",
+        "defaultMessage": "Script-thrown exception",
+        "setMessage": "changed cache message",
+        "caughtMessage": "owned cache message",
+        "type": "cache.CacheException",
+        "directMessage": "owned cache message"
+      },
+      "nativeMessage": "Execution failed at this code:\n\nSystem.AssertException: Assertion Failed: CACHE_EXCEPTION_OBSERVATION: Expected: CACHE_EXCEPTION_OBSERVATION, Actual: {\"controlCaught\":\"owned standard message\",\"controlDirect\":\"owned standard message\",\"defaultMessage\":\"Script-thrown exception\",\"setMessage\":\"changed cache message\",\"caughtMessage\":\"owned cache message\",\"type\":\"cache.CacheException\",\"directMessage\":\"owned cache message\"}",
+      "sources": {},
+      "anonymous": "Map<String,Object> result = new Map<String,Object>();\nCache.CacheException value = new Cache.CacheException('owned cache message');\nresult.put('directMessage', value.getMessage());\nresult.put('type', value.getTypeName());\ntry { throw value; } catch (Cache.CacheException caught) { result.put('caughtMessage', caught.getMessage()); }\nvalue.setMessage('changed cache message');\nresult.put('setMessage', value.getMessage());\nresult.put('defaultMessage', new Cache.CacheException().getMessage());\nIllegalArgumentException control = new IllegalArgumentException('owned standard message');\nresult.put('controlDirect', control.getMessage());\ntry { throw control; } catch (Exception caught) { result.put('controlCaught', caught.getMessage()); }\nSystem.assertEquals('CACHE_EXCEPTION_OBSERVATION',JSON.serialize(result),'CACHE_EXCEPTION_OBSERVATION');\n",
+      "rawSHA256": "e921b13c1b4681df3dd4d3146693c64a224b6e00293d71b6b68a38796aa60c9b",
+      "orgIdHash": "3039d376742a5a13d49ecfded43a0568fb6ffa9e04c11b6f2fcfb2ee7fe41026",
+      "sourceSHA256": {},
+      "anonymousSHA256": "be51a5f6a555015e3b201ceba8280a85d258a0c3dac64569d574699ea6c4a898"
+    }
+  ]
+}

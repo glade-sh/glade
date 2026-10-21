@@ -1,0 +1,3 @@
+case_id	owner	decision
+activeUser	current active User	Owner:User.IsActive EqualTo true
+queueOwner	Group queue supporting Case	Owner:User.IsActive EqualTo true

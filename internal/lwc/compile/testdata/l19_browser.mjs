@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import { observeDOM, actDOM, mountDOM, observeInspector } from "./l19_native_dom.mjs";
 import { observeInteractionDOM, selectInteractionPicklist, editInteractionDate } from "./l19_interaction_dom.mjs";
-import { createL19BatchAllocator, l19PageCount as pageCount } from "./l19_browser_scheduling.mjs";
+import { createL19BatchAllocator, l19WorkerCount } from "./l19_browser_scheduling.mjs";
 
 const config = JSON.parse(fs.readFileSync(0, "utf8"));
 const fixturePath = "/services/data/v" + config.fixtureApi;
@@ -233,7 +233,10 @@ function createPageSession() {
 // Main observations retain native fifteen-row batches. Control rows already
 // open fresh pages, so free workers can claim them individually. A remount
 // primer and its measured capture stay together inside the same row.
-const nextBatch = createL19BatchAllocator(config.cases, config.controlProject);
+// Keep row-level initialization retries and the project-wide asset-error stop;
+// wider controls can change which rows finish only when a failure occurs.
+const pageCount = l19WorkerCount(config.cases, config.controlProject);
+const nextBatch = createL19BatchAllocator(config.cases, config.controlProject, pageCount);
 
 async function replayPage(worker) {
   const session = createPageSession();

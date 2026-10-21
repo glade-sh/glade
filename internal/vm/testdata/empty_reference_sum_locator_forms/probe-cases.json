@@ -1,0 +1,62 @@
+{
+  "nativeStatus": "pending",
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "contexts": [
+    "anonymous",
+    "istest"
+  ],
+  "shapeCount": 5,
+  "pendingCellCount": 30,
+  "additionalRequestedCells": 24,
+  "reusedPendingCells": 6,
+  "rows": [
+    {
+      "id": "date-before-today",
+      "anonymous": "date-before-today.apex",
+      "istestClass": "LocatorCriteriaForm1Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND CloseDate < TODAY GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "date-or-amount",
+      "anonymous": "date-or-amount.apex",
+      "istestClass": "LocatorCriteriaForm2Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND (CloseDate < TODAY OR Amount > 100) GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "picklist-not-equal",
+      "anonymous": "picklist-not-equal.apex",
+      "istestClass": "LocatorCriteriaForm3Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND StageName != 'Prospecting' GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "amount-less-than",
+      "anonymous": "amount-less-than.apex",
+      "istestClass": "LocatorCriteriaForm4Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND Amount < 200 GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "picklist-equal",
+      "reusePacket": "../empty_reference_sum_locator_precedence/probe-cases.json",
+      "reuseRow": "valid-noneligible",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    }
+  ]
+}

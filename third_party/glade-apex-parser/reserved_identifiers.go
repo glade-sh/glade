@@ -27,10 +27,16 @@ func declarationIdentifierDiagnostics(path, source string, root *tree_sitter.Nod
 	seenReserved := make(map[[2]uint]struct{})
 	seenShape := make(map[[2]uint]struct{})
 
-	var visit func(*tree_sitter.Node)
-	visit = func(node *tree_sitter.Node) {
+	var visit func(*tree_sitter.Node, bool)
+	visit = func(node *tree_sitter.Node, local bool) {
 		if node == nil {
 			return
+		}
+		if node.Kind() == "class_declaration" {
+			local = false
+		}
+		if node.Kind() == "local_variable_declaration" {
+			local = true
 		}
 		if _, ok := identifierDeclarationKinds[node.Kind()]; ok {
 			name := childByField(node, "name")
@@ -44,7 +50,7 @@ func declarationIdentifierDiagnostics(path, source string, root *tree_sitter.Nod
 						diagnostics = append(diagnostics, Diagnostic{
 							Severity: Error,
 							Code:     "APEXPARSE002",
-							Message:  "Identifier name is reserved: " + word,
+							Message:  soqlBindReservedLocalMessage(source, name, word, local),
 							File:     path,
 							Range:    &r,
 							Excerpt:  excerpt(source, r.Start.Line),
@@ -67,10 +73,10 @@ func declarationIdentifierDiagnostics(path, source string, root *tree_sitter.Nod
 			}
 		}
 		for i := uint(0); i < node.NamedChildCount(); i++ {
-			visit(node.NamedChild(i))
+			visit(node.NamedChild(i), local)
 		}
 	}
 
-	visit(root)
+	visit(root, false)
 	return diagnostics
 }

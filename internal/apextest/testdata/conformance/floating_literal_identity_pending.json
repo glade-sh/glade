@@ -1,0 +1,48 @@
+{
+  "disposition": "PENDING-ROWS",
+  "scope": "Documented d/D Double literal identity is implemented; exactboxing/type diagnostics are unobserved anddisplay remainswith its own lane.",
+  "apis": [
+    "61.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "contexts": [
+    "anonymous",
+    "@IsTest(SeeAllData=false)"
+  ],
+  "metadata": "Record helper and caller versions separately. Use matched versions plus helper 61/callers 61/62/67/68 unless rows specify another actual helper. Each row runs separately.",
+  "record": [
+    "compile outcome",
+    "stage",
+    "returned payload",
+    "caught exception type and exact message",
+    "uncaught result",
+    "source metadata",
+    "native release and timezone"
+  ],
+  "controls": [
+    "Integer value=17;",
+    "caught and uncaught empty List<Integer> indexed at0"
+  ],
+  "envelope": "Map<String,Object> payload=new Map<String,Object>();try{BODY}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'PROBE|ID|'+JSON.serialize(payload));",
+  "rows": [
+    {
+      "id": "LOWER_SUFFIX",
+      "body": "Object held=42.0d;payload.put('isDouble',held instanceof Double);payload.put('isDecimal',held instanceof Decimal);try{Date invalid=(Date)held;}catch(TypeException error){payload.put('castType',error.getTypeName());payload.put('castMessage',error.getMessage());}"
+    },
+    {
+      "id": "UPPER_SUFFIX",
+      "body": "Object held=42.0D;payload.put('isDouble',held instanceof Double);payload.put('isDecimal',held instanceof Decimal);try{Date invalid=(Date)held;}catch(TypeException error){payload.put('castType',error.getTypeName());payload.put('castMessage',error.getMessage());}"
+    },
+    {
+      "id": "DECIMAL_CONTROL",
+      "body": "Object held=42.0;payload.put('isDouble',held instanceof Double);payload.put('isDecimal',held instanceof Decimal);try{Date invalid=(Date)held;}catch(TypeException error){payload.put('castType',error.getTypeName());payload.put('castMessage',error.getMessage());}"
+    },
+    {
+      "id": "TYPED_DOUBLE",
+      "body": "Double value=42.0;Object held=value;payload.put('isDouble',held instanceof Double);try{Date invalid=(Date)held;}catch(TypeException error){payload.put('castType',error.getTypeName());payload.put('castMessage',error.getMessage());}"
+    }
+  ],
+  "expectedNative": "UNKNOWN; do not infer native answers from local candidates."
+}

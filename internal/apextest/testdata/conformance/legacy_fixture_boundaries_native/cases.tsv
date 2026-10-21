@@ -1,0 +1,5 @@
+case	shape	observation
+updateAbsentDefault	hierarchy setting org defaults before an insert	Null state, Id state, insert branch, update outcome and exception
+upsertAbsentDefault	hierarchy setting org defaults with explicit organization owner	Upsert assigns Id and persists checkbox
+branchReturnControl	unconditional return after both branches return	Compilation outcome
+checkboxNotEqualCount	filtered COUNT of child checkbox notEqual True	Empty, inserted, updated and deleted counts; omitted checkbox value; explicit system mode

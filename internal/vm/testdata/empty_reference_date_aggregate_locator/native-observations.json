@@ -1,0 +1,749 @@
+{
+  "description": "Owned standard-object empty Date aggregate locator construction and iteration observations, with matching-input rejection controls.",
+  "cells": [
+    {
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "context": "anonymous",
+      "id": "maximum-date",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "maximum-date"
+      }
+    },
+    {
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "context": "anonymous",
+      "id": "maximum-date-or-decimal",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY OR Amount > 100) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "maximum-date-or-decimal"
+      }
+    },
+    {
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "context": "anonymous",
+      "id": "count-date",
+      "query": "SELECT AccountId,COUNT(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (Amount < 200) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "count-date"
+      }
+    },
+    {
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "context": "anonymous",
+      "id": "negative-control",
+      "query": "SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :owned GROUP BY NumberOfEmployees",
+      "observation": {
+        "construction": {
+          "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+          "type": "System.QueryException",
+          "attempted": true
+        },
+        "iterator": {
+          "attempted": false
+        },
+        "boundSize": 1,
+        "shape": "negative-control"
+      }
+    },
+    {
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "context": "istest",
+      "id": "count-date",
+      "query": "SELECT AccountId,COUNT(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (Amount < 200) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "count-date"
+      }
+    },
+    {
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "context": "istest",
+      "id": "maximum-date",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "maximum-date"
+      }
+    },
+    {
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "context": "istest",
+      "id": "maximum-date-or-decimal",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY OR Amount > 100) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "maximum-date-or-decimal"
+      }
+    },
+    {
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "context": "istest",
+      "id": "negative-control",
+      "query": "SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :owned GROUP BY NumberOfEmployees",
+      "observation": {
+        "construction": {
+          "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+          "type": "System.QueryException",
+          "attempted": true
+        },
+        "iterator": {
+          "attempted": false
+        },
+        "boundSize": 1,
+        "shape": "negative-control"
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "context": "anonymous",
+      "id": "maximum-date",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "maximum-date"
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "context": "anonymous",
+      "id": "maximum-date-or-decimal",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY OR Amount > 100) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "maximum-date-or-decimal"
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "context": "anonymous",
+      "id": "count-date",
+      "query": "SELECT AccountId,COUNT(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (Amount < 200) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "count-date"
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "context": "anonymous",
+      "id": "negative-control",
+      "query": "SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :owned GROUP BY NumberOfEmployees",
+      "observation": {
+        "construction": {
+          "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+          "type": "System.QueryException",
+          "attempted": true
+        },
+        "iterator": {
+          "attempted": false
+        },
+        "boundSize": 1,
+        "shape": "negative-control"
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "context": "istest",
+      "id": "count-date",
+      "query": "SELECT AccountId,COUNT(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (Amount < 200) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "count-date"
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "context": "istest",
+      "id": "maximum-date",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "maximum-date"
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "context": "istest",
+      "id": "maximum-date-or-decimal",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY OR Amount > 100) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "maximum-date-or-decimal"
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "context": "istest",
+      "id": "negative-control",
+      "query": "SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :owned GROUP BY NumberOfEmployees",
+      "observation": {
+        "construction": {
+          "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+          "type": "System.QueryException",
+          "attempted": true
+        },
+        "iterator": {
+          "attempted": false
+        },
+        "boundSize": 1,
+        "shape": "negative-control"
+      }
+    },
+    {
+      "sourceApi": "68.0",
+      "transportApi": "68.0",
+      "context": "anonymous",
+      "id": "maximum-date",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "maximum-date"
+      }
+    },
+    {
+      "sourceApi": "68.0",
+      "transportApi": "68.0",
+      "context": "anonymous",
+      "id": "maximum-date-or-decimal",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY OR Amount > 100) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "maximum-date-or-decimal"
+      }
+    },
+    {
+      "sourceApi": "68.0",
+      "transportApi": "68.0",
+      "context": "anonymous",
+      "id": "count-date",
+      "query": "SELECT AccountId,COUNT(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (Amount < 200) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "count-date"
+      }
+    },
+    {
+      "sourceApi": "68.0",
+      "transportApi": "68.0",
+      "context": "anonymous",
+      "id": "negative-control",
+      "query": "SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :owned GROUP BY NumberOfEmployees",
+      "observation": {
+        "construction": {
+          "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+          "type": "System.QueryException",
+          "attempted": true
+        },
+        "iterator": {
+          "attempted": false
+        },
+        "boundSize": 1,
+        "shape": "negative-control"
+      }
+    },
+    {
+      "sourceApi": "68.0",
+      "transportApi": "68.0",
+      "context": "istest",
+      "id": "count-date",
+      "query": "SELECT AccountId,COUNT(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (Amount < 200) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "count-date"
+      }
+    },
+    {
+      "sourceApi": "68.0",
+      "transportApi": "68.0",
+      "context": "istest",
+      "id": "maximum-date",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "maximum-date"
+      }
+    },
+    {
+      "sourceApi": "68.0",
+      "transportApi": "68.0",
+      "context": "istest",
+      "id": "maximum-date-or-decimal",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY OR Amount > 100) GROUP BY AccountId",
+      "observation": {
+        "matchingControl": {
+          "iterator": {
+            "attempted": false
+          },
+          "construction": {
+            "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+            "type": "System.QueryException",
+            "attempted": true
+          },
+          "boundSize": 1
+        },
+        "empty": {
+          "iterator": {
+            "hasNext": false,
+            "created": true,
+            "attempted": true
+          },
+          "construction": {
+            "queryPreserved": true,
+            "created": true,
+            "attempted": true
+          },
+          "boundSize": 0
+        },
+        "seededMatchingRows": 1,
+        "shape": "maximum-date-or-decimal"
+      }
+    },
+    {
+      "sourceApi": "68.0",
+      "transportApi": "68.0",
+      "context": "istest",
+      "id": "negative-control",
+      "query": "SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :owned GROUP BY NumberOfEmployees",
+      "observation": {
+        "construction": {
+          "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+          "type": "System.QueryException",
+          "attempted": true
+        },
+        "iterator": {
+          "attempted": false
+        },
+        "boundSize": 1,
+        "shape": "negative-control"
+      }
+    }
+  ]
+}

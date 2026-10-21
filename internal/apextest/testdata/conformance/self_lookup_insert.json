@@ -1,0 +1,774 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "nativeObservationCount": 4,
+  "metadataFiles": {
+    "force-app/main/default/objects/LinkNode__c/LinkNode__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Link Node</label>\n    <nameField><label>Link Node Name</label><type>Text</type></nameField>\n    <pluralLabel>Link Nodes</pluralLabel>\n    <sharingModel>ReadWrite</sharingModel>\n</CustomObject>\n",
+    "force-app/main/default/objects/LinkNode__c/fields/Parent__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <fullName>Parent__c</fullName>\n    <deleteConstraint>SetNull</deleteConstraint>\n    <label>Parent</label>\n    <referenceTo>LinkNode__c</referenceTo>\n    <relationshipLabel>Child Nodes</relationshipLabel>\n    <relationshipName>ChildNodes</relationshipName>\n    <required>false</required>\n    <type>Lookup</type>\n</CustomField>\n"
+  },
+  "metadataFileSHA256": {
+    "force-app/main/default/objects/LinkNode__c/LinkNode__c.object-meta.xml": "72f5f22f5be977c3fb6dd062c9b68a731ec5e1837d489ba86e50f0355e1f28a2",
+    "force-app/main/default/objects/LinkNode__c/fields/Parent__c.field-meta.xml": "74cdaecaeccef292080e84803aa96891ddb2625e561101eb70ef89fd973d5b7f"
+  },
+  "fixtures": {
+    "62.0": {
+      "classes": {
+        "SelfLinkProbe62": "public class SelfLinkProbe62 {\n    private static Map<String, String> knownIds;\n    private static List<Object> errorCatalog;\n    private static Map<String, Integer> errorKeys;\n\n    private static String normalize(String text) {\n        if (text == null) return null;\n        for (String known : knownIds.keySet()) {\n            text = text.replace(known, knownIds.get(known));\n            text = text.replace(known.substring(0, 15), knownIds.get(known));\n        }\n        return text;\n    }\n    private static String parentLabel(Id value) {\n        if (value == null) return null;\n        String key = String.valueOf(value);\n        return knownIds.containsKey(key) ? knownIds.get(key) : 'other-real-id';\n    }\n    private static Integer recordError(String caseName, String mode, String code, List<String> fields, String message) {\n        System.debug(LoggingLevel.ERROR, 'LINK_RAW|' + JSON.serialize(new Map<String, Object>{\n            'case' => caseName, 'mode' => mode, 'code' => code, 'fields' => fields, 'message' => message\n        }));\n        List<Object> error = new List<Object>{code, fields, normalize(message)};\n        String key = JSON.serialize(error);\n        if (!errorKeys.containsKey(key)) {\n            errorKeys.put(key, errorCatalog.size());\n            errorCatalog.add(error);\n        }\n        return errorKeys.get(key);\n    }\n    private static Map<String, Object> insertCase(String caseName, Boolean allOrNone, Id missing, Id existing, Id deleted) {\n        LinkNode__c caller = new LinkNode__c();\n        if (caseName != 'missingNameParent' && caseName != 'missingNameOnly') caller.Name = caseName;\n        if (caseName == 'missingParent' || caseName == 'missingNameParent') caller.Parent__c = missing;\n        if (caseName == 'validParent') caller.Parent__c = existing;\n        if (caseName == 'nullParent') caller.Parent__c = null;\n        if (caseName == 'deletedParent') caller.Parent__c = deleted;\n        String mode = allOrNone ? 'throwing' : 'partial';\n        Map<String, Object> row = new Map<String, Object>();\n        List<Object> errors = new List<Object>();\n        try {\n            List<SObject> inputs = new List<SObject>{caller};\n            List<Database.SaveResult> results = Database.insert(inputs, allOrNone, AccessLevel.SYSTEM_MODE);\n            row.put('success', results[0].isSuccess());\n            for (Database.Error error : results[0].getErrors()) {\n                errors.add(new List<Object>{0, recordError(caseName, mode, String.valueOf(error.getStatusCode()), error.getFields(), error.getMessage())});\n            }\n        } catch (DmlException error) {\n            row.put('success', false);\n            row.put('exceptionType', error.getTypeName());\n            System.debug(LoggingLevel.ERROR, 'LINK_RAW|' + JSON.serialize(new Map<String, Object>{\n                'case' => caseName, 'mode' => mode, 'exceptionMessage' => error.getMessage()\n            }));\n            row.put('exceptionMessage', normalize(error.getMessage()));\n            for (Integer index = 0; index < error.getNumDml(); index++) {\n                errors.add(new List<Object>{error.getDmlIndex(index), recordError(caseName, mode, String.valueOf(error.getDmlType(index)), error.getDmlFieldNames(index), error.getDmlMessage(index))});\n            }\n        } catch (Exception error) {\n            row.put('success', false);\n            row.put('exceptionType', error.getTypeName());\n            row.put('exceptionMessage', normalize(error.getMessage()));\n        }\n        row.put('errors', errors);\n        row.put('idNull', caller.Id == null);\n        row.put('callerName', caller.Name);\n        row.put('callerParent', parentLabel(caller.Parent__c));\n        Id inserted = caller.Id;\n        row.put('storedCount', inserted == null ? 0 : [SELECT COUNT() FROM LinkNode__c WHERE Id = :inserted]);\n        return row;\n    }\n\n    public static String observe() {\n        knownIds = new Map<String, String>();\n        errorCatalog = new List<Object>();\n        errorKeys = new Map<String, Integer>();\n        Map<String, Object> rows = new Map<String, Object>();\n        Integer beforeCount = [SELECT COUNT() FROM LinkNode__c];\n        Savepoint lifetime = Database.setSavepoint();\n        try {\n            LinkNode__c existing = new LinkNode__c(Name = 'existing-parent');\n            LinkNode__c deleted = new LinkNode__c(Name = 'deleted-parent');\n            insert new List<LinkNode__c>{existing, deleted};\n            Id existingId = existing.Id;\n            Id deletedId = deleted.Id;\n            delete deleted;\n            knownIds.put(String.valueOf(existingId), 'EXISTING');\n            knownIds.put(String.valueOf(deletedId), 'DELETED');\n\n            Savepoint allocation = Database.setSavepoint();\n            LinkNode__c rolled = new LinkNode__c(Name = 'rolled');\n            insert rolled;\n            Id missing = rolled.Id;\n            Database.rollback(allocation);\n            knownIds.put(String.valueOf(missing), 'MISSING');\n            rows.put('missingQueryCount', [SELECT COUNT() FROM LinkNode__c WHERE Id = :missing]);\n\n            rows.put('existingQueryCount', [SELECT COUNT() FROM LinkNode__c WHERE Id = :existingId]);\n            rows.put('deletedQueryCount', [SELECT COUNT() FROM LinkNode__c WHERE Id = :deletedId]);\n            for (String caseName : new List<String>{'missingParent', 'missingNameParent', 'missingNameOnly', 'validParent', 'omittedParent', 'nullParent', 'deletedParent'}) {\n                rows.put('partial/' + caseName, insertCase(caseName, false, missing, existingId, deletedId));\n                rows.put('throwing/' + caseName, insertCase(caseName, true, missing, existingId, deletedId));\n            }\n            rows.put('errorCatalog', errorCatalog);\n        } catch (Exception error) {\n            rows.put('setupExceptionType', error.getTypeName());\n            rows.put('setupExceptionMessage', normalize(error.getMessage()));\n        } finally {\n            Database.rollback(lifetime);\n        }\n        Integer afterCount = [SELECT COUNT() FROM LinkNode__c];\n        rows.put('cleanupCountDelta', afterCount - beforeCount);\n        return JSON.serialize(rows);\n    }\n}\n",
+        "SelfLinkProbe62Test": "@IsTest\nprivate class SelfLinkProbe62Test {\n    @IsTest static void observe() {\n        System.assert(false, 'LINK_ROWS|' + SelfLinkProbe62.observe() + '|LINK_END');\n    }\n}\n"
+      },
+      "classMetadata": {
+        "SelfLinkProbe62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "SelfLinkProbe62Test": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n"
+      },
+      "sourceSHA256": {
+        "SelfLinkProbe62": "2dbc10d99a87e64227fb335c982cbd06d40205c681b1a18f00657e0a2c5cd8ea",
+        "SelfLinkProbe62Test": "277bcc4450de4b05b0d5c8f80cad88fc6893fb16120c6232eb035d303070d5c8"
+      },
+      "metadataSHA256": {
+        "SelfLinkProbe62": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "SelfLinkProbe62Test": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+      },
+      "anonymous": "System.debug(LoggingLevel.ERROR, 'LINK_ROWS|' + SelfLinkProbe62.observe() + '|LINK_END');\n",
+      "anonymousSHA256": "e2482623df0f39ff9022b292bcad922633322f2ea54cb58bf0f6078bfdd65671",
+      "testClass": "SelfLinkProbe62Test"
+    },
+    "67.0": {
+      "classes": {
+        "SelfLinkProbe67": "public class SelfLinkProbe67 {\n    private static Map<String, String> knownIds;\n    private static List<Object> errorCatalog;\n    private static Map<String, Integer> errorKeys;\n\n    private static String normalize(String text) {\n        if (text == null) return null;\n        for (String known : knownIds.keySet()) {\n            text = text.replace(known, knownIds.get(known));\n            text = text.replace(known.substring(0, 15), knownIds.get(known));\n        }\n        return text;\n    }\n    private static String parentLabel(Id value) {\n        if (value == null) return null;\n        String key = String.valueOf(value);\n        return knownIds.containsKey(key) ? knownIds.get(key) : 'other-real-id';\n    }\n    private static Integer recordError(String caseName, String mode, String code, List<String> fields, String message) {\n        System.debug(LoggingLevel.ERROR, 'LINK_RAW|' + JSON.serialize(new Map<String, Object>{\n            'case' => caseName, 'mode' => mode, 'code' => code, 'fields' => fields, 'message' => message\n        }));\n        List<Object> error = new List<Object>{code, fields, normalize(message)};\n        String key = JSON.serialize(error);\n        if (!errorKeys.containsKey(key)) {\n            errorKeys.put(key, errorCatalog.size());\n            errorCatalog.add(error);\n        }\n        return errorKeys.get(key);\n    }\n    private static Map<String, Object> insertCase(String caseName, Boolean allOrNone, Id missing, Id existing, Id deleted) {\n        LinkNode__c caller = new LinkNode__c();\n        if (caseName != 'missingNameParent' && caseName != 'missingNameOnly') caller.Name = caseName;\n        if (caseName == 'missingParent' || caseName == 'missingNameParent') caller.Parent__c = missing;\n        if (caseName == 'validParent') caller.Parent__c = existing;\n        if (caseName == 'nullParent') caller.Parent__c = null;\n        if (caseName == 'deletedParent') caller.Parent__c = deleted;\n        String mode = allOrNone ? 'throwing' : 'partial';\n        Map<String, Object> row = new Map<String, Object>();\n        List<Object> errors = new List<Object>();\n        try {\n            List<SObject> inputs = new List<SObject>{caller};\n            List<Database.SaveResult> results = Database.insert(inputs, allOrNone, AccessLevel.SYSTEM_MODE);\n            row.put('success', results[0].isSuccess());\n            for (Database.Error error : results[0].getErrors()) {\n                errors.add(new List<Object>{0, recordError(caseName, mode, String.valueOf(error.getStatusCode()), error.getFields(), error.getMessage())});\n            }\n        } catch (DmlException error) {\n            row.put('success', false);\n            row.put('exceptionType', error.getTypeName());\n            System.debug(LoggingLevel.ERROR, 'LINK_RAW|' + JSON.serialize(new Map<String, Object>{\n                'case' => caseName, 'mode' => mode, 'exceptionMessage' => error.getMessage()\n            }));\n            row.put('exceptionMessage', normalize(error.getMessage()));\n            for (Integer index = 0; index < error.getNumDml(); index++) {\n                errors.add(new List<Object>{error.getDmlIndex(index), recordError(caseName, mode, String.valueOf(error.getDmlType(index)), error.getDmlFieldNames(index), error.getDmlMessage(index))});\n            }\n        } catch (Exception error) {\n            row.put('success', false);\n            row.put('exceptionType', error.getTypeName());\n            row.put('exceptionMessage', normalize(error.getMessage()));\n        }\n        row.put('errors', errors);\n        row.put('idNull', caller.Id == null);\n        row.put('callerName', caller.Name);\n        row.put('callerParent', parentLabel(caller.Parent__c));\n        Id inserted = caller.Id;\n        row.put('storedCount', inserted == null ? 0 : [SELECT COUNT() FROM LinkNode__c WHERE Id = :inserted]);\n        return row;\n    }\n\n    public static String observe() {\n        knownIds = new Map<String, String>();\n        errorCatalog = new List<Object>();\n        errorKeys = new Map<String, Integer>();\n        Map<String, Object> rows = new Map<String, Object>();\n        Integer beforeCount = [SELECT COUNT() FROM LinkNode__c];\n        Savepoint lifetime = Database.setSavepoint();\n        try {\n            LinkNode__c existing = new LinkNode__c(Name = 'existing-parent');\n            LinkNode__c deleted = new LinkNode__c(Name = 'deleted-parent');\n            insert new List<LinkNode__c>{existing, deleted};\n            Id existingId = existing.Id;\n            Id deletedId = deleted.Id;\n            delete deleted;\n            knownIds.put(String.valueOf(existingId), 'EXISTING');\n            knownIds.put(String.valueOf(deletedId), 'DELETED');\n\n            Savepoint allocation = Database.setSavepoint();\n            LinkNode__c rolled = new LinkNode__c(Name = 'rolled');\n            insert rolled;\n            Id missing = rolled.Id;\n            Database.rollback(allocation);\n            knownIds.put(String.valueOf(missing), 'MISSING');\n            rows.put('missingQueryCount', [SELECT COUNT() FROM LinkNode__c WHERE Id = :missing]);\n\n            rows.put('existingQueryCount', [SELECT COUNT() FROM LinkNode__c WHERE Id = :existingId]);\n            rows.put('deletedQueryCount', [SELECT COUNT() FROM LinkNode__c WHERE Id = :deletedId]);\n            for (String caseName : new List<String>{'missingParent', 'missingNameParent', 'missingNameOnly', 'validParent', 'omittedParent', 'nullParent', 'deletedParent'}) {\n                rows.put('partial/' + caseName, insertCase(caseName, false, missing, existingId, deletedId));\n                rows.put('throwing/' + caseName, insertCase(caseName, true, missing, existingId, deletedId));\n            }\n            rows.put('errorCatalog', errorCatalog);\n        } catch (Exception error) {\n            rows.put('setupExceptionType', error.getTypeName());\n            rows.put('setupExceptionMessage', normalize(error.getMessage()));\n        } finally {\n            Database.rollback(lifetime);\n        }\n        Integer afterCount = [SELECT COUNT() FROM LinkNode__c];\n        rows.put('cleanupCountDelta', afterCount - beforeCount);\n        return JSON.serialize(rows);\n    }\n}\n",
+        "SelfLinkProbe67Test": "@IsTest\nprivate class SelfLinkProbe67Test {\n    @IsTest static void observe() {\n        System.assert(false, 'LINK_ROWS|' + SelfLinkProbe67.observe() + '|LINK_END');\n    }\n}\n"
+      },
+      "classMetadata": {
+        "SelfLinkProbe67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "SelfLinkProbe67Test": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n"
+      },
+      "sourceSHA256": {
+        "SelfLinkProbe67": "280144a33b002c04acb8aa22451a71f38c2af39cb3425e63831af8479788881e",
+        "SelfLinkProbe67Test": "74f428e473e72a0d25309afaf057a1858b58954a76c9305044dc1eef0e0385fe"
+      },
+      "metadataSHA256": {
+        "SelfLinkProbe67": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "SelfLinkProbe67Test": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+      },
+      "anonymous": "System.debug(LoggingLevel.ERROR, 'LINK_ROWS|' + SelfLinkProbe67.observe() + '|LINK_END');\n",
+      "anonymousSHA256": "36b2da4e1e0e5a2ee1ece030cc5109e811797be87bfd5b37aaf05bfa90c759f3",
+      "testClass": "SelfLinkProbe67Test"
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "native": {
+        "cleanupCountDelta": 0,
+        "errorCatalog": [
+          [
+            "INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY",
+            [],
+            "insufficient access rights on cross-reference id: MISSING"
+          ],
+          [
+            "ENTITY_IS_DELETED",
+            [],
+            "entity is deleted"
+          ]
+        ],
+        "throwing/deletedParent": {
+          "storedCount": 0,
+          "callerParent": "DELETED",
+          "callerName": "deletedParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              1
+            ]
+          ],
+          "exceptionMessage": "Insert failed. First exception on row 0; first error: ENTITY_IS_DELETED, entity is deleted: []",
+          "exceptionType": "System.DmlException",
+          "success": false
+        },
+        "partial/deletedParent": {
+          "storedCount": 0,
+          "callerParent": "DELETED",
+          "callerName": "deletedParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              1
+            ]
+          ],
+          "success": false
+        },
+        "throwing/nullParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "nullParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/nullParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "nullParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/omittedParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "omittedParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/omittedParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "omittedParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/validParent": {
+          "storedCount": 1,
+          "callerParent": "EXISTING",
+          "callerName": "validParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/validParent": {
+          "storedCount": 1,
+          "callerParent": "EXISTING",
+          "callerName": "validParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/missingNameOnly": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": null,
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/missingNameOnly": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": null,
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/missingNameParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": null,
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "exceptionMessage": "Insert failed. First exception on row 0; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: MISSING: []",
+          "exceptionType": "System.DmlException",
+          "success": false
+        },
+        "partial/missingNameParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": null,
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "success": false
+        },
+        "throwing/missingParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": "missingParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "exceptionMessage": "Insert failed. First exception on row 0; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: MISSING: []",
+          "exceptionType": "System.DmlException",
+          "success": false
+        },
+        "partial/missingParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": "missingParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "success": false
+        },
+        "deletedQueryCount": 0,
+        "existingQueryCount": 1,
+        "missingQueryCount": 0
+      },
+      "nativeJSONSHA256": "ab2698fe5353a8336e6e813f5cbf5f66d015f1ce7c51ebd6f53e40f9f7fc252a",
+      "rawSHA256": "18e562ec62070a570fbf3e6ed7b6c6ec9a5fbbaf0906fcf2bfedf3b02f41a3f6",
+      "deploymentID": "0AfjZ000000Oo28SAC",
+      "deploymentSHA256": "bc187c437a68654492897f16cf1eecbc3360444439cdb51d474a58a46f95d1aa",
+      "orgIdSHA256": "1a08bd72a30d78c1edfdc9c3c7211dde79fd32badb319d722a0fa1cc44000ced",
+      "sourceStatus": "intentional assertion observation"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "native": {
+        "cleanupCountDelta": 0,
+        "errorCatalog": [
+          [
+            "INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY",
+            [],
+            "insufficient access rights on cross-reference id: MISSING"
+          ],
+          [
+            "ENTITY_IS_DELETED",
+            [],
+            "entity is deleted"
+          ]
+        ],
+        "throwing/deletedParent": {
+          "storedCount": 0,
+          "callerParent": "DELETED",
+          "callerName": "deletedParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              1
+            ]
+          ],
+          "exceptionMessage": "Insert failed. First exception on row 0; first error: ENTITY_IS_DELETED, entity is deleted: []",
+          "exceptionType": "System.DmlException",
+          "success": false
+        },
+        "partial/deletedParent": {
+          "storedCount": 0,
+          "callerParent": "DELETED",
+          "callerName": "deletedParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              1
+            ]
+          ],
+          "success": false
+        },
+        "throwing/nullParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "nullParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/nullParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "nullParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/omittedParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "omittedParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/omittedParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "omittedParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/validParent": {
+          "storedCount": 1,
+          "callerParent": "EXISTING",
+          "callerName": "validParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/validParent": {
+          "storedCount": 1,
+          "callerParent": "EXISTING",
+          "callerName": "validParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/missingNameOnly": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": null,
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/missingNameOnly": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": null,
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/missingNameParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": null,
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "exceptionMessage": "Insert failed. First exception on row 0; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: MISSING: []",
+          "exceptionType": "System.DmlException",
+          "success": false
+        },
+        "partial/missingNameParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": null,
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "success": false
+        },
+        "throwing/missingParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": "missingParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "exceptionMessage": "Insert failed. First exception on row 0; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: MISSING: []",
+          "exceptionType": "System.DmlException",
+          "success": false
+        },
+        "partial/missingParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": "missingParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "success": false
+        },
+        "deletedQueryCount": 0,
+        "existingQueryCount": 1,
+        "missingQueryCount": 0
+      },
+      "nativeJSONSHA256": "ab2698fe5353a8336e6e813f5cbf5f66d015f1ce7c51ebd6f53e40f9f7fc252a",
+      "rawSHA256": "2bb3bbd261d56376f226ce19463aefc9a139cb0bf56c8fdaa590c1bd71d2c8dd",
+      "deploymentID": "0AfjZ000000Oo28SAC",
+      "deploymentSHA256": "bc187c437a68654492897f16cf1eecbc3360444439cdb51d474a58a46f95d1aa",
+      "orgIdSHA256": "1a08bd72a30d78c1edfdc9c3c7211dde79fd32badb319d722a0fa1cc44000ced",
+      "sourceStatus": "success/debug observation"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "native": {
+        "cleanupCountDelta": 0,
+        "errorCatalog": [
+          [
+            "INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY",
+            [],
+            "insufficient access rights on cross-reference id: MISSING"
+          ],
+          [
+            "ENTITY_IS_DELETED",
+            [],
+            "entity is deleted"
+          ]
+        ],
+        "throwing/deletedParent": {
+          "storedCount": 0,
+          "callerParent": "DELETED",
+          "callerName": "deletedParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              1
+            ]
+          ],
+          "exceptionMessage": "Insert failed. First exception on row 0; first error: ENTITY_IS_DELETED, entity is deleted: []",
+          "exceptionType": "System.DmlException",
+          "success": false
+        },
+        "partial/deletedParent": {
+          "storedCount": 0,
+          "callerParent": "DELETED",
+          "callerName": "deletedParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              1
+            ]
+          ],
+          "success": false
+        },
+        "throwing/nullParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "nullParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/nullParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "nullParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/omittedParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "omittedParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/omittedParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "omittedParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/validParent": {
+          "storedCount": 1,
+          "callerParent": "EXISTING",
+          "callerName": "validParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/validParent": {
+          "storedCount": 1,
+          "callerParent": "EXISTING",
+          "callerName": "validParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/missingNameOnly": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": null,
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/missingNameOnly": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": null,
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/missingNameParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": null,
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "exceptionMessage": "Insert failed. First exception on row 0; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: MISSING: []",
+          "exceptionType": "System.DmlException",
+          "success": false
+        },
+        "partial/missingNameParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": null,
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "success": false
+        },
+        "throwing/missingParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": "missingParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "exceptionMessage": "Insert failed. First exception on row 0; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: MISSING: []",
+          "exceptionType": "System.DmlException",
+          "success": false
+        },
+        "partial/missingParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": "missingParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "success": false
+        },
+        "deletedQueryCount": 0,
+        "existingQueryCount": 1,
+        "missingQueryCount": 0
+      },
+      "nativeJSONSHA256": "ab2698fe5353a8336e6e813f5cbf5f66d015f1ce7c51ebd6f53e40f9f7fc252a",
+      "rawSHA256": "e5d3431a556c4c7c8173cc2f81d492a7411c4db95678318807f806b2f4e8af3e",
+      "deploymentID": "0AfjZ000000Oo28SAC",
+      "deploymentSHA256": "bc187c437a68654492897f16cf1eecbc3360444439cdb51d474a58a46f95d1aa",
+      "orgIdSHA256": "1a08bd72a30d78c1edfdc9c3c7211dde79fd32badb319d722a0fa1cc44000ced",
+      "sourceStatus": "intentional assertion observation"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "native": {
+        "cleanupCountDelta": 0,
+        "errorCatalog": [
+          [
+            "INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY",
+            [],
+            "insufficient access rights on cross-reference id: MISSING"
+          ],
+          [
+            "ENTITY_IS_DELETED",
+            [],
+            "entity is deleted"
+          ]
+        ],
+        "throwing/deletedParent": {
+          "storedCount": 0,
+          "callerParent": "DELETED",
+          "callerName": "deletedParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              1
+            ]
+          ],
+          "exceptionMessage": "Insert failed. First exception on row 0; first error: ENTITY_IS_DELETED, entity is deleted: []",
+          "exceptionType": "System.DmlException",
+          "success": false
+        },
+        "partial/deletedParent": {
+          "storedCount": 0,
+          "callerParent": "DELETED",
+          "callerName": "deletedParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              1
+            ]
+          ],
+          "success": false
+        },
+        "throwing/nullParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "nullParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/nullParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "nullParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/omittedParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "omittedParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/omittedParent": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": "omittedParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/validParent": {
+          "storedCount": 1,
+          "callerParent": "EXISTING",
+          "callerName": "validParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/validParent": {
+          "storedCount": 1,
+          "callerParent": "EXISTING",
+          "callerName": "validParent",
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/missingNameOnly": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": null,
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "partial/missingNameOnly": {
+          "storedCount": 1,
+          "callerParent": null,
+          "callerName": null,
+          "idNull": false,
+          "errors": [],
+          "success": true
+        },
+        "throwing/missingNameParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": null,
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "exceptionMessage": "Insert failed. First exception on row 0; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: MISSING: []",
+          "exceptionType": "System.DmlException",
+          "success": false
+        },
+        "partial/missingNameParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": null,
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "success": false
+        },
+        "throwing/missingParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": "missingParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "exceptionMessage": "Insert failed. First exception on row 0; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: MISSING: []",
+          "exceptionType": "System.DmlException",
+          "success": false
+        },
+        "partial/missingParent": {
+          "storedCount": 0,
+          "callerParent": "MISSING",
+          "callerName": "missingParent",
+          "idNull": true,
+          "errors": [
+            [
+              0,
+              0
+            ]
+          ],
+          "success": false
+        },
+        "deletedQueryCount": 0,
+        "existingQueryCount": 1,
+        "missingQueryCount": 0
+      },
+      "nativeJSONSHA256": "ab2698fe5353a8336e6e813f5cbf5f66d015f1ce7c51ebd6f53e40f9f7fc252a",
+      "rawSHA256": "e9c210fe77b0684013ba3f61e6f5656a66abfa9afebb73b1d3d012e242e6757d",
+      "deploymentID": "0AfjZ000000Oo28SAC",
+      "deploymentSHA256": "bc187c437a68654492897f16cf1eecbc3360444439cdb51d474a58a46f95d1aa",
+      "orgIdSHA256": "1a08bd72a30d78c1edfdc9c3c7211dde79fd32badb319d722a0fa1cc44000ced",
+      "sourceStatus": "success/debug observation"
+    }
+  ],
+  "scope": "INSERT only: ordinary optional custom self-lookup to a real allocated ID absent after rollback; live/omitted/null/deleted references and omitted-Name ordering; partial/throwing SYSTEM_MODE generic lists. Only dynamic owned IDs are normalized; raw anonymous error messages retained. No ID spelling, permission, update, cross-object, setting, MasterDetail or fabricated-ID policy claim."
+}

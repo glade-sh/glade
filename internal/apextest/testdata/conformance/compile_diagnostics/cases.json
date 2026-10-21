@@ -1,0 +1,117 @@
+[
+  {
+    "id": "assignment_boolean",
+    "body": "Integer value = true;"
+  },
+  {
+    "id": "assignment_string",
+    "body": "Integer value = 'text';"
+  },
+  {
+    "id": "assignment_field",
+    "body": "Contact contact = new Contact(); Schema.SObjectField value = Contact.Email;"
+  },
+  {
+    "id": "assignment_type",
+    "body": "Integer value = Contact.class;"
+  },
+  {
+    "id": "assignment_token",
+    "body": "Integer value = Contact.Email;"
+  },
+  {
+    "id": "assignment_records",
+    "body": "List<Contact> value = new List<Account>();"
+  },
+  {
+    "id": "assignment_object",
+    "body": "Contact value = new Account();"
+  },
+  {
+    "id": "date_fraction",
+    "body": "Date base = Date.today(); Double delta = 0.5; Date value = base-delta;"
+  },
+  {
+    "id": "datetime_add",
+    "body": "Datetime base = Datetime.now(); Boolean delta = true; Datetime value = base+delta;"
+  },
+  {
+    "id": "datetime_subtract",
+    "body": "Datetime base = Datetime.now(); Boolean delta = true; Datetime value = base-delta;"
+  },
+  {
+    "id": "unknown_call",
+    "body": "MissingDiagnosticType.run();"
+  },
+  {
+    "id": "unknown_field",
+    "body": "Object value = MissingDiagnosticType.value;"
+  },
+  {
+    "id": "known_call",
+    "body": "String.valueOf(1).missingDiagnosticMethod();"
+  },
+  {
+    "id": "missing_label",
+    "body": "String value = Label.MissingDiagnosticLabel;"
+  },
+  {
+    "id": "local_describe",
+    "body": "Contact contact = new Contact(); Schema.DescribeFieldResult value = Contact.Email.getDescribe();"
+  },
+  {
+    "id": "missing_field",
+    "body": "Contact contact = new Contact(); Object value = Contact.MissingDiagnosticField__c;"
+  },
+  {
+    "id": "missing_field_write",
+    "body": "Contact contact = new Contact(); Contact.MissingDiagnosticField__c = 'text';"
+  },
+  {
+    "id": "constructor_token",
+    "body": "Contact value = new Contact(HasOptedOutOfEmail=Contact.Email);"
+  },
+  {
+    "id": "constructor_boolean",
+    "body": "Contact value = new Contact(HasOptedOutOfEmail='text');"
+  },
+  {
+    "id": "control_assignment",
+    "body": "Integer value = 1;"
+  },
+  {
+    "id": "control_date",
+    "body": "Date value = Date.today() + 1;"
+  },
+  {
+    "id": "control_token",
+    "body": "Schema.SObjectField value = Contact.Email;"
+  },
+  {
+    "id": "control_describe",
+    "body": "Schema.DescribeFieldResult value = Contact.Email.getDescribe();"
+  },
+  {
+    "id": "control_constructor",
+    "body": "Contact value = new Contact(HasOptedOutOfEmail=true);"
+  },
+  {
+    "id": "duplicate_method",
+    "classes": {
+      "DiagnosticDuplicate": "public class DiagnosticDuplicate {\n public static Integer one() { return 1; }\n public static Integer one() { return 2; }\n}\n"
+    }
+  },
+  {
+    "id": "invalid_version",
+    "classes": {
+      "DiagnosticVersion": "public class DiagnosticVersion {}"
+    },
+    "classAPIs": {
+      "DiagnosticVersion": "99.0"
+    }
+  },
+  {
+    "id": "assignment_boolean_target",
+    "body": "Boolean value = 'text';"
+  }
+]

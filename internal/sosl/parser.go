@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -965,6 +966,11 @@ func lex(input string) []token {
 			tokens = append(tokens, token{kind: tokenWord, text: "?"})
 			i++
 		default:
+			if end := isoDateValueEnd(input, i); end > i {
+				tokens = append(tokens, token{kind: tokenWord, text: input[i:end]})
+				i = end
+				continue
+			}
 			if isDigit(input[i]) || ((input[i] == '-' || input[i] == '+') && i+1 < len(input) && isDigit(input[i+1])) {
 				start := i
 				if input[i] == '-' || input[i] == '+' {
@@ -1005,6 +1011,64 @@ func lex(input string) []token {
 	}
 	tokens = append(tokens, token{kind: tokenEOF})
 	return tokens
+}
+
+// SOSL WHERE uses SOQL's unquoted ISO date and datetime formats. Preserve a
+// complete value before numeric lexing can split its hyphens and time colons.
+func isoDateValueEnd(input string, start int) int {
+	if len(input)-start < 10 || !isDigit(input[start]) || input[start+4] != '-' || input[start+7] != '-' {
+		return start
+	}
+	end := start
+	for end < len(input) && !unicode.IsSpace(rune(input[end])) && !strings.ContainsRune(",()=<>!", rune(input[end])) {
+		end++
+	}
+	literal := input[start:end]
+	layout := time.RFC3339
+	if len(literal) == 10 {
+		layout = "2006-01-02"
+	} else if !isoDateTimeValueShape(literal) {
+		return start
+	}
+	if _, err := time.Parse(layout, literal); err != nil {
+		return start
+	}
+	return end
+}
+
+func isoDateTimeValueShape(literal string) bool {
+	if len(literal) < 20 || literal[10] != 'T' || literal[13] != ':' || literal[16] != ':' {
+		return false
+	}
+	for _, index := range []int{11, 12, 14, 15, 17, 18} {
+		if !isDigit(literal[index]) {
+			return false
+		}
+	}
+	zone := 19
+	if literal[zone] == '.' {
+		zone++
+		fraction := zone
+		for zone < len(literal) && isDigit(literal[zone]) {
+			zone++
+		}
+		if zone == fraction {
+			return false
+		}
+	}
+	offset := literal[zone:]
+	if offset == "Z" {
+		return true
+	}
+	if len(offset) != 6 || (offset[0] != '+' && offset[0] != '-') || offset[3] != ':' {
+		return false
+	}
+	for _, index := range []int{1, 2, 4, 5} {
+		if !isDigit(offset[index]) {
+			return false
+		}
+	}
+	return offset[1:3] < "24" && offset[4:6] < "60"
 }
 
 func isDigit(ch byte) bool {

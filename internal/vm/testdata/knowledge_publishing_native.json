@@ -1,0 +1,62 @@
+{
+  "observations": [
+    {
+      "api": "62.0",
+      "terminal": "observation_assertion",
+      "componentErrors": 0,
+      "testErrors": 1,
+      "observed": {
+        "nullArgument": "System.InvalidParameterValueException",
+        "stringArgument": "returned",
+        "publishedStatus": "Online",
+        "idArgument": "returned",
+        "parentType": "Knowledge__ka",
+        "latest": true,
+        "version": 0,
+        "draftStatus": "Draft",
+        "parentPresent": true,
+        "inputParentNull": true
+      },
+      "edgeObservation": {
+        "terminal": "observation_assertion",
+        "componentErrors": 0,
+        "testErrors": 1,
+        "observed": {
+          "invalidId": "System.InvalidParameterValueException",
+          "missingParent": "System.HandledException",
+          "parentsAfterRollback": 0,
+          "parentRows": 1
+        }
+      }
+    },
+    {
+      "api": "67.0",
+      "terminal": "observation_assertion",
+      "componentErrors": 0,
+      "testErrors": 1,
+      "observed": {
+        "nullArgument": "System.InvalidParameterValueException",
+        "stringArgument": "returned",
+        "publishedStatus": "Online",
+        "idArgument": "returned",
+        "parentType": "Knowledge__ka",
+        "latest": true,
+        "version": 0,
+        "draftStatus": "Draft",
+        "parentPresent": true,
+        "inputParentNull": true
+      },
+      "edgeObservation": {
+        "terminal": "observation_assertion",
+        "componentErrors": 0,
+        "testErrors": 1,
+        "observed": {
+          "invalidId": "System.InvalidParameterValueException",
+          "missingParent": "System.HandledException",
+          "parentsAfterRollback": 0,
+          "parentRows": 1
+        }
+      }
+    }
+  ]
+}

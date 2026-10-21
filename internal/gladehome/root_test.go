@@ -1,6 +1,7 @@
 package gladehome
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -208,5 +209,54 @@ func TestToolchainStatusHonorsExplicitGladeHomeBeforeUserShare(t *testing.T) {
 	path, ok, detail := ToolchainStatus()
 	if !ok || path != filepath.Clean(explicit) || detail != "ok (explicit)" {
 		t.Fatalf("ToolchainStatus = (%q, %v, %q), want (%q, true, %q)", path, ok, detail, filepath.Clean(explicit), "ok (explicit)")
+	}
+}
+
+// Concurrent callers of EnsureRoot share one install. A second caller must not
+// reset the toolchain tree while another caller is copying it, and a caller that
+// finds the install complete must not reinstall.
+func TestEnsureRootConcurrentFirstUseInstallsOnce(t *testing.T) {
+	repo := t.TempDir()
+	for _, rel := range []string{
+		"go.mod",
+		"third_party/lwc/compile.mjs",
+		"third_party/lwc/node_modules/@lwc/compiler/index.js",
+		"lwcruntime/src/shims/wire-adapter.mjs",
+		"lwcruntime/src/shims/lds-cache.mjs",
+		"lwcruntime/src/shell/app.mjs",
+		"lwcruntime/src/slds/slds-loader.mjs",
+		"lwcruntime/src/lightning/button.mjs",
+		"lwcruntime/src/experience/cmsDeliveryApi.mjs",
+	} {
+		writeMinimalToolchainFile(t, repo, rel)
+	}
+	for i := 0; i < 400; i++ {
+		writeMinimalToolchainFile(t, repo, fmt.Sprintf("third_party/lwc/node_modules/pkg%03d/index.js", i))
+	}
+	t.Chdir(repo)
+	t.Setenv("GLADE_HOME", "")
+	t.Setenv("GLADE_ROOT", "")
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+
+	const callers = 8
+	errs := make(chan error, callers)
+	start := make(chan struct{})
+	for i := 0; i < callers; i++ {
+		go func() {
+			<-start
+			root, err := EnsureRoot()
+			if err == nil {
+				if _, ok := validateRoot(root); !ok {
+					err = fmt.Errorf("root %s is incomplete after EnsureRoot", root)
+				}
+			}
+			errs <- err
+		}()
+	}
+	close(start)
+	for i := 0; i < callers; i++ {
+		if err := <-errs; err != nil {
+			t.Error(err)
+		}
 	}
 }

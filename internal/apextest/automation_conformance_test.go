@@ -22,6 +22,10 @@ import (
 
 // A43 native requests, local callbacks and rejection diagnostics at API 62/67.
 // Hosted execution is bounded by explicit local errors. CI loads only this export.
+// The API 68 anonymous capture at native-capture
+// (SHA-256 b8f1dd5b5d17023ec585cde7a06090c5a816cafdc06b55e6ac475040dac302ab)
+// answers the 256 R and C rows with the exact API 67 text. The S shadow controls
+// and B local-boundary rows have no API 68 capture and are excluded at 68.
 func TestAutomationOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected  string
@@ -45,7 +49,7 @@ func TestAutomationOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 304 || len(data.Remaining) != 0 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 304 || len(data.Remaining) != 0 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle: %d asserted + %d carried at %v", len(data.Cases), len(data.Remaining), data.APIVersions)
 	}
 	seen := map[string]bool{}
@@ -138,6 +142,23 @@ func TestAutomationOrgConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "automation", api)
+			apiCases := data.Cases
+			if api == "68.0" {
+				apiCases = nil
+				excluded := 0
+				for _, tc := range data.Cases {
+					if strings.HasPrefix(tc.ID, "S") || strings.HasPrefix(tc.ID, "B") {
+						excluded++
+						continue
+					}
+					apiCases = append(apiCases, tc)
+				}
+				if len(apiCases) != 256 || excluded != 48 {
+					t.Fatalf("API 68 rows=%d excluded=%d, want 256 and 48", len(apiCases), excluded)
+				}
+				t.Logf("A43 API 68.0 excludes %d S/B controls: no native API 68 capture", excluded)
+				t.Log("A43 API 68.0: native capture is anonymous-only; @IsTest checks keep anonymous-backed local assertions and count as legacy, not native named-route evidence")
+			}
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
 			for name, source := range data.Files {
@@ -179,7 +200,7 @@ func TestAutomationOrgConformance(t *testing.T) {
 			var namedSource strings.Builder
 			namedSource.WriteString("@IsTest private class AutomationProbe {\n")
 			executable := 0
-			for _, tc := range data.Cases {
+			for _, tc := range apiCases {
 				if tc.NativeLine > 0 {
 					continue
 				}
@@ -214,7 +235,7 @@ func TestAutomationOrgConformance(t *testing.T) {
 				}
 				namedByID[id] = tc
 			}
-			for _, tc := range data.Cases {
+			for _, tc := range apiCases {
 				t.Run(tc.ID, func(t *testing.T) {
 					kind := "exact"
 					if tc.LocalBoundaryText != "" {
@@ -248,7 +269,12 @@ func TestAutomationOrgConformance(t *testing.T) {
 							t.Fatal(executionErr)
 						}
 					})
-					counts.run(t, "isTest", "@IsTest", kind, func(t *testing.T) {
+					namedKind := kind
+					if api == "68.0" && kind != "" {
+						// API 68 has no native named-route capture.
+						namedKind = "legacy"
+					}
+					counts.run(t, "isTest", "@IsTest", namedKind, func(t *testing.T) {
 						if tc.NativeLine > 0 {
 							path := filepath.Join(root, "AutomationCompile"+tc.ID+".cls")
 							writeFile(t, path, rejectedSource(tc, true))

@@ -6,14 +6,12 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { pathToFileURL } from "node:url";
 import { repoRoot } from "./helpers.mjs";
+import { chromium } from "./shared-playwright.mjs";
 
 const toolchain = process.env.GLADE_LWC_TOOLCHAIN_DIR || path.join(repoRoot, "third_party/lwc");
 const requireToolchain = createRequire(path.join(toolchain, "compile.mjs"));
 const { transformSync } = requireToolchain("@lwc/compiler");
-const playwrightPath = process.env.GLADE_LWC_PLAYWRIGHT_MODULE;
-const { chromium } = await import(playwrightPath ? pathToFileURL(path.join(playwrightPath, "index.mjs")).href : "playwright");
 const cases = JSON.parse(fs.readFileSync(path.join(repoRoot, "internal/lwc/testdata/conformance/lwc_conditionals.json")));
 
 test("API 67 compiled conditionals match the Salesforce family capture", async () => {

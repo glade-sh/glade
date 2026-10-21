@@ -1,0 +1,70 @@
+[
+  {
+    "id": "literal_quotes",
+    "pattern": "value {0} equals 'Thing'"
+  },
+  {
+    "id": "apostrophe",
+    "pattern": "don't replace {0}"
+  },
+  {
+    "id": "quoted_placeholder",
+    "pattern": "value '{0}' then {0}"
+  },
+  {
+    "id": "doubled_apostrophe",
+    "pattern": "value '' then {0}"
+  },
+  {
+    "id": "ids_parameter",
+    "pattern": "The ids parameter should contain id's for A or B records, not {0} records."
+  },
+  {
+    "id": "label_single_apostrophe",
+    "pattern": "Label.StringFormatSingle"
+  },
+  {
+    "id": "label_doubled_apostrophe",
+    "pattern": "Label.StringFormatDoubled"
+  },
+  {
+    "id": "plain_placeholder",
+    "pattern": "{0}"
+  },
+  {
+    "id": "unclosed_literal",
+    "pattern": "value 'Thing then {0}"
+  },
+  {
+    "id": "unclosed_placeholder",
+    "pattern": "value '{0} then {0}"
+  },
+  {
+    "id": "quoted_braces",
+    "pattern": "'{'{0}'}'"
+  },
+  {
+    "id": "quoted_closing_brace",
+    "pattern": "'}' {0}"
+  },
+  {
+    "id": "doubled_around_placeholder",
+    "pattern": "''{0}''"
+  },
+  {
+    "id": "quoted_typed_placeholder",
+    "pattern": "'{0,number}' {0}"
+  },
+  {
+    "id": "literal_then_placeholder",
+    "pattern": "'word' {0}"
+  },
+  {
+    "id": "adjacent_literals",
+    "pattern": "'one' 'two' {0}"
+  },
+  {
+    "id": "quote_before_comma",
+    "pattern": "'word,{0}'"
+  }
+]

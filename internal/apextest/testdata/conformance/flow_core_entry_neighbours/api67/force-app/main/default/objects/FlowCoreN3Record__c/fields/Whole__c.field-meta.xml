@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Whole__c</fullName><label>Whole</label><precision>10</precision><scale>0</scale><type>Number</type></CustomField>

@@ -30,6 +30,7 @@ type PageRenderRequest struct {
 	Machine            *vm.VM
 	PageName           string
 	PageURL            string
+	RequestHeaders     map[string]string
 	ViewState          *ViewStatePayload
 	FormValues         map[string]string
 	Action             string
@@ -47,6 +48,8 @@ type PageRenderResult struct {
 	Redirect      bool
 	Metrics       RenderMetrics
 	Error         *RenderError
+	Headers       map[string]string
+	Cookies       []vm.VisualforceResponseCookie
 }
 
 type RenderError struct {
@@ -113,6 +116,7 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 	}
 	machine.SetCurrentPageURL(pageURL)
 	defer machine.BindVisualforceStandardControllerReset(standardControllerResetter(machine, pageMeta, tree, namespace))()
+	machine.SetCurrentPageRequestHeaders(req.RequestHeaders)
 	if err := validateViewStateForPage(pageMeta, req.PageName, req.ViewState); err != nil {
 		return PageRenderResult{}, err
 	}
@@ -124,6 +128,18 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 				}
 				break
 			}
+		}
+	}
+	if req.ViewState == nil {
+		required, err := visualforceConfirmationTokenRequired(pageMeta.File)
+		if err != nil {
+			return PageRenderResult{}, err
+		}
+		if required {
+			// Native authorization and request context access_meta_confirmationTokenRequired_true stops the
+			// unconfirmed GET before a controller root, with HTTP 200 and a
+			// CSRF notice. Hosted confirmation tokens are not minted locally.
+			return PageRenderResult{HTML: "<!doctype html><html><head><title>Confirmation required</title></head><body>CSRF confirmation is required.</body></html>"}, nil
 		}
 	}
 
@@ -159,6 +175,13 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 	}
 	ordinaryFormValues := visualforceFormValuesWithoutParamAssignments(req.FormValues, paramAssignments)
 	if len(req.FormValues) > 0 {
+		ordinaryFormValues, err = applyControllerMultiSelectFormValues(tree, &RenderContext{
+			VM: machine, Project: req.Project,
+			Expression: &ExpressionContext{VM: machine, Controller: controller, Extensions: extensions, StandardController: stdController, CurrentPage: machine.CurrentPage()},
+		}, ordinaryFormValues, req.Action)
+		if err != nil {
+			return PageRenderResult{}, err
+		}
 		savedPageMessages = mergePageMessages(savedPageMessages, applyFormValues(controller, ordinaryFormValues, allowedFormFields))
 		savedPageMessages = mergePageMessages(savedPageMessages, applyStandardControllerFormValues(&stdController, ordinaryFormValues, allowedFormFields, machine))
 		controller, err = applyVisualforceParamAssignments(machine, controller, paramAssignments, req.FormValues)
@@ -336,7 +359,21 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 		return PageRenderResult{Metrics: metrics, Error: &RenderError{Message: err.Error(), File: pageMeta.File}}, err
 	}
 	finalHTML := InjectCSRF(InjectViewState(rendered, encoded), payload.CSRF)
-	return PageRenderResult{HTML: finalHTML, ViewState: encoded, RenderAs: renderAs, HeaderOptions: &headerOptions, RedirectURL: redirectURL, Redirect: redirect, Metrics: metrics}, nil
+	headers := machine.CurrentPageHeaders()
+	// Unchanged incoming headers are request context. An explicit put remains
+	// a response write even when the controller repeats that incoming value.
+	for name, value := range headers {
+		if machine.CurrentPageHeaderWritten(name) {
+			continue
+		}
+		for inputName, inputValue := range req.RequestHeaders {
+			if strings.EqualFold(name, inputName) && value == inputValue {
+				delete(headers, name)
+				break
+			}
+		}
+	}
+	return PageRenderResult{HTML: finalHTML, ViewState: encoded, RenderAs: renderAs, HeaderOptions: &headerOptions, RedirectURL: redirectURL, Redirect: redirect, Metrics: metrics, Headers: headers, Cookies: machine.CurrentPageResponseCookies()}, nil
 }
 
 func evaluateVisualforcePageAction(action string, ctx *ExpressionContext) (vm.Value, bool, error) {
@@ -1099,7 +1136,7 @@ func standardControllerResetter(machine *vm.VM, page Page, tree *MarkupNode, nam
 	}
 }
 
-// extendStandardControllerFields exposes only direct page bindings authorized
+// extendStandardControllerFields exposes only bounded page bindings authorized
 // by USER_MODE. Row reads remain separate, so absent and unshared rows provide
 // no field values; other readable fields on the page can still render.
 func extendStandardControllerFields(machine *vm.VM, page Page, tree *MarkupNode, namespace string, controller *vm.Value) map[string]storage.Value {
@@ -1119,7 +1156,12 @@ func extendStandardControllerFields(machine *vm.VM, page Page, tree *MarkupNode,
 	object := machine.Org.Objects[objectKey]
 	checked := make(map[string]bool)
 	var requested []string
+	var nameReferences []storage.Field
 	for _, fieldName := range standardControllerDirectBindings(tree, page.StandardController, machine.Org) {
+		if reference, ok := standardControllerNameReference(object.Definition, fieldName); ok {
+			nameReferences = append(nameReferences, reference)
+			fieldName = reference.APIName
+		}
 		resolved, ok := storage.ResolveFieldName(object.Definition, namespace, fieldName)
 		if !ok || strings.EqualFold(resolved, "Name") || strings.EqualFold(resolved, "Id") {
 			continue
@@ -1181,6 +1223,37 @@ func extendStandardControllerFields(machine *vm.VM, page Page, tree *MarkupNode,
 					merge(projected, []string{field})
 				}
 			}
+		}
+	}
+	// A relationship Name needs both the authorized source reference and a fresh
+	// USER_MODE target read. Never consume flattened or preloaded relationships.
+	for _, reference := range nameReferences {
+		value, authorized := allowed[strings.ToLower(reference.APIName)]
+		if !authorized || value.Kind != storage.ValueID {
+			continue
+		}
+		for _, candidate := range reference.ReferenceTo {
+			targetObject, known := storage.ResolveObjectName(*machine.Org, candidate)
+			if !known {
+				continue
+			}
+			prefix := machine.Org.Objects[targetObject].Definition.KeyPrefix
+			if prefix == "" || !strings.HasPrefix(string(value.ID), prefix) {
+				continue
+			}
+			target, found, err := machine.ReadVisualforceRecordFields(targetObject, value.ID, []string{"Name"})
+			if err != nil || !found {
+				continue
+			}
+			name, present := target.GetField("Name")
+			if !present || (name.Kind != storage.ValueString && name.Kind != storage.ValueNull) {
+				continue
+			}
+			path := reference.RelationshipName + ".Name"
+			allowed[strings.ToLower(path)] = name
+			record.Fields[reference.RelationshipName] = machine.MarkVisualforceRecordFields(vmValueFromStorageRecord(target), []string{"Name"})
+			record = machine.MarkVisualforceRecordFields(record, []string{path})
+			break
 		}
 	}
 	controller.Fields["record"] = record

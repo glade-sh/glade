@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>GammaBridge__c</fullName><label>Gamma Bridge</label><type>Lookup</type><referenceTo>Contact</referenceTo><relationshipName>GammaBridgeOwners</relationshipName><relationshipLabel>Gamma Bridge Owners</relationshipLabel><deleteConstraint>SetNull</deleteConstraint><required>false</required></CustomField>

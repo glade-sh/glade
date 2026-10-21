@@ -36,6 +36,10 @@ Try:
 | `APEXPARSE003` | Invalid Apex source identifier shape or length | `glade check --project .` |
 | `GLADESEMA002` | Unknown Apex or metadata type | `glade schema load --project .` |
 | `GLADESCHEMA001` | Local metadata schema load failed | `glade schema load --project .` |
+| `GLADEAUTO001` | Unsupported workflow behavior (warning) | `glade check --project .` |
+| `GLADEAUTO002` | Unsupported Flow behavior (warning) | `glade check --project .` |
+| `GLADEAUTO003` | Automation file could not load and was skipped (warning) | `glade check --project .` |
+| `GLADEAUTO004` | Invalid supported Flow definition (error) | `glade check --project .` |
 
 `APEXPARSE002` and `APEXPARSE003` are emitted by project parsing but are not
 currently accepted by `glade explain`. Use the guidance below and rerun
@@ -91,3 +95,18 @@ Check output prints the code beside the diagnostic:
 force-app/main/default/classes/RefinementService.cls:2:3
 error GLADESEMA002 method "latestInvoice" references unknown type "Invoice__c"
 ```
+
+## Automation diagnostics
+
+Warnings identify the workflow, Flow, or file that needs attention. A
+`GLADEAUTO003` file is skipped while the other automation files still load.
+`GLADEAUTO004` is an error, including invalid references within the supported
+record-triggered Flow subset. See [local Flow execution](/guide/automation#local-flow-execution).
+
+## Recursive collection display
+
+Displaying a List, Set, or Map that contains itself directly or through other
+collections raises `UnsupportedFeature` with a message beginning
+`Glade: cannot display a List, Set or Map that contains itself`.
+This is a local crash guard, with native behavior uncaptured. It is not a
+Salesforce exception contract and has no stable diagnostic code.

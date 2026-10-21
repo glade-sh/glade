@@ -1,0 +1,5 @@
+case	shape
+missing	Missing and deep unknown suffixes resolve existing enclosing type
+members	Instance fields and methods resolve existing enclosing type
+controls	Existing inner type, enum and standard object
+rejections	Static field, static property, enum constant and unknown root

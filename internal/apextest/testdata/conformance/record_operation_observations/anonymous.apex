@@ -1,0 +1,1 @@
+for (String kind : new List<String>{'identifierAccount','identifierCustom','mergeAll','mergePartial','mergeEmpty'}) { System.debug(LoggingLevel.ERROR,'OBSERVED|'+kind+'|'+JSON.serialize(RecordOperationProbe.observe(kind))); }

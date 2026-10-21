@@ -20,6 +20,7 @@ import (
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/semanticcache"
+	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testreport"
@@ -418,7 +419,7 @@ private class BadBodyTest {
 	if summary := run.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 || summary.Failed != 0 {
 		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
 	}
-	if problem := firstRunProblem(run); !strings.Contains(problem, "constructs unknown type") || !strings.Contains(problem, "MissingHelper") {
+	if problem := firstRunProblem(run); !strings.Contains(problem, "GLADESEMA006: Invalid type: MissingHelper") {
 		t.Fatalf("problem = %q", problem)
 	}
 }
@@ -1380,7 +1381,9 @@ func TestCompileProjectRuntimeDoesNotReadNonSourceBackedSymbolFiles(t *testing.T
 	}
 }
 
-func TestRunCasesContextSynthesizesProjectCompileCaseWhenNoTestsDiscovered(t *testing.T) {
+// With no selected test, the dependency-scoped gate reports the invalid class
+// as excluded rather than synthesizing a project compile case (D40).
+func TestRunCasesContextReportsExcludedClassWhenNoTestsDiscovered(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "BadBodyHelper.cls")
 	writeFile(t, path, `
@@ -1401,15 +1404,15 @@ public class BadBodyHelper {
 	}
 
 	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true}, nil)
-	if summary := run.Summary(); summary.Total != 1 || summary.CompileErrors != 1 {
-		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	if summary := run.Summary(); summary.Total != 0 || summary.ExcludedClasses != 1 || summary.OK() {
+		t.Fatalf("summary = %#v, suites = %#v", summary, run.Suites)
 	}
-	if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 ||
-		run.Suites[0].Name != "project" || run.Suites[0].Cases[0].MethodName != "compile" {
-		t.Fatalf("suites = %#v", run.Suites)
+	if len(run.Suites) != 0 || len(run.ExcludedClasses) != 1 {
+		t.Fatalf("suites = %#v excluded = %#v", run.Suites, run.ExcludedClasses)
 	}
-	if problem := firstRunProblem(run); !strings.Contains(problem, "constructs unknown type") || !strings.Contains(problem, "MissingHelper") {
-		t.Fatalf("problem = %q", problem)
+	if entry := run.ExcludedClasses[0]; entry.ClassName != "BadBodyHelper" || entry.Root != "BadBodyHelper" || entry.DependsOn != "" ||
+		entry.File != path || entry.Line != 4 || !strings.Contains(entry.Message, "MissingHelper") {
+		t.Fatalf("excluded = %#v", entry)
 	}
 }
 
@@ -1553,7 +1556,13 @@ private class CacheAPI67StaticHelpersTest {
     Cache.OrgPartition.validatePartitionName('default');
     Cache.Partition.validateKey(false, 'account');
     Cache.SessionPartition.validateKeyValue(false, 'account', 'value');
-    System.assert(Cache.Session.isAvailable());
+    // PCN001: this project configures no Platform Cache partitions.
+    try {
+      Cache.Session.isAvailable();
+      System.assert(false, 'Expected missing-default exception');
+    } catch (Cache.Session.SessionCacheException e) {
+      System.assertEquals('A default partition was not found.  To cache without partition reference, designate a partition as default.', e.getMessage());
+    }
   }
 
   @isTest
@@ -1798,8 +1807,8 @@ func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
 }
 
 func TestRunWithSourceDigestsPersistsExactV7RuntimeKey(t *testing.T) {
-	if testRuntimeCacheABI != "apextest-runtime-v7" {
-		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v7", testRuntimeCacheABI)
+	if testRuntimeCacheABI != "apextest-runtime-v8" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v8", testRuntimeCacheABI)
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -3158,7 +3167,7 @@ func TestCloneRuntimeOrgIsolatesRecordsAndDefinitions(t *testing.T) {
 	t.Cleanup(ResetPerfCounters)
 	counters := newRunPerfCounters(true)
 	org := storage.NewOrgState()
-	org.OrgID = "00D000000000001"
+	org.OrgID = "00D000000000mH2"
 	org.Objects["Account"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "Account",
@@ -7128,9 +7137,11 @@ private class ConcreteWrapperTest {
 	}
 }
 
-func TestRunJSONDeserializeRunsZeroArgConstructorBeforePropertySetters(t *testing.T) {
+// JSON_INHERITED_DESERIALIZE at API 67.0, anonymous and @IsTest, skips the
+// superclass constructor and fails in the map-backed property setter.
+func TestRunJSONDeserializeSkipsZeroArgConstructorBeforePropertySetters(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"67.0","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/BaseWrapper.cls"), `
 public abstract class BaseWrapper {
   private Map<String, String> values;
@@ -7161,19 +7172,24 @@ public class ConcreteWrapper extends BaseWrapper {
 	writeFile(t, filepath.Join(root, "force-app/main/classes/ConcreteWrapperTest.cls"), `
 @isTest
 private class ConcreteWrapperTest {
-  @isTest static void deserializeInitializesSetterState() {
+  @isTest static void deserializeSkipsSetterStateInitialization() {
     ConcreteWrapper wrapper = new ConcreteWrapper();
     wrapper.Name = 'Ada';
     String payload = '{"Name":"Ada"}';
-    ConcreteWrapper decoded = (ConcreteWrapper)JSON.deserialize(payload, ConcreteWrapper.class);
-    System.assertEquals('Ada', decoded.Name);
+    Boolean threw = false;
+    try {
+      JSON.deserialize(payload, ConcreteWrapper.class);
+    } catch (NullPointerException e) {
+      threw = true;
+    }
+    System.assertEquals(true, threw);
   }
 }
 `)
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("summary = %#v run=%#v", got, run)
+		t.Fatalf("summary = %#v problem=%q", got, firstRunProblem(run))
 	}
 }
 
@@ -8606,7 +8622,7 @@ func TestRunBatchStartCanReturnQueryLocator(t *testing.T) {
 </CustomField>
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/LocatorBatch.cls"), `
-public class LocatorBatch implements Database.Batchable<Account> {
+public class LocatorBatch implements Database.Batchable<SObject> {
   public Database.QueryLocator start(Database.BatchableContext bc) {
     return Database.getQueryLocator('SELECT Id, Name FROM Account');
   }
@@ -8661,7 +8677,7 @@ func TestRunBatchRerunsStaticCollectionInitializerInAsyncTransaction(t *testing.
 </CustomField>
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/StaticSetBatch.cls"), `
-public class StaticSetBatch implements Database.Batchable<Account> {
+public class StaticSetBatch implements Database.Batchable<SObject> {
   public static Boolean Ready;
   public static Set<String> Fields = new Set<String>();
   public static Boolean isReady() {
@@ -8875,7 +8891,9 @@ private class AsyncContextIdsTest {
       AND JobType = 'BatchApex'
       AND Id = '707000000000002'
     ];
-    System.assertEquals(1, pendingBatches.size());
+    // Owned async lifecycle observes Completed after stopTest. SOQL IN
+    // compares that actual Status with the listed pending values.
+    System.assertEquals(0, pendingBatches.size());
     List<CronTrigger> crons = [SELECT Id, State, CronExpression, CronJobDetail.Name FROM CronTrigger];
     System.assertEquals(1, crons.size());
     CronTrigger cron = crons.get(0);
@@ -9045,13 +9063,14 @@ func TestRunAsSetsUserContextForBlock(t *testing.T) {
 private class RunAsTest {
   @isTest static void scopesCurrentUser() {
     // A30 J016 and A26 R008 (API 62/67): UserInfo returns the 18-character user Id.
-    System.assert('005000000000001AAA'.equals(UserInfo.getUserId()));
+    Id originalUserId = UserInfo.getUserId();
+    System.assertEquals('`+storage.DefaultUserID+`', originalUserId);
     System.runAs(new User(Id = 'user-a', ProfileId = 'profile-a', Username = 'user-a@example.test')) {
       System.assertEquals('user-a', UserInfo.getUserId());
       System.assertEquals('profile-a', UserInfo.getProfileId());
       System.assertEquals('user-a@example.test', UserInfo.getUserName());
     }
-    System.assert('005000000000001AAA'.equals(UserInfo.getUserId()));
+    System.assertEquals(originalUserId, UserInfo.getUserId());
   }
 }
 `)
@@ -10444,7 +10463,7 @@ public class StaticSettings {
 				ID:     "a0s000000000001",
 				Object: "Setup_Settings__c",
 				Fields: map[string]storage.Value{
-					"SetupOwnerId":     storage.StringValue("00D000000000001"),
+					"SetupOwnerId":     storage.StringValue("00D000000000mH2"),
 					"IsInternalOrg__c": storage.BooleanValue(false),
 				},
 			},
@@ -11403,7 +11422,7 @@ public class WidgetTestData {
 		if record.Fields["Body"].String == "" {
 			t.Fatal("ApexClass.Body was empty")
 		}
-		if record.Fields["NamespacePrefix"].Kind != storage.ValueString {
+		if record.Fields["NamespacePrefix"].Kind != storage.ValueNull {
 			t.Fatalf("NamespacePrefix field = %#v", record.Fields["NamespacePrefix"])
 		}
 		if record.Fields["ApiVersion"].Decimal != "65.0" {
@@ -11415,6 +11434,269 @@ public class WidgetTestData {
 	}
 	if !found {
 		t.Fatalf("ApexClass row for WidgetTestData not found: %#v", state.Records)
+	}
+}
+
+func TestOrgFromIndexIncludesDirectApexTypeImplementorRows(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ProbeContract.cls"), `public interface ProbeContract {}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ProbeImplementor.cls"), `public class ProbeImplementor implements ProbeContract {}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ProbeUnrelated.cls"), `public class ProbeUnrelated {}`)
+	index := loadTestIndex(t, root)
+	org := orgFromIndex(index)
+
+	rows, err := soql.ParseAndExecute(org, "SELECT ClassName, ClassNamespacePrefix, InterfaceName, IsConcrete FROM ApexTypeImplementor WHERE ClassName = 'ProbeImplementor' AND InterfaceName = 'ProbeContract'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rows.Rows != 1 {
+		t.Fatalf("direct implementor rows = %d, want 1", rows.Rows)
+	}
+	row := rows.Records[0]
+	if got := row.Fields["ClassName"]; got.Kind != storage.ValueString || got.String != "ProbeImplementor" {
+		t.Fatalf("ClassName = %#v", got)
+	}
+	if got := row.Fields["ClassNamespacePrefix"]; got.Kind != storage.ValueNull {
+		t.Fatalf("ClassNamespacePrefix = %#v, want null", got)
+	}
+	if got := row.Fields["InterfaceName"]; got.Kind != storage.ValueString || got.String != "ProbeContract" {
+		t.Fatalf("InterfaceName = %#v", got)
+	}
+	if got := row.Fields["IsConcrete"]; got.Kind != storage.ValueBoolean || !got.Boolean {
+		t.Fatalf("IsConcrete = %#v, want true", got)
+	}
+
+	control, err := soql.ParseAndExecute(org, "SELECT ClassName FROM ApexTypeImplementor WHERE ClassName = 'ProbeUnrelated' AND InterfaceName = 'ProbeContract'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if control.Rows != 0 {
+		t.Fatalf("unrelated-class implementor rows = %d, want 0", control.Rows)
+	}
+}
+
+func TestOrgFromIndexMatchesCapturedConcreteApexTypeImplementorRows(t *testing.T) {
+	type capturedRow struct {
+		APIVersion      string  `json:"apiVersion"`
+		Context         string  `json:"context"`
+		ClassName       string  `json:"className"`
+		NamespacePrefix *string `json:"namespacePrefix"`
+		InterfaceName   string  `json:"interfaceName"`
+		IsConcrete      bool    `json:"isConcrete"`
+	}
+	var data struct {
+		APIVersions []string      `json:"apiVersions"`
+		Contexts    []string      `json:"contexts"`
+		Rows        []capturedRow `json:"rows"`
+	}
+	raw, err := os.ReadFile("testdata/conformance/apex_type_implementor_concrete/answers.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(raw, &data); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" || strings.Join(data.Contexts, ",") != "anonymous,@IsTest" || len(data.Rows) != 24 {
+		t.Fatalf("incomplete native matrix: apis=%v contexts=%v rows=%d", data.APIVersions, data.Contexts, len(data.Rows))
+	}
+
+	contract, err := os.ReadFile("testdata/conformance/apex_type_implementor_concrete/ProbeNestedContract.cls")
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondContract, err := os.ReadFile("testdata/conformance/apex_type_implementor_concrete/ProbeSecondContract.cls")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, api := range data.APIVersions {
+		version := strings.TrimSuffix(api, ".0")
+		classNames := []string{"ProbeConcrete" + version + "Top", "ProbeConcrete" + version + "Container"}
+		classes := make([][]byte, 0, len(classNames))
+		for _, name := range classNames {
+			body, err := os.ReadFile(filepath.Join("testdata/conformance/apex_type_implementor_concrete", name+".cls"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			classes = append(classes, body)
+		}
+
+		root := t.TempDir()
+		writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+		classDir := filepath.Join(root, "force-app/main/classes")
+		fixtures := []struct {
+			name string
+			body []byte
+		}{
+			{name: "ProbeNestedContract", body: contract},
+			{name: "ProbeSecondContract", body: secondContract},
+			{name: classNames[0], body: classes[0]},
+			{name: classNames[1], body: classes[1]},
+		}
+		for _, fixture := range fixtures {
+			classPath := filepath.Join(classDir, fixture.name+".cls")
+			writeFile(t, classPath, string(fixture.body))
+			writeFile(t, classPath+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion><status>Active</status></ApexClass>")
+		}
+		index := loadTestIndex(t, root)
+		if index.HasErrors() {
+			t.Fatalf("API %s source errors: %v", api, index.Diagnostics)
+		}
+		org := orgFromIndex(index)
+		org.APIVersion = api
+
+		for _, context := range data.Contexts {
+			capturedRows := make([]capturedRow, 0, 4)
+			for _, captured := range data.Rows {
+				if captured.APIVersion == api && captured.Context == context {
+					capturedRows = append(capturedRows, captured)
+				}
+			}
+			if len(capturedRows) != 4 {
+				t.Fatalf("API %s context %s captured rows = %d, want 4", api, context, len(capturedRows))
+			}
+			t.Run(api+"/"+context, func(t *testing.T) {
+				for _, captured := range capturedRows {
+					query := "SELECT ClassName, ClassNamespacePrefix, InterfaceName, IsConcrete FROM ApexTypeImplementor WHERE ClassName = '" + captured.ClassName + "' AND InterfaceName = '" + captured.InterfaceName + "'"
+					rows, err := soql.ParseAndExecute(org, query)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if rows.Rows != 1 {
+						t.Fatalf("%s/%s rows = %d, want 1", captured.ClassName, captured.InterfaceName, rows.Rows)
+					}
+					row := rows.Records[0]
+					if got := row.Fields["ClassName"]; got.Kind != storage.ValueString || got.String != captured.ClassName {
+						t.Fatalf("ClassName = %#v, want %s", got, captured.ClassName)
+					}
+					if got := row.Fields["ClassNamespacePrefix"]; got.Kind != storage.ValueNull || captured.NamespacePrefix != nil {
+						t.Fatalf("ClassNamespacePrefix = %#v, want null", got)
+					}
+					if got := row.Fields["InterfaceName"]; got.Kind != storage.ValueString || got.String != captured.InterfaceName {
+						t.Fatalf("InterfaceName = %#v, want %s", got, captured.InterfaceName)
+					}
+					if got := row.Fields["IsConcrete"]; got.Kind != storage.ValueBoolean || got.Boolean != captured.IsConcrete {
+						t.Fatalf("IsConcrete = %#v, want %t", got, captured.IsConcrete)
+					}
+				}
+			})
+		}
+	}
+}
+
+func TestOrgFromIndexIncludesNestedApexTypeImplementorRows(t *testing.T) {
+	var data struct {
+		APIVersions []string `json:"apiVersions"`
+		Routes      []string `json:"routes"`
+		Rows        []struct {
+			ClassName       string  `json:"className"`
+			NamespacePrefix *string `json:"namespacePrefix"`
+			InterfaceName   string  `json:"interfaceName"`
+			RowCount        int     `json:"rowCount"`
+		} `json:"rows"`
+		Controls []struct {
+			ClassName     string `json:"className"`
+			InterfaceName string `json:"interfaceName"`
+			RowCount      int    `json:"rowCount"`
+		} `json:"controls"`
+	}
+	raw, err := os.ReadFile("testdata/conformance/apex_type_implementor_nested/answers.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(raw, &data); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" || strings.Join(data.Routes, ",") != "anonymous,istest" {
+		t.Fatalf("incomplete native matrix: %#v", data)
+	}
+	if len(data.Rows) != 3 || len(data.Controls) != 2 {
+		t.Fatalf("incomplete native rows and controls: %#v", data)
+	}
+	expectedRows := []struct {
+		ClassName       string  `json:"className"`
+		NamespacePrefix *string `json:"namespacePrefix"`
+		InterfaceName   string  `json:"interfaceName"`
+		RowCount        int     `json:"rowCount"`
+	}{
+		{ClassName: "ProbeNestedContainer.NestedImplementor", InterfaceName: "ProbeNestedContract", RowCount: 1},
+		{ClassName: "ProbeNestedContainer.MultiImplementor", InterfaceName: "ProbeNestedContract", RowCount: 1},
+		{ClassName: "ProbeNestedContainer.MultiImplementor", InterfaceName: "ProbeSecondContract", RowCount: 1},
+	}
+	expectedControls := []struct {
+		ClassName     string `json:"className"`
+		InterfaceName string `json:"interfaceName"`
+		RowCount      int    `json:"rowCount"`
+	}{
+		{ClassName: "ProbeNestedContainer.NestedControl", InterfaceName: "ProbeNestedContract"},
+		{ClassName: "ProbeNestedContainer.PrivateImplementor", InterfaceName: "ProbeNestedContract"},
+	}
+	if !reflect.DeepEqual(data.Rows, expectedRows) || !reflect.DeepEqual(data.Controls, expectedControls) {
+		t.Fatalf("unexpected native cells: rows=%#v controls=%#v", data.Rows, data.Controls)
+	}
+	contract, err := os.ReadFile("testdata/conformance/apex_type_implementor_nested/ProbeNestedContract.cls")
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondContract, err := os.ReadFile("testdata/conformance/apex_type_implementor_nested/ProbeSecondContract.cls")
+	if err != nil {
+		t.Fatal(err)
+	}
+	container, err := os.ReadFile("testdata/conformance/apex_type_implementor_nested/ProbeNestedContainer.cls")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, api := range data.APIVersions {
+		root := t.TempDir()
+		writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+		classDir := filepath.Join(root, "force-app/main/classes")
+		for _, class := range []struct {
+			name string
+			body string
+		}{{"ProbeNestedContract", string(contract)}, {"ProbeSecondContract", string(secondContract)}, {"ProbeNestedContainer", string(container)}} {
+			classPath := filepath.Join(classDir, class.name+".cls")
+			writeFile(t, classPath, class.body)
+			writeFile(t, classPath+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion><status>Active</status></ApexClass>")
+		}
+		index := loadTestIndex(t, root)
+		if index.HasErrors() {
+			t.Fatalf("API %s source errors: %v", api, index.Diagnostics)
+		}
+		org := orgFromIndex(index)
+		org.APIVersion = api
+		for _, route := range data.Routes {
+			t.Run(api+"/"+route, func(t *testing.T) {
+				for _, captured := range data.Rows {
+					rows, err := soql.ParseAndExecute(org, "SELECT ClassName, ClassNamespacePrefix, InterfaceName FROM ApexTypeImplementor WHERE ClassName = '"+captured.ClassName+"' AND InterfaceName = '"+captured.InterfaceName+"'")
+					if err != nil {
+						t.Fatal(err)
+					}
+					if rows.Rows != captured.RowCount {
+						t.Fatalf("%s/%s rows = %d, want %d", captured.ClassName, captured.InterfaceName, rows.Rows, captured.RowCount)
+					}
+					row := rows.Records[0]
+					if got := row.Fields["ClassName"]; got.Kind != storage.ValueString || got.String != captured.ClassName {
+						t.Fatalf("ClassName = %#v", got)
+					}
+					if got := row.Fields["ClassNamespacePrefix"]; got.Kind != storage.ValueNull || captured.NamespacePrefix != nil {
+						t.Fatalf("ClassNamespacePrefix = %#v, want null", got)
+					}
+					if got := row.Fields["InterfaceName"]; got.Kind != storage.ValueString || got.String != captured.InterfaceName {
+						t.Fatalf("InterfaceName = %#v", got)
+					}
+				}
+
+				for _, control := range data.Controls {
+					rows, err := soql.ParseAndExecute(org, "SELECT ClassName FROM ApexTypeImplementor WHERE ClassName = '"+control.ClassName+"' AND InterfaceName = '"+control.InterfaceName+"'")
+					if err != nil {
+						t.Fatal(err)
+					}
+					if rows.Rows != control.RowCount {
+						t.Fatalf("control %s rows = %d, want %d", control.ClassName, rows.Rows, control.RowCount)
+					}
+				}
+			})
+		}
 	}
 }
 
@@ -11586,7 +11868,7 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 	foundCartPermission := false
 	for _, record := range org.Objects["ObjectPermissions"].Records {
 		parent, hasParent := record.GetField("ParentId")
-		objectValue, hasObject := record.GetField("SObjectType")
+		objectValue, hasObject := record.GetField("SobjectType")
 		if hasParent && hasObject &&
 			storageIDValueEqualsText(parent, string(communityLoginProfileID)) &&
 			storageStringValueEqualsText(objectValue, "pkg__Cart__c") {
@@ -11603,7 +11885,7 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 	if !guestPermissionSetAssignmentExists(org) {
 		t.Fatalf("guest permission set assignment was not created; records=%#v", org.Objects["PermissionSetAssignment"].Records)
 	}
-	if !recordWithFieldValueExists(org.Objects["ObjectPermissions"], "SObjectType", "Account") {
+	if !recordWithFieldValueExists(org.Objects["ObjectPermissions"], "SobjectType", "Account") {
 		t.Fatalf("project object permissions row was not created; records=%#v", org.Objects["ObjectPermissions"].Records)
 	}
 	if !recordWithFieldValueExists(org.Objects["FieldPermissions"], "Field", "Account.ShippingStreet") {
@@ -12022,7 +12304,7 @@ func TestRunCustomMetadataEntityDefinitionRelationshipFieldIsTypeName(t *testing
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Handler__mdt/Handler__mdt.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Handler</label></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Handler__mdt/fields/SObjectType__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>SObjectType__c</fullName><label>SObject Type</label><type>MetadataRelationship</type><referenceTo>EntityDefinition</referenceTo><relationshipName>Handlers</relationshipName></CustomField>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Handler__mdt/fields/TargetField__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>TargetField__c</fullName><label>Target Field</label><type>MetadataRelationship</type><referenceTo>FieldDefinition</referenceTo><relationshipName>TargetField</relationshipName></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Handler__mdt/fields/TargetField__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>TargetField__c</fullName><label>Target Field</label><type>MetadataRelationship</type><referenceTo>FieldDefinition</referenceTo><relationshipName>TargetField</relationshipName><metadataRelationshipControllingField>SObjectType__c</metadataRelationshipControllingField></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/customMetadata/Handler.Log.md-meta.xml"), `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><label>Log</label><values><field>SObjectType__c</field><value>Log__c</value></values><values><field>TargetField__c</field><value>Log__c.Status__c</value></values></CustomMetadata>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Log__c/Log__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Log</label></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Log__c/fields/Status__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Status__c</fullName><label>Status</label><type>Text</type><length>40</length></CustomField>`)
@@ -12031,15 +12313,21 @@ func TestRunCustomMetadataEntityDefinitionRelationshipFieldIsTypeName(t *testing
 private class HandlerTest {
   @isTest static void metadataRelationshipFieldIsATypeName() {
 	    Handler__mdt handler = [
-	      SELECT SObjectType__c, TargetField__c
+	      SELECT SObjectType__c, SObjectType__r.QualifiedApiName,
+	        TargetField__c, TargetField__r.QualifiedApiName
 	      FROM Handler__mdt
 	      LIMIT 1
 	    ];
 	    System.assertEquals('Log__c', handler.SObjectType__c);
+	    System.assertEquals('Log__c', handler.SObjectType__r.QualifiedApiName);
 	    handler.SObjectType__c = handler.SObjectType__r.QualifiedApiName;
 	    System.assertEquals('Log__c', Type.forName(handler.SObjectType__c).getName());
 	    System.assertEquals('Status__c', handler.TargetField__r.QualifiedApiName);
-	    System.assertEquals('Log__c', handler.TargetField__r.EntityDefinition.QualifiedApiName);
+	    try {
+	      System.assertEquals('Log__c', handler.TargetField__r.EntityDefinition.QualifiedApiName);
+	    } catch (SObjectException issue) {
+	      System.assertEquals('SObject row was retrieved via SOQL without querying the requested field: FieldDefinition.EntityDefinition', issue.getMessage());
+	    }
 	  }
 	}
 `)
@@ -12112,7 +12400,7 @@ func TestUpdateRecordTypeFromProjectReferenceRefreshesExistingMetadata(t *testin
 		Active:        false,
 		Available:     false,
 	}}
-	if !updateRecordTypeFromProjectReference(recordTypes, "Business_Account", "Organization") {
+	if !updateRecordTypeFromProjectReference(recordTypes, "Business_Account", "Organization", false) {
 		t.Fatalf("record type was not updated")
 	}
 	if recordTypes[0].Name != "Organization" || !recordTypes[0].Active || !recordTypes[0].Available {
@@ -12127,7 +12415,7 @@ func TestUpdateRecordTypeFromProjectReferencePreservesExistingLabelWhenReference
 		Active:        true,
 		Available:     true,
 	}}
-	if updateRecordTypeFromProjectReference(recordTypes, "FlatRate", "FlatRate") {
+	if updateRecordTypeFromProjectReference(recordTypes, "FlatRate", "FlatRate", false) {
 		t.Fatalf("record type should not have been updated")
 	}
 	if recordTypes[0].Name != "Flat Rate" {

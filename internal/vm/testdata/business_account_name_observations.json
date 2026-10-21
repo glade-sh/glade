@@ -1,0 +1,41 @@
+{
+  "source": "Map<String,Boolean> flags = new Map<String,Boolean>();\nMap<String,Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();\nBoolean personEnabled = fields.containsKey('IsPersonAccount');\nSet<String> parts = new Set<String>{'Name','FirstName','LastName','MiddleName','Suffix'};\nfor (Schema.SObjectField token : fields.values()) {\n    Schema.DescribeFieldResult field = token.getDescribe();\n    if (field.isNameField() || parts.contains(field.getName())) flags.put(field.getName(), field.isNameField());\n}\nSystem.debug('ACCOUNT_NAME|'+JSON.serialize(new Map<String,Object>{'personAccounts'=>personEnabled,'flags'=>flags}));\n",
+  "sourceSHA256": "b783c0abdc78f1c3547093be9b32040ed31bbfacddb917ff55cc1dbf862cd8ec",
+  "scope": "Business Account only; three anonymous transport/source APIs. Person-enabled catalog retained separately; no named-context observation from this packet.",
+  "cells": [
+    {
+      "api": "62.0",
+      "context": "anonymous",
+      "answer": {
+        "personAccounts": false,
+        "flags": {
+          "Name": true
+        }
+      },
+      "rawSHA256": "f3a7196833bf021e5f97c16418774a685f785f5d115608ca52e0f74d70b8f584"
+    },
+    {
+      "api": "67.0",
+      "context": "anonymous",
+      "answer": {
+        "personAccounts": false,
+        "flags": {
+          "Name": true
+        }
+      },
+      "rawSHA256": "98fa1f25978c0a7a0c858110a3ba3ebf188ffe461f1f6f74d2a794d34217d852"
+    },
+    {
+      "api": "68.0",
+      "context": "anonymous",
+      "answer": {
+        "personAccounts": false,
+        "flags": {
+          "Name": true
+        }
+      },
+      "rawSHA256": "eb0b7c0895b90a8bd000e4f36c3b14b69d3d6729e485378497319461086e3ae0"
+    }
+  ],
+  "orgIdSHA256": "ea65475929a6a0c33b9d81ee15285bf90448da6438acca15e0249ba74fb22632"
+}

@@ -2,10 +2,12 @@ package sema
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -17,6 +19,23 @@ const visualforceControllerAssignmentCode = "GLADESEMA_VF018"
 func IsVisualforceControllerDiagnostic(diag diagnostic.Diagnostic) bool {
 	if diag.Severity != diagnostic.Error {
 		return false
+	}
+	if diag.Code == "GLADESEMA_QUERY_FIELD" || diag.Code == "GLADESEMA_QUERY_OBJECT" ||
+		(diag.Code == "GLADESEMA006" && strings.HasPrefix(diag.Message, "Invalid type: ")) {
+		return true
+	}
+	if diag.Code == "GLADESEMA_QUERY_RELATIONSHIP" &&
+		strings.Contains(diag.Message, "Didn't understand relationship '") && strings.Contains(diag.Message, "' in field path.") {
+		return true
+	}
+	if diag.Code == "GLADESEMA032" && diag.Message == "Top-level type must have public or global visibility" {
+		return true
+	}
+	if diag.Code == "GLADESEMA_QUERY_CONTRACT" && strings.HasPrefix(diag.Message, "WITH SECURITY_ENFORCED is no longer supported") {
+		return true
+	}
+	if diag.Code == "GLADESEMA_QUERY_CONTRACT" && (strings.HasPrefix(diag.Message, "Invalid WITH Identifier: ") || strings.HasPrefix(diag.Message, "Conflicting WITH Identifier: ")) {
+		return true
 	}
 	if diag.Code == "GLADESEMA_VF001" || diag.Code == visualforceControllerAssignmentCode {
 		return true
@@ -48,7 +67,160 @@ func IsVisualforceControllerDiagnostic(diag diagnostic.Diagnostic) bool {
 	return diag.Code == "GLADESEMA023" && strings.HasPrefix(diag.Message, "Method does not exist or incorrect signature: void ") &&
 		(strings.HasSuffix(diag.Message, " from the type System.PageReference") || strings.HasSuffix(diag.Message, " from the type Map<String,String>") ||
 			strings.HasSuffix(diag.Message, " from the type ApexPages.StandardController") ||
-			strings.HasSuffix(diag.Message, " from the type ApexPages.StandardSetController") || strings.HasSuffix(diag.Message, " from the type System.SelectOption"))
+			strings.HasSuffix(diag.Message, " from the type ApexPages.StandardSetController") || strings.HasSuffix(diag.Message, " from the type System.SelectOption") ||
+			strings.HasSuffix(diag.Message, " from the type System.UserInfo"))
+}
+
+// Captured inline-query class failures precede the dependent page rejection.
+// Keep dynamic query exceptions and the API67 SECURITY_ENFORCED gate on their
+// existing paths. Only already-rejected parser forms are presented here.
+func inlineQueryWithDiagnostic(ctx queryTextContext, apiVersion int, parseErr error) (diagnostic.Diagnostic, bool) {
+	if parseErr == nil {
+		return diagnostic.Diagnostic{}, false
+	}
+	invalidMode := parseErr.Error() == "soql: expected SECURITY_ENFORCED, USER_MODE, or SYSTEM_MODE after WITH"
+	duplicateMode := parseErr.Error() == "soql: duplicate WITH clause"
+	if !invalidMode && !duplicateMode {
+		return diagnostic.Diagnostic{}, false
+	}
+	text := maskInlineQueryComments(ctx.queryText)
+	spans := newSourceFacts(text).codeSpans()
+	depth, firstMode := 0, ""
+	fromSeen := false
+	for offset := 0; offset < len(text); offset++ {
+		if !spans.contains(offset) {
+			continue
+		}
+		switch text[offset] {
+		case '(':
+			depth++
+		case ')':
+			depth--
+		}
+		previous := offset - 1
+		for previous >= 0 && isWhitespace(text[previous]) {
+			previous--
+		}
+		qualified := previous >= 0 && (text[previous] == ':' || text[previous] == '.')
+		if depth == 0 && !qualified && wordAtFold(text, offset, "FROM") {
+			fromSeen = true
+		}
+		if depth != 0 || !fromSeen || qualified || !wordAtFold(text, offset, "WITH") {
+			continue
+		}
+		start := offset + len("WITH")
+		for start < len(text) && isWhitespace(text[start]) {
+			start++
+		}
+		end := start
+		for end < len(text) && spans.contains(end) && isQueryIdentPart(text[end]) {
+			end++
+		}
+		mode := ctx.queryText[start:end]
+		if !semaBindName(mode) {
+			continue
+		}
+		known := strings.EqualFold(mode, "USER_MODE") || strings.EqualFold(mode, "SYSTEM_MODE") || strings.EqualFold(mode, "SECURITY_ENFORCED")
+		if !known && invalidMode {
+			return ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "Invalid WITH Identifier: "+mode, mode, start), true
+		}
+		if duplicateMode && strings.EqualFold(firstMode, "USER_MODE") && strings.EqualFold(mode, "SECURITY_ENFORCED") {
+			if items := queryVersionDiagnostics(soql.Query{SecurityMode: mode}, ctx, apiVersion); len(items) != 0 {
+				return items[0], true
+			}
+			return ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "Conflicting WITH Identifier: "+mode, mode, start), true
+		}
+		if known && firstMode == "" {
+			firstMode = mode
+		}
+		offset = max(offset, end-1)
+	}
+	return diagnostic.Diagnostic{}, false
+}
+
+// VisualforceMetadataDiagnostic keeps the local source range and code while
+// presenting captured Metadata API class diagnostics. Execute-anonymous
+// diagnostics keep their framing at their existing callers.
+func VisualforceMetadataDiagnostic(diag diagnostic.Diagnostic, source string) diagnostic.Diagnostic {
+	if diag.Code == "GLADESEMA006" {
+		// Local-declaration recovery can retain the earlier source-scan
+		// diagnostic instead of the IR diagnostic for the same unknown type.
+		declaration, quotedType, ok := strings.Cut(diag.Message, " with unknown type ")
+		if ok && strings.Contains(declaration, " declares local ") {
+			typeName, err := strconv.Unquote(quotedType)
+			if err == nil {
+				diag.Message = "Invalid type: " + typeName
+			}
+		}
+		return diag
+	}
+	if diag.Code == "GLADESEMA_QUERY_OBJECT" {
+		if object, ok := strings.CutPrefix(diag.Message, "SOQL query references unknown SObject "); ok {
+			diag.Message = "Invalid type: Schema." + strings.Trim(object, "\"")
+		}
+		return diag
+	}
+	if (diag.Code != "GLADESEMA_QUERY_FIELD" && diag.Code != "GLADESEMA_QUERY_RELATIONSHIP") || diag.Range == nil {
+		return diag
+	}
+	detail := ""
+	if field, ok := strings.CutPrefix(diag.Message, "SOQL query references unknown field "); ok {
+		// The optional via suffix describes the source path, not the resolved
+		// entity and field. Its dots must not participate in this split.
+		field, _, _ = strings.Cut(field, " via ")
+		if dot := strings.LastIndexByte(field, '.'); dot >= 0 {
+			detail = soql.MissingColumnMessage(field[dot+1:], field[:dot])
+		}
+	} else if diag.Code == "GLADESEMA_QUERY_FIELD" {
+		if _, tail, ok := strings.Cut(diag.Message, "No such column '"); ok {
+			detail = "No such column '" + tail
+		}
+	} else if _, tail, ok := strings.Cut(diag.Message, "Didn't understand relationship '"); ok && strings.Contains(tail, "' in field path.") {
+		detail = "Didn't understand relationship '" + tail
+	}
+	if detail == "" {
+		return diag
+	}
+	for _, literal := range semaSOQLLiterals(source, newSourceFacts(source).codeSpans()) {
+		offset := diag.Range.Start.Offset - literal.queryOffset
+		if offset < 0 || offset >= len(literal.text) {
+			continue
+		}
+		column := offset + 1
+		start := max(0, column-30)
+		for start > 0 && !isWhitespace(literal.text[start-1]) {
+			start--
+		}
+		end := min(len(literal.text), column+30)
+		for end < len(literal.text) && !isWhitespace(literal.text[end]) {
+			end++
+		}
+		diag.Message = literal.text[start:end] + "\n" + strings.Repeat(" ", offset-start) + "^\nERROR at Row:1:Column:" + fmt.Sprint(column) + "\n" + detail
+		break
+	}
+	return diag
+}
+
+// The declaration already reports Invalid type for an unknown list element.
+// Native metadata omits a secondary query-object error for that initializer.
+func (ctx queryTextContext) rejectedListQueryDeclaration(objectName string) bool {
+	prefix := strings.TrimSpace(ctx.locator.source[:ctx.queryOffset])
+	if !strings.HasSuffix(prefix, "[") {
+		return false
+	}
+	prefix = strings.TrimSpace(strings.TrimSuffix(prefix, "["))
+	equal := strings.LastIndexByte(prefix, '=')
+	if equal < 0 || strings.TrimSpace(prefix[equal+1:]) != "" {
+		return false
+	}
+	declaration := prefix[strings.LastIndexAny(prefix[:equal], ";{}\n")+1 : equal]
+	words := strings.Fields(declaration)
+	if len(words) < 2 || !semaBindName(words[len(words)-1]) {
+		return false
+	}
+	typeName := strings.Join(words[:len(words)-1], "")
+	element, collection := queryBindCollectionElementType(typeName)
+	return isListType(typeName) && collection && strings.EqualFold(element, objectName)
 }
 
 func visualforceControllerDiagnostic(typ typesys.TypeSymbol, message string, start, end int, source string) diagnostic.Diagnostic {
@@ -102,7 +274,7 @@ func semaVisualforceSeverityDiagnostic(typ typesys.TypeSymbol, expr ir.Expr, sco
 // constructors, overload selection and visibility use existing code.
 func semaVisualforceConstructorDiagnostic(typ typesys.TypeSymbol, typeName string, argTypes []string, model *semaTypeMemberView, start int, source string) (diagnostic.Diagnostic, bool) {
 	canonical := semaCanonicalPlatformAlias(typeName)
-	if !strings.EqualFold(canonical, "PageReference") && !strings.EqualFold(canonical, "ApexPages.Message") && !strings.EqualFold(canonical, "ApexPages.StandardController") && !strings.EqualFold(canonical, "ApexPages.StandardSetController") && !strings.EqualFold(canonical, "SelectOption") {
+	if !strings.EqualFold(canonical, "PageReference") && !strings.EqualFold(canonical, "Cookie") && !strings.EqualFold(canonical, "ApexPages.Message") && !strings.EqualFold(canonical, "ApexPages.StandardController") && !strings.EqualFold(canonical, "ApexPages.StandardSetController") && !strings.EqualFold(canonical, "SelectOption") {
 		return diagnostic.Diagnostic{}, false
 	}
 	if !semaVisualforcePlatformType(model, typeName) || semaArgTypesContainUnknown(argTypes) {
@@ -111,8 +283,14 @@ func semaVisualforceConstructorDiagnostic(typ typesys.TypeSymbol, typeName strin
 	message := ""
 	switch strings.ToLower(canonical) {
 	case "pagereference":
-		if len(argTypes) == 1 && strings.EqualFold(argTypes[0], "null") {
+		if len(argTypes) == 0 {
+			message = "Constructor not defined: [System.PageReference].<Constructor>()"
+		} else if len(argTypes) == 1 && strings.EqualFold(argTypes[0], "null") {
 			message = "Ambiguous method signature: void <init>(NULL)"
+		}
+	case "cookie":
+		if len(argTypes) == 0 {
+			message = "Constructor not defined: [System.Cookie].<Constructor>()"
 		}
 	case "apexpages.message":
 		if params, ok := semaPlatformConstructorSignatures(canonical); ok && !semaArgsMatchAny(params, argTypes, model) {
@@ -137,20 +315,30 @@ func semaVisualforceConstructorDiagnostic(typ typesys.TypeSymbol, typeName strin
 	return visualforceControllerDiagnostic(typ, message, start, start+max(1, len(typeName)), source), true
 }
 
-func (a *Analyzer) checkIRVisualforceCall(typ typesys.TypeSymbol, expr ir.Expr, receiverType, method, receiverMode string, scope irSemaScope, model *semaTypeMemberView, start int, source string) (diagnostic.Diagnostic, bool) {
+func (a *Analyzer) checkIRVisualforceCall(typ typesys.TypeSymbol, expr ir.Expr, receiverType, method, receiverMode string, scope irSemaScope, model *semaTypeMemberView, start int, source string) ([]diagnostic.Diagnostic, bool) {
 	canonical := semaCanonicalPlatformAlias(receiverType)
 	pageReference := strings.EqualFold(canonical, "PageReference") && semaVisualforcePlatformType(model, receiverType)
 	standardController := strings.EqualFold(canonical, "ApexPages.StandardController") && semaVisualforcePlatformType(model, receiverType)
 	selectOption := strings.EqualFold(canonical, "SelectOption") && semaVisualforcePlatformType(model, receiverType)
 	standardSetController := strings.EqualFold(canonical, "ApexPages.StandardSetController") && semaVisualforcePlatformType(model, receiverType)
+	userInfo := strings.EqualFold(canonical, "UserInfo") && receiverMode == "class" && semaVisualforcePlatformType(model, receiverType)
 	parameterMap := strings.EqualFold(canonical, "Map<String,String>") && strings.EqualFold(method, "put") &&
 		a.irVisualforceParameterMap(expr.Left, scope, model, typ.Name)
-	if !pageReference && !standardController && !standardSetController && !parameterMap && !selectOption {
-		return diagnostic.Diagnostic{}, false
+	if !pageReference && !standardController && !standardSetController && !parameterMap && !selectOption && !userInfo {
+		return nil, false
+	}
+	// The ordinary receiver walk already reports a rejected constructor.
+	// Stop here before resolving its method without emitting the same error
+	// again (authorization and request context new PageReference.getUrl captures at API 59/67).
+	if pageReference && expr.Left != nil && expr.Left.Kind == ir.ExprCall && strings.HasPrefix(expr.Left.Callee, "new:") && len(expr.Left.NamedArgs) == 0 {
+		constructorTypes := irCallArgTypes(a, expr.Left.Args, scope, model, typ.Name)
+		if _, rejected := semaVisualforceConstructorDiagnostic(typ, receiverType, constructorTypes, model, start, source); rejected {
+			return nil, true
+		}
 	}
 	argTypes := irCallArgTypes(a, expr.Args, scope, model, typ.Name)
 	if semaArgTypesContainUnknown(argTypes) {
-		return diagnostic.Diagnostic{}, false
+		return nil, false
 	}
 	target := "System.PageReference"
 	if selectOption {
@@ -159,7 +347,7 @@ func (a *Analyzer) checkIRVisualforceCall(typ typesys.TypeSymbol, expr ir.Expr, 
 	if parameterMap {
 		sig, ok := semaCollectionMethodSignature(receiverType, method)
 		if !ok || semaArgsMatchAny(sig.params, argTypes, model) {
-			return diagnostic.Diagnostic{}, false
+			return nil, false
 		}
 		target = "Map<String,String>"
 	} else {
@@ -170,24 +358,27 @@ func (a *Analyzer) checkIRVisualforceCall(typ typesys.TypeSymbol, expr ir.Expr, 
 			sig.params = [][]string{{"List<SObject>"}}
 		}
 		if known && semaArgsMatchAny(sig.params, argTypes, model) {
-			return diagnostic.Diagnostic{}, false
+			return nil, false
 		}
 		// Preserve existing handling of other declared platform methods, including
 		// the getContent/getContentAsPDF boundary.
 		if !known && len(resolveMemberMethods(model, receiverType, method)) != 0 {
-			return diagnostic.Diagnostic{}, false
+			return nil, false
 		}
 		if standardController {
 			if !known {
-				return diagnostic.Diagnostic{}, false
+				return nil, false
 			}
 			target = "ApexPages.StandardController"
 		}
 		if standardSetController {
 			if !known {
-				return diagnostic.Diagnostic{}, false
+				return nil, false
 			}
 			target = "ApexPages.StandardSetController"
+		}
+		if userInfo {
+			target = "System.UserInfo"
 		}
 	}
 	message := fmt.Sprintf("Method does not exist or incorrect signature: void %s(%s) from the type %s", method, semaVisualforceArgumentTypes(argTypes), target)
@@ -195,7 +386,7 @@ func (a *Analyzer) checkIRVisualforceCall(typ typesys.TypeSymbol, expr ir.Expr, 
 	// Retain the call diagnostic code so the existing IR/text duplicate removal
 	// keeps the resolved IR message instead of a second text-scanner message.
 	diag.Code = "GLADESEMA023"
-	return diag, true
+	return []diagnostic.Diagnostic{diag}, true
 }
 
 // Native diagnostics format rejected assignments from
@@ -288,7 +479,7 @@ func (a *Analyzer) semaVisualforceSetControllerField(typ typesys.TypeSymbol, exp
 	return visualforceControllerDiagnostic(typ, "Variable does not exist: "+field, start, start+max(1, len(field)), source), true
 }
 
-// This diagnostic formatting applies to the direct getParameters() result,
+// This diagnostic formatting applies to the direct getParameters()/getHeaders() result,
 // not to an unrelated Map<String,String> receiver.
 func (a *Analyzer) irVisualforceParameterMap(expr *ir.Expr, scope irSemaScope, model *semaTypeMemberView, owner string) bool {
 	if expr == nil || expr.Kind != ir.ExprCall {
@@ -298,7 +489,7 @@ func (a *Analyzer) irVisualforceParameterMap(expr *ir.Expr, scope irSemaScope, m
 	if dot := strings.LastIndexByte(method, '.'); dot >= 0 {
 		method = method[dot+1:]
 	}
-	if !strings.EqualFold(method, "getParameters") {
+	if !strings.EqualFold(method, "getParameters") && !strings.EqualFold(method, "getHeaders") {
 		return false
 	}
 	receiver := ""

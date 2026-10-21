@@ -1,0 +1,297 @@
+{
+  "apiVersions": [
+    "62.0",
+    "63.0",
+    "64.0",
+    "65.0",
+    "66.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "releaseDriftControlApiVersions": [
+    "59.0"
+  ],
+  "expectationStatus": "pending native capture",
+  "declarations": {
+    "StubDispatchTarget": "public virtual class StubDispatchTarget {\n    public List<SObject> records;\n    public StubDispatchTarget() {\n        StubDispatchProbe.constructorCalls++;\n        records = new List<SObject>();\n        if (StubDispatchProbe.failConstruction) {\n            throw new StubDispatchProbe.ProbeFailureException('construction marker');\n        }\n    }\n    public virtual String fetch() {\n        StubDispatchProbe.bodyCalls++;\n        if (!Test.isRunningTest()) {\n            throw new StubDispatchProbe.ProbeFailureException('transport requires test context');\n        }\n        HttpRequest request = new HttpRequest();\n        request.setEndpoint('https://example.invalid/capture-only');\n        request.setMethod('GET');\n        return new Http().send(request).getBody();\n    }\n    public virtual Schema.SObjectType objectType() {\n        StubDispatchProbe.bodyCalls++;\n        return Account.SObjectType;\n    }\n    public virtual List<Schema.SObjectField> fieldList() {\n        StubDispatchProbe.bodyCalls++;\n        return new List<Schema.SObjectField>{Account.Id, Account.Name};\n    }\n    public virtual List<SObject> rows() {\n        StubDispatchProbe.bodyCalls++;\n        return Database.query('SELECT Id, Name FROM Account WHERE Name = \\'capture-row\\'');\n    }\n    public virtual Integer getDecimalPlaces() {\n        StubDispatchProbe.bodyCalls++;\n        return 7;\n    }\n    public virtual StubDispatchTarget fluent() {\n        StubDispatchProbe.bodyCalls++;\n        return this;\n    }\n    public virtual void write(List<SObject> values) {\n        StubDispatchProbe.bodyCalls++;\n        insert values;\n    }\n}\n",
+    "StubDispatchCallKey": "public class StubDispatchCallKey {\n    public String methodName;\n    public Integer arity;\n    public StubDispatchCallKey(String methodName, Integer arity) {\n        this.methodName = methodName;\n        this.arity = arity;\n    }\n    public Boolean equals(Object other) {\n        if (!(other instanceof StubDispatchCallKey)) return false;\n        StubDispatchCallKey key = (StubDispatchCallKey)other;\n        return methodName == key.methodName && arity == key.arity;\n    }\n    public Integer hashCode() {\n        return 31;\n    }\n}\n",
+    "StubDispatchProvider": "public class StubDispatchProvider implements System.StubProvider {\n    public Object answer;\n    public Boolean Verifying = false;\n    public Boolean keyed = false;\n    public Map<StubDispatchCallKey, Object> answers = new Map<StubDispatchCallKey, Object>();\n    public List<StubDispatchTarget> proxies = new List<StubDispatchTarget>();\n    public Object handleMethodCall(Object receiver, String methodName,\n            Type returnType, List<Type> parameterTypes,\n            List<String> parameterNames, List<Object> arguments) {\n        StubDispatchProbe.providerCalls++;\n        StubDispatchProbe.lastMethod = methodName;\n        StubDispatchProbe.lastArity = arguments.size();\n        if (keyed) {\n            return answers.get(new StubDispatchCallKey(methodName, arguments.size()));\n        }\n        return answer;\n    }\n}\n",
+    "StubDispatchProbe": "public class StubDispatchProbe {\n    public static Integer bodyCalls = 0;\n    public static Integer constructorCalls = 0;\n    public static Integer providerCalls = 0;\n    public static Integer httpCalls = 0;\n    public static String lastMethod = '';\n    public static Integer lastArity = -1;\n    public static Boolean failConstruction = false;\n    public static StubDispatchTarget held;\n    public static StubDispatchProvider heldProvider;\n    public class ProbeFailureException extends Exception {}\n\n    private class HttpReply implements HttpCalloutMock {\n        public HttpResponse respond(HttpRequest request) {\n            httpCalls++;\n            HttpResponse response = new HttpResponse();\n            response.setStatusCode(200);\n            response.setBody('http marker');\n            return response;\n        }\n    }\n    private static void reset() {\n        bodyCalls = 0;\n        constructorCalls = 0;\n        providerCalls = 0;\n        httpCalls = 0;\n        lastMethod = '';\n        lastArity = -1;\n        failConstruction = false;\n        held = null;\n        heldProvider = null;\n    }\n    private static String snapshot() {\n        return '|body=' + bodyCalls + '|ctor=' + constructorCalls +\n            '|provider=' + providerCalls + '|http=' + httpCalls +\n            '|method=' + lastMethod + '|arity=' + lastArity;\n    }\n    private static StubDispatchTarget stub(StubDispatchProvider provider) {\n        return (StubDispatchTarget)Test.createStub(StubDispatchTarget.class, provider);\n    }\n    private static StubDispatchTarget fromStatic() {\n        return held;\n    }\n    private static Integer storedRows() {\n        List<SObject> values = Database.query(\n            'SELECT Id FROM Account WHERE Name = \\'capture-row\\'');\n        return values.size();\n    }\n    private static String flags(Schema.SObjectField token) {\n        Schema.DescribeFieldResult value = token.getDescribe();\n        return 'idLookup=' + value.isIdLookup() + '|externalId=' +\n            value.isExternalId() + '|unique=' + value.isUnique();\n    }\n    public static String run(String id) {\n        reset();\n        try {\n            return execute(id) + snapshot();\n        } catch (Exception error) {\n            return 'EXC|' + error.getTypeName() + '|' + error.getMessage() + snapshot();\n        }\n    }\n    private static String execute(String id) {\n        if (id == 'A01') return flags(Opportunity.Id);\n        if (id == 'A02') return flags(Opportunity.StageName);\n        if (id == 'A03') return flags(User.Username);\n        if (id == 'A04') return flags(Opportunity.AccountId);\n\n        StubDispatchProvider provider = new StubDispatchProvider();\n        if (id == 'H01') {\n            provider.answer = 'stub marker';\n            return String.valueOf(stub(provider).fetch());\n        }\n        if (id == 'H02') return String.valueOf(stub(provider).fetch());\n        if (id == 'H03') {\n            // An anonymous control must never attempt a real network request.\n            if (!Test.isRunningTest()) return 'BOUNDARY|test context required';\n            return new StubDispatchTarget().fetch();\n        }\n        if (id == 'H04') {\n            Test.setMock(HttpCalloutMock.class, new HttpReply());\n            return new StubDispatchTarget().fetch();\n        }\n        if (id == 'H05') {\n            provider.answer = 'static marker';\n            heldProvider = provider;\n            held = stub(provider);\n            Map<String, List<StubDispatchTarget>> aliases =\n                new Map<String, List<StubDispatchTarget>>{\n                    'service' => new List<StubDispatchTarget>{fromStatic()}};\n            return aliases.get('service')[0].fetch();\n        }\n        if (id == 'H06') {\n            provider.answer = 'initial marker';\n            StubDispatchTarget target = stub(provider);\n            StubDispatchProvider other = new StubDispatchProvider();\n            other.Verifying = true;\n            other.answer = 'other marker';\n            provider.answer = 'updated marker';\n            return target.fetch();\n        }\n        if (id == 'H07') {\n            provider.keyed = true;\n            provider.answers.put(new StubDispatchCallKey('fetch', 0), 'key marker');\n            return stub(provider).fetch();\n        }\n        if (id == 'H08') {\n            Test.setMock(HttpCalloutMock.class, new HttpReply());\n            Test.startTest();\n            String value = new StubDispatchTarget().fetch();\n            Test.stopTest();\n            return value;\n        }\n\n        if (id == 'D01') return String.valueOf(stub(provider).objectType() == null);\n        if (id == 'D02') return stub(provider).objectType().getDescribe().getName();\n        if (id == 'D03') {\n            provider.answer = Account.SObjectType;\n            return stub(provider).objectType().getDescribe().fields.getMap()\n                .get('Name').getDescribe().getName();\n        }\n        if (id == 'D04') return String.valueOf(stub(provider).fieldList() == null);\n        if (id == 'D05') return String.valueOf(stub(provider).fieldList().size());\n        if (id == 'D06') {\n            provider.answer = new List<Schema.SObjectField>{Account.Id, Account.Name};\n            List<Schema.SObjectField> fields = stub(provider).fieldList();\n            return fields.size() + '|' + fields[0].getDescribe().getName();\n        }\n        if (id == 'D07') return String.valueOf(stub(provider).getDecimalPlaces());\n        if (id == 'D08') {\n            StubDispatchTarget target = new StubDispatchTarget();\n            return target.objectType().getDescribe().getName() + '|' +\n                target.fieldList().size();\n        }\n        if (id == 'D09') {\n            StubDispatchTarget target = stub(provider);\n            return String.valueOf(target.fluent() == null);\n        }\n\n        if (id == 'L01') {\n            provider.answer = new List<Account>();\n            List<Contact> values = (List<Contact>)stub(provider).rows();\n            return String.valueOf(values.size());\n        }\n        if (id == 'L02') {\n            provider.answer = new List<Account>{new Account(Name = 'capture-row')};\n            List<Contact> values = (List<Contact>)stub(provider).rows();\n            return String.valueOf(values.size());\n        }\n        if (id == 'L03') {\n            provider.answer = new List<SObject>();\n            List<Contact> values = (List<Contact>)stub(provider).rows();\n            return String.valueOf(values.size());\n        }\n        if (id == 'L04') {\n            provider.answer = Database.query(\n                'SELECT Id FROM Account WHERE Name = \\'capture-empty\\'');\n            List<Contact> values = (List<Contact>)stub(provider).rows();\n            return String.valueOf(values.size());\n        }\n        if (id == 'L05') {\n            insert new Account(Name = 'capture-row');\n            provider.answer = Database.query(\n                'SELECT Id FROM Account WHERE Name = \\'capture-row\\'');\n            List<Contact> values = (List<Contact>)stub(provider).rows();\n            return String.valueOf(values.size());\n        }\n        if (id == 'L06') {\n            insert new Account(Name = 'capture-row');\n            provider.answer = Database.query(\n                'SELECT Id, Name FROM Account WHERE Name = \\'capture-row\\'');\n            List<Account> values = (List<Account>)stub(provider).rows();\n            return values.size() + '|' + values[0].Name;\n        }\n\n        if (id == 'E01') {\n            stub(provider).write(new List<SObject>{new Account(Name = 'capture-row')});\n            return String.valueOf(storedRows());\n        }\n        if (id == 'E02') {\n            new StubDispatchTarget().write(\n                new List<SObject>{new Account(Name = 'capture-row')});\n            return String.valueOf(storedRows());\n        }\n        if (id == 'E03' || id == 'E04') {\n            heldProvider = provider;\n            if (id == 'E03') held = stub(provider);\n            try {\n                throw new ProbeFailureException('callback marker');\n            } catch (ProbeFailureException original) {\n                fromStatic().write(\n                    new List<SObject>{new Account(Name = 'capture-row')});\n            }\n            return String.valueOf(storedRows());\n        }\n        if (id == 'E05') {\n            provider.answer = 'cycle marker';\n            heldProvider = provider;\n            held = stub(provider);\n            provider.proxies.add(held);\n            return fromStatic().fetch() + '|' + provider.proxies[0].fetch();\n        }\n        if (id == 'E06') {\n            provider.answer = 'first marker';\n            held = stub(provider);\n            provider.Verifying = true;\n            provider.answer = 'second marker';\n            return fromStatic().fetch();\n        }\n        if (id == 'E07') {\n            StubDispatchTarget ordinary = new StubDispatchTarget();\n            return String.valueOf(ordinary.records.size());\n        }\n        if (id == 'E08') {\n            failConstruction = true;\n            return String.valueOf(new StubDispatchTarget().records.size());\n        }\n        if (id == 'E09') {\n            StubDispatchTarget target = stub(provider);\n            return target == null ? 'null target' : 'stub created';\n        }\n        throw new ProbeFailureException('unknown row');\n    }\n}\n"
+  },
+  "anonymousDeclarations": {
+    "StubDispatchTarget": "public virtual class StubDispatchTarget {\n    public List<SObject> records;\n    public StubDispatchTarget() {\n        StubDispatchProbe.constructorCalls++;\n        records = new List<SObject>();\n        if (StubDispatchProbe.failConstruction) {\n            throw new StubDispatchProbe.ProbeFailureException('construction marker');\n        }\n    }\n    public virtual String fetch() {\n        StubDispatchProbe.bodyCalls++;\n        if (!Test.isRunningTest()) {\n            throw new StubDispatchProbe.ProbeFailureException('transport requires test context');\n        }\n        HttpRequest request = new HttpRequest();\n        request.setEndpoint('https://example.invalid/capture-only');\n        request.setMethod('GET');\n        return new Http().send(request).getBody();\n    }\n    public virtual Schema.SObjectType objectType() {\n        StubDispatchProbe.bodyCalls++;\n        return Account.SObjectType;\n    }\n    public virtual List<Schema.SObjectField> fieldList() {\n        StubDispatchProbe.bodyCalls++;\n        return new List<Schema.SObjectField>{Account.Id, Account.Name};\n    }\n    public virtual List<SObject> rows() {\n        StubDispatchProbe.bodyCalls++;\n        return Database.query('SELECT Id, Name FROM Account WHERE Name = \\'capture-row\\'');\n    }\n    public virtual Integer getDecimalPlaces() {\n        StubDispatchProbe.bodyCalls++;\n        return 7;\n    }\n    public virtual StubDispatchTarget fluent() {\n        StubDispatchProbe.bodyCalls++;\n        return this;\n    }\n    public virtual void write(List<SObject> values) {\n        StubDispatchProbe.bodyCalls++;\n        insert values;\n    }\n}\n",
+    "StubDispatchCallKey": "public class StubDispatchCallKey {\n    public String methodName;\n    public Integer arity;\n    public StubDispatchCallKey(String methodName, Integer arity) {\n        this.methodName = methodName;\n        this.arity = arity;\n    }\n    public Boolean equals(Object other) {\n        if (!(other instanceof StubDispatchCallKey)) return false;\n        StubDispatchCallKey key = (StubDispatchCallKey)other;\n        return methodName == key.methodName && arity == key.arity;\n    }\n    public Integer hashCode() {\n        return 31;\n    }\n}\n",
+    "StubDispatchProvider": "public class StubDispatchProvider implements System.StubProvider {\n    public Object answer;\n    public Boolean Verifying = false;\n    public Boolean keyed = false;\n    public Map<StubDispatchCallKey, Object> answers = new Map<StubDispatchCallKey, Object>();\n    public List<StubDispatchTarget> proxies = new List<StubDispatchTarget>();\n    public Object handleMethodCall(Object receiver, String methodName,\n            Type returnType, List<Type> parameterTypes,\n            List<String> parameterNames, List<Object> arguments) {\n        StubDispatchProbe.providerCalls++;\n        StubDispatchProbe.lastMethod = methodName;\n        StubDispatchProbe.lastArity = arguments.size();\n        if (keyed) {\n            return answers.get(new StubDispatchCallKey(methodName, arguments.size()));\n        }\n        return answer;\n    }\n}\n",
+    "StubDispatchProbe": "public class StubDispatchProbe {\n    public static Integer bodyCalls = 0;\n    public static Integer constructorCalls = 0;\n    public static Integer providerCalls = 0;\n    public static Integer httpCalls = 0;\n    public static String lastMethod = '';\n    public static Integer lastArity = -1;\n    public static Boolean failConstruction = false;\n    public static StubDispatchTarget held;\n    public static StubDispatchProvider heldProvider;\n    public class ProbeFailureException extends Exception {}\n\n    private class HttpReply implements HttpCalloutMock {\n        public HttpResponse respond(HttpRequest request) {\n            httpCalls++;\n            HttpResponse response = new HttpResponse();\n            response.setStatusCode(200);\n            response.setBody('http marker');\n            return response;\n        }\n    }\n    private static void reset() {\n        bodyCalls = 0;\n        constructorCalls = 0;\n        providerCalls = 0;\n        httpCalls = 0;\n        lastMethod = '';\n        lastArity = -1;\n        failConstruction = false;\n        held = null;\n        heldProvider = null;\n    }\n    private static String snapshot() {\n        return '|body=' + bodyCalls + '|ctor=' + constructorCalls +\n            '|provider=' + providerCalls + '|http=' + httpCalls +\n            '|method=' + lastMethod + '|arity=' + lastArity;\n    }\n    private static StubDispatchTarget stub(StubDispatchProvider provider) {\n        return (StubDispatchTarget)Test.createStub(StubDispatchTarget.class, provider);\n    }\n    private static StubDispatchTarget fromStatic() {\n        return held;\n    }\n    private static Integer storedRows() {\n        List<SObject> values = Database.query(\n            'SELECT Id FROM Account WHERE Name = \\'capture-row\\'');\n        return values.size();\n    }\n    private static String flags(Schema.SObjectField token) {\n        Schema.DescribeFieldResult value = token.getDescribe();\n        return 'idLookup=' + value.isIdLookup() + '|externalId=' +\n            value.isExternalId() + '|unique=' + value.isUnique();\n    }\n    public static String run(String id) {\n        reset();\n        try {\n            return execute(id) + snapshot();\n        } catch (Exception error) {\n            return 'EXC|' + error.getTypeName() + '|' + error.getMessage() + snapshot();\n        }\n    }\n    private static String execute(String id) {\n        if (id == 'A01') return flags(Opportunity.Id);\n        if (id == 'A02') return flags(Opportunity.StageName);\n        if (id == 'A03') return flags(User.Username);\n        if (id == 'A04') return flags(Opportunity.AccountId);\n\n        StubDispatchProvider provider = new StubDispatchProvider();\n        if (id == 'H01') {\n            provider.answer = 'stub marker';\n            return String.valueOf(stub(provider).fetch());\n        }\n        if (id == 'H02') return String.valueOf(stub(provider).fetch());\n        if (id == 'H03') {\n            // An anonymous control must never attempt a real network request.\n            if (!Test.isRunningTest()) return 'BOUNDARY|test context required';\n            return new StubDispatchTarget().fetch();\n        }\n        if (id == 'H04') {\n            Test.setMock(HttpCalloutMock.class, new HttpReply());\n            return new StubDispatchTarget().fetch();\n        }\n        if (id == 'H05') {\n            provider.answer = 'static marker';\n            heldProvider = provider;\n            held = stub(provider);\n            Map<String, List<StubDispatchTarget>> aliases =\n                new Map<String, List<StubDispatchTarget>>{\n                    'service' => new List<StubDispatchTarget>{fromStatic()}};\n            return aliases.get('service')[0].fetch();\n        }\n        if (id == 'H06') {\n            provider.answer = 'initial marker';\n            StubDispatchTarget target = stub(provider);\n            StubDispatchProvider other = new StubDispatchProvider();\n            other.Verifying = true;\n            other.answer = 'other marker';\n            provider.answer = 'updated marker';\n            return target.fetch();\n        }\n        if (id == 'H07') {\n            provider.keyed = true;\n            provider.answers.put(new StubDispatchCallKey('fetch', 0), 'key marker');\n            return stub(provider).fetch();\n        }\n        if (id == 'H08') {\n            Test.setMock(HttpCalloutMock.class, new HttpReply());\n            Test.startTest();\n            String value = new StubDispatchTarget().fetch();\n            Test.stopTest();\n            return value;\n        }\n\n        if (id == 'D01') return String.valueOf(stub(provider).objectType() == null);\n        if (id == 'D02') return stub(provider).objectType().getDescribe().getName();\n        if (id == 'D03') {\n            provider.answer = Account.SObjectType;\n            return stub(provider).objectType().getDescribe().fields.getMap()\n                .get('Name').getDescribe().getName();\n        }\n        if (id == 'D04') return String.valueOf(stub(provider).fieldList() == null);\n        if (id == 'D05') return String.valueOf(stub(provider).fieldList().size());\n        if (id == 'D06') {\n            provider.answer = new List<Schema.SObjectField>{Account.Id, Account.Name};\n            List<Schema.SObjectField> fields = stub(provider).fieldList();\n            return fields.size() + '|' + fields[0].getDescribe().getName();\n        }\n        if (id == 'D07') return String.valueOf(stub(provider).getDecimalPlaces());\n        if (id == 'D08') {\n            StubDispatchTarget target = new StubDispatchTarget();\n            return target.objectType().getDescribe().getName() + '|' +\n                target.fieldList().size();\n        }\n        if (id == 'D09') {\n            StubDispatchTarget target = stub(provider);\n            return String.valueOf(target.fluent() == null);\n        }\n\n        if (id == 'L01') {\n            provider.answer = new List<Account>();\n            List<Contact> values = (List<Contact>)stub(provider).rows();\n            return String.valueOf(values.size());\n        }\n        if (id == 'L02') {\n            provider.answer = new List<Account>{new Account(Name = 'capture-row')};\n            List<Contact> values = (List<Contact>)stub(provider).rows();\n            return String.valueOf(values.size());\n        }\n        if (id == 'L03') {\n            provider.answer = new List<SObject>();\n            List<Contact> values = (List<Contact>)stub(provider).rows();\n            return String.valueOf(values.size());\n        }\n        if (id == 'L04') {\n            provider.answer = Database.query(\n                'SELECT Id FROM Account WHERE Name = \\'capture-empty\\'');\n            List<Contact> values = (List<Contact>)stub(provider).rows();\n            return String.valueOf(values.size());\n        }\n        if (id == 'L05') {\n            insert new Account(Name = 'capture-row');\n            provider.answer = Database.query(\n                'SELECT Id FROM Account WHERE Name = \\'capture-row\\'');\n            List<Contact> values = (List<Contact>)stub(provider).rows();\n            return String.valueOf(values.size());\n        }\n        if (id == 'L06') {\n            insert new Account(Name = 'capture-row');\n            provider.answer = Database.query(\n                'SELECT Id, Name FROM Account WHERE Name = \\'capture-row\\'');\n            List<Account> values = (List<Account>)stub(provider).rows();\n            return values.size() + '|' + values[0].Name;\n        }\n\n        if (id == 'E01') {\n            stub(provider).write(new List<SObject>{new Account(Name = 'capture-row')});\n            return String.valueOf(storedRows());\n        }\n        if (id == 'E02') {\n            new StubDispatchTarget().write(\n                new List<SObject>{new Account(Name = 'capture-row')});\n            return String.valueOf(storedRows());\n        }\n        if (id == 'E03' || id == 'E04') {\n            heldProvider = provider;\n            if (id == 'E03') held = stub(provider);\n            try {\n                throw new ProbeFailureException('callback marker');\n            } catch (ProbeFailureException original) {\n                fromStatic().write(\n                    new List<SObject>{new Account(Name = 'capture-row')});\n            }\n            return String.valueOf(storedRows());\n        }\n        if (id == 'E05') {\n            provider.answer = 'cycle marker';\n            heldProvider = provider;\n            held = stub(provider);\n            provider.proxies.add(held);\n            return fromStatic().fetch() + '|' + provider.proxies[0].fetch();\n        }\n        if (id == 'E06') {\n            provider.answer = 'first marker';\n            held = stub(provider);\n            provider.Verifying = true;\n            provider.answer = 'second marker';\n            return fromStatic().fetch();\n        }\n        if (id == 'E07') {\n            StubDispatchTarget ordinary = new StubDispatchTarget();\n            return String.valueOf(ordinary.records.size());\n        }\n        if (id == 'E08') {\n            failConstruction = true;\n            return String.valueOf(new StubDispatchTarget().records.size());\n        }\n        if (id == 'E09') {\n            StubDispatchTarget target = stub(provider);\n            return target == null ? 'null target' : 'stub created';\n        }\n        throw new ProbeFailureException('unknown row');\n    }\n}\n"
+  },
+  "testClass": "StubDispatchCases",
+  "testHead": "@IsTest private class StubDispatchCases {\n",
+  "cases": [
+    {
+      "id": "A01",
+      "description": "record Id describe flags; overlaps the dedicated field-capture work",
+      "code": "r=StubDispatchProbe.run('A01');",
+      "anonymousCode": "r=StubDispatchProbe.run('A01');",
+      "expected": "?"
+    },
+    {
+      "id": "A02",
+      "description": "picklist field flag rejection boundary",
+      "code": "r=StubDispatchProbe.run('A02');",
+      "anonymousCode": "r=StubDispatchProbe.run('A02');",
+      "expected": "?"
+    },
+    {
+      "id": "A03",
+      "description": "standard alternate lookup field flags",
+      "code": "r=StubDispatchProbe.run('A03');",
+      "anonymousCode": "r=StubDispatchProbe.run('A03');",
+      "expected": "?"
+    },
+    {
+      "id": "A04",
+      "description": "reference field flag boundary",
+      "code": "r=StubDispatchProbe.run('A04');",
+      "anonymousCode": "r=StubDispatchProbe.run('A04');",
+      "expected": "?"
+    },
+    {
+      "id": "H01",
+      "description": "explicit service stub prevents HTTP body execution without an HTTP mock",
+      "code": "r=StubDispatchProbe.run('H01');",
+      "anonymousCode": "r=StubDispatchProbe.run('H01');",
+      "expected": "?"
+    },
+    {
+      "id": "H02",
+      "description": "null service stub result; no invented return or HTTP body",
+      "code": "r=StubDispatchProbe.run('H02');",
+      "anonymousCode": "r=StubDispatchProbe.run('H02');",
+      "expected": "?"
+    },
+    {
+      "id": "H03",
+      "description": "real service without HTTP mock in test; guarded anonymous boundary",
+      "code": "r=StubDispatchProbe.run('H03');",
+      "anonymousCode": "r=StubDispatchProbe.run('H03');",
+      "expected": "?"
+    },
+    {
+      "id": "H04",
+      "description": "real service with Test.setMock reaches HttpCalloutMock.respond",
+      "code": "r=StubDispatchProbe.run('H04');",
+      "anonymousCode": "r=StubDispatchProbe.run('H04');",
+      "expected": "?"
+    },
+    {
+      "id": "H05",
+      "description": "service stub survives a static factory, map and list alias",
+      "code": "r=StubDispatchProbe.run('H05');",
+      "anonymousCode": "r=StubDispatchProbe.run('H05');",
+      "expected": "?"
+    },
+    {
+      "id": "H06",
+      "description": "attached provider mutation with another same-type Verifying provider",
+      "code": "r=StubDispatchProbe.run('H06');",
+      "anonymousCode": "r=StubDispatchProbe.run('H06');",
+      "expected": "?"
+    },
+    {
+      "id": "H07",
+      "description": "fresh equivalent user-defined map key locates a configured stub return",
+      "code": "r=StubDispatchProbe.run('H07');",
+      "anonymousCode": "r=StubDispatchProbe.run('H07');",
+      "expected": "?"
+    },
+    {
+      "id": "H08",
+      "description": "HTTP mock installed before Test.startTest remains active",
+      "code": "r=StubDispatchProbe.run('H08');",
+      "anonymousCode": "r=StubDispatchProbe.run('H08');",
+      "expected": "?"
+    },
+    {
+      "id": "D01",
+      "description": "null provider schema token is observed without dereference",
+      "code": "r=StubDispatchProbe.run('D01');",
+      "anonymousCode": "r=StubDispatchProbe.run('D01');",
+      "expected": "?"
+    },
+    {
+      "id": "D02",
+      "description": "null provider schema token dereference is recorded",
+      "code": "r=StubDispatchProbe.run('D02');",
+      "anonymousCode": "r=StubDispatchProbe.run('D02');",
+      "expected": "?"
+    },
+    {
+      "id": "D03",
+      "description": "explicit schema token provider return reaches fields map and describe",
+      "code": "r=StubDispatchProbe.run('D03');",
+      "anonymousCode": "r=StubDispatchProbe.run('D03');",
+      "expected": "?"
+    },
+    {
+      "id": "D04",
+      "description": "null provider field list is observed without dereference",
+      "code": "r=StubDispatchProbe.run('D04');",
+      "anonymousCode": "r=StubDispatchProbe.run('D04');",
+      "expected": "?"
+    },
+    {
+      "id": "D05",
+      "description": "null provider field list dereference is recorded",
+      "code": "r=StubDispatchProbe.run('D05');",
+      "anonymousCode": "r=StubDispatchProbe.run('D05');",
+      "expected": "?"
+    },
+    {
+      "id": "D06",
+      "description": "explicit field list provider return reaches each field describe",
+      "code": "r=StubDispatchProbe.run('D06');",
+      "anonymousCode": "r=StubDispatchProbe.run('D06');",
+      "expected": "?"
+    },
+    {
+      "id": "D07",
+      "description": "null formatting return versus a name-derived passive default",
+      "code": "r=StubDispatchProbe.run('D07');",
+      "anonymousCode": "r=StubDispatchProbe.run('D07');",
+      "expected": "?"
+    },
+    {
+      "id": "D08",
+      "description": "ordinary source-defined schema and field-list control",
+      "code": "r=StubDispatchProbe.run('D08');",
+      "anonymousCode": "r=StubDispatchProbe.run('D08');",
+      "expected": "?"
+    },
+    {
+      "id": "D09",
+      "description": "null fluent self return; control for an existing generic VM fallback",
+      "code": "r=StubDispatchProbe.run('D09');",
+      "anonymousCode": "r=StubDispatchProbe.run('D09');",
+      "expected": "?"
+    },
+    {
+      "id": "L01",
+      "description": "empty concrete Account list returned as List<SObject> and cast to Contact",
+      "code": "r=StubDispatchProbe.run('L01');",
+      "anonymousCode": "r=StubDispatchProbe.run('L01');",
+      "expected": "?"
+    },
+    {
+      "id": "L02",
+      "description": "nonempty Account list cast rejection twin",
+      "code": "r=StubDispatchProbe.run('L02');",
+      "anonymousCode": "r=StubDispatchProbe.run('L02');",
+      "expected": "?"
+    },
+    {
+      "id": "L03",
+      "description": "empty generic SObject list cast boundary",
+      "code": "r=StubDispatchProbe.run('L03');",
+      "anonymousCode": "r=StubDispatchProbe.run('L03');",
+      "expected": "?"
+    },
+    {
+      "id": "L04",
+      "description": "empty Database.query Account result cast to Contact",
+      "code": "r=StubDispatchProbe.run('L04');",
+      "anonymousCode": "r=StubDispatchProbe.run('L04');",
+      "expected": "?"
+    },
+    {
+      "id": "L05",
+      "description": "nonempty Database.query Account result cast rejection twin",
+      "code": "r=StubDispatchProbe.run('L05');",
+      "anonymousCode": "r=StubDispatchProbe.run('L05');",
+      "expected": "?"
+    },
+    {
+      "id": "L06",
+      "description": "nonempty Database.query Account result cast to matching Account list",
+      "code": "r=StubDispatchProbe.run('L06');",
+      "anonymousCode": "r=StubDispatchProbe.run('L06');",
+      "expected": "?"
+    },
+    {
+      "id": "E01",
+      "description": "stubbed void writer has observable provider/body/record-count effects",
+      "code": "r=StubDispatchProbe.run('E01');",
+      "anonymousCode": "r=StubDispatchProbe.run('E01');",
+      "expected": "?"
+    },
+    {
+      "id": "E02",
+      "description": "ordinary writer persists a synthetic row; source-body boundary",
+      "code": "r=StubDispatchProbe.run('E02');",
+      "anonymousCode": "r=StubDispatchProbe.run('E02');",
+      "expected": "?"
+    },
+    {
+      "id": "E03",
+      "description": "error callback uses a static-held stub writer",
+      "code": "r=StubDispatchProbe.run('E03');",
+      "anonymousCode": "r=StubDispatchProbe.run('E03');",
+      "expected": "?"
+    },
+    {
+      "id": "E04",
+      "description": "error callback with a missing writer records the null rejection",
+      "code": "r=StubDispatchProbe.run('E04');",
+      "anonymousCode": "r=StubDispatchProbe.run('E04');",
+      "expected": "?"
+    },
+    {
+      "id": "E05",
+      "description": "provider/proxy cycle and static/list aliases preserve configured state",
+      "code": "r=StubDispatchProbe.run('E05');",
+      "anonymousCode": "r=StubDispatchProbe.run('E05');",
+      "expected": "?"
+    },
+    {
+      "id": "E06",
+      "description": "provider flag changes are source state, not a VM provider selector",
+      "code": "r=StubDispatchProbe.run('E06');",
+      "anonymousCode": "r=StubDispatchProbe.run('E06');",
+      "expected": "?"
+    },
+    {
+      "id": "E07",
+      "description": "ordinary constructor initializes collection and updates static counter",
+      "code": "r=StubDispatchProbe.run('E07');",
+      "anonymousCode": "r=StubDispatchProbe.run('E07');",
+      "expected": "?"
+    },
+    {
+      "id": "E08",
+      "description": "throwing constructor records static effects; no inferred recorder rollback",
+      "code": "r=StubDispatchProbe.run('E08');",
+      "anonymousCode": "r=StubDispatchProbe.run('E08');",
+      "expected": "?"
+    },
+    {
+      "id": "E09",
+      "description": "stub creation exposes constructor side effects independently of dispatch",
+      "code": "r=StubDispatchProbe.run('E09');",
+      "anonymousCode": "r=StubDispatchProbe.run('E09');",
+      "expected": "?"
+    }
+  ],
+  "nativeObservations": [],
+  "captureRequirements": {
+    "freshTransactionPerCase": true,
+    "updateAllClassMetadataApiVersions": true,
+    "deploymentMetadataDefaultApiVersion": "62.0",
+    "anonymousBoundary": "Test API rejection is an observation; H03 has an explicit guard. Source fetch also guards test context, so no row attempts real network transport.",
+    "sourceShape": "Synthetic standard-object rows only. Dedicated field captures cover custom external-ID and unique-only metadata and native upsert.",
+    "namespaceAxis": "First capture no namespace. Repeat H05-H07,D01-D06,E03-E06 in a namespaced org with synthetic classes owned by that namespace; never simulate namespace by editing strings.",
+    "classification": "No fixture is wired into a Go test. Fill observations from native rows before adding assertions."
+  }
+}

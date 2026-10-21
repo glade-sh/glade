@@ -1,6 +1,7 @@
 // Replay the captured component controls. Native answers never enter this observer.
 import fs from "node:fs";
 import { createRequire } from "node:module";
+import { pageCount } from "./browser_pages.mjs";
 
 const config = JSON.parse(fs.readFileSync(0, "utf8"));
 const { chromium } = createRequire(import.meta.url)(config.playwrightModule);
@@ -11,9 +12,12 @@ const browser = await chromium.launch({
 });
 try {
   const values = {}, errors = {};
-  // These metadata rows have no record mutations or cache-history prerequisites.
-  // Each navigation supplies the native c__case state to CurrentPageReference.
-  const groups = [[], [], []];
+  // Every ?c__case=ID navigation recreates the component (including wireLast)
+  // and document-local LDS caches keyed by endpoint/body. The shared context's
+  // cookies/storage/service workers are unused by these routes and components.
+  // Metadata reads are server-locked; the five projected CRM definitions are
+  // prepared up front, so lazy hydration adds no observed history prerequisites.
+  const groups = Array.from({ length: pageCount(3, 8, config.specs.length) }, () => []);
   config.specs.forEach((spec, index) => groups[index % groups.length].push(spec));
   const context = await browser.newContext();
   await Promise.all(groups.map(async specs => {

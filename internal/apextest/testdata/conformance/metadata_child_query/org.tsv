@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	cachedChildren	{"again":"First","children":1,"first":"First"}
+62.0	directChildren	{"children":1,"first":"First","parents":3}
+62.0	nameControls	{"RoutePlanSampleOneChildren":1,"RoutePlanSampleOneFirst":"LongStep","ShortChildren":1,"ShortFirst":"ShortStep"}
+67.0	cachedChildren	{"again":"First","children":1,"first":"First"}
+67.0	directChildren	{"children":1,"first":"First","parents":3}
+67.0	nameControls	{"RoutePlanSampleOneChildren":1,"RoutePlanSampleOneFirst":"LongStep","ShortChildren":1,"ShortFirst":"ShortStep"}

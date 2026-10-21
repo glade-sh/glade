@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	missingCertificate	{"missingData":true,"type":"System.NoDataFoundException"}
+62.0	ordinalFormula	{"value":60}
+67.0	missingCertificate	{"missingData":true,"type":"System.NoDataFoundException"}
+67.0	ordinalFormula	{"value":60}

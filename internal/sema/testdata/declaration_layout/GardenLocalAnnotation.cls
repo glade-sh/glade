@@ -1,0 +1,1 @@
+public class GardenLocalAnnotation { public static Integer observe(){ Map<String,Object> seeds=new Map<String,Object>(); @SuppressWarnings('unchecked') Map<String,Object> copy=seeds; return copy.size(); } }

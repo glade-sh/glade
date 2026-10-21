@@ -18,6 +18,8 @@ import (
 )
 
 // Captured type-system observations need neither Salesforce nor glade-tools in CI.
+// API 68 reuses the same primary rows and answers captured on the anonymous route;
+// the existing local @IsTest route and three carries remain unchanged.
 func TestTypeSystemOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Group, Code, Expected string
@@ -38,7 +40,7 @@ func TestTypeSystemOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 277 || len(data.Remaining) != 3 || len(data.CaseRows["all"]) != 280 || strings.Join(data.APIVersions, ",") != "62.0,67.0" || data.DiagnosticTextOwner != "A01" {
+	if len(data.Cases) != 277 || len(data.Remaining) != 3 || len(data.CaseRows["all"]) != 280 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" || data.DiagnosticTextOwner != "A01" {
 		t.Fatalf("oracle shape: cases=%d carried=%d listed=%d versions=%v diagnostic owner=%s", len(data.Cases), len(data.Remaining), len(data.CaseRows["all"]), data.APIVersions, data.DiagnosticTextOwner)
 	}
 	seen := map[string]bool{}

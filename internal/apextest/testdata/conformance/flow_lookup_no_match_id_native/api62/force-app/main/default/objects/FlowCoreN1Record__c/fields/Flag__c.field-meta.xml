@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Flag__c</fullName><defaultValue>false</defaultValue><label>Flag</label><type>Checkbox</type></CustomField>

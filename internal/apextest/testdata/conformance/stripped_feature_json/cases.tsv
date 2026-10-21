@@ -1,0 +1,6 @@
+case	context	apis	observation
+SINGLE	istest	62.0,67.0	READABLE with root CRUD disabled keeps only Id; pretty JSON equals an Id-only record
+LIST	istest	62.0,67.0	Stripped records serialize as an SObject list
+MAP	istest	62.0,67.0	String keys including empty key retain stripped SObject JSON
+BLANK	istest	62.0,67.0	Stripped transient record serializes as an empty SObject
+LIFECYCLE	istest	62.0,67.0	Private custom object owner shares do not add DML rows to parent delete; undelete, partial delete and purge controls

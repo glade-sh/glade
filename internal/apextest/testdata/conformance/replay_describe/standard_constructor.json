@@ -1,0 +1,803 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "standard_constructor",
+  "shapeCount": 4,
+  "nativeObservationCount": 32,
+  "assertedObservationCount": 32,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C168RP_094",
+      "group": "standard-constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new BatchApexErrorEvent(ReplayId='1');v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "80ea92f1d7cbfbcab9f3528d2e5d2cd81fb981b4326bc21d836a9d59cc3b24e0",
+          "sourceSha256": {
+            "anonymous": "4f93215f78f146f1a1f72eeab541ed80cd506cbd1d82d51be929373f95cdc169"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.ReplayId",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.ReplayId"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.ReplayId",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.ReplayId"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.ReplayId",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.ReplayId"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.ReplayId",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.ReplayId"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new BatchApexErrorEvent(ReplayId='1');v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_094');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new BatchApexErrorEvent(ReplayId='1');v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "80ea92f1d7cbfbcab9f3528d2e5d2cd81fb981b4326bc21d836a9d59cc3b24e0",
+          "sourceSha256": {
+            "class:C168C168RP094Test": "59251736c346796ddd1a0934cf81dad9df8cb7611587c8083f3f18b0c7ccdfee"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP094Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.ReplayId"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.ReplayId"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP094Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.ReplayId"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.ReplayId"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP094Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.ReplayId"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.ReplayId"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP094Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.ReplayId"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.ReplayId"
+            }
+          },
+          "classes": {
+            "C168C168RP094Test": "@IsTest private class C168C168RP094Test{@IsTest static void observe(){Object v;try{SObject s=new BatchApexErrorEvent(ReplayId='1');v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_094');}}"
+          },
+          "tests": [
+            "C168C168RP094Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_095",
+      "group": "standard-constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new BatchApexErrorEvent(EventUuid='00000000-0000-4000-8000-000000000001');v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "b40ed35e311c92a35f9452503d8c3c2bcfefe867fe6945ae5994bdf3c597cbd2",
+          "sourceSha256": {
+            "anonymous": "8513dcb611838281c2c7b77de0286c683d59e4196882f790f95077798de8eb82"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.EventUuid",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.EventUuid"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.EventUuid",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.EventUuid"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.EventUuid",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.EventUuid"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.EventUuid",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.EventUuid"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new BatchApexErrorEvent(EventUuid='00000000-0000-4000-8000-000000000001');v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_095');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new BatchApexErrorEvent(EventUuid='00000000-0000-4000-8000-000000000001');v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "b40ed35e311c92a35f9452503d8c3c2bcfefe867fe6945ae5994bdf3c597cbd2",
+          "sourceSha256": {
+            "class:C168C168RP095Test": "5303d95d1ce87a2b0764faa1113eec13af66a319b5dbd130a92b3e36567a3f42"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP095Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.EventUuid"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.EventUuid"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP095Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.EventUuid"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.EventUuid"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP095Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.EventUuid"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.EventUuid"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP095Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.EventUuid"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.EventUuid"
+            }
+          },
+          "classes": {
+            "C168C168RP095Test": "@IsTest private class C168C168RP095Test{@IsTest static void observe(){Object v;try{SObject s=new BatchApexErrorEvent(EventUuid='00000000-0000-4000-8000-000000000001');v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_095');}}"
+          },
+          "tests": [
+            "C168C168RP095Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_096",
+      "group": "standard-constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new BatchApexErrorEvent(CreatedDate=Datetime.newInstanceGmt(2024,1,15,12,0,0));v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "83b8700ae803963d0b765dbd0bb1615f8a763766cca9cf6b4da325a920d33024",
+          "sourceSha256": {
+            "anonymous": "bea2d7145cd54af124d407c378a08b9298c1e4f048cda358d911e62c1f320b17"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.CreatedDate",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedDate"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.CreatedDate",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedDate"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.CreatedDate",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedDate"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.CreatedDate",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedDate"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new BatchApexErrorEvent(CreatedDate=Datetime.newInstanceGmt(2024,1,15,12,0,0));v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_096');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new BatchApexErrorEvent(CreatedDate=Datetime.newInstanceGmt(2024,1,15,12,0,0));v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "83b8700ae803963d0b765dbd0bb1615f8a763766cca9cf6b4da325a920d33024",
+          "sourceSha256": {
+            "class:C168C168RP096Test": "8c79c17e3cb00da8dd0f472c425071d289716d30387097931dd2eb3909ce22f5"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP096Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.CreatedDate"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedDate"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP096Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.CreatedDate"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedDate"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP096Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.CreatedDate"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedDate"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP096Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.CreatedDate"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedDate"
+            }
+          },
+          "classes": {
+            "C168C168RP096Test": "@IsTest private class C168C168RP096Test{@IsTest static void observe(){Object v;try{SObject s=new BatchApexErrorEvent(CreatedDate=Datetime.newInstanceGmt(2024,1,15,12,0,0));v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_096');}}"
+          },
+          "tests": [
+            "C168C168RP096Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_097",
+      "group": "standard-constructor",
+      "role": "compile-rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new BatchApexErrorEvent(CreatedById=UserInfo.getUserId());v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "07a10d226728e85d94d2a4081cfbf4b2d747b4ff6ceb259b753f12afc7f566b2",
+          "sourceSha256": {
+            "anonymous": "c9efd3daaf3cf8ed41447ed918bb1fa0c08f95be01737f4e849f1dd5962381ae"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.CreatedById",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedById"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.CreatedById",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedById"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.CreatedById",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedById"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Field is not writeable: BatchApexErrorEvent.CreatedById",
+                  "line": 1,
+                  "column": 24,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedById"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new BatchApexErrorEvent(CreatedById=UserInfo.getUserId());v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_097');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new BatchApexErrorEvent(CreatedById=UserInfo.getUserId());v=s.getPopulatedFieldsAsMap();",
+          "originalApexSha256": "07a10d226728e85d94d2a4081cfbf4b2d747b4ff6ceb259b753f12afc7f566b2",
+          "sourceSha256": {
+            "class:C168C168RP097Test": "57745732f848a72189c28edcfb0f7917fa7490256e933b274a5bb481b09ff9f5"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP097Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.CreatedById"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedById"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP097Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.CreatedById"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedById"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP097Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.CreatedById"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedById"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C168C168RP097Test",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Field is not writeable: BatchApexErrorEvent.CreatedById"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": [],
+                  "numberComponentsTotal": 2,
+                  "numberComponentsDeployed": 1,
+                  "numberComponentErrors": 1,
+                  "done": true
+                }
+              },
+              "outcome": "reject",
+              "primary": "Field is not writeable: BatchApexErrorEvent.CreatedById"
+            }
+          },
+          "classes": {
+            "C168C168RP097Test": "@IsTest private class C168C168RP097Test{@IsTest static void observe(){Object v;try{SObject s=new BatchApexErrorEvent(CreatedById=UserInfo.getUserId());v=s.getPopulatedFieldsAsMap();}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_097');}}"
+          },
+          "tests": [
+            "C168C168RP097Test"
+          ]
+        }
+      }
+    }
+  ]
+}

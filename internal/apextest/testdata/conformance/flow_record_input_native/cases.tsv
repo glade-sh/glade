@@ -1,0 +1,7 @@
+case	observation
+I01	Decimal numeric output assignment and IsNull false decision for nonzero zero and missing values
+I02	Record Create consumes declared Account variable Id for a Contact AccountId input assignment
+I03	Missing explicit lookup output becomes typed Account after dotted create Id assignment
+I04	whole local record-variable IsNull false branch before parent creation
+I05	terminal scalar decision branches add String collection item and select title for matching mixed-case and different inputs
+I06	matched explicit local Account lookup is nonnull in whole-record IsNull false decision; missing lookup follows creation branch

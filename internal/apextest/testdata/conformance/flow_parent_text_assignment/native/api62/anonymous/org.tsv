@@ -1,0 +1,6 @@
+id	group	route	status	value
+P01	FLOW_PARENT_TEXT_ASSIGNMENT	anonymous	runtime	{"outcome":"runtime","value":{"exception":null,"email":"populated@example.invalid","description":"Marker Alpha"}}
+P02	FLOW_PARENT_TEXT_ASSIGNMENT	anonymous	runtime	{"outcome":"runtime","value":{"exception":null,"email":"absent@example.invalid","description":null}}
+P03	FLOW_PARENT_TEXT_ASSIGNMENT	anonymous	runtime	{"outcome":"runtime","value":{"exception":null,"email":"empty@example.invalid","description":null}}
+P04	FLOW_PARENT_TEXT_ASSIGNMENT	anonymous	runtime	{"outcome":"runtime","value":{"exception":null,"email":"reparent@example.invalid","description":"Marker Beta"}}
+P05	FLOW_PARENT_TEXT_ASSIGNMENT	anonymous	runtime	{"outcome":"runtime","value":{"exception":null,"email":"direct@example.invalid","description":"Meadow direct"}}

@@ -1,0 +1,221 @@
+{
+  "sourceApi": "62.0",
+  "transportApi": "67.0",
+  "route": "isTest",
+  "nativeProcessExit": 1,
+  "nativeIntentionalAssertionCount": 7,
+  "nativeComponentErrors": 0,
+  "nativeDeploymentSHA256": "ae16189371fe703c2bf302e5542bbd342bbfe6c16f13dea033c74ac880ad08b9",
+  "files": {
+    "force-app/main/default/classes/OwnedMultiTimingState.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/OwnedMultiTimingProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/OwnedMultiTimingState.cls": "public class OwnedMultiTimingState {\n public static String mode='pass';\n public static List<Map<String,Object>> events=new List<Map<String,Object>>();\n public static void reset(String nextMode){mode=nextMode;events=new List<Map<String,Object>>();}\n private static void record(String phase,Account row){\n  events.add(new Map<String,Object>{'phase'=>phase,'multi'=>row.OwnedMultiTimingSelection__c,'text'=>row.Description});\n }\n public static void beforeRows(List<Account> rows){\n  for(Account row:rows){\n   record('beforeInput',row);\n   if(mode=='produce')row.OwnedMultiTimingSelection__c=Trigger.isInsert?';':';;';\n   if(mode=='produceValid')row.OwnedMultiTimingSelection__c='Beta';\n   record('beforeReturn',row);\n  }\n }\n public static void afterRows(List<Account> rows){for(Account row:rows)record('after',row);}\n}\n",
+    "force-app/main/default/classes/OwnedMultiTimingProbe.cls": "@IsTest private class OwnedMultiTimingProbe {\n private static Map<String,Object> observe(String shape){\n  Boolean updating=shape.endsWith('Update');\n  Account row=new Account(Name='Owned multi timing',OwnedMultiTimingSelection__c='Alpha');\n  if(updating){OwnedMultiTimingState.reset('pass');insert row;row.Name='Owned multi timing updated';}\n  String mode=shape.startsWith('produced')?'produce':'pass';\n  if(shape=='producedValidInsert')mode='produceValid';\n  OwnedMultiTimingState.reset(mode);\n  if(shape=='suppliedInsert')row.OwnedMultiTimingSelection__c=';';\n  if(shape=='suppliedUpdate')row.OwnedMultiTimingSelection__c=';;';\n  if(shape=='unknownInsert')row.OwnedMultiTimingSelection__c='NotDefined';\n  if(shape=='textFenceInsert')row.Description=';';\n  Map<String,Object> out=new Map<String,Object>{'shape'=>shape,'suppliedMulti'=>row.OwnedMultiTimingSelection__c,\n   'restricted'=>Account.OwnedMultiTimingSelection__c.getDescribe().isRestrictedPicklist()};\n  Boolean succeeded=false;\n  try {\n   if(updating)update row;else insert row;\n   succeeded=true;\n  }catch(DmlException e){out.put('errorType',e.getTypeName());out.put('status',String.valueOf(e.getDmlType(0)));}\n  out.put('succeeded',succeeded);\n  out.put('callerMulti',row.OwnedMultiTimingSelection__c);\n  out.put('callerText',row.Description);\n  out.put('events',OwnedMultiTimingState.events);\n  if(succeeded){\n   Account stored=[SELECT OwnedMultiTimingSelection__c,Description FROM Account WHERE Id=:row.Id];\n   out.put('storedMulti',stored.OwnedMultiTimingSelection__c);out.put('storedText',stored.Description);\n  }\n  return out;\n }\n @IsTest static void suppliedInsert(){System.assert(false,'OWNED_MULTI_TIMING='+JSON.serialize(observe('suppliedInsert')));}\n @IsTest static void suppliedUpdate(){System.assert(false,'OWNED_MULTI_TIMING='+JSON.serialize(observe('suppliedUpdate')));}\n @IsTest static void producedInsert(){System.assert(false,'OWNED_MULTI_TIMING='+JSON.serialize(observe('producedInsert')));}\n @IsTest static void producedUpdate(){System.assert(false,'OWNED_MULTI_TIMING='+JSON.serialize(observe('producedUpdate')));}\n @IsTest static void producedValidInsert(){System.assert(false,'OWNED_MULTI_TIMING='+JSON.serialize(observe('producedValidInsert')));}\n @IsTest static void textFenceInsert(){System.assert(false,'OWNED_MULTI_TIMING='+JSON.serialize(observe('textFenceInsert')));}\n @IsTest static void unknownInsert(){System.assert(false,'OWNED_MULTI_TIMING='+JSON.serialize(observe('unknownInsert')));}\n}\n",
+    "force-app/main/default/triggers/OwnedMultiTimingTrigger.trigger": "trigger OwnedMultiTimingTrigger on Account (before insert,before update,after insert,after update) {\n if(Trigger.isBefore)OwnedMultiTimingState.beforeRows(Trigger.new);\n else OwnedMultiTimingState.afterRows(Trigger.new);\n}\n",
+    "force-app/main/default/triggers/OwnedMultiTimingTrigger.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>",
+    "force-app/main/default/objects/Account/fields/OwnedMultiTimingSelection__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OwnedMultiTimingSelection__c</fullName><label>Owned multi timing selection</label><required>false</required><type>MultiselectPicklist</type><valueSet><valueSetDefinition><sorted>false</sorted><value><fullName>Alpha</fullName><default>false</default><label>Alpha</label></value><value><fullName>Beta</fullName><default>false</default><label>Beta</label></value><value><fullName>Gamma</fullName><default>false</default><label>Gamma</label></value></valueSetDefinition></valueSet><visibleLines>3</visibleLines></CustomField>",
+    "sfdx-project.json": "{\"sourceApiVersion\": \"62.0\", \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}]}"
+  },
+  "fileSHA256": {
+    "force-app/main/default/classes/OwnedMultiTimingState.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+    "force-app/main/default/classes/OwnedMultiTimingProbe.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+    "force-app/main/default/classes/OwnedMultiTimingState.cls": "1a67349f4913118b2a183bc92a1d816116158d58a080d8e9d5458f2fa8a48e8a",
+    "force-app/main/default/classes/OwnedMultiTimingProbe.cls": "4e88a95b5d85fc79a519a94b5e49b9f2a07dcf5fd6cb5a5f1fb3e4ea36fbbe51",
+    "force-app/main/default/triggers/OwnedMultiTimingTrigger.trigger": "594e5896510b924800a9f42674dda60f3200f654839d21a83953e0fddcc749cd",
+    "force-app/main/default/triggers/OwnedMultiTimingTrigger.trigger-meta.xml": "33ade1f2c93058c16e91218278a24c461db734e4f4778ed0c743e19e43f96b85",
+    "force-app/main/default/objects/Account/fields/OwnedMultiTimingSelection__c.field-meta.xml": "942fc2ade390de7765091073fef5c4b13f4aeb63b6e38d0ae555e5b1f52e8bde",
+    "sfdx-project.json": "f6916dafb89144f6387d4a009d493039b855f6af3d685eb16e5b3d42442397cd"
+  },
+  "cells": [
+    {
+      "storedText": null,
+      "storedMulti": null,
+      "events": [
+        {
+          "text": null,
+          "multi": "Alpha",
+          "phase": "beforeInput"
+        },
+        {
+          "text": null,
+          "multi": ";",
+          "phase": "beforeReturn"
+        },
+        {
+          "text": null,
+          "multi": null,
+          "phase": "after"
+        }
+      ],
+      "callerText": null,
+      "callerMulti": "Alpha",
+      "succeeded": true,
+      "restricted": false,
+      "suppliedMulti": "Alpha",
+      "shape": "producedInsert"
+    },
+    {
+      "storedText": null,
+      "storedMulti": null,
+      "events": [
+        {
+          "text": null,
+          "multi": "Alpha",
+          "phase": "beforeInput"
+        },
+        {
+          "text": null,
+          "multi": ";;",
+          "phase": "beforeReturn"
+        },
+        {
+          "text": null,
+          "multi": null,
+          "phase": "after"
+        }
+      ],
+      "callerText": null,
+      "callerMulti": "Alpha",
+      "succeeded": true,
+      "restricted": false,
+      "suppliedMulti": "Alpha",
+      "shape": "producedUpdate"
+    },
+    {
+      "storedText": null,
+      "storedMulti": "Beta",
+      "events": [
+        {
+          "text": null,
+          "multi": "Alpha",
+          "phase": "beforeInput"
+        },
+        {
+          "text": null,
+          "multi": "Beta",
+          "phase": "beforeReturn"
+        },
+        {
+          "text": null,
+          "multi": "Beta",
+          "phase": "after"
+        }
+      ],
+      "callerText": null,
+      "callerMulti": "Alpha",
+      "succeeded": true,
+      "restricted": false,
+      "suppliedMulti": "Alpha",
+      "shape": "producedValidInsert"
+    },
+    {
+      "storedText": null,
+      "storedMulti": null,
+      "events": [
+        {
+          "text": null,
+          "multi": null,
+          "phase": "beforeInput"
+        },
+        {
+          "text": null,
+          "multi": null,
+          "phase": "beforeReturn"
+        },
+        {
+          "text": null,
+          "multi": null,
+          "phase": "after"
+        }
+      ],
+      "callerText": null,
+      "callerMulti": ";",
+      "succeeded": true,
+      "restricted": false,
+      "suppliedMulti": ";",
+      "shape": "suppliedInsert"
+    },
+    {
+      "storedText": null,
+      "storedMulti": null,
+      "events": [
+        {
+          "text": null,
+          "multi": null,
+          "phase": "beforeInput"
+        },
+        {
+          "text": null,
+          "multi": null,
+          "phase": "beforeReturn"
+        },
+        {
+          "text": null,
+          "multi": null,
+          "phase": "after"
+        }
+      ],
+      "callerText": null,
+      "callerMulti": ";;",
+      "succeeded": true,
+      "restricted": false,
+      "suppliedMulti": ";;",
+      "shape": "suppliedUpdate"
+    },
+    {
+      "storedText": ";",
+      "storedMulti": "Alpha",
+      "events": [
+        {
+          "text": ";",
+          "multi": "Alpha",
+          "phase": "beforeInput"
+        },
+        {
+          "text": ";",
+          "multi": "Alpha",
+          "phase": "beforeReturn"
+        },
+        {
+          "text": ";",
+          "multi": "Alpha",
+          "phase": "after"
+        }
+      ],
+      "callerText": ";",
+      "callerMulti": "Alpha",
+      "succeeded": true,
+      "restricted": false,
+      "suppliedMulti": "Alpha",
+      "shape": "textFenceInsert"
+    },
+    {
+      "storedText": null,
+      "storedMulti": "NotDefined",
+      "events": [
+        {
+          "text": null,
+          "multi": "NotDefined",
+          "phase": "beforeInput"
+        },
+        {
+          "text": null,
+          "multi": "NotDefined",
+          "phase": "beforeReturn"
+        },
+        {
+          "text": null,
+          "multi": "NotDefined",
+          "phase": "after"
+        }
+      ],
+      "callerText": null,
+      "callerMulti": "NotDefined",
+      "succeeded": true,
+      "restricted": false,
+      "suppliedMulti": "NotDefined",
+      "shape": "unknownInsert"
+    }
+  ],
+  "source67TimingEstablished": false
+}

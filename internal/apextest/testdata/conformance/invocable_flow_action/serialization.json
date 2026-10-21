@@ -1,0 +1,484 @@
+{
+  "cluster": "serialization",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "nativeObservationCount": 24,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C187IA_041",
+      "routes": {
+        "anonymous": {
+          "code": "Account jsonAcc=new Account(Name='Before',Description='Keep');step='create';Invocable.Action jsonAction=Invocable.Action.createCustomAction('flow','FLOW_Success');jsonAction.setInvocationParameter('record',jsonAcc);step='invoke';List<Invocable.Action.Result> realResults=jsonAction.invoke();step='serialize';String resultJson=JSON.serialize(realResults[0]);payload.put('resultJson',resultJson);payload.put('listJson',JSON.serialize(realResults));",
+          "operationSHA256": "0f26d43a8abbaea171834009f5c9359002b80972cfbbac3b48dcfec020d8cda1",
+          "captureSourceSHA256": {
+            "anonymous": "9aa280ed6c1f63be3e4896d943b87d4d13d80b21c112f31d2b3ff367a2b1fb02"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "serialize",
+                "listJson": "[{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A62aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}]",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A62aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "serialize",
+                "listJson": "[{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A67aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}]",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A67aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "serialize",
+                "listJson": "[{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A68aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}]",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A68aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "Account jsonAcc=new Account(Name='Before',Description='Keep');step='create';Invocable.Action jsonAction=Invocable.Action.createCustomAction('flow','FLOW_Success');jsonAction.setInvocationParameter('record',jsonAcc);step='invoke';List<Invocable.Action.Result> realResults=jsonAction.invoke();step='serialize';String resultJson=JSON.serialize(realResults[0]);payload.put('resultJson',resultJson);payload.put('listJson',JSON.serialize(realResults));",
+          "operationSHA256": "0f26d43a8abbaea171834009f5c9359002b80972cfbbac3b48dcfec020d8cda1",
+          "captureSourceSHA256": {
+            "C187Observe041": "fa62de0f49363ef036cf457f7fd9659f7426e70d1449974bd5c0248d21b02a35"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "serialize",
+                "listJson": "[{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A62aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}]",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A62aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "serialize",
+                "listJson": "[{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A67aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}]",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A67aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "serialize",
+                "listJson": "[{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A68aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}]",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A68aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {},
+          "retryCaptureSourceSHA256": {
+            "C187Observe041": "fa62de0f49363ef036cf457f7fd9659f7426e70d1449974bd5c0248d21b02a35"
+          }
+        }
+      }
+    },
+    {
+      "id": "C187IA_042",
+      "routes": {
+        "anonymous": {
+          "code": "Account jsonAcc=new Account(Name='Before',Description='Keep');step='create';Invocable.Action jsonAction=Invocable.Action.createCustomAction('flow','FLOW_Success');jsonAction.setInvocationParameter('record',jsonAcc);step='invoke';List<Invocable.Action.Result> realResults=jsonAction.invoke();step='serialize';String resultJson=JSON.serialize(realResults[0]);payload.put('resultJson',resultJson);step='deserialize';Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(resultJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "225767a6c9320a5dcf03701144d294a44af5bdf7e991ce3e66fdefb169671531",
+          "captureSourceSHA256": {
+            "anonymous": "cdbcd6e099d06e4be33d72b0bccc45afece673cbe4bfdea3bda31b2e6427ae92"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A62aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A67aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A68aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "Account jsonAcc=new Account(Name='Before',Description='Keep');step='create';Invocable.Action jsonAction=Invocable.Action.createCustomAction('flow','FLOW_Success');jsonAction.setInvocationParameter('record',jsonAcc);step='invoke';List<Invocable.Action.Result> realResults=jsonAction.invoke();step='serialize';String resultJson=JSON.serialize(realResults[0]);payload.put('resultJson',resultJson);step='deserialize';Invocable.Action.Result jsonResult=(Invocable.Action.Result)JSON.deserialize(resultJson,Invocable.Action.Result.class);List<Invocable.Action.Result> jsonResults=new List<Invocable.Action.Result>{jsonResult};step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "225767a6c9320a5dcf03701144d294a44af5bdf7e991ce3e66fdefb169671531",
+          "captureSourceSHA256": {
+            "C187Observe042": "40fd2b8b3ea7b5eef04f9422a0aa2c039e2890502403b54aca8d5987c0e9f536"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A62aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A67aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A68aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {},
+          "retryCaptureSourceSHA256": {
+            "C187Observe042": "40fd2b8b3ea7b5eef04f9422a0aa2c039e2890502403b54aca8d5987c0e9f536"
+          }
+        }
+      }
+    },
+    {
+      "id": "C187IA_043",
+      "routes": {
+        "anonymous": {
+          "code": "Account jsonAcc=new Account(Name='Before',Description='Keep');step='create';Invocable.Action jsonAction=Invocable.Action.createCustomAction('flow','FLOW_Success');jsonAction.setInvocationParameter('record',jsonAcc);step='invoke';List<Invocable.Action.Result> realResults=jsonAction.invoke();step='serialize';String resultJson=JSON.serialize(realResults[0]);payload.put('resultJson',resultJson);String sourceJson=JSON.serialize(realResults);step='deserialize';List<Invocable.Action.Result> jsonResults=(List<Invocable.Action.Result>)JSON.deserialize(sourceJson,List<Invocable.Action.Result>.class);step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "c9dc57e6ee5c166f5635c63052610813cb0096aad4b25c6bb2476a80b8464d66",
+          "captureSourceSHA256": {
+            "anonymous": "2c13fbedc5e495b961216cd8ecd1ab09d62f4ee01edb99299c0e8209b6e1dc29"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A62aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A67aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A68aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "Account jsonAcc=new Account(Name='Before',Description='Keep');step='create';Invocable.Action jsonAction=Invocable.Action.createCustomAction('flow','FLOW_Success');jsonAction.setInvocationParameter('record',jsonAcc);step='invoke';List<Invocable.Action.Result> realResults=jsonAction.invoke();step='serialize';String resultJson=JSON.serialize(realResults[0]);payload.put('resultJson',resultJson);String sourceJson=JSON.serialize(realResults);step='deserialize';List<Invocable.Action.Result> jsonResults=(List<Invocable.Action.Result>)JSON.deserialize(sourceJson,List<Invocable.Action.Result>.class);step='getters';payload.put('resultsNull',jsonResults==null);List<Object> jsonRows=new List<Object>();payload.put('jsonResults',jsonRows);if(jsonResults!=null){for(Invocable.Action.Result jsonItem:jsonResults){Map<String,Object> jsonOne=new Map<String,Object>{'null'=>jsonItem==null};jsonRows.add(jsonOne);if(jsonItem!=null){jsonOne.put('success',jsonItem.isSuccess());jsonOne.put('outputs',jsonItem.getOutputParameters());jsonOne.put('invocation',jsonItem.getInvocationParameters());jsonOne.put('errorsJson',JSON.serialize(jsonItem.getErrors()));jsonOne.put('serialized',JSON.serialize(jsonItem));}}}",
+          "operationSHA256": "c9dc57e6ee5c166f5635c63052610813cb0096aad4b25c6bb2476a80b8464d66",
+          "captureSourceSHA256": {
+            "C187Observe043": "a8b0ab277d170f2188bff0d5791242c7fab94c4738efbadcc82ee04712cfba4e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A62aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A67aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A68aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {},
+          "retryCaptureSourceSHA256": {
+            "C187Observe043": "a8b0ab277d170f2188bff0d5791242c7fab94c4738efbadcc82ee04712cfba4e"
+          }
+        }
+      }
+    },
+    {
+      "id": "C187IA_044",
+      "routes": {
+        "anonymous": {
+          "code": "Account jsonAcc=new Account(Name='Before',Description='Keep');step='create';Invocable.Action jsonAction=Invocable.Action.createCustomAction('flow','FLOW_Success');jsonAction.setInvocationParameter('record',jsonAcc);step='invoke';List<Invocable.Action.Result> realResults=jsonAction.invoke();step='serialize';String resultJson=JSON.serialize(realResults[0]);payload.put('resultJson',resultJson);step='map';Map<String,Object> mapped=(Map<String,Object>)JSON.deserializeUntyped(resultJson);payload.put('mapKeys',new List<String>(mapped.keySet()));payload.put('successField',mapped.get('isSuccess'));payload.put('errorsField',mapped.get('errors'));payload.put('outputsField',mapped.get('outputParameters'));String mapJson=JSON.serialize(mapped);payload.put('mapJson',mapJson);step='deserialize';Invocable.Action.Result copied=(Invocable.Action.Result)JSON.deserialize(mapJson,Invocable.Action.Result.class);step='getters';payload.put('copiedNull',copied==null);if(copied!=null){payload.put('success',copied.isSuccess());payload.put('outputs',copied.getOutputParameters());payload.put('errorsJson',JSON.serialize(copied.getErrors()));}",
+          "operationSHA256": "053c4b530abafd8a97c9860729e893a03f1049b010b880d206b6d064fcd16e91",
+          "captureSourceSHA256": {
+            "anonymous": "0e1d2bab44db634e1c5e538e3d3d389df87121a271a53a5aed56d8c9926c6414"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "mapJson": "{\"action\":{\"apiVersion\":null,\"invocations\":[{\"record\":{\"Description\":\"Keep\",\"Name\":\"Before\",\"attributes\":{\"type\":\"Account\"}}}],\"invokeFromLightningComponent\":false,\"name\":\"C187A62aaaaaaaaSuccess\",\"namespace\":null,\"type\":\"flow\",\"version\":null},\"errors\":[],\"invocationParameters\":{\"record\":{\"Description\":\"Keep\",\"Name\":\"Before\",\"attributes\":{\"type\":\"Account\"}}},\"outputParameters\":{\"fired\":true,\"Flow__InterviewGuid\":\"<interview-guid>\",\"record\":{\"Description\":null,\"Name\":\"Foo\",\"attributes\":{\"type\":\"Account\"}},\"Flow__InterviewStatus\":\"Finished\"},\"success\":true}",
+                "outputsField": {
+                  "fired": true,
+                  "Flow__InterviewGuid": "<interview-guid>",
+                  "record": {
+                    "Description": null,
+                    "Name": "Foo",
+                    "attributes": {
+                      "type": "Account"
+                    }
+                  },
+                  "Flow__InterviewStatus": "Finished"
+                },
+                "errorsField": [],
+                "successField": null,
+                "mapKeys": [
+                  "success",
+                  "outputParameters",
+                  "invocationParameters",
+                  "errors",
+                  "action"
+                ],
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A62aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "mapJson": "{\"action\":{\"apiVersion\":null,\"invocations\":[{\"record\":{\"Description\":\"Keep\",\"Name\":\"Before\",\"attributes\":{\"type\":\"Account\"}}}],\"invokeFromLightningComponent\":false,\"name\":\"C187A67aaaaaaaaSuccess\",\"namespace\":null,\"type\":\"flow\",\"version\":null},\"errors\":[],\"invocationParameters\":{\"record\":{\"Description\":\"Keep\",\"Name\":\"Before\",\"attributes\":{\"type\":\"Account\"}}},\"outputParameters\":{\"fired\":true,\"Flow__InterviewGuid\":\"<interview-guid>\",\"record\":{\"Description\":null,\"Name\":\"Foo\",\"attributes\":{\"type\":\"Account\"}},\"Flow__InterviewStatus\":\"Finished\"},\"success\":true}",
+                "outputsField": {
+                  "fired": true,
+                  "Flow__InterviewGuid": "<interview-guid>",
+                  "record": {
+                    "Description": null,
+                    "Name": "Foo",
+                    "attributes": {
+                      "type": "Account"
+                    }
+                  },
+                  "Flow__InterviewStatus": "Finished"
+                },
+                "errorsField": [],
+                "successField": null,
+                "mapKeys": [
+                  "success",
+                  "outputParameters",
+                  "invocationParameters",
+                  "errors",
+                  "action"
+                ],
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A67aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "mapJson": "{\"action\":{\"apiVersion\":null,\"invocations\":[{\"record\":{\"Description\":\"Keep\",\"Name\":\"Before\",\"attributes\":{\"type\":\"Account\"}}}],\"invokeFromLightningComponent\":false,\"name\":\"C187A68aaaaaaaaSuccess\",\"namespace\":null,\"type\":\"flow\",\"version\":null},\"errors\":[],\"invocationParameters\":{\"record\":{\"Description\":\"Keep\",\"Name\":\"Before\",\"attributes\":{\"type\":\"Account\"}}},\"outputParameters\":{\"fired\":true,\"Flow__InterviewGuid\":\"<interview-guid>\",\"record\":{\"Description\":null,\"Name\":\"Foo\",\"attributes\":{\"type\":\"Account\"}},\"Flow__InterviewStatus\":\"Finished\"},\"success\":true}",
+                "outputsField": {
+                  "fired": true,
+                  "Flow__InterviewGuid": "<interview-guid>",
+                  "record": {
+                    "Description": null,
+                    "Name": "Foo",
+                    "attributes": {
+                      "type": "Account"
+                    }
+                  },
+                  "Flow__InterviewStatus": "Finished"
+                },
+                "errorsField": [],
+                "successField": null,
+                "mapKeys": [
+                  "success",
+                  "outputParameters",
+                  "invocationParameters",
+                  "errors",
+                  "action"
+                ],
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A68aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "Account jsonAcc=new Account(Name='Before',Description='Keep');step='create';Invocable.Action jsonAction=Invocable.Action.createCustomAction('flow','FLOW_Success');jsonAction.setInvocationParameter('record',jsonAcc);step='invoke';List<Invocable.Action.Result> realResults=jsonAction.invoke();step='serialize';String resultJson=JSON.serialize(realResults[0]);payload.put('resultJson',resultJson);step='map';Map<String,Object> mapped=(Map<String,Object>)JSON.deserializeUntyped(resultJson);payload.put('mapKeys',new List<String>(mapped.keySet()));payload.put('successField',mapped.get('isSuccess'));payload.put('errorsField',mapped.get('errors'));payload.put('outputsField',mapped.get('outputParameters'));String mapJson=JSON.serialize(mapped);payload.put('mapJson',mapJson);step='deserialize';Invocable.Action.Result copied=(Invocable.Action.Result)JSON.deserialize(mapJson,Invocable.Action.Result.class);step='getters';payload.put('copiedNull',copied==null);if(copied!=null){payload.put('success',copied.isSuccess());payload.put('outputs',copied.getOutputParameters());payload.put('errorsJson',JSON.serialize(copied.getErrors()));}",
+          "operationSHA256": "053c4b530abafd8a97c9860729e893a03f1049b010b880d206b6d064fcd16e91",
+          "captureSourceSHA256": {
+            "C187Observe044": "d269eda9dc1c9f1ec3ede0ab0dbe4f78a937618cbaac3858d277488d9ca1629a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "mapJson": "{\"action\":{\"apiVersion\":null,\"invocations\":[{\"record\":{\"Description\":\"Keep\",\"Name\":\"Before\",\"attributes\":{\"type\":\"Account\"}}}],\"invokeFromLightningComponent\":false,\"name\":\"C187A62aaaaaaaaSuccess\",\"namespace\":null,\"type\":\"flow\",\"version\":null},\"errors\":[],\"invocationParameters\":{\"record\":{\"Description\":\"Keep\",\"Name\":\"Before\",\"attributes\":{\"type\":\"Account\"}}},\"outputParameters\":{\"fired\":true,\"Flow__InterviewGuid\":\"<interview-guid>\",\"record\":{\"Description\":null,\"Name\":\"Foo\",\"attributes\":{\"type\":\"Account\"}},\"Flow__InterviewStatus\":\"Finished\"},\"success\":true}",
+                "outputsField": {
+                  "fired": true,
+                  "Flow__InterviewGuid": "<interview-guid>",
+                  "record": {
+                    "Description": null,
+                    "Name": "Foo",
+                    "attributes": {
+                      "type": "Account"
+                    }
+                  },
+                  "Flow__InterviewStatus": "Finished"
+                },
+                "errorsField": [],
+                "successField": null,
+                "mapKeys": [
+                  "success",
+                  "outputParameters",
+                  "invocationParameters",
+                  "errors",
+                  "action"
+                ],
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A62aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "mapJson": "{\"action\":{\"apiVersion\":null,\"invocations\":[{\"record\":{\"Description\":\"Keep\",\"Name\":\"Before\",\"attributes\":{\"type\":\"Account\"}}}],\"invokeFromLightningComponent\":false,\"name\":\"C187A67aaaaaaaaSuccess\",\"namespace\":null,\"type\":\"flow\",\"version\":null},\"errors\":[],\"invocationParameters\":{\"record\":{\"Description\":\"Keep\",\"Name\":\"Before\",\"attributes\":{\"type\":\"Account\"}}},\"outputParameters\":{\"fired\":true,\"Flow__InterviewGuid\":\"<interview-guid>\",\"record\":{\"Description\":null,\"Name\":\"Foo\",\"attributes\":{\"type\":\"Account\"}},\"Flow__InterviewStatus\":\"Finished\"},\"success\":true}",
+                "outputsField": {
+                  "fired": true,
+                  "Flow__InterviewGuid": "<interview-guid>",
+                  "record": {
+                    "Description": null,
+                    "Name": "Foo",
+                    "attributes": {
+                      "type": "Account"
+                    }
+                  },
+                  "Flow__InterviewStatus": "Finished"
+                },
+                "errorsField": [],
+                "successField": null,
+                "mapKeys": [
+                  "success",
+                  "outputParameters",
+                  "invocationParameters",
+                  "errors",
+                  "action"
+                ],
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A67aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "deserialize",
+                "exceptionMessageLength": 37,
+                "exceptionMessage": "Apex Type unsupported in JSON: Object",
+                "exceptionType": "System.JSONException",
+                "mapJson": "{\"action\":{\"apiVersion\":null,\"invocations\":[{\"record\":{\"Description\":\"Keep\",\"Name\":\"Before\",\"attributes\":{\"type\":\"Account\"}}}],\"invokeFromLightningComponent\":false,\"name\":\"C187A68aaaaaaaaSuccess\",\"namespace\":null,\"type\":\"flow\",\"version\":null},\"errors\":[],\"invocationParameters\":{\"record\":{\"Description\":\"Keep\",\"Name\":\"Before\",\"attributes\":{\"type\":\"Account\"}}},\"outputParameters\":{\"fired\":true,\"Flow__InterviewGuid\":\"<interview-guid>\",\"record\":{\"Description\":null,\"Name\":\"Foo\",\"attributes\":{\"type\":\"Account\"}},\"Flow__InterviewStatus\":\"Finished\"},\"success\":true}",
+                "outputsField": {
+                  "fired": true,
+                  "Flow__InterviewGuid": "<interview-guid>",
+                  "record": {
+                    "Description": null,
+                    "Name": "Foo",
+                    "attributes": {
+                      "type": "Account"
+                    }
+                  },
+                  "Flow__InterviewStatus": "Finished"
+                },
+                "errorsField": [],
+                "successField": null,
+                "mapKeys": [
+                  "success",
+                  "outputParameters",
+                  "invocationParameters",
+                  "errors",
+                  "action"
+                ],
+                "resultJson": "{\"success\":true,\"outputParameters\":{\"Flow__InterviewStatus\":\"Finished\",\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Foo\",\"Description\":null},\"Flow__InterviewGuid\":\"<interview-guid>\",\"fired\":true},\"invocationParameters\":{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}},\"errors\":[],\"action\":{\"version\":null,\"type\":\"flow\",\"namespace\":null,\"name\":\"C187A68aaaaaaaaSuccess\",\"invokeFromLightningComponent\":false,\"invocations\":[{\"record\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Before\",\"Description\":\"Keep\"}}],\"apiVersion\":null}}"
+              }
+            }
+          },
+          "carriedByAPI": {},
+          "retryCaptureSourceSHA256": {
+            "C187Observe044": "d269eda9dc1c9f1ec3ede0ab0dbe4f78a937618cbaac3858d277488d9ca1629a"
+          }
+        }
+      }
+    }
+  ]
+}

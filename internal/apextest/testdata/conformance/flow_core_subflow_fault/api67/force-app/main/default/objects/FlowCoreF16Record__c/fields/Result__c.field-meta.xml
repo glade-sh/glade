@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Result__c</fullName><label>FlowCoreF16Record__c Result</label><length>255</length><required>false</required><type>Text</type></CustomField>

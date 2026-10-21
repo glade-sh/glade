@@ -1,0 +1,13 @@
+id	group	route	status	value
+EN01	PREDICATE	istest	runtime	{"outcome":"runtime","value":1}
+EN02	PREDICATE	istest	runtime	{"outcome":"runtime","value":1}
+EN03	PREDICATE	istest	runtime	{"outcome":"runtime","value":1}
+EN04	PREDICATE	istest	runtime	{"outcome":"runtime","value":0}
+EN05	PREDICATE	istest	runtime	{"outcome":"runtime","value":1}
+EN06	PREDICATE	istest	runtime	{"outcome":"runtime","value":1}
+EN07	PREDICATE	istest	runtime	{"outcome":"runtime","value":0}
+EN08	PREDICATE	istest	runtime	{"outcome":"runtime","value":1}
+EN09	PREDICATE	istest	runtime	{"outcome":"runtime","value":1}
+EC01	CONTROL	istest	runtime	{"outcome":"runtime","value":3}
+EC02	CONTROL	istest	runtime	{"outcome":"runtime","value":true}
+EC03	CONTROL	istest	runtime	{"outcome":"runtime","value":1}

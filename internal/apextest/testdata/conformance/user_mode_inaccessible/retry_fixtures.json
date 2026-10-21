@@ -1,0 +1,62 @@
+{
+  "59.0": {
+    "names": {
+      "secret": "C185A594f708b41Secret__c",
+      "second": "C185A594f708b41SecondSecret__c",
+      "running": "C185A594f708b41Running",
+      "limited": "C185A594f708b41Limited"
+    },
+    "metadata": {
+      "objects/Account/fields/C185A594f708b41Secret__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>C185A594f708b41Secret__c</ns0:fullName><ns0:label>C185A594f708b41Secret</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+      "objects/Account/fields/C185A594f708b41SecondSecret__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>C185A594f708b41SecondSecret__c</ns0:fullName><ns0:label>C185A594f708b41SecondSecret</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+      "permissionsets/C185A594f708b41Running.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>true</editable><field>Account.C185A594f708b41Secret__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>Account.C185A594f708b41SecondSecret__c</field><readable>true</readable></fieldPermissions><label>C185A594f708b41Running</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Opportunity</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+      "permissionsets/C185A594f708b41Limited.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185A594f708b41Limited</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+    },
+    "sourceManifestSHA256": "3bc09496d82a82157d5cbe0bed35a94db9dacf14fd356ebccd5a205b479be526"
+  },
+  "62.0": {
+    "names": {
+      "secret": "C185A6204f6031dSecret__c",
+      "second": "C185A6204f6031dSecondSecret__c",
+      "running": "C185A6204f6031dRunning",
+      "limited": "C185A6204f6031dLimited"
+    },
+    "metadata": {
+      "objects/Account/fields/C185A6204f6031dSecret__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>C185A6204f6031dSecret__c</ns0:fullName><ns0:label>C185A6204f6031dSecret</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+      "objects/Account/fields/C185A6204f6031dSecondSecret__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>C185A6204f6031dSecondSecret__c</ns0:fullName><ns0:label>C185A6204f6031dSecondSecret</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+      "permissionsets/C185A6204f6031dRunning.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>true</editable><field>Account.C185A6204f6031dSecret__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>Account.C185A6204f6031dSecondSecret__c</field><readable>true</readable></fieldPermissions><label>C185A6204f6031dRunning</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Opportunity</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+      "permissionsets/C185A6204f6031dLimited.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185A6204f6031dLimited</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+    },
+    "sourceManifestSHA256": "3bc09496d82a82157d5cbe0bed35a94db9dacf14fd356ebccd5a205b479be526"
+  },
+  "67.0": {
+    "names": {
+      "secret": "C185A67c27bae69Secret__c",
+      "second": "C185A67c27bae69SecondSecret__c",
+      "running": "C185A67c27bae69Running",
+      "limited": "C185A67c27bae69Limited"
+    },
+    "metadata": {
+      "objects/Account/fields/C185A67c27bae69Secret__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>C185A67c27bae69Secret__c</ns0:fullName><ns0:label>C185A67c27bae69Secret</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+      "objects/Account/fields/C185A67c27bae69SecondSecret__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>C185A67c27bae69SecondSecret__c</ns0:fullName><ns0:label>C185A67c27bae69SecondSecret</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+      "permissionsets/C185A67c27bae69Running.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>true</editable><field>Account.C185A67c27bae69Secret__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>Account.C185A67c27bae69SecondSecret__c</field><readable>true</readable></fieldPermissions><label>C185A67c27bae69Running</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Opportunity</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+      "permissionsets/C185A67c27bae69Limited.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185A67c27bae69Limited</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+    },
+    "sourceManifestSHA256": "3bc09496d82a82157d5cbe0bed35a94db9dacf14fd356ebccd5a205b479be526"
+  },
+  "68.0": {
+    "names": {
+      "secret": "C185A68f0cbe7b5Secret__c",
+      "second": "C185A68f0cbe7b5SecondSecret__c",
+      "running": "C185A68f0cbe7b5Running",
+      "limited": "C185A68f0cbe7b5Limited"
+    },
+    "metadata": {
+      "objects/Account/fields/C185A68f0cbe7b5Secret__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>C185A68f0cbe7b5Secret__c</ns0:fullName><ns0:label>C185A68f0cbe7b5Secret</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+      "objects/Account/fields/C185A68f0cbe7b5SecondSecret__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>C185A68f0cbe7b5SecondSecret__c</ns0:fullName><ns0:label>C185A68f0cbe7b5SecondSecret</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+      "permissionsets/C185A68f0cbe7b5Running.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>true</editable><field>Account.C185A68f0cbe7b5Secret__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>Account.C185A68f0cbe7b5SecondSecret__c</field><readable>true</readable></fieldPermissions><label>C185A68f0cbe7b5Running</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Opportunity</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+      "permissionsets/C185A68f0cbe7b5Limited.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185A68f0cbe7b5Limited</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+    },
+    "sourceManifestSHA256": "3bc09496d82a82157d5cbe0bed35a94db9dacf14fd356ebccd5a205b479be526"
+  }
+}

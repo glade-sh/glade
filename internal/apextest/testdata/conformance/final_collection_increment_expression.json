@@ -1,0 +1,1214 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "expression",
+  "shapeCount": 8,
+  "nativeObservationCount": 24,
+  "carriedObservationCount": 24,
+  "rows": [
+    {
+      "id": "C166PF_067",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};Integer o=true?(a[0]++):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_067|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "fe116d0055bff9860fc44e5165fb45d79c961fa1bbcaf30c51d4db8b7067e682"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "http-error",
+              "code": null,
+              "native": {
+                "outcome": "http-error",
+                "status": 500,
+                "code": null,
+                "message_prefix": null,
+                "diagnostics": {
+                  "stdout_json_parsed": true,
+                  "json_name": null,
+                  "json_code": null,
+                  "platform_fault": false,
+                  "http_status": 500,
+                  "envelope_status": 1,
+                  "sf_json_exit_code": null,
+                  "top_level_keys": [
+                    "result",
+                    "status",
+                    "warnings"
+                  ],
+                  "list_body_shapes": [],
+                  "error_entries": [],
+                  "message_prefix": null,
+                  "genuine_transport": false
+                }
+              }
+            },
+            "67.0": {
+              "status": "http-error",
+              "code": null,
+              "native": {
+                "outcome": "http-error",
+                "status": 500,
+                "code": null,
+                "message_prefix": null,
+                "diagnostics": {
+                  "stdout_json_parsed": true,
+                  "json_name": null,
+                  "json_code": null,
+                  "platform_fault": false,
+                  "http_status": 500,
+                  "envelope_status": 1,
+                  "sf_json_exit_code": null,
+                  "top_level_keys": [
+                    "result",
+                    "status",
+                    "warnings"
+                  ],
+                  "list_body_shapes": [],
+                  "error_entries": [],
+                  "message_prefix": null,
+                  "genuine_transport": false
+                }
+              }
+            },
+            "68.0": {
+              "status": "http-error",
+              "code": null,
+              "native": {
+                "outcome": "http-error",
+                "status": 500,
+                "code": null,
+                "message_prefix": null,
+                "diagnostics": {
+                  "stdout_json_parsed": true,
+                  "json_name": null,
+                  "json_code": null,
+                  "platform_fault": false,
+                  "http_status": 500,
+                  "envelope_status": 1,
+                  "sf_json_exit_code": null,
+                  "top_level_keys": [
+                    "result",
+                    "status",
+                    "warnings"
+                  ],
+                  "list_body_shapes": [],
+                  "error_entries": [],
+                  "message_prefix": null,
+                  "genuine_transport": false
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe067": "@IsTest private class C166Observe067{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};Integer o=true?(a[0]++):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_067|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe067"
+          ],
+          "sourceSha256": {
+            "class:C166Observe067": "d4865c8c332ab61b03a855589fbdb643d8074cfe95d457ee853fd0b493a6fa71"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "no-answer",
+              "code": "platform-fault",
+              "native": {
+                "phase": "platform-fault",
+                "row_id": "C166PF_067",
+                "api": "62.0",
+                "route": "istest",
+                "exception_class": "PlatformFault",
+                "message": "Platform fault is missing native evidence; raw diagnostics withheld",
+                "transport_reason": null,
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": true,
+                "attempt_count": 1,
+                "elapsed": 2.67039,
+                "stdout_json_parsed": false,
+                "json_name": null,
+                "json_code": null,
+                "http_status": null,
+                "envelope_status": null,
+                "sf_json_exit_code": null,
+                "top_level_keys": [],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "platform-fault"
+              }
+            },
+            "67.0": {
+              "status": "no-answer",
+              "code": "platform-fault",
+              "native": {
+                "phase": "platform-fault",
+                "row_id": "C166PF_067",
+                "api": "67.0",
+                "route": "istest",
+                "exception_class": "PlatformFault",
+                "message": "Platform fault is missing native evidence; raw diagnostics withheld",
+                "transport_reason": null,
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": true,
+                "attempt_count": 1,
+                "elapsed": 2.554879,
+                "stdout_json_parsed": false,
+                "json_name": null,
+                "json_code": null,
+                "http_status": null,
+                "envelope_status": null,
+                "sf_json_exit_code": null,
+                "top_level_keys": [],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "platform-fault"
+              }
+            },
+            "68.0": {
+              "status": "no-answer",
+              "code": "platform-fault",
+              "native": {
+                "phase": "platform-fault",
+                "row_id": "C166PF_067",
+                "api": "68.0",
+                "route": "istest",
+                "exception_class": "PlatformFault",
+                "message": "Platform fault is missing native evidence; raw diagnostics withheld",
+                "transport_reason": null,
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": true,
+                "attempt_count": 1,
+                "elapsed": 2.835268,
+                "stdout_json_parsed": false,
+                "json_name": null,
+                "json_code": null,
+                "http_status": null,
+                "envelope_status": null,
+                "sf_json_exit_code": null,
+                "top_level_keys": [],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "platform-fault"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C166PF_068",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};Integer o=false?(a[0]++):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_068|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "f9dc303a27b701957b0cd720ed7363c4f838d521ea67e7b6514dde44a57bebe9"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe068": "@IsTest private class C166Observe068{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};Integer o=false?(a[0]++):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_068|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe068"
+          ],
+          "sourceSha256": {
+            "class:C166Observe068": "3b0b260c4afc2757b9588344bd1894492993a5983f5c53ad281874c4fa834289"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_069",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Long> a=new List<Long>{1};Long o=true?(++a[0]):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_069|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "317e94cea732e45ba9031668ccc08db5960575c60a4962b7895004756fcf9f78"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "no-answer",
+              "code": "transport-failed",
+              "native": {
+                "phase": "anonymous-transport",
+                "row_id": "C166PF_069",
+                "api": "62.0",
+                "route": "anonymous",
+                "exception_class": "RuntimeError",
+                "message": "Salesforce transport failed; raw output withheld",
+                "transport_reason": "sf-exit",
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": false,
+                "attempt_count": 3,
+                "elapsed": 21.198064,
+                "stdout_json_parsed": true,
+                "json_name": "WITHHELD_UNRECOGNIZED",
+                "json_code": "ECONNRESET",
+                "http_status": null,
+                "envelope_status": 1,
+                "sf_json_exit_code": 1,
+                "top_level_keys": [
+                  "cause",
+                  "code",
+                  "commandName",
+                  "context",
+                  "exitCode",
+                  "message",
+                  "name",
+                  "stack",
+                  "status",
+                  "warnings"
+                ],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": true,
+                "outcome": "no-answer",
+                "code": "transport-failed"
+              }
+            },
+            "67.0": {
+              "status": "http-error",
+              "code": null,
+              "native": {
+                "outcome": "http-error",
+                "status": 500,
+                "code": null,
+                "message_prefix": null,
+                "diagnostics": {
+                  "stdout_json_parsed": true,
+                  "json_name": null,
+                  "json_code": null,
+                  "platform_fault": false,
+                  "http_status": 500,
+                  "envelope_status": 1,
+                  "sf_json_exit_code": null,
+                  "top_level_keys": [
+                    "result",
+                    "status",
+                    "warnings"
+                  ],
+                  "list_body_shapes": [],
+                  "error_entries": [],
+                  "message_prefix": null,
+                  "genuine_transport": false
+                }
+              }
+            },
+            "68.0": {
+              "status": "http-error",
+              "code": null,
+              "native": {
+                "outcome": "http-error",
+                "status": 500,
+                "code": null,
+                "message_prefix": null,
+                "diagnostics": {
+                  "stdout_json_parsed": true,
+                  "json_name": null,
+                  "json_code": null,
+                  "platform_fault": false,
+                  "http_status": 500,
+                  "envelope_status": 1,
+                  "sf_json_exit_code": null,
+                  "top_level_keys": [
+                    "result",
+                    "status",
+                    "warnings"
+                  ],
+                  "list_body_shapes": [],
+                  "error_entries": [],
+                  "message_prefix": null,
+                  "genuine_transport": false
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe069": "@IsTest private class C166Observe069{@IsTest static void observe(){String r;final List<Long> a=new List<Long>{1};Long o=true?(++a[0]):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_069|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe069"
+          ],
+          "sourceSha256": {
+            "class:C166Observe069": "5fc0334c461dcaa61120506ef2eded0efcf2c5e04e10e985c4e8710d16225d1d"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "no-answer",
+              "code": "platform-fault",
+              "native": {
+                "phase": "platform-fault",
+                "row_id": "C166PF_069",
+                "api": "62.0",
+                "route": "istest",
+                "exception_class": "PlatformFault",
+                "message": "Platform fault is missing native evidence; raw diagnostics withheld",
+                "transport_reason": null,
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": true,
+                "attempt_count": 1,
+                "elapsed": 2.557447,
+                "stdout_json_parsed": false,
+                "json_name": null,
+                "json_code": null,
+                "http_status": null,
+                "envelope_status": null,
+                "sf_json_exit_code": null,
+                "top_level_keys": [],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "platform-fault"
+              }
+            },
+            "67.0": {
+              "status": "no-answer",
+              "code": "platform-fault",
+              "native": {
+                "phase": "platform-fault",
+                "row_id": "C166PF_069",
+                "api": "67.0",
+                "route": "istest",
+                "exception_class": "PlatformFault",
+                "message": "Platform fault is missing native evidence; raw diagnostics withheld",
+                "transport_reason": null,
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": true,
+                "attempt_count": 1,
+                "elapsed": 2.567827,
+                "stdout_json_parsed": false,
+                "json_name": null,
+                "json_code": null,
+                "http_status": null,
+                "envelope_status": null,
+                "sf_json_exit_code": null,
+                "top_level_keys": [],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "platform-fault"
+              }
+            },
+            "68.0": {
+              "status": "no-answer",
+              "code": "platform-fault",
+              "native": {
+                "phase": "platform-fault",
+                "row_id": "C166PF_069",
+                "api": "68.0",
+                "route": "istest",
+                "exception_class": "PlatformFault",
+                "message": "Platform fault is missing native evidence; raw diagnostics withheld",
+                "transport_reason": null,
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": true,
+                "attempt_count": 1,
+                "elapsed": 2.818387,
+                "stdout_json_parsed": false,
+                "json_name": null,
+                "json_code": null,
+                "http_status": null,
+                "envelope_status": null,
+                "sf_json_exit_code": null,
+                "top_level_keys": [],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "platform-fault"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C166PF_070",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Long> a=new List<Long>{1};Long o=false?(++a[0]):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_070|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "e769b7b10303cc0bac88e76475eba0e213599de7f2b514d24c962adccc4f17d4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe070": "@IsTest private class C166Observe070{@IsTest static void observe(){String r;final List<Long> a=new List<Long>{1};Long o=false?(++a[0]):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_070|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe070"
+          ],
+          "sourceSha256": {
+            "class:C166Observe070": "7fc92a61b02ce3a95c67ab49d6942586cf724f6ffe098ee34decc9787f9a8e3e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_071",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Double> a=new List<Double>{1};Double o=true?(a[0]--):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_071|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "bfdf2681b37c80f25c4c60752826a864e92403f91d7af5edc70c5ddb926a3608"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "no-answer",
+              "code": "fixture-error",
+              "native": {
+                "phase": "anonymous-transport",
+                "row_id": "C166PF_071",
+                "api": "62.0",
+                "route": "anonymous",
+                "exception_class": "RuntimeError",
+                "message": "Salesforce transport failed; raw output withheld",
+                "transport_reason": "sf-exit",
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": false,
+                "attempt_count": 3,
+                "elapsed": 18.931906,
+                "stdout_json_parsed": true,
+                "json_name": null,
+                "json_code": null,
+                "http_status": 500,
+                "envelope_status": 1,
+                "sf_json_exit_code": null,
+                "top_level_keys": [
+                  "result",
+                  "status",
+                  "warnings"
+                ],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "fixture-error"
+              }
+            },
+            "67.0": {
+              "status": "http-error",
+              "code": null,
+              "native": {
+                "outcome": "http-error",
+                "status": 500,
+                "code": null,
+                "message_prefix": null,
+                "diagnostics": {
+                  "stdout_json_parsed": true,
+                  "json_name": null,
+                  "json_code": null,
+                  "platform_fault": false,
+                  "http_status": 500,
+                  "envelope_status": 1,
+                  "sf_json_exit_code": null,
+                  "top_level_keys": [
+                    "result",
+                    "status",
+                    "warnings"
+                  ],
+                  "list_body_shapes": [],
+                  "error_entries": [],
+                  "message_prefix": null,
+                  "genuine_transport": false
+                }
+              }
+            },
+            "68.0": {
+              "status": "http-error",
+              "code": null,
+              "native": {
+                "outcome": "http-error",
+                "status": 500,
+                "code": null,
+                "message_prefix": null,
+                "diagnostics": {
+                  "stdout_json_parsed": true,
+                  "json_name": null,
+                  "json_code": null,
+                  "platform_fault": false,
+                  "http_status": 500,
+                  "envelope_status": 1,
+                  "sf_json_exit_code": null,
+                  "top_level_keys": [
+                    "result",
+                    "status",
+                    "warnings"
+                  ],
+                  "list_body_shapes": [],
+                  "error_entries": [],
+                  "message_prefix": null,
+                  "genuine_transport": false
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe071": "@IsTest private class C166Observe071{@IsTest static void observe(){String r;final List<Double> a=new List<Double>{1};Double o=true?(a[0]--):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_071|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe071"
+          ],
+          "sourceSha256": {
+            "class:C166Observe071": "0bfba525a81e44e0036b70ff929032b31f68f4ee9f667440082da2a173e52785"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "no-answer",
+              "code": "platform-fault",
+              "native": {
+                "phase": "platform-fault",
+                "row_id": "C166PF_071",
+                "api": "62.0",
+                "route": "istest",
+                "exception_class": "PlatformFault",
+                "message": "Platform fault is missing native evidence; raw diagnostics withheld",
+                "transport_reason": null,
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": true,
+                "attempt_count": 1,
+                "elapsed": 2.631205,
+                "stdout_json_parsed": false,
+                "json_name": null,
+                "json_code": null,
+                "http_status": null,
+                "envelope_status": null,
+                "sf_json_exit_code": null,
+                "top_level_keys": [],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "platform-fault"
+              }
+            },
+            "67.0": {
+              "status": "no-answer",
+              "code": "platform-fault",
+              "native": {
+                "phase": "platform-fault",
+                "row_id": "C166PF_071",
+                "api": "67.0",
+                "route": "istest",
+                "exception_class": "PlatformFault",
+                "message": "Platform fault is missing native evidence; raw diagnostics withheld",
+                "transport_reason": null,
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": true,
+                "attempt_count": 1,
+                "elapsed": 2.557188,
+                "stdout_json_parsed": false,
+                "json_name": null,
+                "json_code": null,
+                "http_status": null,
+                "envelope_status": null,
+                "sf_json_exit_code": null,
+                "top_level_keys": [],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "platform-fault"
+              }
+            },
+            "68.0": {
+              "status": "no-answer",
+              "code": "platform-fault",
+              "native": {
+                "phase": "platform-fault",
+                "row_id": "C166PF_071",
+                "api": "68.0",
+                "route": "istest",
+                "exception_class": "PlatformFault",
+                "message": "Platform fault is missing native evidence; raw diagnostics withheld",
+                "transport_reason": null,
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": true,
+                "attempt_count": 1,
+                "elapsed": 2.843963,
+                "stdout_json_parsed": false,
+                "json_name": null,
+                "json_code": null,
+                "http_status": null,
+                "envelope_status": null,
+                "sf_json_exit_code": null,
+                "top_level_keys": [],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "platform-fault"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C166PF_072",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Double> a=new List<Double>{1};Double o=false?(a[0]--):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_072|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "45236350310768aaec567f56090202ae84187a51b92f0c8ebcd5b0d6b0fa9610"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0.0|1.0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0.0|1.0\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0.0|1.0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0.0|1.0\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0.0|1.0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0.0|1.0\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe072": "@IsTest private class C166Observe072{@IsTest static void observe(){String r;final List<Double> a=new List<Double>{1};Double o=false?(a[0]--):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_072|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe072"
+          ],
+          "sourceSha256": {
+            "class:C166Observe072": "72266badbd628b88ca438554897a771f60e8bcd94cd458bc390351ea0c3b4df3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0.0|1.0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0.0|1.0\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0.0|1.0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0.0|1.0\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0.0|1.0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0.0|1.0\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_073",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Decimal> a=new List<Decimal>{1};Decimal o=true?(--a[0]):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_073|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "2e5cfb906f3e4f8979e64c330fdf127d13a826fb37e8701465618410117c1cbe"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "http-error",
+              "code": null,
+              "native": {
+                "outcome": "http-error",
+                "status": 500,
+                "code": null,
+                "message_prefix": null,
+                "diagnostics": {
+                  "stdout_json_parsed": true,
+                  "json_name": null,
+                  "json_code": null,
+                  "platform_fault": false,
+                  "http_status": 500,
+                  "envelope_status": 1,
+                  "sf_json_exit_code": null,
+                  "top_level_keys": [
+                    "result",
+                    "status",
+                    "warnings"
+                  ],
+                  "list_body_shapes": [],
+                  "error_entries": [],
+                  "message_prefix": null,
+                  "genuine_transport": false
+                }
+              }
+            },
+            "67.0": {
+              "status": "http-error",
+              "code": null,
+              "native": {
+                "outcome": "http-error",
+                "status": 500,
+                "code": null,
+                "message_prefix": null,
+                "diagnostics": {
+                  "stdout_json_parsed": true,
+                  "json_name": null,
+                  "json_code": null,
+                  "platform_fault": false,
+                  "http_status": 500,
+                  "envelope_status": 1,
+                  "sf_json_exit_code": null,
+                  "top_level_keys": [
+                    "result",
+                    "status",
+                    "warnings"
+                  ],
+                  "list_body_shapes": [],
+                  "error_entries": [],
+                  "message_prefix": null,
+                  "genuine_transport": false
+                }
+              }
+            },
+            "68.0": {
+              "status": "http-error",
+              "code": null,
+              "native": {
+                "outcome": "http-error",
+                "status": 500,
+                "code": null,
+                "message_prefix": null,
+                "diagnostics": {
+                  "stdout_json_parsed": true,
+                  "json_name": null,
+                  "json_code": null,
+                  "platform_fault": false,
+                  "http_status": 500,
+                  "envelope_status": 1,
+                  "sf_json_exit_code": null,
+                  "top_level_keys": [
+                    "result",
+                    "status",
+                    "warnings"
+                  ],
+                  "list_body_shapes": [],
+                  "error_entries": [],
+                  "message_prefix": null,
+                  "genuine_transport": false
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe073": "@IsTest private class C166Observe073{@IsTest static void observe(){String r;final List<Decimal> a=new List<Decimal>{1};Decimal o=true?(--a[0]):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_073|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe073"
+          ],
+          "sourceSha256": {
+            "class:C166Observe073": "ec6a8568dde36324119f73c5204fb742c1b32e01aa7bad5889ddb583ad0fbc46"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "no-answer",
+              "code": "platform-fault",
+              "native": {
+                "phase": "platform-fault",
+                "row_id": "C166PF_073",
+                "api": "62.0",
+                "route": "istest",
+                "exception_class": "PlatformFault",
+                "message": "Platform fault is missing native evidence; raw diagnostics withheld",
+                "transport_reason": null,
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": true,
+                "attempt_count": 1,
+                "elapsed": 2.577684,
+                "stdout_json_parsed": false,
+                "json_name": null,
+                "json_code": null,
+                "http_status": null,
+                "envelope_status": null,
+                "sf_json_exit_code": null,
+                "top_level_keys": [],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "platform-fault"
+              }
+            },
+            "67.0": {
+              "status": "no-answer",
+              "code": "platform-fault",
+              "native": {
+                "phase": "platform-fault",
+                "row_id": "C166PF_073",
+                "api": "67.0",
+                "route": "istest",
+                "exception_class": "PlatformFault",
+                "message": "Platform fault is missing native evidence; raw diagnostics withheld",
+                "transport_reason": null,
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": true,
+                "attempt_count": 1,
+                "elapsed": 2.567606,
+                "stdout_json_parsed": false,
+                "json_name": null,
+                "json_code": null,
+                "http_status": null,
+                "envelope_status": null,
+                "sf_json_exit_code": null,
+                "top_level_keys": [],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "platform-fault"
+              }
+            },
+            "68.0": {
+              "status": "no-answer",
+              "code": "platform-fault",
+              "native": {
+                "phase": "platform-fault",
+                "row_id": "C166PF_073",
+                "api": "68.0",
+                "route": "istest",
+                "exception_class": "PlatformFault",
+                "message": "Platform fault is missing native evidence; raw diagnostics withheld",
+                "transport_reason": null,
+                "sf_exit_code": 1,
+                "timeout": false,
+                "platform_fault": true,
+                "attempt_count": 1,
+                "elapsed": 2.827959,
+                "stdout_json_parsed": false,
+                "json_name": null,
+                "json_code": null,
+                "http_status": null,
+                "envelope_status": null,
+                "sf_json_exit_code": null,
+                "top_level_keys": [],
+                "list_body_shapes": [],
+                "error_entries": [],
+                "message_prefix": null,
+                "genuine_transport": false,
+                "outcome": "no-answer",
+                "code": "platform-fault"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C166PF_074",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Decimal> a=new List<Decimal>{1};Decimal o=false?(--a[0]):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_074|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "95538be893dc36aaffc76850f4c62a468a9674572af26fdfd4bdb35f90c25575"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe074": "@IsTest private class C166Observe074{@IsTest static void observe(){String r;final List<Decimal> a=new List<Decimal>{1};Decimal o=false?(--a[0]):0;r=String.valueOf(o)+'|'+String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_074|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe074"
+          ],
+          "sourceSha256": {
+            "class:C166Observe074": "2f267e3788b2d16c748b31fe21e3024195ea69c65d885ff2525f842dd906fef4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0|1"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0|1\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    }
+  ]
+}

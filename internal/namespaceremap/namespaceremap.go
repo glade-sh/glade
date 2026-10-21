@@ -53,7 +53,11 @@ func ApplySource(rules []Rule, source string) string {
 		case source[i] == '\'':
 			end := stringLiteralEnd(source, i)
 			out.WriteByte('\'')
-			out.WriteString(rewriteNamespaceTokens(rules, source[i+1:end]))
+			literal := source[i+1 : end]
+			// A standalone namespace can also form a qualified name through
+			// concatenation with an object or class delimiter.
+			literal = ApplyNamespace(rules, literal)
+			out.WriteString(rewriteNamespaceTokens(rules, literal))
 			if end < len(source) {
 				out.WriteByte('\'')
 				i = end + 1
@@ -83,7 +87,9 @@ func Fingerprint(rules []Rule) string {
 		parts = append(parts, strings.ToLower(rule.From)+"\x00"+rule.To)
 	}
 	sort.Strings(parts)
-	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
+	// Cached normalized sources must not reuse the earlier transformation,
+	// which only recognized namespaces already followed by a delimiter.
+	sum := sha256.Sum256([]byte("source-remap-v2\x00" + strings.Join(parts, "\x00")))
 	return hex.EncodeToString(sum[:8])
 }
 

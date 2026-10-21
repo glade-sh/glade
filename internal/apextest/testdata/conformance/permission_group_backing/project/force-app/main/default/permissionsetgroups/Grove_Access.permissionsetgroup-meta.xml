@@ -1,0 +1,1 @@
+<PermissionSetGroup xmlns="http://soap.sforce.com/2006/04/metadata"><label>Grove Access</label><permissionSets>Grove_Reader</permissionSets><permissionSets>Grove_Writer</permissionSets></PermissionSetGroup>

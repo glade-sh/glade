@@ -1,0 +1,130 @@
+workflow	job	samples	wall_p50_s	checkout_p50_s	go_p50_s	node_p50_s	cache_restore_p50_s	dependencies_p50_s	build_p50_s	validation_p50_s	other_p50_s	failures	timeouts
+browser	Browser	20	256.5	9.0	8.5	2.0	8.0	7.0	0.0	204.5	12.5	0	0
+ci	LWC compile (0)	14	1159.0	3.5	10.0	1.0	5.5	28.5	0.0	1094.5	10.0	0	0
+ci	LWC compile (1)	14	1479.0	3.0	9.0	1.0	6.0	28.5	0.0	1415.0	9.0	0	0
+ci	LWC compile (2)	14	1264.0	3.0	8.5	1.0	4.0	27.5	0.0	1201.0	9.0	0	0
+ci	LWC compile (3)	14	1270.0	3.5	9.5	1.0	5.5	30.0	0.0	1208.0	9.0	1	0
+ci	LWC compile (4)	15	670.0	3.0	10.0	1.0	5.0	27.0	0	619.0	10.0	0	0
+ci	LWC compile (5)	14	675.5	3.5	9.0	1.0	5.0	28.0	0.0	609.5	10.0	0	0
+ci	LWC compile (6)	15	526.0	3.0	9.0	1.0	6.0	29.0	0	477.0	10.0	0	0
+ci	LWC compile (7)	15	610.0	3.0	9.0	1.0	5.0	30.0	0	529.0	11.0	0	0
+ci	Required CI	20	3.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	6	0
+ci	Required Scheduled CI	2	3.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	2	0
+ci	Visualforce (0)	7	421.0	3.0	10.0	0	6.0	29.0	0	357.0	11.0	0	0
+ci	Visualforce (1)	7	503.0	3.0	10.0	1.0	5.0	30.0	0	438.0	9.0	0	0
+ci	Visualforce (2)	7	489.0	3.0	10.0	1.0	7.0	31.0	0	415.0	12.0	0	0
+ci	Visualforce (3)	7	463.0	3.0	10.0	1.0	6.0	29.0	0	394.0	11.0	0	0
+ci	apextest (0)	17	654.0	3.0	8.0	0	10.0	0	0	629.0	5.0	1	0
+ci	apextest (1)	17	554.0	3.0	9.0	0	10.0	0	0	526.0	3.0	1	0
+ci	apextest-history	16	13.0	4.0	0.0	0.0	0.0	0.0	0.0	0.0	6.5	0	0
+ci	apextest-history-input	20	8.5	3.0	0.0	0.0	0.0	0.0	0.0	0.0	2.5	0	0
+ci	gladecli	18	362.0	3.0	10.0	0.0	4.5	0.0	0.0	334.5	7.0	0	0
+ci	lwc-compile-history	9	10.0	4.0	0	0	0	0	0	0	4.0	0	0
+ci	lwc-compile-history-input	9	11.0	3.0	0	0	0	0	0	0	4.0	0	0
+ci	nested-sources	20	44.5	3.0	9.0	1.0	0.0	4.0	0.0	18.0	5.0	0	0
+ci	node-integration	20	66.5	3.0	9.5	2.0	4.0	2.0	0.0	34.0	10.0	1	0
+ci	sema (0)	20	53.0	3.0	9.0	0.0	9.5	0.0	0.0	23.0	3.0	0	0
+ci	sema (1)	20	57.5	3.0	9.0	0.0	12.0	0.0	0.0	23.0	3.5	0	0
+ci	sema-full	2	122.0	3.5	8.0	0.0	1.0	0.0	0.0	93.0	2.0	2	0
+ci	sema-history	20	10.0	3.0	0.0	0.0	0.0	0.0	0.0	0.0	5.0	0	0
+ci	server-and-playground	18	353.0	3.0	9.5	1.0	4.5	29.5	0.0	294.0	8.0	0	0
+ci	site	19	575.0	4.0	0	3.0	0	14.0	0	552.0	1.0	2	0
+ci	smoke-distribution	20	78.5	3.0	9.0	2.0	4.0	2.0	0.0	47.0	7.0	0	0
+ci	smoke-runtime	20	48.0	3.0	8.0	0.0	4.0	0.0	0.0	19.5	7.0	0	0
+ci	test	17	1522.0	3.0	9.0	1.0	6.0	29.0	0	1475.0	8.0	2	0
+ci	vet	20	34.0	3.0	9.0	0.0	5.0	0.0	0.0	1.0	7.0	0	0
+ci	visualforce-history	7	11.0	4.0	0	0	0	0	0	0	5.0	0	0
+ci	visualforce-history-input	7	11.0	3.0	0	0	0	0	0	0	4.0	0	0
+race	plan	20	31.0	9.0	9.0	1.0	1.0	2.0	0.0	0.0	4.0	1	0
+race	race (./cmd/glade)	19	123.0	3.0	10.0	0	0	0	0	104.0	3.0	0	0
+race	race (./internal/apexast)	19	37.0	3.0	9.0	0	0	0	0	20.0	3.0	0	0
+race	race (./internal/apexlang)	19	30.0	4.0	9.0	0	0	0	0	12.0	2.0	0	0
+race	race (./internal/apexlog)	18	120.0	3.0	9.0	0.0	0.0	0.0	0.0	99.0	2.5	0	0
+race	race (./internal/apexversion)	19	28.0	3.0	8.0	0	0	0	0	11.0	3.0	0	0
+race	race (./internal/aura)	19	32.0	4.0	9.0	0	0	0	0	12.0	3.0	0	0
+race	race (./internal/automation)	19	91.0	3.0	9.0	0	0	0	0	71.0	2.0	0	0
+race	race (./internal/cliui)	19	32.0	3.0	9.0	0	0	0	0	12.0	3.0	0	0
+race	race (./internal/codeintel)	19	93.0	3.0	9.0	0	0	0	0	76.0	2.0	0	0
+race	race (./internal/config)	19	30.0	3.0	9.0	0	0	0	0	12.0	2.0	0	0
+race	race (./internal/dap)	18	113.5	3.0	9.0	0.0	0.0	0.0	0.0	94.5	3.0	0	0
+race	race (./internal/dataweave)	8	39.0	4.0	10.0	0.0	0.0	0.0	0.0	20.0	2.5	0	0
+race	race (./internal/dbmanager)	19	90.0	3.0	9.0	0	0	0	0	73.0	3.0	0	0
+race	race (./internal/debuglog)	19	112.0	3.0	9.0	0	0	0	0	93.0	3.0	0	0
+race	race (./internal/diagnostic)	19	31.0	3.0	10.0	0	0	0	0	12.0	3.0	0	0
+race	race (./internal/dml)	19	95.0	3.0	9.0	0	0	0	0	76.0	3.0	0	0
+race	race (./internal/enterprise)	19	114.0	3.0	9.0	0	0	0	0	96.0	3.0	0	0
+race	race (./internal/enterpriseassess)	19	114.0	3.0	9.0	0	0	0	0	96.0	2.0	0	0
+race	race (./internal/enterprisecruft)	19	113.0	3.0	10.0	0	0	0	0	95.0	3.0	0	0
+race	race (./internal/enterprisegraph)	18	112.0	3.0	9.0	0.0	0.0	0.0	0.0	96.5	2.0	0	0
+race	race (./internal/flagparse)	18	29.0	3.0	9.0	0.0	0.0	0.0	0.0	12.0	3.0	0	0
+race	race (./internal/gladehome)	18	43.0	3.0	9.0	1.0	1.0	2.0	0.0	14.0	2.0	0	0
+race	race (./internal/ir)	19	29.0	3.0	9.0	0	0	0	0	12.0	3.0	0	0
+race	race (./internal/lsp)	18	113.0	3.0	9.0	0.0	0.0	0.0	0.0	95.5	3.0	0	0
+race	race (./internal/lwc)	19	30.0	3.0	9.0	0	0	0	0	13.0	3.0	0	0
+race	race (./internal/lwc/compile)	11	41.0	3.0	10.0	0	1.0	2.0	0	21.0	2.0	1	0
+race	race (./internal/lwcbrowser)	19	102.0	3.0	9.0	1.0	1.0	2.0	0	79.0	3.0	0	0
+race	race (./internal/lwcruntime)	18	34.0	3.0	9.5	0.0	0.0	0.0	0.0	14.5	2.0	0	0
+race	race (./internal/lwcruntime/embed)	18	24.0	3.0	10.0	0.0	0.0	0.0	0.0	6.0	2.0	0	0
+race	race (./internal/lwcshell)	18	33.0	3.0	9.0	0.0	0.0	0.0	0.0	15.0	3.0	0	0
+race	race (./internal/namespaceremap)	18	31.0	3.0	9.0	0.0	0.0	0.0	0.0	12.0	3.0	0	0
+race	race (./internal/orgdescribe)	19	88.0	3.0	9.0	0	0	0	0	71.0	2.0	0	0
+race	race (./internal/orgimport)	19	89.0	3.0	9.0	0	0	0	0	72.0	3.0	0	0
+race	race (./internal/packageartifact)	19	38.0	3.0	9.0	0	0	0	0	20.0	3.0	0	0
+race	race (./internal/playground)	19	507.0	3.0	9.0	0	0	0	0	489.0	3.0	0	0
+race	race (./internal/pluginhost)	19	41.0	3.0	9.0	0	0	0	0	23.0	2.0	0	0
+race	race (./internal/profile)	19	49.0	4.0	9.0	0	0	0	0	31.0	3.0	0	0
+race	race (./internal/project)	19	31.0	3.0	9.0	0	0	0	0	13.0	3.0	0	0
+race	race (./internal/refactor)	18	94.0	3.0	9.0	0.0	0.0	0.0	0.0	77.5	3.0	0	0
+race	race (./internal/refactorproof)	19	119.0	3.0	9.0	0	0	0	0	100.0	3.0	0	0
+race	race (./internal/resource)	18	88.0	3.0	9.0	0.0	0.0	0.0	0.0	71.0	2.0	0	0
+race	race (./internal/runartifact)	18	30.0	3.0	10.0	0.0	0.0	0.0	0.0	12.0	3.0	0	0
+race	race (./internal/schema)	19	29.0	3.0	9.0	0	0	0	0	13.0	2.0	0	0
+race	race (./internal/sema)	18	248.5	3.0	9.0	0.0	0.0	0.0	0.0	232.5	3.0	0	0
+race	race (./internal/semanticcache)	19	117.0	3.0	9.0	0	0	0	0	99.0	3.0	0	0
+race	race (./internal/server)	18	526.5	3.5	10.0	1.0	1.0	4.5	0.0	499.0	2.5	0	0
+race	race (./internal/sobject)	19	91.0	3.0	10.0	0	0	0	0	72.0	3.0	0	0
+race	race (./internal/soql)	19	94.0	4.0	10.0	0	0	0	0	75.0	2.0	1	0
+race	race (./internal/sosl)	19	32.0	3.0	10.0	0	0	0	0	12.0	3.0	0	0
+race	race (./internal/startupcache)	19	109.0	4.0	9.0	0	0	0	0	90.0	3.0	0	0
+race	race (./internal/storage)	18	256.5	3.0	9.0	0.0	0.0	0.0	0.0	237.5	3.0	0	0
+race	race (./internal/testdaemon)	18	378.0	3.0	9.0	0.0	0.0	0.0	0.0	359.0	3.0	0	0
+race	race (./internal/testreport)	18	41.5	3.0	8.0	0.0	0.0	0.0	0.0	23.5	3.0	0	0
+race	race (./internal/trace)	18	31.0	3.0	9.5	0.0	0.0	0.0	0.0	12.0	3.0	0	0
+race	race (./internal/tui)	18	35.5	3.0	9.5	0.0	0.0	0.0	0.0	16.0	3.0	0	0
+race	race (./internal/typesys)	19	48.0	3.0	9.0	0	0	0	0	30.0	3.0	0	0
+race	race (./internal/visualforce)	11	116.0	4.0	9.0	0	0	0	0	100.0	3.0	1	0
+race	race (./internal/vm)	18	167.5	3.0	10.0	0.0	0.0	0.0	0.0	146.5	3.0	0	0
+race	race (./internal/watch)	19	128.0	3.0	9.0	0	0	0	0	108.0	3.0	0	0
+race	race (./scripts)	18	174.0	3.5	9.0	0.0	0.0	0.0	0.0	157.0	3.0	0	0
+race	race (./scripts/internal/cicache)	19	31.0	3.0	9.0	0	0	0	0	13.0	3.0	0	0
+race	race (./scripts/internal/cishard)	18	35.5	3.0	9.0	0.0	0.0	0.0	0.0	17.5	3.0	0	0
+race	race (./scripts/internal/testlog)	18	38.0	3.0	9.0	0.0	0.0	0.0	0.0	19.0	2.5	0	0
+race	race-apextest-a	19	907.0	3.0	9.0	0	0	0	0	891.0	2.0	1	0
+race	race-apextest-aggregate	18	13.0	4.0	0.0	0.0	0.0	0.0	0.0	0.0	6.5	1	0
+race	race-apextest-b	19	652.0	3.0	10.0	0	0	0	0	633.0	2.0	1	0
+race	race-apextest-c	18	978.5	3.5	9.0	0.0	0.0	0.0	0.0	955.0	2.0	1	0
+race	race-browser (./internal/lwc/compile, internal-lwc-compile, 0)	7	1302.0	4.0	9.0	1.0	0	28.0	0	1252.0	4.0	0	0
+race	race-browser (./internal/lwc/compile, internal-lwc-compile, 1)	7	1331.0	3.0	8.0	1.0	0	28.0	0	1281.0	4.0	0	0
+race	race-browser (./internal/lwc/compile, internal-lwc-compile, 2)	7	2227.0	4.0	8.0	0	0	29.0	0	2183.0	4.0	0	0
+race	race-browser (./internal/lwc/compile, internal-lwc-compile, 3)	7	1328.0	4.0	9.0	0	0	27.0	0	1279.0	4.0	1	0
+race	race-browser (./internal/lwc/compile, internal-lwc-compile, 4)	7	784.0	3.0	9.0	1.0	0	29.0	0	734.0	4.0	0	0
+race	race-browser (./internal/lwc/compile, internal-lwc-compile, 5)	7	791.0	3.0	8.0	1.0	0	32.0	0	740.0	3.0	0	0
+race	race-browser (./internal/lwc/compile, internal-lwc-compile, 6)	7	788.0	4.0	10.0	1.0	0	29.0	0	741.0	3.0	0	0
+race	race-browser (./internal/lwc/compile, internal-lwc-compile, 7)	7	742.0	3.0	9.0	1.0	0	28.0	0	694.0	4.0	0	0
+race	race-browser (./internal/visualforce, internal-visualforce, 0)	7	870.0	4.0	10.0	1.0	0	25.0	0	823.0	3.0	0	0
+race	race-browser (./internal/visualforce, internal-visualforce, 1)	7	1423.0	3.0	9.0	1.0	0	25.0	0	1374.0	3.0	0	0
+race	race-browser (./internal/visualforce, internal-visualforce, 2)	7	1876.0	4.0	9.0	1.0	0	27.0	0	1822.0	3.0	0	0
+race	race-browser (./internal/visualforce, internal-visualforce, 3)	7	1272.0	4.0	9.0	0	0	25.0	0	1214.0	3.0	0	0
+race	race-browser-aggregate (./internal/lwc/compile, internal-lwc-compile, 8)	7	9.0	4.0	0	0	0	0	0	0	3.0	1	0
+race	race-browser-aggregate (./internal/visualforce, internal-visualforce, 4)	7	10.0	4.0	0	0	0	0	0	0	4.0	0	0
+race	race-early (./internal/gladecli)	19	1235.0	3.0	9.0	1.0	1.0	2.0	0	1211.0	3.0	2	0
+race	race-early (./internal/repoguard)	19	995.0	3.0	9.0	0	0	0	0	973.0	3.0	0	0
+security	CodeQL	15	233.0	3.0	10.0	0	6.0	0	0	150.0	58.0	3	0
+security	CodeQL (remaining)	2	262.5	3.5	10.5	0.0	4.0	0.0	0.0	177.0	65.0	0	0
+security	CodeQL (unsafe-quoting)	1	3410.0	5.0	10.0	0	6.0	0	0	3301.0	85.0	1	0
+security	CodeQL (url-redirection)	1	3389.0	3.0	9.0	0	4.0	0	0	3300.0	65.0	1	0
+security	Dependency review	15	10.0	3.0	0	0	0	0	0	2.0	1.0	0	0
+security	OpenSSF Scorecard	20	24.0	3.0	0.0	0.0	0.0	0.0	0.0	3.0	13.0	0	0
+security	gosec	20	252.5	3.0	8.5	0.0	6.0	0.0	0.0	232.5	2.0	0	0
+security	govulncheck	20	40.5	3.5	10.0	0.0	5.0	0.0	0.0	13.0	1.0	1	0
+security	npm audit	20	10.0	4.0	0.0	1.0	0.0	0.0	0.0	1.0	1.0	1	0

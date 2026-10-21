@@ -49,6 +49,33 @@ func (vm *VM) resolveRuntimeTypeName(typeName string) string {
 	}
 	return typeName
 }
+
+// runtimeClassConcreteOverride resolves an abstract (interface or abstract
+// class) method against the receiver's own runtime class.
+func (vm *VM) runtimeClassConcreteOverride(receiver Value, baseType, method string, args []Value) (Method, bool) {
+	className := strings.TrimSpace(receiver.Type)
+	if className == "" || strings.EqualFold(className, baseType) {
+		return Method{}, false
+	}
+	if _, ok := vm.Classes[className]; !ok {
+		return Method{}, false
+	}
+	if !vm.typeMatches(className, baseType, make(map[string]bool)) && !classExtendsType(vm.Classes[className], baseType) {
+		return Method{}, false
+	}
+	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(className, method, args)
+	if (!ok || methodHasModifier(target.Modifiers, "abstract")) && !ambiguous {
+		// A static method satisfies the interface method (native rows).
+		if staticTarget, found := vm.staticConcreteOverrideForAbstract(baseType, className, method, args); found {
+			return staticTarget, true
+		}
+	}
+	if !ok || ambiguous || methodHasModifier(target.Modifiers, "abstract") {
+		return Method{}, false
+	}
+	return target, true
+}
+
 func (vm *VM) uniqueConcreteOverride(receiver Value, baseType, method string, args []Value) (Method, bool) {
 	var found Method
 	count := 0
@@ -200,10 +227,19 @@ func (vm *VM) resolveTypeNameInClass(className, typeName string) string {
 		return "Map<" + vm.resolveTypeNameInClass(className, keyType) + "," + vm.resolveTypeNameInClass(className, valueType) + ">"
 	}
 	if strings.Contains(typeName, ".") && className != "" {
-		if owner, member, ok := strings.Cut(typeName, "."); ok && strings.EqualFold(owner, shortTypeName(className)) {
-			if nested, nestedOK := vm.lookupClass(typeName); nestedOK && strings.Contains(nested.Name, ".") {
-				return typeName
+		// Outer.Inner and a lexical Inner must resolve to the same runtime
+		// identity when comparing interface and implementation signatures.
+		// Prefer the declaring namespace over a bare alias from another package.
+		if class, ok := vm.lookupClass(className); ok && class.Namespace != "" {
+			qualified := class.Namespace + "." + typeName
+			if nested, ok := vm.lookupClass(qualified); ok && strings.Contains(nested.Name, ".") && namespacedRuntimeClassMatch(qualified, nested) {
+				return runtimeClassName(nested)
 			}
+		}
+		if nested, ok := vm.lookupClass(typeName); ok && strings.Contains(nested.Name, ".") {
+			return runtimeClassName(nested)
+		}
+		if owner, member, ok := strings.Cut(typeName, "."); ok && strings.EqualFold(owner, shortTypeName(className)) {
 			if class, classOK := vm.lookupClass(className); classOK {
 				if namespace := strings.TrimSpace(class.Namespace); namespace != "" {
 					if topLevel, topLevelOK := vm.lookupClassInNamespace(namespace, member); topLevelOK && !strings.Contains(topLevel.Name, ".") {
@@ -231,6 +267,11 @@ func (vm *VM) resolveTypeNameInClass(className, typeName string) string {
 				if !strings.Contains(sameNamespaceClass.Name, ".") {
 					return runtimeClassName(sameNamespaceClass)
 				}
+			}
+			// Provider-local record parameters and subscriber-qualified spellings
+			// identify the same declared schema object, not a prefix-stripped type.
+			if objectName, ok := vm.localNamespaceSObjectTypeForName(namespace, typeName); ok {
+				return objectName
 			}
 		}
 	} else if namespace := strings.TrimSpace(vm.currentCallerNamespace()); namespace != "" {
@@ -311,6 +352,21 @@ func (vm *VM) resolveNestedTypeInClassHierarchyUncached(className, typeName stri
 			break
 		}
 		owner = owner[:dot]
+	}
+	// A nested superclass also brings the types declared beside it into scope.
+	// Keep existing lexical and inherited declarations ahead of this fallback.
+	seen := make(map[string]bool)
+	for super := vm.superClassName(className); super != ""; super = vm.superClassName(super) {
+		key := strings.ToLower(super)
+		if seen[key] {
+			break
+		}
+		seen[key] = true
+		if dot := strings.LastIndexByte(super, '.'); dot > 0 {
+			if resolved, ok := vm.resolveLexicalNestedTypeName(super[:dot], typeName); ok {
+				return resolved, true
+			}
+		}
 	}
 	return "", false
 }
@@ -427,9 +483,6 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 	if platformTokenTypeAlias(from, to) {
 		return true
 	}
-	if frameworkMockSupportTypesMatch(from, to) {
-		return true
-	}
 	if (strings.EqualFold(from, "String") && strings.EqualFold(to, "Id")) ||
 		(strings.EqualFold(from, "Id") && strings.EqualFold(to, "String")) {
 		return true
@@ -482,7 +535,14 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 	if !strings.Contains(to, ".") && vm.typeHasShortAncestor(from, to, make(map[string]bool)) {
 		return true
 	}
-	if strings.Contains(to, ".") && !hasPrefixFold(to, "System.") && vm.typeHasShortAncestor(from, shortTypeName(to), make(map[string]bool)) {
+	// A dot in a generic argument does not qualify its outer collection.
+	// Otherwise List<Schema.SObjectField> and Iterator<Schema.SObjectField>
+	// both collapse to the same trailing fragment during ancestor matching.
+	qualifiedTarget := to
+	if base, ok := genericBaseName(to); ok {
+		qualifiedTarget = base
+	}
+	if strings.Contains(qualifiedTarget, ".") && !hasPrefixFold(to, "System.") && vm.typeHasShortAncestor(from, shortTypeName(to), make(map[string]bool)) {
 		return true
 	}
 	if numericConversionScore(to, from) >= 0 {
@@ -499,6 +559,16 @@ func (vm *VM) generatedPlatformTypeDistance(typeName, target string, seen map[st
 	target = canonicalRuntimePlatformType(target)
 	if strings.EqualFold(typeName, target) {
 		return 0, true
+	}
+	// Native mock assignment and constructor captures supply these two
+	// interface edges. Other generated interfaces remain on the prior path.
+	if strings.EqualFold(target, "HttpCalloutMock") &&
+		(strings.EqualFold(typeName, "StaticResourceCalloutMock") || strings.EqualFold(typeName, "MultiStaticResourceCalloutMock")) {
+		from, fromFound := vm.lookupClass(typeName)
+		to, toFound := vm.lookupClass(target)
+		if (!fromFound || from.PlatformType) && (!toFound || to.PlatformType) {
+			return 1, true
+		}
 	}
 	key := strings.ToLower(strings.TrimSpace(typeName))
 	if key == "" || seen[key] {
@@ -651,6 +721,9 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 				return 850
 			}
 		}
+		if runtimeIteratorArgumentCaptured(paramType, valueType) {
+			return 850
+		}
 		return -1
 	}
 	if isMapType(valueType) && isMapType(paramType) {
@@ -688,10 +761,48 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 		}
 		return -1
 	}
+	// E21 C01/C02, O01-O04, O08: a Map of class or SObject values is never a
+	// class or SObject argument. Reject it before ensureAssignable rebuilds the
+	// map through JSON, which fails on the cyclic graphs these maps can hold.
+	if vm.recordMapToRecordTarget(paramType, value) {
+		return -1
+	}
 	if err := vm.ensureAssignable(paramType, value); err != nil {
 		return -1
 	}
 	return 1
+}
+
+// recordMapToRecordTarget reports a Map whose declared value type is an
+// ordinary class or an SObject, offered to an ordinary class or SObject target.
+// Native E21 captures cover Map<String,GcrNode> to GcrNode and
+// Map<String,Account> to Account and SObject, cyclic and acyclic alike. Maps
+// with Object or platform values keep their existing JSON DTO coercion.
+func (vm *VM) recordMapToRecordTarget(typeName string, value Value) bool {
+	if value.Kind != ValueMap {
+		return false
+	}
+	mapType := value.Runtime
+	if !isMapType(mapType) {
+		mapType = value.Type
+	}
+	_, elementType, ok := mapTypeArgs(mapType)
+	if !ok {
+		return false
+	}
+	return vm.ordinaryRecordType(elementType) && vm.ordinaryRecordType(vm.resolveAssignableTargetType(typeName))
+}
+
+func (vm *VM) ordinaryRecordType(typeName string) bool {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" || strings.EqualFold(canonicalRuntimePlatformType(typeName), "Object") {
+		return false
+	}
+	if vm.isSObjectLikeType(typeName) {
+		return true
+	}
+	class, ok := vm.lookupClass(typeName)
+	return ok && !class.PlatformType && !class.IsInterface && len(class.EnumValues) == 0
 }
 
 func (vm *VM) inlineSOQLListAssignableTo(paramType string, value Value) bool {
@@ -700,6 +811,29 @@ func (vm *VM) inlineSOQLListAssignableTo(paramType string, value Value) bool {
 	}
 	if elementType := vm.inlineSOQLListElementType(value); elementType != "" {
 		return vm.typeAssignableTo(elementType, paramType) || vm.typeMatches(elementType, paramType, make(map[string]bool))
+	}
+	return false
+}
+
+// runtimeIteratorArgumentCaptured mirrors sema's semaIteratorArgumentCaptured
+// for binding at run time. Native API 62.0 and 67.0 bind an Iterator<Integer>
+// (H1SI1, H1SI1-A), Iterator<Long>, Iterator<Double>, Iterator<Decimal> and
+// Iterator<Boolean> (H1XS1-A..H1XS4-A) argument to an Iterator<String>
+// parameter; the other captured pairs (Integer, Double, SObject -> Object;
+// SObject -> Account) already bind through typeAssignableTo.
+func runtimeIteratorArgumentCaptured(paramType, valueType string) bool {
+	if collectionBase(paramType) != "Iterator" || collectionBase(valueType) != "Iterator" {
+		return false
+	}
+	paramElement, paramOK := collectionElementType(paramType)
+	valueElement, valueOK := collectionElementType(valueType)
+	if !paramOK || !valueOK {
+		return false
+	}
+	for _, pair := range [][2]string{{"Integer", "Object"}, {"Double", "Object"}, {"SObject", "Object"}, {"Integer", "String"}, {"Long", "String"}, {"Double", "String"}, {"Decimal", "String"}, {"Boolean", "String"}, {"SObject", "Account"}} {
+		if strings.EqualFold(canonicalRuntimePlatformType(valueElement), pair[0]) && strings.EqualFold(canonicalRuntimePlatformType(paramElement), pair[1]) {
+			return true
+		}
 	}
 	return false
 }
@@ -875,6 +1009,9 @@ func valueTypeName(value Value) string {
 		}
 		return "Integer"
 	case ValueDecimal:
+		if isFloatBackedDecimal(value) {
+			return "Double"
+		}
 		return "Decimal"
 	case ValueBool:
 		return "Boolean"
@@ -909,6 +1046,101 @@ func valueTypeName(value Value) string {
 		return string(value.Kind)
 	}
 }
+
+// typeExceptionDisplayName is the target of "Invalid conversion from runtime
+// type X to Y": the canonical name whatever the source spelling. Native
+// NS340A-NS342C, NS350A-NS352D, NS384A and NS385A-F: user types print their
+// declared name (Outer.Inner for a nested type, also for a bare nested
+// spelling and inside List<...>); collections print List<...>, Set<...> and
+// Map<K,V>; System types print System.<Name>, except primitives and the base
+// Exception.
+func (vm *VM) typeExceptionDisplayName(typeName string) string {
+	return vm.typeExceptionName(typeName, true)
+}
+
+// typeExceptionSourceName canonicalizes the System types in a runtime source
+// type (NS352C/NS385E: System.DmlException to Account); user runtime types
+// keep their runtime name. Target-side class identity does not affect sources.
+func (vm *VM) typeExceptionSourceName(typeName string) string {
+	return vm.typeExceptionName(typeName, false)
+}
+
+func (vm *VM) typeExceptionName(typeName string, userTypes bool) string {
+	typeName = strings.TrimSpace(typeName)
+	element := func(name string) string {
+		if strings.EqualFold(name, "Object") || strings.EqualFold(name, "System.Object") {
+			return "ANY"
+		}
+		return vm.typeExceptionName(name, userTypes)
+	}
+	if isMapType(typeName) {
+		if keyType, valueType, ok := mapTypeArgs(typeName); ok {
+			return "Map<" + element(keyType) + "," + element(valueType) + ">"
+		}
+		return typeName
+	}
+	if base := collectionBase(typeName); base != "" {
+		if elementType, ok := collectionElementType(typeName); ok {
+			return base + "<" + element(elementType) + ">"
+		}
+		return typeName
+	}
+	// Only target labels resolve source-class identity; source labels retain
+	// their prior name-based platform qualification.
+	if !hasPrefixFold(typeName, "System.") {
+		lookup := typeName
+		if nested := vm.resolveNestedTypeNameInCurrentExecutionContext(typeName); userTypes && nested != "" {
+			lookup = nested
+		}
+		if class, ok := vm.lookupClass(lookup); ok {
+			if !userTypes {
+				if !generatedPlatformTypeName(class.Name) && !isBuiltinExceptionType(class.Name) {
+					return typeName
+				}
+			} else if !class.PlatformType {
+				name := strings.TrimSpace(class.Name)
+				if namespace := strings.TrimSpace(class.Namespace); namespace != "" && hasPrefixFold(name, namespace+".") {
+					name = name[len(namespace)+1:]
+				}
+				return name
+			}
+		}
+	}
+	if name, ok := typeExceptionSystemTypeName(typeName); ok {
+		return name
+	}
+	return typeName
+}
+
+func typeExceptionSystemTypeName(typeName string) (string, bool) {
+	name := typeName
+	if prefix, rest, ok := strings.Cut(name, "."); ok {
+		if !strings.EqualFold(prefix, "System") {
+			return "", false
+		}
+		name = rest
+	}
+	if name == "" || strings.Contains(name, ".") {
+		return "", false
+	}
+	switch strings.ToLower(name) {
+	case "blob", "boolean", "date", "datetime", "decimal", "double", "id", "integer", "long", "object", "string", "time":
+		return canonicalTypeValueText(name), true
+	}
+	for known := range builtinExceptionParents {
+		if strings.EqualFold(known, name) {
+			if known == "Exception" {
+				return known, true
+			}
+			return "System." + known, true
+		}
+	}
+	if canonical, ok := systemNamespaceClassName(name); ok {
+		return "System." + canonical, true
+	}
+	return "", false
+}
+
 func runtimeValueTypeName(value Value) string {
 	if value.Kind == ValueObject {
 		if runtime := runtimeObjectType(value); runtime != "" {
@@ -920,6 +1152,13 @@ func runtimeValueTypeName(value Value) string {
 		return "Object"
 	}
 	if value.Kind == ValueList || value.Kind == ValueSet || value.Kind == ValueMap {
+		if value.Kind == ValueList {
+			element, _ := collectionElementType(value.Type)
+			runtimeElement, _ := collectionElementType(value.Runtime)
+			if strings.EqualFold(element, "Object") && collectionBase(value.Runtime) == "List" && collectionElementCarriesSObjectType(runtimeElement) {
+				return typeExceptionCollectionName(value.Runtime)
+			}
+		}
 		if typed := typeExceptionCollectionName(value.Type); typed != "" {
 			return typed
 		}
@@ -980,9 +1219,6 @@ func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
 		return true
 	}
 	if platformTokenTypeAlias(typeName, target) {
-		return true
-	}
-	if frameworkMockSupportTypesMatch(typeName, target) {
 		return true
 	}
 	if strings.EqualFold(target, "sObject") && vm.isSObjectLikeType(typeName) {
@@ -1054,7 +1290,23 @@ func exceptionTypeName(typeName string) string {
 	typeName = strings.TrimPrefix(typeName, "System.")
 	return typeName
 }
+
+// queryLocatorKeepsObjectAs reports whether a Database.QueryLocator assigned,
+// passed or returned as typeName stays the locator object. Native API 62.0 and
+// 67.0: Iterable<Object> local (H1K2L, H1K2L-A), argument (H1K2G, H1K2G-A) and
+// return (PB02, PB04), and Iterable<SObject> return (H1K2T1), all report
+// instanceof Database.QueryLocator. Casts keep the list view (coerceCast).
+func queryLocatorKeepsObjectAs(typeName string) bool {
+	element, ok := collectionElementType(typeName)
+	if !ok || collectionBase(typeName) != "Iterable" {
+		return false
+	}
+	element = strings.TrimPrefix(canonicalRuntimePlatformType(element), "System.")
+	return strings.EqualFold(element, "Object") || strings.EqualFold(element, "SObject")
+}
+
 func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
+	value = value.currentMapKeySet()
 	typeName = vm.resolveAssignableTargetType(typeName)
 	if value.Kind == ValueObject {
 		if matched, handled := vm.schemaRecordValueMatches(value, typeName); handled {
@@ -1281,6 +1533,10 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			return value, nil
 		}
 		if collectionBase(typeName) == "Iterable" && value.Type == "Database.QueryLocator" {
+			if queryLocatorKeepsObjectAs(typeName) {
+				value.Static = typeName
+				return value, nil
+			}
 			return vm.queryLocatorIterable(typeName, value)
 		}
 		if strings.EqualFold(typeName, "Object") || vm.typeAssignableTo(value.Type, typeName) || vm.typeMatches(value.Type, typeName, make(map[string]bool)) {
@@ -1317,7 +1573,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	}
 	if value.Kind == ValueList && vm.isSObjectLikeType(typeName) {
 		if len(value.List) == 0 {
-			return Null, newExceptionError("QueryException", "List has no rows for assignment to SObject")
+			return Null, vm.emptySObjectQueryError(value)
 		}
 		if len(value.List) > 1 {
 			return Null, newExceptionError("QueryException", "List has more than 1 row for assignment to SObject")
@@ -1361,6 +1617,14 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		if !ok {
 			return value, nil
 		}
+		// Widening the list view retains its Integer elements and shared identity.
+		if strings.EqualFold(elementType, "Long") {
+			for _, sourceType := range sourceTypes {
+				if sourceElement, ok := collectionElementType(sourceType); ok && strings.EqualFold(sourceElement, "Integer") {
+					return value, nil
+				}
+			}
+		}
 		if strings.EqualFold(elementType, "SObject") {
 			if len(value.List) == 0 {
 				for _, sourceType := range sourceTypes {
@@ -1380,21 +1644,77 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			}
 			return value, nil
 		}
-		queriedRows := len(value.List) > 0
+		recordRows := len(value.List) > 0
+		queriedRows := recordRows
 		for _, row := range value.List {
-			if _, queried := row.Fields[sobjectQueriedFieldsField]; row.Kind != ValueObject || !queried {
+			if row.Kind == ValueNull {
+				queriedRows = false
+				continue
+			}
+			if row.Kind != ValueObject || row.classInstance {
+				recordRows = false
 				queriedRows = false
 				break
 			}
+			if _, queried := row.Fields[sobjectQueriedFieldsField]; !queried {
+				queriedRows = false
+			}
 		}
-		if (len(value.List) == 0 || queriedRows) && vm.isSObjectLikeType(elementType) {
+		if recordRows && !queriedRows {
+			if class, found := vm.lookupClass(elementType); found && !class.PlatformType {
+				recordRows = false
+			}
+		}
+		if (len(value.List) == 0 || queriedRows || recordRows && vm.concreteRecordElement(elementType)) && vm.isSObjectLikeType(elementType) {
+			queryRecord := ""
+			if _, qualified := vm.explicitSchemaRecordType(elementType); qualified {
+				if query := inlineSOQLQueryText(value); query != "" {
+					queryRecord = vm.soqlResultObjectNameWithExpander(query, vm.expandSOQLBinds)
+				}
+				for _, row := range value.List {
+					matches, _ := vm.schemaRecordValueMatches(row, elementType)
+					if row.classInstance || !matches {
+						queryRecord = ""
+						break
+					}
+				}
+			}
 			for _, sourceType := range sourceTypes {
 				sourceElementType, ok := collectionElementType(sourceType)
 				if !ok || strings.EqualFold(sourceElementType, "SObject") || strings.EqualFold(sourceElementType, "Object") {
 					continue
 				}
+				// Native assignment also checks nonempty concrete record lists.
+				// Generic and class lists retain their existing conversion paths;
+				// method returns are handled by coerceMethodReturn.
+				if len(value.List) > 0 && !queriedRows &&
+					(collectionBase(sourceType) != "List" || !vm.concreteRecordElement(sourceElementType)) {
+					continue
+				}
+				// SOQL element names denote records even when a local class has
+				// the same name. Qualify only this comparison, preserving display.
+				if (queriedRows || inlineSOQLQueryText(value) != "") && vm.isSObjectLikeType(sourceElementType) && !strings.HasPrefix(strings.ToLower(sourceElementType), "schema.") {
+					sourceElementType = "Schema." + sourceElementType
+				}
 				if vm.typeAssignableTo(sourceElementType, elementType) {
 					continue
+				}
+				if queryRecord != "" && sObjectTypeNamespaceEquivalent(sourceElementType, queryRecord) &&
+					vm.typeAssignableTo("Schema."+queryRecord, elementType) {
+					continue
+				}
+				if queriedRows && sObjectTypeNamespaceEquivalent(sourceElementType, elementType) {
+					matchingRecords := true
+					for _, row := range value.List {
+						matched, handled := vm.schemaRecordValueMatches(row, elementType)
+						if row.classInstance || !handled || !matched {
+							matchingRecords = false
+							break
+						}
+					}
+					if matchingRecords {
+						continue
+					}
 				}
 				return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", typeExceptionAnyName(sourceType), typeExceptionAnyName(typeName)))
 			}
@@ -1451,6 +1771,10 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		return value, nil
 	}
 	if collectionBase(typeName) == "Iterable" && (value.Kind == ValueList || value.Kind == ValueSet) {
+		// Binding an existing interface view must not recheck cast elements.
+		if strings.EqualFold(value.Static, typeName) {
+			return value, nil
+		}
 		// An interface view must not erase the concrete collection element type.
 		value.Static = typeName
 		elementType, ok := collectionElementType(typeName)
@@ -1474,6 +1798,10 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		return value, nil
 	}
 	if collectionBase(typeName) == "Iterable" && value.Kind == ValueObject && value.Type == "Database.QueryLocator" {
+		if queryLocatorKeepsObjectAs(typeName) {
+			value.Static = typeName
+			return value, nil
+		}
 		return vm.queryLocatorIterable(typeName, value)
 	}
 	if isMapType(typeName) && value.Kind == ValueMap {

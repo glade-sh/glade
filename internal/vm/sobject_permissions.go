@@ -95,15 +95,21 @@ func (vm *VM) ensureUserProfilePermissionSetAssignment(record storage.Record) {
 	vm.Org.Objects["PermissionSetAssignment"] = state
 }
 
-// Salesforce creates the implicit role group when a UserRole is inserted.
+// Owned RG01-RG03 observations expose both group types immediately after role
+// insertion (API 62/67/68, anonymous and named, default Developer org).
 func (vm *VM) ensureUserRoleGroup(record storage.Record) {
+	vm.ensureUserRoleGroupType(record, "Role")
+	vm.ensureUserRoleGroupType(record, "RoleAndSubordinatesInternal")
+}
+
+func (vm *VM) ensureUserRoleGroupType(record storage.Record, groupType string) {
 	if vm == nil || vm.Org == nil || record.ID == "" || !strings.EqualFold(record.Object, "UserRole") {
 		return
 	}
 	storage.EnsureStandardObject(vm.Org, "Group")
 	state := vm.Org.Objects["Group"]
 	for _, existing := range state.Records {
-		if strings.EqualFold(storageValueIDText(existing.Fields["RelatedId"]), string(record.ID)) && strings.EqualFold(existing.Fields["Type"].String, "Role") {
+		if strings.EqualFold(storageValueIDText(existing.Fields["RelatedId"]), string(record.ID)) && strings.EqualFold(existing.Fields["Type"].String, groupType) {
 			return
 		}
 	}
@@ -124,11 +130,14 @@ func (vm *VM) ensureUserRoleGroup(record storage.Record) {
 	if state.Records == nil {
 		state.Records = make(map[storage.ID]storage.Record)
 	}
-	name := record.Fields["Name"].String
+	fields := map[string]storage.Value{
+		"Type": storage.StringValue(groupType), "RelatedId": storage.IDValue(record.ID),
+	}
+	if groupType == "Role" {
+		fields["Name"] = storage.StringValue(record.Fields["Name"].String)
+	}
 	vm.recordIsolationJournalMutation("Group", id, storage.Record{}, false)
-	state.Records[id] = storage.Record{ID: id, Object: "Group", Fields: map[string]storage.Value{
-		"Name": storage.StringValue(name), "Type": storage.StringValue("Role"), "RelatedId": storage.IDValue(record.ID),
-	}}
+	state.Records[id] = storage.Record{ID: id, Object: "Group", Fields: fields}
 	vm.Org.IDSequences = copyOrgIDSequences(generator.Sequences)
 	vm.Org.Objects["Group"] = state
 }

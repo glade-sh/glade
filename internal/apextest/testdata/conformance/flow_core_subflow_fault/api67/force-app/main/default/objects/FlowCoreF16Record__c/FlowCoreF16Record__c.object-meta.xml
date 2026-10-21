@@ -1,0 +1,1 @@
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><deploymentStatus>Deployed</deploymentStatus><label>FlowCoreF16Record__c Flow Record</label><nameField><label>FlowCoreF16Record__c Name</label><type>Text</type></nameField><pluralLabel>FlowCoreF16Record__c Flow Records</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>

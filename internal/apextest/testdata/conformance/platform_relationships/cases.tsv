@@ -1,0 +1,5 @@
+kind	parents	shape
+child	Account,User,Case,Contact,Opportunity,LinkProbe__c	describe-driven Id child projection
+invalid	all six	unknown child; Badges restricted to User
+access	all six	access flags; parent path; child projection; invalid leaves; filter/order/group
+static	Account,User	Badges; four child queries; declared lookup; access flags

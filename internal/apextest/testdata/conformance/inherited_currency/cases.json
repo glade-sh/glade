@@ -1,0 +1,4 @@
+[
+  {"method":"inherited_insert","shape":"Omitted read-only delivery currency on insert; inherits order currency and permits sparse update"},
+  {"method":"field_flags","shape":"Read-only, non-calculated currency with a platform default"}
+]

@@ -18,12 +18,13 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Owned anonymous and named compiler observations at both API endpoints. The
+// Owned anonymous and named compiler observations at API 62, 67, and 68. The
 // linked runtime is shared once per API; each row executes on a private clone.
 func TestAnnotationsOrgConformance(t *testing.T) {
 	type namedCompilation struct{ Name, Source, Expected string }
 	type familyCase struct {
 		ID, Group, Code, Expected, FloorExpected string
+		CeilingExpected                          *string
 		Compile, NativeNull                      bool
 		NamedCompilations                        map[string]namedCompilation
 	}
@@ -40,13 +41,13 @@ func TestAnnotationsOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 294 || len(data.Controls) != 49 || strings.Join(data.APIVersions, ",") != "62.0,67.0" || len(data.TicketRows) != 0 {
+	if len(data.Cases) != 294 || len(data.Controls) != 49 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" || len(data.TicketRows) != 0 {
 		t.Fatalf("oracle shape: cases=%d controls=%d APIs=%v tickets=%v", len(data.Cases), len(data.Controls), data.APIVersions, data.TicketRows)
 	}
 	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)
 	seen := map[string]bool{}
 	for _, row := range rows {
-		if row.ID == "" || row.Code == "" || seen[row.ID] || row.Expected != row.FloorExpected {
+		if row.ID == "" || row.Code == "" || seen[row.ID] || row.Expected != row.FloorExpected || row.CeilingExpected == nil {
 			t.Fatalf("invalid or differing oracle row: %#v", row)
 		}
 		seen[row.ID] = true
@@ -91,8 +92,8 @@ func TestAnnotationsOrgConformance(t *testing.T) {
 		}
 		return text
 	}
-	body := func(row familyCase, code string) string {
-		prefix := "P pq=new P();" + configuration(row, row.Expected) + "\n"
+	body := func(row familyCase, expected, code string) string {
+		prefix := "P pq=new P();" + configuration(row, expected) + "\n"
 		if row.Compile {
 			return prefix + code
 		}
@@ -123,6 +124,15 @@ func TestAnnotationsOrgConformance(t *testing.T) {
 	}
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
+			expected := func(row familyCase) string {
+				if api == "68.0" {
+					return *row.CeilingExpected
+				}
+				if api == "62.0" {
+					return row.FloorExpected
+				}
+				return row.Expected
+			}
 			counts := newConformanceCounts()
 			defer counts.Log(t, "annotations", api, "")
 			build := func(sources map[string]string) typesys.Index {
@@ -190,25 +200,26 @@ func TestAnnotationsOrgConformance(t *testing.T) {
 			namedSource.WriteString("@IsTest private class AnnotationsRuntime {\n")
 			for _, row := range rows {
 				if !row.Compile {
-					fmt.Fprintf(&namedSource, "@IsTest static void observed%s(){\n%s\n}\n", row.ID, body(row, row.Code))
+					fmt.Fprintf(&namedSource, "@IsTest static void observed%s(){\n%s\n}\n", row.ID, body(row, expected(row), row.Code))
 				}
 			}
 			namedSource.WriteString("}\n")
 			var invokeRuntime func(*testing.T, string)
 			for _, row := range rows {
 				t.Run(row.ID, func(t *testing.T) {
+					want := expected(row)
 					counts.Run(t, "anonymous", row.ID, "anonymous", func(t *testing.T) {
-						rowIndex, code := index, body(row, row.Code)
+						rowIndex, code := index, body(row, want, row.Code)
 						rowRunner := runner
 						if row.Compile {
 							// The native helper occupies five lines. Keep the row at
 							// line six and configure our already-linked helper inline.
-							code = "P pq=new P();" + configuration(row, row.Expected) + strings.Repeat("\n", 5) + row.Code
+							code = "P pq=new P();" + configuration(row, want) + strings.Repeat("\n", 5) + row.Code
 							parsed := apexast.NewParser().ParseSource("AnnotationsAnonymous.cls", code)
 							if (apexast.Result{Diagnostics: parsed.Diagnostics}).HasErrors() {
 								actual := observation(parsed.Diagnostics, true)
-								if actual != row.Expected {
-									t.Fatalf("expected <%s> actual <%s>", row.Expected, actual)
+								if actual != want {
+									t.Fatalf("expected <%s> actual <%s>", want, actual)
 								}
 								return
 							}
@@ -239,8 +250,8 @@ func TestAnnotationsOrgConformance(t *testing.T) {
 								analysis := sema.AnalyzeAnonymousDeclarations(rowIndex)
 								if analysis.HasErrors() {
 									actual := observation(analysis.Diagnostics, true)
-									if actual != row.Expected {
-										t.Fatalf("expected <%s> actual <%s>", row.Expected, actual)
+									if actual != want {
+										t.Fatalf("expected <%s> actual <%s>", want, actual)
 									}
 									return
 								}
@@ -250,12 +261,12 @@ func TestAnnotationsOrgConformance(t *testing.T) {
 						}
 						if analysis := sema.AnalyzeAnonymous(rowIndex, code, api); analysis.HasErrors() {
 							actual := observation(analysis.Diagnostics, true)
-							if actual != row.Expected {
-								t.Fatalf("expected <%s> actual <%s>", row.Expected, actual)
+							if actual != want {
+								t.Fatalf("expected <%s> actual <%s>", want, actual)
 							}
 							return
 						}
-						if strings.HasPrefix(row.Expected, "COMPILE_ERROR") {
+						if strings.HasPrefix(want, "COMPILE_ERROR") {
 							t.Fatal("native rejection was accepted")
 						}
 						program, err := vm.CompileAnonymousWithOptions(code, vm.CompileOptions{APIVersion: api})
@@ -266,7 +277,13 @@ func TestAnnotationsOrgConformance(t *testing.T) {
 							t.Fatal(err)
 						}
 					})
-					counts.Run(t, "isTest", row.ID, "isTest", func(t *testing.T) {
+					// API 68 has native named compiler observations for declaration
+					// rows, but no native @IsTest execution for this route.
+					namedKind := "exact"
+					if api == "68.0" {
+						namedKind = "legacy"
+					}
+					counts.RunKind(t, "isTest", row.ID, "isTest", namedKind, func(t *testing.T) {
 						if !row.Compile {
 							if invokeRuntime == nil {
 								sources := copySources()
@@ -294,7 +311,7 @@ func TestAnnotationsOrgConformance(t *testing.T) {
 						// Keep the captured body; replace only its observation helper
 						// and configure the exact-text assertion on the same line.
 						// S002 admits the named global type but rejects it anonymously.
-						namedExpected := row.Expected
+						namedExpected := want
 						if strings.HasPrefix(namedExpected, "COMPILE_ERROR\t") {
 							namedExpected = native.Expected
 						}

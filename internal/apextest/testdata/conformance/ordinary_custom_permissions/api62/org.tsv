@@ -1,0 +1,7 @@
+api	route	case	objectRead	objectCreate	objectUpdate	fieldRead	fieldCreate	fieldUpdate
+62.0	istest	running	true	true	true	false	false	false
+62.0	istest	running-id	true	true	true	false	false	false
+62.0	istest	profile	false	false	false	false	false	false
+62.0	istest	empty	false	false	false	false	false	false
+62.0	istest	object	true	true	true	false	false	false
+62.0	istest	full	true	true	true	true	true	true

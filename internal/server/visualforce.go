@@ -374,7 +374,7 @@ func visualforceRemotingStringMapKey(key string) string {
 }
 
 func (s *Server) handleVisualforcePageGet(w http.ResponseWriter, r *http.Request, parts []string) {
-	s.renderVisualforceResponse(r.Context(), w, r.URL.RequestURI(), parts, nil, "", nil, visualforceRequestWantsPDF(r))
+	s.renderVisualforceResponse(r.Context(), w, r.URL.RequestURI(), parts, nil, "", nil, visualforceRequestWantsPDF(r), r.Header)
 }
 
 func (s *Server) handleVisualforcePagePost(w http.ResponseWriter, r *http.Request, parts []string) {
@@ -416,10 +416,10 @@ func (s *Server) handleVisualforcePagePost(w http.ResponseWriter, r *http.Reques
 	ajaxPayload := visualforce.ParseAjaxPayload(formValues)
 	action := ajaxPayload.Action
 	if ajaxPayload.IsAjax {
-		s.renderVisualforceAjaxResponse(w, r.URL.RequestURI(), parts, payload, ajaxPayload)
+		s.renderVisualforceAjaxResponse(w, r.URL.RequestURI(), parts, payload, ajaxPayload, r.Header)
 		return
 	}
-	s.renderVisualforceResponse(r.Context(), w, r.URL.RequestURI(), parts, payload, action, formValues, false)
+	s.renderVisualforceResponse(r.Context(), w, r.URL.RequestURI(), parts, payload, action, formValues, false, r.Header)
 }
 
 func (s *Server) verifyVisualforceRequestViewState(pageParts []string, encoded string, csrf string) error {
@@ -548,15 +548,16 @@ func visualforceUploadAssignmentString(value any) string {
 	}
 }
 
-func (s *Server) renderVisualforceResponse(ctx context.Context, w http.ResponseWriter, pageURL string, parts []string, viewState *visualforce.ViewStatePayload, action string, formValues map[string]string, forcePDF bool) {
+func (s *Server) renderVisualforceResponse(ctx context.Context, w http.ResponseWriter, pageURL string, parts []string, viewState *visualforce.ViewStatePayload, action string, formValues map[string]string, forcePDF bool, requestHeaders ...http.Header) {
 	w.Header().Del("Content-Type")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	result, err := s.renderVisualforceResult(pageURL, parts, viewState, action, formValues)
+	result, err := s.renderVisualforceResult(pageURL, parts, viewState, action, formValues, requestHeaders...)
 	if err != nil {
 		writeVisualforceRenderError(w, err, result)
 		return
 	}
 	if result.RedirectURL != "" {
+		applyVisualforceRequestResponse(w, result)
 		status := http.StatusFound
 		if !result.Redirect {
 			status = http.StatusSeeOther
@@ -594,6 +595,7 @@ func (s *Server) renderVisualforceResponse(ctx context.Context, w http.ResponseW
 			contentType += ";charset=utf-8"
 		}
 		applyVisualforcePageHeaders(w.Header(), headerOptions, contentType)
+		applyVisualforceRequestResponse(w, result)
 		_, _ = w.Write(pdf)
 		return
 	}
@@ -602,6 +604,7 @@ func (s *Server) renderVisualforceResponse(ctx context.Context, w http.ResponseW
 		contentType = "text/html;charset=utf-8"
 	}
 	applyVisualforcePageHeaders(w.Header(), headerOptions, contentType)
+	applyVisualforceRequestResponse(w, result)
 	secret, err := s.visualforceViewStateSecretBytes()
 	if err != nil {
 		writeVisualforceSecurityError(w, err)
@@ -640,15 +643,66 @@ func applyVisualforcePageHeaders(header http.Header, options visualforce.Visualf
 	options.Apply(header, time.Now())
 }
 
-func (s *Server) renderVisualforceAjaxResponse(w http.ResponseWriter, pageURL string, parts []string, viewState *visualforce.ViewStatePayload, payload visualforce.AjaxPayload) {
+// Controller header writes override the markup's defaults. These two cache
+// values are the exact native authorization and request context response controls; other values retain the
+// controller's text rather than guessing a wider native cache policy.
+func applyVisualforceRequestResponse(w http.ResponseWriter, result visualforce.PageRenderResult) {
+	for name, value := range result.Headers {
+		if strings.EqualFold(name, "Cache-Control") {
+			switch value {
+			case "no-store":
+				value = "no-cache,must-revalidate,max-age=0,no-store,private"
+			case "private, max-age=0":
+				value = "private,max-age=0"
+			}
+		}
+		w.Header().Set(name, value)
+	}
+	for _, value := range result.Cookies {
+		cookie := &http.Cookie{
+			Name:     "apex__" + value.Name,
+			Value:    value.Value,
+			Path:     value.Path,
+			Secure:   value.Secure,
+			HttpOnly: value.HTTPOnly,
+		}
+		if value.MaxAge > 0 {
+			cookie.MaxAge = value.MaxAge
+		} else if value.MaxAge == 0 {
+			// Native request control cookie_zero_age removes the browser cookie.
+			// net/http uses a negative MaxAge to emit Max-Age=0.
+			cookie.MaxAge = -1
+		}
+		http.SetCookie(w, cookie)
+	}
+}
+
+func (s *Server) renderVisualforceAjaxResponse(w http.ResponseWriter, pageURL string, parts []string, viewState *visualforce.ViewStatePayload, payload visualforce.AjaxPayload, requestHeaders ...http.Header) {
 	w.Header().Del("Content-Type")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	result, err := s.renderVisualforceResult(pageURL, parts, viewState, payload.Action, payload.SubmittedFields)
+	result, err := s.renderVisualforceResult(pageURL, parts, viewState, payload.Action, payload.SubmittedFields, requestHeaders...)
+	var response visualforce.PartialResponse
 	if err != nil {
-		writeVisualforceRenderError(w, err, result)
-		return
+		var actionError *vm.UIActionError
+		if !errors.As(err, &actionError) {
+			writeVisualforceRenderError(w, err, result)
+			return
+		}
+		response = visualforce.NewPartialResponse("", "", nil)
+		response.Error = actionError.Message
+		if location, _, _ := strings.Cut(actionError.StackTraceString(), "\n"); location != "" {
+			// Captured AJAX action exceptions retain the originating Apex
+			// line with column 1 in the page caption, independently of the
+			// VM's statement column. Keep the message on its own display line.
+			if column := strings.LastIndex(location, ", column "); column >= 0 {
+				location = location[:column] + ", column 1"
+			}
+			response.Error = fmt.Sprintf("%s\nError is in expression '%s' in page %s: %s",
+				actionError.Message, payload.Action, strings.ToLower(strings.Join(parts, "/")), location)
+		}
+	} else {
+		response = visualforce.NewPartialResponse(result.HTML, result.ViewState, payload.RerenderTargets)
 	}
-	response := visualforce.NewPartialResponse(result.HTML, result.ViewState, payload.RerenderTargets)
 	if result.RedirectURL != "" {
 		response.Redirect = result.RedirectURL
 	}
@@ -661,12 +715,13 @@ func (s *Server) renderVisualforceAjaxResponse(w http.ResponseWriter, pageURL st
 		writeVisualforceRenderError(w, err, result)
 		return
 	}
+	applyVisualforceRequestResponse(w, result)
 	_, _ = w.Write(body.Bytes())
 }
 
 var errVisualforceUnknownPage = errors.New("unknown Visualforce page")
 
-func (s *Server) renderVisualforceResult(pageURL string, parts []string, viewState *visualforce.ViewStatePayload, action string, formValues map[string]string) (visualforce.PageRenderResult, error) {
+func (s *Server) renderVisualforceResult(pageURL string, parts []string, viewState *visualforce.ViewStatePayload, action string, formValues map[string]string, requestHeaders ...http.Header) (visualforce.PageRenderResult, error) {
 	pageName := strings.TrimSpace(strings.Join(parts, "/"))
 	pageFile, ok, err := lookupPageForPreview(s.Source.Project, pageName)
 	if err != nil {
@@ -711,6 +766,12 @@ func (s *Server) renderVisualforceResult(pageURL string, parts []string, viewSta
 		Action:          action,
 		Debug:           true,
 		ViewStateSecret: secret,
+	}
+	if len(requestHeaders) != 0 {
+		req.RequestHeaders = make(map[string]string, len(requestHeaders[0]))
+		for name := range requestHeaders[0] {
+			req.RequestHeaders[name] = requestHeaders[0].Get(name)
+		}
 	}
 	if req.PageURL == "" {
 		req.PageURL = "/apex/" + pageName

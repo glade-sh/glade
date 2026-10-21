@@ -94,7 +94,7 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 				return Null, err
 			}
 			typeName := strings.TrimPrefix(expr.Callee, "__cast:")
-			return vm.coerceCast(typeName, value)
+			return vm.coerceCastForOperand(typeName, value, expr.CastQueryOperand)
 		}
 		if expr.Callee == "__ternary" {
 			if len(expr.Args) != 3 {
@@ -108,10 +108,15 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			if err != nil {
 				return Null, err
 			}
+			selected, other := expr.Args[2], expr.Args[1]
 			if conditionValue {
-				return vm.eval(expr.Args[1], result)
+				selected, other = other, selected
 			}
-			return vm.eval(expr.Args[2], result)
+			value, err := vm.eval(selected, result)
+			if err != nil {
+				return Null, err
+			}
+			return vm.typedNullTernaryResult(expr, selected, other, value), nil
 		}
 		if expr.Callee == "__coalesce" {
 			if len(expr.Args) != 2 {
@@ -164,6 +169,12 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 				return Null, err
 			}
 			fieldName := strings.TrimPrefix(strings.TrimPrefix(expr.Callee, "__safe_field:"), "__field:")
+			// Apex's safe navigation operator treats an empty immediate inline
+			// SOQL receiver as null, while ordinary singleton reads still throw.
+			if strings.HasPrefix(expr.Callee, "__safe_field:") && expr.Left.Kind == ir.ExprSOQL && receiver.Kind == ValueList && len(receiver.List) == 0 {
+				elementType, _ := collectionElementType(receiver.Type)
+				receiver = typedNull(elementType)
+			}
 			receiverType := receiver.Static
 			if receiverType == "" {
 				receiverType = receiver.Type
@@ -178,7 +189,16 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 				return receiver, nil
 			}
 			if strings.HasPrefix(expr.Callee, "__safe_field:") {
-				if receiver.Kind == ValueNull {
+				// Apex Developer Guide, Safe Navigation Operator (p46): an
+				// empty immediate SOQL query followed by ?.field yields null.
+				// Stored lists and ordinary singleton reads keep their rules.
+				emptyInlineQuery := expr.Left.Kind == ir.ExprSOQL && receiver.Kind == ValueList && len(receiver.List) == 0
+				if emptyInlineQuery {
+					if elementType, ok := collectionElementType(receiverType); ok {
+						fieldType = vm.fieldPathTargetType(elementType, splitFieldPath(fieldName))
+					}
+				}
+				if receiver.Kind == ValueNull || emptyInlineQuery {
 					if fieldType != "" {
 						return safeNavigationNullOfType(fieldType), nil
 					}
@@ -235,7 +255,7 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		if hasReceiver && !receiverResolved {
 			var err error
 			if expr.Left.Kind == ir.ExprSOQL {
-				receiver, err = vm.executeSOQL(expr.Left.Value, result)
+				receiver, err = vm.executeSOQLQuery(expr.Left.Value, result)
 			} else {
 				receiver, err = vm.eval(*expr.Left, result)
 			}
@@ -253,7 +273,7 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		if hasReceiver {
 			if strings.HasPrefix(callee, "__safe_call:") {
 				if receiver.Kind == ValueNull {
-					return safeNavigationNull(), nil
+					return vm.safeNavigationNullForExpression(expr), nil
 				}
 				if receiver.Kind == ValueObject && platformScalarObject(receiver.Type) {
 					if raw, ok := receiver.Fields["value"]; ok && raw.Kind == ValueNull {
@@ -319,6 +339,12 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			}
 			value, handled, err := vm.callValueMember(receiverName, receiver, callee, args, result)
 			if handled || err != nil {
+				// Bracket assignment is an expression. The shared List.set path
+				// performs its mutation, but its explicit-method Void result is
+				// not the value of the assignment. Operands were evaluated once.
+				if handled && err == nil && expr.Operator == "[]=" && receiver.Kind == ValueList && len(args) == 2 {
+					return receiver.List[int(args[0].Int)], nil
+				}
 				return value, err
 			}
 			return Null, unsupportedCallError(expr.Callee)
@@ -328,6 +354,9 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		if strings.HasPrefix(callee, "new:") || strings.HasPrefix(callee, "newlit:") {
 			return vm.callConstructorWithNamedArgOrder(callee, args, namedArgs, namedArgOrder, result)
+		}
+		if err := vm.validateSOQLCallAccess(callee, args); err != nil {
+			return Null, err
 		}
 		return vm.call(callee, args, namedArgs, result)
 	case ir.ExprSOQL:
@@ -412,17 +441,17 @@ func (vm *VM) evalBinary(op string, left, right Value, result *Result) (Value, e
 			return value, err
 		}
 		if isStringConcatOperand(left) || isStringConcatOperand(right) {
-			leftText, err := vm.displayString(left, result)
+			leftText, err := vm.stubNamespaceExpressionText(left, result)
 			if err != nil {
 				return Null, err
 			}
 			leftText = concatStringText(left, leftText)
-			rightText, err := vm.displayString(right, result)
+			rightText, err := vm.stubNamespaceExpressionText(right, result)
 			if err != nil {
 				return Null, err
 			}
 			rightText = concatStringText(right, rightText)
-			return String(leftText + rightText), nil
+			return concatApexStrings(leftText, rightText)
 		}
 		return evalBinary(op, left, right)
 	case "-":
@@ -467,8 +496,22 @@ func (vm *VM) evalBinary(op string, left, right Value, result *Result) (Value, e
 }
 
 func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
+	var err error
+	left, err = vm.refreshMapKeySet(left)
+	if err != nil {
+		return false, err
+	}
+	right, err = vm.refreshMapKeySet(right)
+	if err != nil {
+		return false, err
+	}
 	if left.Kind == ValueNull || right.Kind == ValueNull {
 		return left.Kind == ValueNull && right.Kind == ValueNull, nil
+	}
+	// Type tokens compare their private identity before scalar text fallback.
+	if left.Kind == ValueObject && right.Kind == ValueObject &&
+		strings.EqualFold(left.Type, "Type") && strings.EqualFold(right.Type, "Type") {
+		return left.Equal(right), nil
 	}
 	if equal, ok := dateObjectStringEqual(left, right); ok {
 		return equal, nil
@@ -505,12 +548,18 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 			if listElementValuesEqual(left.List[i], right.List[i], make(map[[2]uint64]bool)) {
 				continue
 			}
+			if isNumeric(left.List[i]) && isNumeric(right.List[i]) {
+				return false, nil
+			}
 			equal, err := vm.apexCollectionElementEquals(left.List[i], right.List[i], result)
 			if err != nil || !equal {
 				return equal, err
 			}
 		}
 		return true, nil
+	}
+	if left.Kind == ValueSet && right.Kind == ValueSet {
+		return vm.apexSetsEqual(left, right, result)
 	}
 	if left.Kind == ValueMap && right.Kind == ValueMap {
 		return vm.apexMapsEqual(left, right, result, true)
@@ -674,8 +723,67 @@ func (vm *VM) evalIndexedIncrementExpression(expr ir.Expr, result *Result) (Valu
 	return next, nil
 }
 
+// Map numeric values retain Integer/Decimal type identity and Decimal scale.
+// Scalar numeric equality and other boxed numeric kinds keep their own rules.
+func mapNumericValueIdentityDiffers(left, right Value) bool {
+	leftDecimal := left.Kind == ValueDecimal && !isFloatBackedDecimal(left)
+	rightDecimal := right.Kind == ValueDecimal && !isFloatBackedDecimal(right)
+	if leftDecimal && rightDecimal {
+		return decimalScale(left) != decimalScale(right)
+	}
+	leftInteger := left.Kind == ValueInt && canonicalApexScalarType(valueTypeName(left)) == "Integer"
+	rightInteger := right.Kind == ValueInt && canonicalApexScalarType(valueTypeName(right)) == "Integer"
+	return leftDecimal && rightInteger || rightDecimal && leftInteger
+}
+
+// Whole-Set comparisons of directly declared custom keys use the same
+// equality/hash policy as membership. Preserve raw comparison for primitive,
+// mixed-type, changed-hash and other unobserved declaration shapes.
+func (vm *VM) apexSetsEqual(left, right Value, result *Result) (bool, error) {
+	if left.Equal(right) {
+		return true, nil
+	}
+	if len(left.Set) != len(right.Set) || len(left.Set) == 0 {
+		return false, nil
+	}
+	typeName := runtimeObjectType(left.Set[0])
+	for _, set := range []Value{left, right} {
+		for index, element := range set.Set {
+			method, admitted := vm.equalsUserCollectionDeclaration(element, element)
+			if !admitted || !strings.EqualFold(method.ReturnType, "Boolean") ||
+				!strings.EqualFold(runtimeObjectType(element), typeName) {
+				return false, nil
+			}
+			stored := set.setInsertionHashAt(index)
+			if !stored.tracked {
+				return false, nil
+			}
+		}
+	}
+	for _, set := range []Value{left, right} {
+		for index, element := range set.Set {
+			stored := set.setInsertionHashAt(index)
+			current, err := vm.captureSetInsertionHash(element)
+			if err != nil {
+				return false, err
+			}
+			if !current.tracked || current.key != stored.key {
+				return false, nil
+			}
+		}
+	}
+	for _, element := range left.Set {
+		found, err := vm.setContainsValue(right, element, result)
+		if err != nil || !found {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
 // Map storage slots disambiguate hash collisions; equality compares the actual
-// stored keys. The operator retains its existing value-equality fallback.
+// stored keys. String values keep exact collection equality; the operator
+// retains its existing fallback for other value kinds.
 func (vm *VM) apexMapsEqual(left, right Value, result *Result, operator bool) (bool, error) {
 	if right.Kind != ValueMap || len(left.Map) != len(right.Map) {
 		return false, nil
@@ -689,10 +797,15 @@ func (vm *VM) apexMapsEqual(left, right Value, result *Result, operator bool) (b
 		if !ok {
 			return false, nil
 		}
+		if mapNumericValueIdentityDiffers(leftValue, rightValue) {
+			return false, nil
+		}
 		if leftValue.equal(rightValue, make(map[[2]uint64]bool)) {
 			continue
 		}
-		if !operator {
+		bothStrings := leftValue.Kind == ValueString && rightValue.Kind == ValueString &&
+			strings.EqualFold(valueTypeName(leftValue), "String") && strings.EqualFold(valueTypeName(rightValue), "String")
+		if !operator || bothStrings {
 			return false, nil
 		}
 		equal, err := vm.apexEquals(leftValue, rightValue, result)

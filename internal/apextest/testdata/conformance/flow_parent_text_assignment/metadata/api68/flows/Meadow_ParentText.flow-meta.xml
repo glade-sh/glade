@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>68.0</apiVersion>
+  <assignments>
+    <name>ReadParentText</name><label>Read parent text</label><locationX>0</locationX><locationY>0</locationY>
+    <assignmentItems><assignToReference>textValue</assignToReference><operator>Assign</operator><value><elementReference>$Record.MeadowParent__r.MeadowText__c</elementReference></value></assignmentItems>
+    <connector><targetReference>WriteDescription</targetReference></connector>
+  </assignments>
+  <assignments>
+    <name>ReadDirectText</name><label>Read direct text</label><locationX>0</locationX><locationY>0</locationY>
+    <assignmentItems><assignToReference>textValue</assignToReference><operator>Assign</operator><value><elementReference>$Record.LastName</elementReference></value></assignmentItems>
+    <connector><targetReference>WriteDescription</targetReference></connector>
+  </assignments>
+  <assignments>
+    <name>WriteDescription</name><label>Write description</label><locationX>0</locationX><locationY>0</locationY>
+    <assignmentItems><assignToReference>$Record.Description</assignToReference><operator>Assign</operator><value><elementReference>textValue</elementReference></value></assignmentItems>
+  </assignments>
+  <decisions>
+    <name>ChooseSource</name><label>Choose source</label><locationX>0</locationX><locationY>0</locationY>
+    <defaultConnector><targetReference>ReadParentText</targetReference></defaultConnector><defaultConnectorLabel>Parent text</defaultConnectorLabel>
+    <rules><name>UseDirectText</name><conditionLogic>and</conditionLogic>
+      <conditions><leftValueReference>$Record.LastName</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>Meadow direct</stringValue></rightValue></conditions>
+      <connector><targetReference>ReadDirectText</targetReference></connector><label>Direct field control</label>
+    </rules>
+  </decisions>
+  <interviewLabel>Meadow parent text {!$Flow.CurrentDateTime}</interviewLabel>
+  <label>Meadow parent text</label>
+  <processType>AutoLaunchedFlow</processType>
+  <start><locationX>0</locationX><locationY>0</locationY>
+    <connector><targetReference>ChooseSource</targetReference></connector>
+    <object>Contact</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType>
+  </start>
+  <status>Active</status>
+  <variables><name>textValue</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput></variables>
+</Flow>

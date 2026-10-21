@@ -1,0 +1,2 @@
+shape	question
+queue_owner	Can an explicitly null FirstName be read through a polymorphic Name relationship?

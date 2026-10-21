@@ -1,0 +1,42 @@
+{
+  "id": "0AfRt00000he64LKAQ",
+  "status": "Failed",
+  "numberComponentErrors": 0,
+  "numberTestErrors": 3,
+  "failures": [
+    {
+      "id": "01pRt00001H2XbvIAF",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|community|{\"userType\":\"CspLitePortal\",\"profileName\":\"Customer Community User\",\"profileCount\":1,\"total\":5,\"status\":\"Active\",\"key\":\"PID_Customer_Community\",\"name\":\"Customer Community\",\"count\":1}",
+      "methodName": "community",
+      "name": "SetupQueryPrerequisitesTest",
+      "namespace": null,
+      "packageName": "SetupQueryPrerequisitesTest",
+      "stackTrace": "Class.SetupQueryPrerequisitesTest.emit: line 5, column 1\nClass.SetupQueryPrerequisitesTest.community: line 3, column 1",
+      "time": 23,
+      "type": "Class"
+    },
+    {
+      "id": "01pRt00001H2XbvIAF",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|metadata|{\"missingGroupMessage\":\"List has no rows for assignment to SObject\",\"missingGroupException\":\"System.QueryException\",\"absentGroup\":0,\"presentPermissionSet\":1,\"presentGroup\":1}",
+      "methodName": "metadata",
+      "name": "SetupQueryPrerequisitesTest",
+      "namespace": null,
+      "packageName": "SetupQueryPrerequisitesTest",
+      "stackTrace": "Class.SetupQueryPrerequisitesTest.emit: line 5, column 1\nClass.SetupQueryPrerequisitesTest.metadata: line 2, column 1",
+      "time": 64,
+      "type": "Class"
+    },
+    {
+      "id": "01pRt00001H2XbvIAF",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|packageLicenses|{\"SalesforceCPQ_CPQStandardPerm\":{\"prefix\":\"0PL\",\"total\":2,\"status\":\"Active\",\"label\":\"Salesforce CPQ License\"},\"SalesforceCPQ_CPQAAPerm\":{\"prefix\":\"0PL\",\"total\":2,\"status\":\"Active\",\"label\":\"Salesforce CPQ AA License\"},\"count\":2}",
+      "methodName": "packageLicenses",
+      "name": "SetupQueryPrerequisitesTest",
+      "namespace": null,
+      "packageName": "SetupQueryPrerequisitesTest",
+      "stackTrace": "Class.SetupQueryPrerequisitesTest.emit: line 5, column 1\nClass.SetupQueryPrerequisitesTest.packageLicenses: line 4, column 1",
+      "time": 47,
+      "type": "Class"
+    }
+  ],
+  "componentFailures": []
+}

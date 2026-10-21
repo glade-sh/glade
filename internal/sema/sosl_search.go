@@ -67,7 +67,10 @@ func semaSearchCallDiagnostic(typ typesys.TypeSymbol, receiver, method string, a
 	nullable := func(value, want string) bool {
 		return value == "" || strings.EqualFold(value, "null") || strings.EqualFold(value, want)
 	}
-	access := func(value string) bool { return nullable(value, "AccessLevel") || strings.EqualFold(value, "Object") }
+	access := func(value string) bool {
+		value = semaCanonicalPlatformAlias(value)
+		return nullable(value, "AccessLevel") || strings.EqualFold(value, "Object")
+	}
 	valid, handled := false, false
 	if strings.EqualFold(receiver, "Search") && mode == "class" {
 		switch strings.ToLower(method) {

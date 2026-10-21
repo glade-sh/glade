@@ -343,8 +343,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			writeCommandError(stderr, args[0], err)
 			return 1
 		}
-		summary := result.Summary()
-		if summary.Failed > 0 || summary.Errors > 0 {
+		if !result.Summary().OK() {
 			return 1
 		}
 		return 0
@@ -355,8 +354,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		if ranTests {
-			summary := result.Summary()
-			if summary.Failed > 0 || summary.Errors > 0 {
+			if !result.Summary().OK() {
 				return 1
 			}
 		}
@@ -2213,6 +2211,9 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		Phase: "check",
 		Label: "Loading project",
 	})
+	if err := ctx.Err(); err != nil {
+		return sema.Result{}, err
+	}
 	var totalStarted time.Time
 	var projectStarted time.Time
 	if perfEnabled {
@@ -2220,6 +2221,9 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		projectStarted = totalStarted
 	}
 	p, err := project.Load(opts.root)
+	if err := ctx.Err(); err != nil {
+		return sema.Result{}, err
+	}
 	var projectLoadNS int64
 	if perfEnabled {
 		projectLoadNS = time.Since(projectStarted).Nanoseconds()
@@ -2235,11 +2239,17 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		Current: 1,
 		Total:   4,
 	})
+	if err := ctx.Err(); err != nil {
+		return sema.Result{}, err
+	}
 	var schemaStarted time.Time
 	if perfEnabled {
 		schemaStarted = time.Now()
 	}
 	s, err := gladeschema.LoadProject(p)
+	if err := ctx.Err(); err != nil {
+		return sema.Result{}, err
+	}
 	var schemaLoadNS int64
 	if perfEnabled {
 		schemaLoadNS = time.Since(schemaStarted).Nanoseconds()
@@ -2265,7 +2275,13 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 			Current: 2,
 			Total:   4,
 		})
+		if err := ctx.Err(); err != nil {
+			return sema.Result{}, err
+		}
 		index, buildArtifacts = typesys.BuildWithArtifacts(p, s)
+	}
+	if err := ctx.Err(); err != nil {
+		return sema.Result{}, err
 	}
 	var indexBuildNS int64
 	if perfEnabled {
@@ -2278,6 +2294,9 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		Current: 3,
 		Total:   4,
 	})
+	if err := ctx.Err(); err != nil {
+		return sema.Result{}, err
+	}
 	var semaCounters *sema.PerfCounters
 	var semanticCachePerf checkSemanticCachePerf
 	if perfEnabled {
@@ -2348,6 +2367,10 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		} else {
 			result = cachedResult
 		}
+	}
+	result = withAutomationDiagnostics(result, p)
+	if err := ctx.Err(); err != nil {
+		return sema.Result{}, err
 	}
 	renderer.Render(cliui.Event{
 		Kind:    cliui.EventPhaseEnd,

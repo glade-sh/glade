@@ -1,0 +1,819 @@
+{
+  "plannedCells": 726,
+  "observedCells": 723,
+  "assertedCells": 681,
+  "carriedCells": 45,
+  "receipts": [
+    {
+      "shard": "bare",
+      "api": "62.0",
+      "route": "anon",
+      "orgTSVSHA256": "9c7f6a5a9018f4e42dd8c684cc0ac913f1a1d33ec4f280d99ca09905efff55a9",
+      "fixture": {
+        "verified": true,
+        "allocation_step": null,
+        "allocation_mb": null,
+        "metadata_inventory": {
+          "verified": true,
+          "partitions": {},
+          "inventory_parse_valid": true
+        },
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown"
+      },
+      "source": "native Salesforce",
+      "manifestSHA256": "db16e1e89f725a3d015b8a3da41440a554066c95c117c41cece133bd2e3123ef"
+    },
+    {
+      "shard": "bare",
+      "api": "62.0",
+      "route": "istest",
+      "orgTSVSHA256": "0f098d6c2bbc6343f9f0054178dde9211c17040d8f5c4c951d80a709d0863189",
+      "fixture": {
+        "verified": true,
+        "allocation_step": null,
+        "allocation_mb": null,
+        "metadata_inventory": {
+          "verified": true,
+          "partitions": {},
+          "inventory_parse_valid": true
+        },
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown"
+      },
+      "source": "native Salesforce",
+      "manifestSHA256": "db16e1e89f725a3d015b8a3da41440a554066c95c117c41cece133bd2e3123ef"
+    },
+    {
+      "shard": "bare",
+      "api": "67.0",
+      "route": "anon",
+      "orgTSVSHA256": "9c7f6a5a9018f4e42dd8c684cc0ac913f1a1d33ec4f280d99ca09905efff55a9",
+      "fixture": {
+        "verified": true,
+        "allocation_step": null,
+        "allocation_mb": null,
+        "metadata_inventory": {
+          "verified": true,
+          "partitions": {},
+          "inventory_parse_valid": true
+        },
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown"
+      },
+      "source": "native Salesforce",
+      "manifestSHA256": "db16e1e89f725a3d015b8a3da41440a554066c95c117c41cece133bd2e3123ef"
+    },
+    {
+      "shard": "bare",
+      "api": "67.0",
+      "route": "istest",
+      "orgTSVSHA256": "ca684f2ae400557d3b901f8fdbf58ec4016d041fc062680a88846b16f39b4c67",
+      "fixture": {
+        "verified": true,
+        "allocation_step": null,
+        "allocation_mb": null,
+        "metadata_inventory": {
+          "verified": true,
+          "partitions": {},
+          "inventory_parse_valid": true
+        },
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown"
+      },
+      "source": "native Salesforce",
+      "manifestSHA256": "db16e1e89f725a3d015b8a3da41440a554066c95c117c41cece133bd2e3123ef"
+    },
+    {
+      "shard": "bare",
+      "api": "68.0",
+      "route": "anon",
+      "orgTSVSHA256": "9c7f6a5a9018f4e42dd8c684cc0ac913f1a1d33ec4f280d99ca09905efff55a9",
+      "fixture": {
+        "verified": true,
+        "allocation_step": null,
+        "allocation_mb": null,
+        "metadata_inventory": {
+          "verified": true,
+          "partitions": {},
+          "inventory_parse_valid": true
+        },
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown"
+      },
+      "source": "native Salesforce",
+      "manifestSHA256": "db16e1e89f725a3d015b8a3da41440a554066c95c117c41cece133bd2e3123ef"
+    },
+    {
+      "shard": "bare",
+      "api": "68.0",
+      "route": "istest",
+      "orgTSVSHA256": "eeadd9251343846d8c263e3942bbe9dbe808c862cc45487b9afcdb4109fa4942",
+      "fixture": {
+        "verified": true,
+        "allocation_step": null,
+        "allocation_mb": null,
+        "metadata_inventory": {
+          "verified": true,
+          "partitions": {},
+          "inventory_parse_valid": true
+        },
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown"
+      },
+      "source": "native Salesforce",
+      "manifestSHA256": "db16e1e89f725a3d015b8a3da41440a554066c95c117c41cece133bd2e3123ef"
+    },
+    {
+      "shard": "configured",
+      "api": "62.0",
+      "route": "anon",
+      "orgTSVSHA256": "5f62808769833cb5f09c95edebec126df07bcd64804060e16c77bf5270075330",
+      "fixture": {
+        "verified": true,
+        "allocation_step": "alt",
+        "allocation_mb": {
+          "PcMain": 0,
+          "PcAlt": 1,
+          "PcZero": 0
+        },
+        "metadata_inventory": {
+          "verified": true,
+          "partitions": {
+            "PcZero": {
+              "isDefault": "false",
+              "types": [
+                {
+                  "type": "Session",
+                  "allocated": "0",
+                  "trial": "0"
+                },
+                {
+                  "type": "Organization",
+                  "allocated": "0",
+                  "trial": "0"
+                }
+              ]
+            },
+            "PcAlt": {
+              "isDefault": "false",
+              "types": [
+                {
+                  "type": "Session",
+                  "allocated": "1",
+                  "trial": "0"
+                },
+                {
+                  "type": "Organization",
+                  "allocated": "1",
+                  "trial": "0"
+                }
+              ]
+            },
+            "PcMain": {
+              "isDefault": "true",
+              "types": [
+                {
+                  "type": "Organization",
+                  "allocated": "0",
+                  "trial": "0"
+                },
+                {
+                  "type": "Session",
+                  "allocated": "0",
+                  "trial": "0"
+                }
+              ]
+            }
+          },
+          "inventory_parse_valid": true
+        },
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown"
+      },
+      "source": "native Salesforce",
+      "manifestSHA256": "db16e1e89f725a3d015b8a3da41440a554066c95c117c41cece133bd2e3123ef"
+    },
+    {
+      "shard": "configured",
+      "api": "62.0",
+      "route": "istest",
+      "orgTSVSHA256": "33f49e6f2478c758c724cecfdd46490debe0b6ae08668e1258e392f848d364b7",
+      "fixture": {
+        "verified": true,
+        "allocation_step": "alt",
+        "allocation_mb": {
+          "PcMain": 0,
+          "PcAlt": 1,
+          "PcZero": 0
+        },
+        "metadata_inventory": {
+          "verified": true,
+          "partitions": {
+            "PcZero": {
+              "isDefault": "false",
+              "types": [
+                {
+                  "type": "Session",
+                  "allocated": "0",
+                  "trial": "0"
+                },
+                {
+                  "type": "Organization",
+                  "allocated": "0",
+                  "trial": "0"
+                }
+              ]
+            },
+            "PcAlt": {
+              "isDefault": "false",
+              "types": [
+                {
+                  "type": "Session",
+                  "allocated": "1",
+                  "trial": "0"
+                },
+                {
+                  "type": "Organization",
+                  "allocated": "1",
+                  "trial": "0"
+                }
+              ]
+            },
+            "PcMain": {
+              "isDefault": "true",
+              "types": [
+                {
+                  "type": "Organization",
+                  "allocated": "0",
+                  "trial": "0"
+                },
+                {
+                  "type": "Session",
+                  "allocated": "0",
+                  "trial": "0"
+                }
+              ]
+            }
+          },
+          "inventory_parse_valid": true
+        },
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown"
+      },
+      "source": "native Salesforce",
+      "manifestSHA256": "db16e1e89f725a3d015b8a3da41440a554066c95c117c41cece133bd2e3123ef"
+    },
+    {
+      "shard": "configured",
+      "api": "67.0",
+      "route": "anon",
+      "orgTSVSHA256": "bff5245f4b362d8ce04d50e46a98d5cf79bc385cd70a13f277d9c462274b7649",
+      "fixture": {
+        "verified": true,
+        "allocation_step": "alt",
+        "allocation_mb": {
+          "PcMain": 0,
+          "PcAlt": 1,
+          "PcZero": 0
+        },
+        "metadata_inventory": {
+          "verified": true,
+          "partitions": {
+            "PcZero": {
+              "isDefault": "false",
+              "types": [
+                {
+                  "type": "Session",
+                  "allocated": "0",
+                  "trial": "0"
+                },
+                {
+                  "type": "Organization",
+                  "allocated": "0",
+                  "trial": "0"
+                }
+              ]
+            },
+            "PcAlt": {
+              "isDefault": "false",
+              "types": [
+                {
+                  "type": "Session",
+                  "allocated": "1",
+                  "trial": "0"
+                },
+                {
+                  "type": "Organization",
+                  "allocated": "1",
+                  "trial": "0"
+                }
+              ]
+            },
+            "PcMain": {
+              "isDefault": "true",
+              "types": [
+                {
+                  "type": "Organization",
+                  "allocated": "0",
+                  "trial": "0"
+                },
+                {
+                  "type": "Session",
+                  "allocated": "0",
+                  "trial": "0"
+                }
+              ]
+            }
+          },
+          "inventory_parse_valid": true
+        },
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown"
+      },
+      "source": "native Salesforce",
+      "manifestSHA256": "db16e1e89f725a3d015b8a3da41440a554066c95c117c41cece133bd2e3123ef"
+    },
+    {
+      "shard": "configured",
+      "api": "67.0",
+      "route": "istest",
+      "orgTSVSHA256": "946102a765897288816aae9fba3a3197f7a506ddd69c254391b2550a4394aa66",
+      "fixture": {
+        "verified": true,
+        "allocation_step": "alt",
+        "allocation_mb": {
+          "PcMain": 0,
+          "PcAlt": 1,
+          "PcZero": 0
+        },
+        "metadata_inventory": {
+          "verified": true,
+          "partitions": {
+            "PcZero": {
+              "isDefault": "false",
+              "types": [
+                {
+                  "type": "Session",
+                  "allocated": "0",
+                  "trial": "0"
+                },
+                {
+                  "type": "Organization",
+                  "allocated": "0",
+                  "trial": "0"
+                }
+              ]
+            },
+            "PcAlt": {
+              "isDefault": "false",
+              "types": [
+                {
+                  "type": "Session",
+                  "allocated": "1",
+                  "trial": "0"
+                },
+                {
+                  "type": "Organization",
+                  "allocated": "1",
+                  "trial": "0"
+                }
+              ]
+            },
+            "PcMain": {
+              "isDefault": "true",
+              "types": [
+                {
+                  "type": "Organization",
+                  "allocated": "0",
+                  "trial": "0"
+                },
+                {
+                  "type": "Session",
+                  "allocated": "0",
+                  "trial": "0"
+                }
+              ]
+            }
+          },
+          "inventory_parse_valid": true
+        },
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown"
+      },
+      "source": "native Salesforce",
+      "manifestSHA256": "db16e1e89f725a3d015b8a3da41440a554066c95c117c41cece133bd2e3123ef"
+    },
+    {
+      "shard": "configured",
+      "api": "68.0",
+      "route": "anon",
+      "orgTSVSHA256": "0681d9abdbfc630d7ac7e349f933e93eb9c861746dd72a18a54e2f874b845abd",
+      "fixture": {
+        "verified": true,
+        "allocation_step": "alt",
+        "allocation_mb": {
+          "PcMain": 0,
+          "PcAlt": 1,
+          "PcZero": 0
+        },
+        "metadata_inventory": {
+          "verified": true,
+          "partitions": {
+            "PcZero": {
+              "isDefault": "false",
+              "types": [
+                {
+                  "type": "Session",
+                  "allocated": "0",
+                  "trial": "0"
+                },
+                {
+                  "type": "Organization",
+                  "allocated": "0",
+                  "trial": "0"
+                }
+              ]
+            },
+            "PcAlt": {
+              "isDefault": "false",
+              "types": [
+                {
+                  "type": "Session",
+                  "allocated": "1",
+                  "trial": "0"
+                },
+                {
+                  "type": "Organization",
+                  "allocated": "1",
+                  "trial": "0"
+                }
+              ]
+            },
+            "PcMain": {
+              "isDefault": "true",
+              "types": [
+                {
+                  "type": "Organization",
+                  "allocated": "0",
+                  "trial": "0"
+                },
+                {
+                  "type": "Session",
+                  "allocated": "0",
+                  "trial": "0"
+                }
+              ]
+            }
+          },
+          "inventory_parse_valid": true
+        },
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown"
+      },
+      "source": "native Salesforce",
+      "manifestSHA256": "db16e1e89f725a3d015b8a3da41440a554066c95c117c41cece133bd2e3123ef"
+    },
+    {
+      "shard": "configured",
+      "api": "68.0",
+      "route": "istest",
+      "orgTSVSHA256": "5508accb6c8456f76d7aa169e2c5cc8c233a5c93c8b1a7ea817a0bcf4ba8ba26",
+      "fixture": {
+        "verified": true,
+        "allocation_step": "alt",
+        "allocation_mb": {
+          "PcMain": 0,
+          "PcAlt": 1,
+          "PcZero": 0
+        },
+        "metadata_inventory": {
+          "verified": true,
+          "partitions": {
+            "PcZero": {
+              "isDefault": "false",
+              "types": [
+                {
+                  "type": "Session",
+                  "allocated": "0",
+                  "trial": "0"
+                },
+                {
+                  "type": "Organization",
+                  "allocated": "0",
+                  "trial": "0"
+                }
+              ]
+            },
+            "PcAlt": {
+              "isDefault": "false",
+              "types": [
+                {
+                  "type": "Session",
+                  "allocated": "1",
+                  "trial": "0"
+                },
+                {
+                  "type": "Organization",
+                  "allocated": "1",
+                  "trial": "0"
+                }
+              ]
+            },
+            "PcMain": {
+              "isDefault": "true",
+              "types": [
+                {
+                  "type": "Organization",
+                  "allocated": "0",
+                  "trial": "0"
+                },
+                {
+                  "type": "Session",
+                  "allocated": "0",
+                  "trial": "0"
+                }
+              ]
+            }
+          },
+          "inventory_parse_valid": true
+        },
+        "capacity_evidence": "metadata retrieve; Apex getCapacity unit unknown"
+      },
+      "source": "native Salesforce",
+      "manifestSHA256": "db16e1e89f725a3d015b8a3da41440a554066c95c117c41cece133bd2e3123ef"
+    }
+  ],
+  "uncaptured": [
+    "namespaced shadowing and namespaced visibility context",
+    "general persistence beyond the admitted String / TTL-300 / same-local-session request shape",
+    "cross-session behavior and process restart persistence",
+    "uncaptured APIs between the observed versions"
+  ],
+  "retry": {
+    "plannedCells": 63,
+    "observedCells": 63,
+    "familyCells": 45,
+    "controlCells": 18,
+    "manifestSHA256": "fdd1bbe4f664e08e2eb3ce598fef99fd2adae572e4e3f37a8ed4e0d24739f00f",
+    "mergedUniqueIdentityCells": 183,
+    "mergedVariantRecords": 216,
+    "replacedNonanswerCells": 12,
+    "retryContextVariants": 33,
+    "replacedDefaultKeyCarries": 6,
+    "supersededCells": [
+      {
+        "id": "PCA011",
+        "api": "62.0",
+        "route": "anon",
+        "native": {
+          "outcome": "value",
+          "value": "{}"
+        },
+        "sourceSHA256": {
+          "anonymous": "db1c769fb25fe42d50ec0f59267ea4d0df63de0320f96f89134f1ea6a7ff5483"
+        },
+        "allocationMB": {
+          "PcMain": {
+            "Organization": 0,
+            "Session": 0
+          },
+          "PcAlt": {
+            "Organization": 1,
+            "Session": 1
+          },
+          "PcZero": {
+            "Organization": 0,
+            "Session": 0
+          }
+        },
+        "reason": "Superseded asserted shape by allocated-default retry; zero-capacity observation remains evidence only"
+      },
+      {
+        "id": "PCA011",
+        "api": "62.0",
+        "route": "istest",
+        "native": {
+          "outcome": "value",
+          "value": "{}"
+        },
+        "sourceSHA256": {
+          "class:PcPCA011A62Test": "94d66069e6c1194380d2cd5305f95c40afbf1aa01ffdf70eaed5056c1d968402"
+        },
+        "allocationMB": {
+          "PcMain": {
+            "Organization": 0,
+            "Session": 0
+          },
+          "PcAlt": {
+            "Organization": 1,
+            "Session": 1
+          },
+          "PcZero": {
+            "Organization": 0,
+            "Session": 0
+          }
+        },
+        "reason": "Superseded asserted shape by allocated-default retry; zero-capacity observation remains evidence only"
+      },
+      {
+        "id": "PCA011",
+        "api": "67.0",
+        "route": "anon",
+        "native": {
+          "outcome": "value",
+          "value": "{}"
+        },
+        "sourceSHA256": {
+          "anonymous": "db1c769fb25fe42d50ec0f59267ea4d0df63de0320f96f89134f1ea6a7ff5483"
+        },
+        "allocationMB": {
+          "PcMain": {
+            "Organization": 0,
+            "Session": 0
+          },
+          "PcAlt": {
+            "Organization": 1,
+            "Session": 1
+          },
+          "PcZero": {
+            "Organization": 0,
+            "Session": 0
+          }
+        },
+        "reason": "Superseded asserted shape by allocated-default retry; zero-capacity observation remains evidence only"
+      },
+      {
+        "id": "PCA011",
+        "api": "67.0",
+        "route": "istest",
+        "native": {
+          "outcome": "value",
+          "value": "{}"
+        },
+        "sourceSHA256": {
+          "class:PcPCA011A67Test": "da196f41bbdc27c6df40ee2bb386acc94d4ccd6dc89335e7c9c65165df741672"
+        },
+        "allocationMB": {
+          "PcMain": {
+            "Organization": 0,
+            "Session": 0
+          },
+          "PcAlt": {
+            "Organization": 1,
+            "Session": 1
+          },
+          "PcZero": {
+            "Organization": 0,
+            "Session": 0
+          }
+        },
+        "reason": "Superseded asserted shape by allocated-default retry; zero-capacity observation remains evidence only"
+      },
+      {
+        "id": "PCA011",
+        "api": "68.0",
+        "route": "anon",
+        "native": {
+          "outcome": "value",
+          "value": "{}"
+        },
+        "sourceSHA256": {
+          "anonymous": "db1c769fb25fe42d50ec0f59267ea4d0df63de0320f96f89134f1ea6a7ff5483"
+        },
+        "allocationMB": {
+          "PcMain": {
+            "Organization": 0,
+            "Session": 0
+          },
+          "PcAlt": {
+            "Organization": 1,
+            "Session": 1
+          },
+          "PcZero": {
+            "Organization": 0,
+            "Session": 0
+          }
+        },
+        "reason": "Superseded asserted shape by allocated-default retry; zero-capacity observation remains evidence only"
+      },
+      {
+        "id": "PCA011",
+        "api": "68.0",
+        "route": "istest",
+        "native": {
+          "outcome": "value",
+          "value": "{}"
+        },
+        "sourceSHA256": {
+          "class:PcPCA011A68Test": "a0f65ad5c2106cc2edc5d7648d831c06b046035ef754fcfc6d1c65b6fb53b9cb"
+        },
+        "allocationMB": {
+          "PcMain": {
+            "Organization": 0,
+            "Session": 0
+          },
+          "PcAlt": {
+            "Organization": 1,
+            "Session": 1
+          },
+          "PcZero": {
+            "Organization": 0,
+            "Session": 0
+          }
+        },
+        "reason": "Superseded asserted shape by allocated-default retry; zero-capacity observation remains evidence only"
+      }
+    ],
+    "answerHashes": {
+      "api62/anonymous/org.tsv": "3858e7ae86a0ffcb4cd199ae205a9a1c5125768475649aa2ffb66708e667476c",
+      "api62/istest/org.tsv": "c6569d9347acbd5f2aac82e7037723b1df99b836a0fd92744776b163532835e5",
+      "api67/anonymous/org.tsv": "3678f89d5bf2d268ccdb858a91012609d24b611ce2953c686f34779342fbb65b",
+      "api67/istest/org.tsv": "bfab5f32ddef1cf26c179fe41bd593248f76a13e3a429a0c6992133a11207de8",
+      "api68/anonymous/org.tsv": "3678f89d5bf2d268ccdb858a91012609d24b611ce2953c686f34779342fbb65b",
+      "api68/istest/org.tsv": "6459968f8a844373b443664ab887f1aa2ee71eea2937321e335ee4c0db003b79"
+    },
+    "readbackHashes": {
+      "partition-readback-0.json": "2296f001844b1b09c6817fb86c4fd5e0f85060056d73307e7bb04a8e73acf5b4",
+      "partition-readback-1.json": "dfede8a966878eece37b42579119478f8add726086fcd079f51e9578d1be69ad",
+      "partition-readback-2.json": "2296f001844b1b09c6817fb86c4fd5e0f85060056d73307e7bb04a8e73acf5b4",
+      "partition-readback-3.json": "dfede8a966878eece37b42579119478f8add726086fcd079f51e9578d1be69ad",
+      "partition-readback-4.json": "2296f001844b1b09c6817fb86c4fd5e0f85060056d73307e7bb04a8e73acf5b4",
+      "partition-readback-5.json": "dfede8a966878eece37b42579119478f8add726086fcd079f51e9578d1be69ad"
+    },
+    "mergedObservationSHA256": "eb9739c4c1631a133c1517506151b34083fd4877e7c2deabf6845bf6aa3c68ab"
+  },
+  "extended": {
+    "accountedCells": 396,
+    "observedCells": 393,
+    "assertedCells": 363,
+    "carriedCells": 33,
+    "apis": [
+      "62.0",
+      "67.0",
+      "68.0"
+    ],
+    "cellsPerAPI": {
+      "anon": 68,
+      "istest": 64
+    },
+    "fixtureErrorCells": [
+      "PCR004/anon/62.0",
+      "PCR004/anon/67.0",
+      "PCR004/anon/68.0"
+    ],
+    "deferredResolverRows": [
+      "NL01",
+      "NL05",
+      "NL06"
+    ],
+    "unstableRenderingRows": [
+      "PCH008",
+      "PCH012"
+    ],
+    "droppedRows": [
+      "PCR001/istest",
+      "PCR004/istest",
+      "PCS002",
+      "PCS004",
+      "PCS005"
+    ],
+    "earlierCellsAndCarries": "Six setup-to-method carries admitted with paired-method isolation twins; other earlier cells and carries unchanged",
+    "partitionReadbackLayouts": [
+      {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      }
+    ],
+    "settledEarlierCarries": {
+      "rows": [
+        "PCT003",
+        "PCT004"
+      ],
+      "cells": 6,
+      "isolationEvidence": [
+        "PCT011",
+        "PCT012"
+      ]
+    },
+    "settledNamespaceRows": [
+      "PCH007",
+      "PCH009",
+      "PCH011",
+      "PCH014"
+    ]
+  }
+}

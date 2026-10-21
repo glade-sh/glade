@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -26,7 +27,9 @@ import (
 )
 
 // Native API endpoints include the distinct anonymous and granted @IsTest
-// routes. The exported metadata is the entire credential-free CI fixture.
+// routes. API68 has 27 direct named observations; other named checks retain
+// local legacy expectations. Auxiliary controls were captured only at 62/67.
+// The exported metadata is the entire credential-free CI fixture.
 func TestSecurityAccessOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, NamedCode     string
@@ -35,14 +38,20 @@ func TestSecurityAccessOrgConformance(t *testing.T) {
 		NamedProvenance         map[string]string
 	}
 	var data struct {
-		APIVersions            []string `json:"apiVersions"`
+		APIVersions   []string `json:"apiVersions"`
+		CeilingOracle struct {
+			APIVersion                                                                            string
+			Rows, Observed, AnonymousReused, AnonymousRecaptured, NamedObserved, NamedLocalLegacy int
+			ControlsUnobserved                                                                    []string
+			Observations                                                                          []struct{ ID, CaseSHA256 string }
+		} `json:"ceilingOracle"`
 		Declarations, Metadata map[string]string
 		Cases, Controls        []familyCase
 		NamespaceControls      []securityNamespaceControl
 		NestedControls         []securityNamespaceControl
 		Remaining              []struct{ ID, Owner, Reason string }
 		ProvenanceCounts       map[string]struct {
-			AnonymousNative, NamedNative, NamedAnonymousBackedCompiler, AnonymousControls int
+			AnonymousNative, NamedNative, NamedAnonymousBackedCompiler, NamedLocalLegacy, AnonymousControls int
 		}
 	}
 	raw, err := os.ReadFile("testdata/conformance/security_access.json")
@@ -52,8 +61,32 @@ func TestSecurityAccessOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 265 || len(data.Controls) != 45 || len(data.NamespaceControls) != 8 || len(data.NestedControls) != 8 || len(data.Remaining) != 0 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 265 || len(data.Controls) != 45 || len(data.NamespaceControls) != 8 || len(data.NestedControls) != 8 || len(data.Remaining) != 0 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle: %d family rows + %d anonymous controls + %d carried at %v", len(data.Cases), len(data.Controls), len(data.Remaining), data.APIVersions)
+	}
+	ceiling := data.CeilingOracle
+	if ceiling.APIVersion != "68.0" || ceiling.Rows != 265 || ceiling.Observed != 265 || ceiling.AnonymousReused != 238 || ceiling.AnonymousRecaptured != 27 || ceiling.NamedObserved != 27 || ceiling.NamedLocalLegacy != 238 || len(ceiling.Observations) != 27 {
+		t.Fatalf("incomplete API68 source binding: %+v", ceiling)
+	}
+	captured := map[string]string{}
+	for _, observation := range ceiling.Observations {
+		if observation.ID == "" || captured[observation.ID] != "" || len(observation.CaseSHA256) != 64 {
+			t.Fatalf("invalid repeated API68 observation: %+v", observation)
+		}
+		captured[observation.ID] = observation.CaseSHA256
+	}
+	var unobserved []string
+	for _, row := range data.Controls {
+		unobserved = append(unobserved, row.ID)
+	}
+	for _, row := range data.NamespaceControls {
+		unobserved = append(unobserved, row.ID)
+	}
+	for _, row := range data.NestedControls {
+		unobserved = append(unobserved, row.ID)
+	}
+	if strings.Join(ceiling.ControlsUnobserved, ",") != strings.Join(unobserved, ",") {
+		t.Fatal("API68 auxiliary control exclusions differ from retained floor controls")
 	}
 	seen := map[string]bool{}
 	for _, tc := range data.Cases {
@@ -61,11 +94,22 @@ func TestSecurityAccessOrgConformance(t *testing.T) {
 			t.Fatalf("invalid/repeated row: %#v", tc)
 		}
 		seen[tc.ID] = true
+		if digest, ok := captured[tc.ID]; ok {
+			if fmt.Sprintf("%x", sha256.Sum256([]byte(tc.Code))) != digest || tc.NamedProvenance["68.0"] != "native-named" {
+				t.Fatalf("API68 source or named route changed for %s", tc.ID)
+			}
+			delete(captured, tc.ID)
+		} else if tc.NamedProvenance["68.0"] != "local-legacy" {
+			t.Fatalf("uncaptured API68 named row %s is not local legacy", tc.ID)
+		}
 		for _, api := range data.APIVersions {
 			if tc.Expected[api] == "" || tc.Expected[api] == "?" || tc.NamedExpected[api] == "" || tc.NamedExpected[api] == "?" {
 				t.Fatalf("uncaptured %s at %s", tc.ID, api)
 			}
 		}
+	}
+	if len(captured) != 0 {
+		t.Fatalf("unknown API68 observation IDs: %v", captured)
 	}
 	for _, tc := range data.Controls {
 		if tc.ID == "" || seen[tc.ID] || len(tc.NamedExpected) != 0 {
@@ -73,17 +117,25 @@ func TestSecurityAccessOrgConformance(t *testing.T) {
 		}
 		seen[tc.ID] = true
 		for _, api := range data.APIVersions {
+			if api == "68.0" {
+				continue
+			}
 			if tc.Expected[api] == "" || tc.Expected[api] == "?" {
 				t.Fatalf("uncaptured control %s at %s", tc.ID, api)
 			}
 		}
 	}
 	for _, api := range data.APIVersions {
-		nativeNamed, anonymousBacked := 0, 0
+		nativeNamed, anonymousBacked, localLegacy := 0, 0, 0
 		for _, tc := range data.Cases {
 			switch tc.NamedProvenance[api] {
 			case "native-named":
 				nativeNamed++
+			case "local-legacy":
+				if api != "68.0" {
+					t.Fatalf("unexpected legacy named provenance at %s", api)
+				}
+				localLegacy++
 			case "anonymous-backed-compiler":
 				if tc.NamedExpected[api] != tc.Expected[api] || !strings.HasPrefix(tc.Expected[api], "COMPILE_ERROR\tline ") {
 					t.Fatalf("invalid anonymous-backed compiler check %s at %s", tc.ID, api)
@@ -93,11 +145,15 @@ func TestSecurityAccessOrgConformance(t *testing.T) {
 				t.Fatalf("missing/unknown named provenance %s at %s: %q", tc.ID, api, tc.NamedProvenance[api])
 			}
 		}
+		controlCount := len(data.Controls)
+		if api == "68.0" {
+			controlCount = 0
+		}
 		counts := data.ProvenanceCounts[api]
-		if counts.AnonymousNative != len(data.Cases) || counts.AnonymousControls != len(data.Controls) || counts.NamedNative != nativeNamed || counts.NamedAnonymousBackedCompiler != anonymousBacked {
+		if counts.AnonymousNative != len(data.Cases) || counts.AnonymousControls != controlCount || counts.NamedNative != nativeNamed || counts.NamedAnonymousBackedCompiler != anonymousBacked || counts.NamedLocalLegacy != localLegacy {
 			t.Fatalf("provenance counts at %s: %#v, observed named %d native + %d anonymous-backed", api, counts, nativeNamed, anonymousBacked)
 		}
-		t.Logf("API %s provenance: %d native anonymous rows + %d anonymous controls; %d native named results + %d anonymous-backed named compiler checks", api, len(data.Cases), len(data.Controls), nativeNamed, anonymousBacked)
+		t.Logf("API %s provenance: %d native anonymous rows + %d anonymous controls; %d native named results + %d anonymous-backed named compiler checks + %d local legacy named checks", api, len(data.Cases), controlCount, nativeNamed, anonymousBacked, localLegacy)
 	}
 	for _, row := range data.Remaining {
 		if row.ID == "" || seen[row.ID] || row.Owner == "" || strings.Contains(row.Owner, "A28") || row.Reason == "" {
@@ -182,12 +238,16 @@ func TestSecurityAccessOrgConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "security access", api)
-			t.Run("namespace-shadow-controls", func(t *testing.T) {
-				checkSecurityNamespaceControls(t, api, data.NamespaceControls, 4, counts)
-			})
-			t.Run("nested-type-shadow-controls", func(t *testing.T) {
-				checkSecurityNamespaceControls(t, api, data.NestedControls, 8, counts)
-			})
+			if api != "68.0" {
+				t.Run("namespace-shadow-controls", func(t *testing.T) {
+					checkSecurityNamespaceControls(t, api, data.NamespaceControls, 4, counts)
+				})
+				t.Run("nested-type-shadow-controls", func(t *testing.T) {
+					checkSecurityNamespaceControls(t, api, data.NestedControls, 8, counts)
+				})
+			} else {
+				t.Log("API68: 61 auxiliary controls remain captured only at 62/67")
+			}
 			root := t.TempDir()
 			for path, source := range data.Metadata {
 				writeFile(t, filepath.Join(root, path), source)
@@ -255,7 +315,10 @@ func TestSecurityAccessOrgConformance(t *testing.T) {
 			var namedSource strings.Builder
 			namedSource.WriteString("@IsTest private class SecurityAccessProbe {\n")
 			executable := 0
-			rows := append(append([]familyCase{}, data.Cases...), data.Controls...)
+			rows := append([]familyCase{}, data.Cases...)
+			if api != "68.0" {
+				rows = append(rows, data.Controls...)
+			}
 			for _, tc := range data.Cases {
 				expected := tc.NamedExpected[api]
 				if nativeLine(expected) > 0 {
@@ -341,11 +404,14 @@ func TestSecurityAccessOrgConformance(t *testing.T) {
 						return // Additional controls were captured only through anonymous Apex.
 					}
 					namedKind := "exact"
-					if tc.NamedProvenance[api] == "anonymous-backed-compiler" {
+					if tc.NamedProvenance[api] != "native-named" {
 						namedKind = ""
 					}
 					counts.run(t, "isTest", "@IsTest", namedKind, func(t *testing.T) {
 						expected := tc.NamedExpected[api]
+						if tc.NamedProvenance[api] == "local-legacy" {
+							t.Log("local legacy named assertion; API68 native named observation not captured")
+						}
 						if tc.NamedProvenance[api] == "anonymous-backed-compiler" {
 							t.Log("anonymous-backed compiler assertion; native named observation not captured")
 						}

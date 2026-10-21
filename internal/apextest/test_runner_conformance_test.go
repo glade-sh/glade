@@ -45,7 +45,7 @@ func TestTestRunnerOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 36 || len(data.NativeCases) != 206 || len(data.Controls) != 161 || len(data.AnonymousControls) != 13 || len(data.CompileControls) != 3 || len(data.NamedControls) != 25 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 36 || len(data.NativeCases) != 206 || len(data.Controls) != 161 || len(data.AnonymousControls) != 13 || len(data.CompileControls) != 3 || len(data.NamedControls) != 25 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle: %d anonymous/compiler, %d native, %d controls, %d anonymous controls, %d named counterparts at %v", len(data.Cases), len(data.NativeCases), len(data.Controls), len(data.AnonymousControls), len(data.NamedControls), data.APIVersions)
 	}
 	seen := map[string]bool{}

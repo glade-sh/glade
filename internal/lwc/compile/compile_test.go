@@ -36,12 +36,19 @@ func TestBuildCompileConfigAPIVersionMatrix(t *testing.T) {
 		{projectVersion: "67.0", bundleVersion: "67.0", want: 67},
 		{projectVersion: "66.0", bundleVersion: "67.0", want: 67},
 		{projectVersion: "67.0", bundleVersion: "58.0", wantError: "unsupported LWC source API version"},
-		{projectVersion: "67.0", bundleVersion: "68.0", wantError: "unsupported LWC source API version"},
+		{projectVersion: "65.0", bundleVersion: "68.0", want: 68},
+		{projectVersion: "67.0", bundleVersion: "68.0", want: 68},
+		{projectVersion: "68.0", bundleVersion: "68.0", want: 68},
+		{projectVersion: "68.0", bundleVersion: "59.0", want: 59},
+		{projectVersion: "68.0", bundleVersion: "67.0", want: 67},
+		{projectVersion: "67.0", bundleVersion: "69.0", wantError: "unsupported LWC source API version"},
+		{projectVersion: "68.0", bundleVersion: "69.0", wantError: "unsupported LWC source API version"},
 		// Native rows meta_no_version, meta_no_version_complex and
-		// meta_no_version_details_name accept unversioned bundles at both APIs.
-		{projectVersion: "59.0", bundleVersion: "", want: 67},
-		{projectVersion: "65.0", bundleVersion: "", want: 67},
-		{projectVersion: "67.0", bundleVersion: "", want: 67},
+		// meta_no_version_details_name accept unversioned bundles at API 59, 67, and 68.
+		{projectVersion: "59.0", bundleVersion: "", want: 68},
+		{projectVersion: "65.0", bundleVersion: "", want: 68},
+		{projectVersion: "67.0", bundleVersion: "", want: 68},
+		{projectVersion: "68.0", bundleVersion: "", want: 68},
 	} {
 		t.Run(test.projectVersion+"_bundle_"+test.bundleVersion, func(t *testing.T) {
 			root := t.TempDir()

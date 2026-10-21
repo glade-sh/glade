@@ -1,0 +1,790 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "packetRowsSha256": "1b3b9e49047b3a8b156268d7d4fcdef858b43ce15190b0202e5e42846f48ea9f",
+  "sourceManifestSha256": "9bcfac705a75ce2d060e88f587fa1a45f7dc07bc55723a7648aea87f13192392",
+  "completionSha256": "184fc9ac1c9d038ac782179333a620c31838c860dbf93004d4ca73aac94a2aff",
+  "evidenceByAPI": {
+    "62.0": {
+      "anonymous": {
+        "orgTsvSha256": "b892f47513c97daa56d854673ff384bc90784c7070d81284fe50dbaa2136fa50",
+        "orgRunSha256": "154f6ea6ac83559cfc1c3a5115ece17eec3d64ed9f8827487dd611ce0697b88f",
+        "observations": 69
+      },
+      "isTest": {
+        "orgTsvSha256": "a5d75d995cc300e1b26bdd0ff3089d3624e19b32e59b130334de93f0153a89df",
+        "orgRunSha256": "3867aeef5e38191a4a16594a73a94dae4ddc67ee0f40e4ef3f0e68fe4a3fac1e",
+        "observations": 69
+      }
+    },
+    "67.0": {
+      "anonymous": {
+        "orgTsvSha256": "b892f47513c97daa56d854673ff384bc90784c7070d81284fe50dbaa2136fa50",
+        "orgRunSha256": "73b6a4a7fe1e8ad0ae4ebee48057ae9f2b5c133efb5dfb054ef5e6f40ee9d31b",
+        "observations": 69
+      },
+      "isTest": {
+        "orgTsvSha256": "a5d75d995cc300e1b26bdd0ff3089d3624e19b32e59b130334de93f0153a89df",
+        "orgRunSha256": "9ed2202ac056b46a4b721d1c875f11c6c3a0eb9fa10e782bd0c1f06ad068ede0",
+        "observations": 69
+      }
+    },
+    "68.0": {
+      "anonymous": {
+        "orgTsvSha256": "b892f47513c97daa56d854673ff384bc90784c7070d81284fe50dbaa2136fa50",
+        "orgRunSha256": "636b3ece624236a1324464abe52d8d056d4d18227b7d59fed06ccb8039fa83e5",
+        "observations": 69
+      },
+      "isTest": {
+        "orgTsvSha256": "a5d75d995cc300e1b26bdd0ff3089d3624e19b32e59b130334de93f0153a89df",
+        "orgRunSha256": "30f324b07072a9d6187f460ba9bd787b737f6e690188eda2338e54d5fb35ae3f",
+        "observations": 69
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "C157SJ_025",
+      "question": "custom-unqualified",
+      "query": "SELECT Id,Name FROM C157Child__c WHERE Name LIKE 'SJ-%' AND Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)",
+      "variant": "dynamic",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_025",
+          "stage": "observed",
+          "objects": {
+            "C157Child__c": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Synthetic Join Child</label>\n    <pluralLabel>Synthetic Join Children</pluralLabel>\n    <nameField><label>Child Name</label><type>Text</type></nameField>\n    <sharingModel>ReadWrite</sharingModel>\n    <fields>\n        <fullName>Parent__c</fullName>\n        <deleteConstraint>SetNull</deleteConstraint>\n        <label>Synthetic Parent</label>\n        <referenceTo>Account</referenceTo>\n        <relationshipLabel>Synthetic Join Children</relationshipLabel>\n        <relationshipName>C157Children</relationshipName>\n        <required>false</required>\n        <type>Lookup</type>\n    </fields>\n</CustomObject>\n"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "object:C157Child__c": "95503befb47878acda009d8223464eaccaad660a19bc999255101b9202360ce6",
+            "anonymous": "e68ffb85a6ce0e78f2dc40f74faf55855f90dfe4ed800c35fd54d92bd6990ec1"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nList<C157Child__c> fixtureChildren=new List<C157Child__c>{\nnew C157Child__c(Name='SJ-Child-A',Parent__c=a.Id),\nnew C157Child__c(Name='SJ-Child-C',Parent__c=c.Id),\nnew C157Child__c(Name='SJ-Child-Unlinked')};\ninsert fixtureChildren;\nSet<Id> childScope=new Set<Id>();\nfor(C157Child__c child:fixtureChildren){childScope.add(child.Id);}\nv.put('phase','query');List<SObject> selected=Database.query('SELECT Id,Name FROM C157Child__c WHERE Name LIKE \\'SJ-%\\' AND Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)');Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!childScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_025|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C157SJ_025",
+          "stage": "observed",
+          "objects": {
+            "C157Child__c": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Synthetic Join Child</label>\n    <pluralLabel>Synthetic Join Children</pluralLabel>\n    <nameField><label>Child Name</label><type>Text</type></nameField>\n    <sharingModel>ReadWrite</sharingModel>\n    <fields>\n        <fullName>Parent__c</fullName>\n        <deleteConstraint>SetNull</deleteConstraint>\n        <label>Synthetic Parent</label>\n        <referenceTo>Account</referenceTo>\n        <relationshipLabel>Synthetic Join Children</relationshipLabel>\n        <relationshipName>C157Children</relationshipName>\n        <required>false</required>\n        <type>Lookup</type>\n    </fields>\n</CustomObject>\n"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "class:C157SJ025Test": "e0553f1503f4e0ed2fcf24b4bb29f1b878ac65cf71e6b8bdd2205359336b6cec",
+            "object:C157Child__c": "95503befb47878acda009d8223464eaccaad660a19bc999255101b9202360ce6"
+          },
+          "classes": {
+            "C157SJ025Test": "@IsTest private class C157SJ025Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nList<C157Child__c> fixtureChildren=new List<C157Child__c>{\nnew C157Child__c(Name='SJ-Child-A',Parent__c=a.Id),\nnew C157Child__c(Name='SJ-Child-C',Parent__c=c.Id),\nnew C157Child__c(Name='SJ-Child-Unlinked')};\ninsert fixtureChildren;\nSet<Id> childScope=new Set<Id>();\nfor(C157Child__c child:fixtureChildren){childScope.add(child.Id);}\nv.put('phase','query');List<SObject> selected=Database.query('SELECT Id,Name FROM C157Child__c WHERE Name LIKE \\'SJ-%\\' AND Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)');Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!childScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_025|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ025Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C157SJ_026",
+      "question": "custom-unqualified",
+      "query": "SELECT Id,Name FROM C157Child__c WHERE Name LIKE 'SJ-%' AND Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)",
+      "variant": "static",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_026",
+          "stage": "observed",
+          "objects": {
+            "C157Child__c": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Synthetic Join Child</label>\n    <pluralLabel>Synthetic Join Children</pluralLabel>\n    <nameField><label>Child Name</label><type>Text</type></nameField>\n    <sharingModel>ReadWrite</sharingModel>\n    <fields>\n        <fullName>Parent__c</fullName>\n        <deleteConstraint>SetNull</deleteConstraint>\n        <label>Synthetic Parent</label>\n        <referenceTo>Account</referenceTo>\n        <relationshipLabel>Synthetic Join Children</relationshipLabel>\n        <relationshipName>C157Children</relationshipName>\n        <required>false</required>\n        <type>Lookup</type>\n    </fields>\n</CustomObject>\n"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "object:C157Child__c": "95503befb47878acda009d8223464eaccaad660a19bc999255101b9202360ce6",
+            "anonymous": "1d1736dc2a0958d1adba6ac04625a3a38e6d4af2bd2d4c8f26c5239d0ca18781"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nList<C157Child__c> fixtureChildren=new List<C157Child__c>{\nnew C157Child__c(Name='SJ-Child-A',Parent__c=a.Id),\nnew C157Child__c(Name='SJ-Child-C',Parent__c=c.Id),\nnew C157Child__c(Name='SJ-Child-Unlinked')};\ninsert fixtureChildren;\nSet<Id> childScope=new Set<Id>();\nfor(C157Child__c child:fixtureChildren){childScope.add(child.Id);}\nv.put('phase','query');List<SObject> selected=[SELECT Id,Name FROM C157Child__c WHERE Name LIKE 'SJ-%' AND Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)];Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!childScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_026|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C157SJ_026",
+          "stage": "observed",
+          "objects": {
+            "C157Child__c": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Synthetic Join Child</label>\n    <pluralLabel>Synthetic Join Children</pluralLabel>\n    <nameField><label>Child Name</label><type>Text</type></nameField>\n    <sharingModel>ReadWrite</sharingModel>\n    <fields>\n        <fullName>Parent__c</fullName>\n        <deleteConstraint>SetNull</deleteConstraint>\n        <label>Synthetic Parent</label>\n        <referenceTo>Account</referenceTo>\n        <relationshipLabel>Synthetic Join Children</relationshipLabel>\n        <relationshipName>C157Children</relationshipName>\n        <required>false</required>\n        <type>Lookup</type>\n    </fields>\n</CustomObject>\n"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "class:C157SJ026Test": "af5bdd5568a0ad6eab9bb49417e88ee07ef26e6898dd27074a95876f343ad978",
+            "object:C157Child__c": "95503befb47878acda009d8223464eaccaad660a19bc999255101b9202360ce6"
+          },
+          "classes": {
+            "C157SJ026Test": "@IsTest private class C157SJ026Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nList<C157Child__c> fixtureChildren=new List<C157Child__c>{\nnew C157Child__c(Name='SJ-Child-A',Parent__c=a.Id),\nnew C157Child__c(Name='SJ-Child-C',Parent__c=c.Id),\nnew C157Child__c(Name='SJ-Child-Unlinked')};\ninsert fixtureChildren;\nSet<Id> childScope=new Set<Id>();\nfor(C157Child__c child:fixtureChildren){childScope.add(child.Id);}\nv.put('phase','query');List<SObject> selected=[SELECT Id,Name FROM C157Child__c WHERE Name LIKE 'SJ-%' AND Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)];Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!childScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_026|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ026Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C157SJ_027",
+      "question": "custom-object",
+      "query": "SELECT Id,Name FROM C157Child__c WHERE Name LIKE 'SJ-%' AND C157Child__c.Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)",
+      "variant": "dynamic",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_027",
+          "stage": "observed",
+          "objects": {
+            "C157Child__c": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Synthetic Join Child</label>\n    <pluralLabel>Synthetic Join Children</pluralLabel>\n    <nameField><label>Child Name</label><type>Text</type></nameField>\n    <sharingModel>ReadWrite</sharingModel>\n    <fields>\n        <fullName>Parent__c</fullName>\n        <deleteConstraint>SetNull</deleteConstraint>\n        <label>Synthetic Parent</label>\n        <referenceTo>Account</referenceTo>\n        <relationshipLabel>Synthetic Join Children</relationshipLabel>\n        <relationshipName>C157Children</relationshipName>\n        <required>false</required>\n        <type>Lookup</type>\n    </fields>\n</CustomObject>\n"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "object:C157Child__c": "95503befb47878acda009d8223464eaccaad660a19bc999255101b9202360ce6",
+            "anonymous": "0a1ecfe6498d01fd3b3bb2edf58670ae492d0ffbacb634bf4ea0387245aa0ee8"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nList<C157Child__c> fixtureChildren=new List<C157Child__c>{\nnew C157Child__c(Name='SJ-Child-A',Parent__c=a.Id),\nnew C157Child__c(Name='SJ-Child-C',Parent__c=c.Id),\nnew C157Child__c(Name='SJ-Child-Unlinked')};\ninsert fixtureChildren;\nSet<Id> childScope=new Set<Id>();\nfor(C157Child__c child:fixtureChildren){childScope.add(child.Id);}\nv.put('phase','query');List<SObject> selected=Database.query('SELECT Id,Name FROM C157Child__c WHERE Name LIKE \\'SJ-%\\' AND C157Child__c.Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)');Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!childScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_027|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C157SJ_027",
+          "stage": "observed",
+          "objects": {
+            "C157Child__c": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Synthetic Join Child</label>\n    <pluralLabel>Synthetic Join Children</pluralLabel>\n    <nameField><label>Child Name</label><type>Text</type></nameField>\n    <sharingModel>ReadWrite</sharingModel>\n    <fields>\n        <fullName>Parent__c</fullName>\n        <deleteConstraint>SetNull</deleteConstraint>\n        <label>Synthetic Parent</label>\n        <referenceTo>Account</referenceTo>\n        <relationshipLabel>Synthetic Join Children</relationshipLabel>\n        <relationshipName>C157Children</relationshipName>\n        <required>false</required>\n        <type>Lookup</type>\n    </fields>\n</CustomObject>\n"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "class:C157SJ027Test": "78fb44590538fd3673ac75777bbcd3f756d5b2014fc98905a2d9e92b7ae4d8d6",
+            "object:C157Child__c": "95503befb47878acda009d8223464eaccaad660a19bc999255101b9202360ce6"
+          },
+          "classes": {
+            "C157SJ027Test": "@IsTest private class C157SJ027Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nList<C157Child__c> fixtureChildren=new List<C157Child__c>{\nnew C157Child__c(Name='SJ-Child-A',Parent__c=a.Id),\nnew C157Child__c(Name='SJ-Child-C',Parent__c=c.Id),\nnew C157Child__c(Name='SJ-Child-Unlinked')};\ninsert fixtureChildren;\nSet<Id> childScope=new Set<Id>();\nfor(C157Child__c child:fixtureChildren){childScope.add(child.Id);}\nv.put('phase','query');List<SObject> selected=Database.query('SELECT Id,Name FROM C157Child__c WHERE Name LIKE \\'SJ-%\\' AND C157Child__c.Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)');Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!childScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_027|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ027Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C157SJ_028",
+      "question": "custom-object",
+      "query": "SELECT Id,Name FROM C157Child__c WHERE Name LIKE 'SJ-%' AND C157Child__c.Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)",
+      "variant": "static",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_028",
+          "stage": "observed",
+          "objects": {
+            "C157Child__c": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Synthetic Join Child</label>\n    <pluralLabel>Synthetic Join Children</pluralLabel>\n    <nameField><label>Child Name</label><type>Text</type></nameField>\n    <sharingModel>ReadWrite</sharingModel>\n    <fields>\n        <fullName>Parent__c</fullName>\n        <deleteConstraint>SetNull</deleteConstraint>\n        <label>Synthetic Parent</label>\n        <referenceTo>Account</referenceTo>\n        <relationshipLabel>Synthetic Join Children</relationshipLabel>\n        <relationshipName>C157Children</relationshipName>\n        <required>false</required>\n        <type>Lookup</type>\n    </fields>\n</CustomObject>\n"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "object:C157Child__c": "95503befb47878acda009d8223464eaccaad660a19bc999255101b9202360ce6",
+            "anonymous": "e555ff5814c28f8a5273c986b285f8b8bb5b8a12434f2d2649784c08c0dd47e2"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nList<C157Child__c> fixtureChildren=new List<C157Child__c>{\nnew C157Child__c(Name='SJ-Child-A',Parent__c=a.Id),\nnew C157Child__c(Name='SJ-Child-C',Parent__c=c.Id),\nnew C157Child__c(Name='SJ-Child-Unlinked')};\ninsert fixtureChildren;\nSet<Id> childScope=new Set<Id>();\nfor(C157Child__c child:fixtureChildren){childScope.add(child.Id);}\nv.put('phase','query');List<SObject> selected=[SELECT Id,Name FROM C157Child__c WHERE Name LIKE 'SJ-%' AND C157Child__c.Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)];Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!childScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_028|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C157SJ_028",
+          "stage": "observed",
+          "objects": {
+            "C157Child__c": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Synthetic Join Child</label>\n    <pluralLabel>Synthetic Join Children</pluralLabel>\n    <nameField><label>Child Name</label><type>Text</type></nameField>\n    <sharingModel>ReadWrite</sharingModel>\n    <fields>\n        <fullName>Parent__c</fullName>\n        <deleteConstraint>SetNull</deleteConstraint>\n        <label>Synthetic Parent</label>\n        <referenceTo>Account</referenceTo>\n        <relationshipLabel>Synthetic Join Children</relationshipLabel>\n        <relationshipName>C157Children</relationshipName>\n        <required>false</required>\n        <type>Lookup</type>\n    </fields>\n</CustomObject>\n"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Child-A",
+                  "SJ-Child-C"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "class:C157SJ028Test": "e85ece9057b546bded0e3180e1a1cb226ff9e56fc1dfafa58955aca7d7e258a9",
+            "object:C157Child__c": "95503befb47878acda009d8223464eaccaad660a19bc999255101b9202360ce6"
+          },
+          "classes": {
+            "C157SJ028Test": "@IsTest private class C157SJ028Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nList<C157Child__c> fixtureChildren=new List<C157Child__c>{\nnew C157Child__c(Name='SJ-Child-A',Parent__c=a.Id),\nnew C157Child__c(Name='SJ-Child-C',Parent__c=c.Id),\nnew C157Child__c(Name='SJ-Child-Unlinked')};\ninsert fixtureChildren;\nSet<Id> childScope=new Set<Id>();\nfor(C157Child__c child:fixtureChildren){childScope.add(child.Id);}\nv.put('phase','query');List<SObject> selected=[SELECT Id,Name FROM C157Child__c WHERE Name LIKE 'SJ-%' AND C157Child__c.Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)];Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!childScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_028|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ028Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C157SJ_029",
+      "question": "custom-wrong-qualifier",
+      "query": "SELECT Id,Name FROM C157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)",
+      "variant": "dynamic",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_029",
+          "stage": "observed",
+          "objects": {
+            "C157Child__c": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Synthetic Join Child</label>\n    <pluralLabel>Synthetic Join Children</pluralLabel>\n    <nameField><label>Child Name</label><type>Text</type></nameField>\n    <sharingModel>ReadWrite</sharingModel>\n    <fields>\n        <fullName>Parent__c</fullName>\n        <deleteConstraint>SetNull</deleteConstraint>\n        <label>Synthetic Parent</label>\n        <referenceTo>Account</referenceTo>\n        <relationshipLabel>Synthetic Join Children</relationshipLabel>\n        <relationshipName>C157Children</relationshipName>\n        <required>false</required>\n        <type>Lookup</type>\n    </fields>\n</CustomObject>\n"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Didn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Didn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Didn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "object:C157Child__c": "95503befb47878acda009d8223464eaccaad660a19bc999255101b9202360ce6",
+            "anonymous": "1260355e6c3dedf340dd76408de3bcdf8a12974ef43db649c46e26543a0358cf"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nList<C157Child__c> fixtureChildren=new List<C157Child__c>{\nnew C157Child__c(Name='SJ-Child-A',Parent__c=a.Id),\nnew C157Child__c(Name='SJ-Child-C',Parent__c=c.Id),\nnew C157Child__c(Name='SJ-Child-Unlinked')};\ninsert fixtureChildren;\nSet<Id> childScope=new Set<Id>();\nfor(C157Child__c child:fixtureChildren){childScope.add(child.Id);}\nv.put('phase','query');List<SObject> selected=Database.query('SELECT Id,Name FROM C157Child__c WHERE Name LIKE \\'SJ-%\\' AND Account.Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)');Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!childScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_029|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C157SJ_029",
+          "stage": "observed",
+          "objects": {
+            "C157Child__c": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Synthetic Join Child</label>\n    <pluralLabel>Synthetic Join Children</pluralLabel>\n    <nameField><label>Child Name</label><type>Text</type></nameField>\n    <sharingModel>ReadWrite</sharingModel>\n    <fields>\n        <fullName>Parent__c</fullName>\n        <deleteConstraint>SetNull</deleteConstraint>\n        <label>Synthetic Parent</label>\n        <referenceTo>Account</referenceTo>\n        <relationshipLabel>Synthetic Join Children</relationshipLabel>\n        <relationshipName>C157Children</relationshipName>\n        <required>false</required>\n        <type>Lookup</type>\n    </fields>\n</CustomObject>\n"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Didn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Didn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Didn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "class:C157SJ029Test": "500014738cf623628d98150fa66878050e45055ac74d6be420ca3938f7fbc35d",
+            "object:C157Child__c": "95503befb47878acda009d8223464eaccaad660a19bc999255101b9202360ce6"
+          },
+          "classes": {
+            "C157SJ029Test": "@IsTest private class C157SJ029Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nList<C157Child__c> fixtureChildren=new List<C157Child__c>{\nnew C157Child__c(Name='SJ-Child-A',Parent__c=a.Id),\nnew C157Child__c(Name='SJ-Child-C',Parent__c=c.Id),\nnew C157Child__c(Name='SJ-Child-Unlinked')};\ninsert fixtureChildren;\nSet<Id> childScope=new Set<Id>();\nfor(C157Child__c child:fixtureChildren){childScope.add(child.Id);}\nv.put('phase','query');List<SObject> selected=Database.query('SELECT Id,Name FROM C157Child__c WHERE Name LIKE \\'SJ-%\\' AND Account.Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)');Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!childScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_029|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ029Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C157SJ_030",
+      "question": "custom-wrong-qualifier",
+      "query": "SELECT Id,Name FROM C157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)",
+      "variant": "static",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_030",
+          "stage": "observed",
+          "objects": {
+            "C157Child__c": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Synthetic Join Child</label>\n    <pluralLabel>Synthetic Join Children</pluralLabel>\n    <nameField><label>Child Name</label><type>Text</type></nameField>\n    <sharingModel>ReadWrite</sharingModel>\n    <fields>\n        <fullName>Parent__c</fullName>\n        <deleteConstraint>SetNull</deleteConstraint>\n        <label>Synthetic Parent</label>\n        <referenceTo>Account</referenceTo>\n        <relationshipLabel>Synthetic Join Children</relationshipLabel>\n        <relationshipName>C157Children</relationshipName>\n        <required>false</required>\n        <type>Lookup</type>\n    </fields>\n</CustomObject>\n"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "\nC157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM\n                                          ^\nERROR at Row:1:Column:63\nDidn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 23,
+                "column": 47,
+                "success": false,
+                "exceptionMessage": null,
+                "exit_code": 0
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "\nC157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM\n                                          ^\nERROR at Row:1:Column:63\nDidn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 23,
+                "column": 47,
+                "success": false,
+                "exceptionMessage": null,
+                "exit_code": 0
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "\nC157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM\n                                          ^\nERROR at Row:1:Column:63\nDidn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 23,
+                "column": 47,
+                "success": false,
+                "exceptionMessage": null,
+                "exit_code": 0
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "\nC157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM\n                                          ^\nERROR at Row:1:Column:63\nDidn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "\nC157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM\n                                          ^\nERROR at Row:1:Column:63\nDidn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "\nC157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM\n                                          ^\nERROR at Row:1:Column:63\nDidn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ]
+          },
+          "sourceSha256": {
+            "object:C157Child__c": "95503befb47878acda009d8223464eaccaad660a19bc999255101b9202360ce6",
+            "anonymous": "ab0183e80a99fcfea4c4c88defb339cf33965b43f4386bcf114f895dcd300bf5"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nList<C157Child__c> fixtureChildren=new List<C157Child__c>{\nnew C157Child__c(Name='SJ-Child-A',Parent__c=a.Id),\nnew C157Child__c(Name='SJ-Child-C',Parent__c=c.Id),\nnew C157Child__c(Name='SJ-Child-Unlinked')};\ninsert fixtureChildren;\nSet<Id> childScope=new Set<Id>();\nfor(C157Child__c child:fixtureChildren){childScope.add(child.Id);}\nv.put('phase','query');List<SObject> selected=[SELECT Id,Name FROM C157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)];Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!childScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_030|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C157SJ_030",
+          "stage": "observed",
+          "objects": {
+            "C157Child__c": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Synthetic Join Child</label>\n    <pluralLabel>Synthetic Join Children</pluralLabel>\n    <nameField><label>Child Name</label><type>Text</type></nameField>\n    <sharingModel>ReadWrite</sharingModel>\n    <fields>\n        <fullName>Parent__c</fullName>\n        <deleteConstraint>SetNull</deleteConstraint>\n        <label>Synthetic Parent</label>\n        <referenceTo>Account</referenceTo>\n        <relationshipLabel>Synthetic Join Children</relationshipLabel>\n        <relationshipName>C157Children</relationshipName>\n        <required>false</required>\n        <type>Lookup</type>\n    </fields>\n</CustomObject>\n"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "exit_code": 1,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C157SJ030Test",
+                    "type": "ApexClass",
+                    "line": 23,
+                    "problemType": "Error",
+                    "problem": "C157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM\n                                          ^\nERROR at Row:1:Column:63\nDidn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "exit_code": 1,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C157SJ030Test",
+                    "type": "ApexClass",
+                    "line": 23,
+                    "problemType": "Error",
+                    "problem": "C157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM\n                                          ^\nERROR at Row:1:Column:63\nDidn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "exit_code": 1,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C157SJ030Test",
+                    "type": "ApexClass",
+                    "line": 23,
+                    "problemType": "Error",
+                    "problem": "C157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM\n                                          ^\nERROR at Row:1:Column:63\nDidn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C157SJ030Test",
+                "type": "ApexClass",
+                "line": 23,
+                "problemType": "Error",
+                "problem": "C157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM\n                                          ^\nERROR at Row:1:Column:63\nDidn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C157SJ030Test",
+                "type": "ApexClass",
+                "line": 23,
+                "problemType": "Error",
+                "problem": "C157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM\n                                          ^\nERROR at Row:1:Column:63\nDidn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C157SJ030Test",
+                "type": "ApexClass",
+                "line": 23,
+                "problemType": "Error",
+                "problem": "C157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM\n                                          ^\nERROR at Row:1:Column:63\nDidn't understand relationship 'Account' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ]
+          },
+          "sourceSha256": {
+            "class:C157SJ030Test": "ec75b469fc7f29d0eaea72b765538c70e8ca32e8fd82774e1b1093520651fc2b",
+            "object:C157Child__c": "95503befb47878acda009d8223464eaccaad660a19bc999255101b9202360ce6"
+          },
+          "classes": {
+            "C157SJ030Test": "@IsTest private class C157SJ030Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nList<C157Child__c> fixtureChildren=new List<C157Child__c>{\nnew C157Child__c(Name='SJ-Child-A',Parent__c=a.Id),\nnew C157Child__c(Name='SJ-Child-C',Parent__c=c.Id),\nnew C157Child__c(Name='SJ-Child-Unlinked')};\ninsert fixtureChildren;\nSet<Id> childScope=new Set<Id>();\nfor(C157Child__c child:fixtureChildren){childScope.add(child.Id);}\nv.put('phase','query');List<SObject> selected=[SELECT Id,Name FROM C157Child__c WHERE Name LIKE 'SJ-%' AND Account.Parent__c IN (SELECT Id FROM Account WHERE Id IN :accountScope)];Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!childScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_030|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ030Test"
+          ]
+        }
+      }
+    }
+  ]
+}

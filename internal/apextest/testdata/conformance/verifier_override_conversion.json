@@ -1,0 +1,1960 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "context": "plain",
+  "caseTableSHA256": "a85cd7c9b2cdd61db0f5db55d5e2741e9f77563ef45495cb898293c55c2df8ab",
+  "supportClasses": {
+    "framework_QualifiedMethod": "public class framework_QualifiedMethod {\n    public override String toString() {\n        return 'prism.Orbit__sfdc_ApexStub.pulse(String)';\n    }\n}\n",
+    "framework_MethodVerifier": "public class framework_MethodVerifier {\n    public class DisplayException extends Exception {}\n    public static String direct(Object item) {\n        return item.toString();\n    }\n    public static String implicit(Object item) {\n        return '' + item;\n    }\n    public static String viaValue(Object item) {\n        return String.valueOf(item);\n    }\n    public static String viaPattern(Object item) {\n        return String.format('{0}', new List<Object>{item});\n    }\n    public static void raise(Object item) {\n        throw new DisplayException('Missing call: ' + item + '.');\n    }\n}\n"
+  },
+  "supportSHA256": {
+    "framework_QualifiedMethod": "4f7f9abcc88a911adb1e093d2c6721af41d1b5f45d5fef03d965a4025fa10b2e",
+    "framework_MethodVerifier": "d87e0890b6b7c5b281a12c7f8fa616887139f9ee3694ce7f4d8019e93df62490"
+  },
+  "rows": [
+    {
+      "id": "C01",
+      "expression": "new framework_QualifiedMethod().toString()",
+      "statement": false,
+      "expression_sha256": "353f0cd6c43e674435ed74dbad6504b954e3a26f8b9bb0bdc583e99d5b85d35a",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "969ef0d094e4897af5b9bf6c4dd2150c55805060e6c99831a5be4735f5000b6b"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "969ef0d094e4897af5b9bf6c4dd2150c55805060e6c99831a5be4735f5000b6b"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "969ef0d094e4897af5b9bf6c4dd2150c55805060e6c99831a5be4735f5000b6b"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "969ef0d094e4897af5b9bf6c4dd2150c55805060e6c99831a5be4735f5000b6b"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "969ef0d094e4897af5b9bf6c4dd2150c55805060e6c99831a5be4735f5000b6b"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "969ef0d094e4897af5b9bf6c4dd2150c55805060e6c99831a5be4735f5000b6b"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C02",
+      "expression": "'' + new framework_QualifiedMethod()",
+      "statement": false,
+      "expression_sha256": "cbb1f1efd935b497cec7b1698527cd5df7132568a06977080d745ee975abdb23",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "0a314e7e3261322efa04126d322d08e7e34135bd789c263081b9caf364336822"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "0a314e7e3261322efa04126d322d08e7e34135bd789c263081b9caf364336822"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "0a314e7e3261322efa04126d322d08e7e34135bd789c263081b9caf364336822"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "0a314e7e3261322efa04126d322d08e7e34135bd789c263081b9caf364336822"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "0a314e7e3261322efa04126d322d08e7e34135bd789c263081b9caf364336822"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "0a314e7e3261322efa04126d322d08e7e34135bd789c263081b9caf364336822"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C03",
+      "expression": "framework_MethodVerifier.direct(new framework_QualifiedMethod())",
+      "statement": false,
+      "expression_sha256": "2c5082732da737e6d64b5f37bb6a54ce4680c1c758761db956d1082cb906d7e3",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "1f8211ca219e584c877180ebfe2dcfaa7c1b8a859532992f78d47576dd02a950"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "1f8211ca219e584c877180ebfe2dcfaa7c1b8a859532992f78d47576dd02a950"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "1f8211ca219e584c877180ebfe2dcfaa7c1b8a859532992f78d47576dd02a950"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "1f8211ca219e584c877180ebfe2dcfaa7c1b8a859532992f78d47576dd02a950"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "1f8211ca219e584c877180ebfe2dcfaa7c1b8a859532992f78d47576dd02a950"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "1f8211ca219e584c877180ebfe2dcfaa7c1b8a859532992f78d47576dd02a950"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C04",
+      "expression": "framework_MethodVerifier.implicit(new framework_QualifiedMethod())",
+      "statement": false,
+      "expression_sha256": "c5961406d09049ec8728676974dd7d2e24de8f7a273849b29f9cdb5405cfd024",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "06811a6abba08f9093d21fc3649b6f4c6ccd6ab2992e3734656a832d968ea037"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "06811a6abba08f9093d21fc3649b6f4c6ccd6ab2992e3734656a832d968ea037"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "06811a6abba08f9093d21fc3649b6f4c6ccd6ab2992e3734656a832d968ea037"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "06811a6abba08f9093d21fc3649b6f4c6ccd6ab2992e3734656a832d968ea037"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "06811a6abba08f9093d21fc3649b6f4c6ccd6ab2992e3734656a832d968ea037"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "06811a6abba08f9093d21fc3649b6f4c6ccd6ab2992e3734656a832d968ea037"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C05",
+      "expression": "String.valueOf(new framework_QualifiedMethod())",
+      "statement": false,
+      "expression_sha256": "8025357b20ed9b588acb761bc57d7d4c634ccfd79777858e1ad2979215caa9ad",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "9a861ab2fd553a2723c353b2049ae757dd4e51c2120e0b781d5dd4eeb827589c"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "9a861ab2fd553a2723c353b2049ae757dd4e51c2120e0b781d5dd4eeb827589c"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "9a861ab2fd553a2723c353b2049ae757dd4e51c2120e0b781d5dd4eeb827589c"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "9a861ab2fd553a2723c353b2049ae757dd4e51c2120e0b781d5dd4eeb827589c"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "9a861ab2fd553a2723c353b2049ae757dd4e51c2120e0b781d5dd4eeb827589c"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "9a861ab2fd553a2723c353b2049ae757dd4e51c2120e0b781d5dd4eeb827589c"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C06",
+      "expression": "framework_MethodVerifier.viaValue(new framework_QualifiedMethod())",
+      "statement": false,
+      "expression_sha256": "380a10433b264da8ddd7fb82c786f8da30bcb1105f3b4ab25816a378f5a92bfa",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "c1b10b43ec7c6f60c9f97e678a5b03a507e4174c7db2a2b4a747c8f7028bb279"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "c1b10b43ec7c6f60c9f97e678a5b03a507e4174c7db2a2b4a747c8f7028bb279"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "c1b10b43ec7c6f60c9f97e678a5b03a507e4174c7db2a2b4a747c8f7028bb279"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "c1b10b43ec7c6f60c9f97e678a5b03a507e4174c7db2a2b4a747c8f7028bb279"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "c1b10b43ec7c6f60c9f97e678a5b03a507e4174c7db2a2b4a747c8f7028bb279"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "c1b10b43ec7c6f60c9f97e678a5b03a507e4174c7db2a2b4a747c8f7028bb279"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C07",
+      "expression": "String.format('{0}', new List<Object>{new framework_QualifiedMethod()})",
+      "statement": false,
+      "expression_sha256": "820c6e857aaf0caebac698fdb9a10ff04d5f900ec1a45b31f03451f998bf2ab2",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "b59a198d51c8520c8466fcc14b8f6461f8a1856da5ff36605f0374c5a38c2f7c"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "b59a198d51c8520c8466fcc14b8f6461f8a1856da5ff36605f0374c5a38c2f7c"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "b59a198d51c8520c8466fcc14b8f6461f8a1856da5ff36605f0374c5a38c2f7c"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "b59a198d51c8520c8466fcc14b8f6461f8a1856da5ff36605f0374c5a38c2f7c"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "b59a198d51c8520c8466fcc14b8f6461f8a1856da5ff36605f0374c5a38c2f7c"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "b59a198d51c8520c8466fcc14b8f6461f8a1856da5ff36605f0374c5a38c2f7c"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C08",
+      "expression": "framework_MethodVerifier.viaPattern(new framework_QualifiedMethod())",
+      "statement": false,
+      "expression_sha256": "a26eac4d56949c4d762b3708eaaa42f1711665b0dd5583c212d8792f3babde3a",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "671def78587c607cc4f28f4af83e182a6bf95d1ba17e34eb4c3b4ea0d2c53bfa"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "671def78587c607cc4f28f4af83e182a6bf95d1ba17e34eb4c3b4ea0d2c53bfa"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "671def78587c607cc4f28f4af83e182a6bf95d1ba17e34eb4c3b4ea0d2c53bfa"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "671def78587c607cc4f28f4af83e182a6bf95d1ba17e34eb4c3b4ea0d2c53bfa"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "671def78587c607cc4f28f4af83e182a6bf95d1ba17e34eb4c3b4ea0d2c53bfa"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "671def78587c607cc4f28f4af83e182a6bf95d1ba17e34eb4c3b4ea0d2c53bfa"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C09",
+      "expression": "framework_MethodVerifier.viaPattern(new framework_QualifiedMethod().toString())",
+      "statement": false,
+      "expression_sha256": "fbb7c542b4e182c2babe24447eda6e048f31866715241a4c187770aaad5aa30e",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "cfd7b6f1a0eac8b1ac59daab8c9933e58cd43f036bad84d3d200085b9f493280"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "cfd7b6f1a0eac8b1ac59daab8c9933e58cd43f036bad84d3d200085b9f493280"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "cfd7b6f1a0eac8b1ac59daab8c9933e58cd43f036bad84d3d200085b9f493280"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "cfd7b6f1a0eac8b1ac59daab8c9933e58cd43f036bad84d3d200085b9f493280"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "cfd7b6f1a0eac8b1ac59daab8c9933e58cd43f036bad84d3d200085b9f493280"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "cfd7b6f1a0eac8b1ac59daab8c9933e58cd43f036bad84d3d200085b9f493280"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C10",
+      "expression": "String.format('{0}', new List<String>{new framework_QualifiedMethod().toString()})",
+      "statement": false,
+      "expression_sha256": "12bd4aebd7982751c64a1a8980af8dcce70dbda893f490cf8380906735e89b54",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "603e5790a29db8a50246c1a47b7ff0fa3d12734bf596d0e8be4be352ec39ef67"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "603e5790a29db8a50246c1a47b7ff0fa3d12734bf596d0e8be4be352ec39ef67"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "603e5790a29db8a50246c1a47b7ff0fa3d12734bf596d0e8be4be352ec39ef67"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "603e5790a29db8a50246c1a47b7ff0fa3d12734bf596d0e8be4be352ec39ef67"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "603e5790a29db8a50246c1a47b7ff0fa3d12734bf596d0e8be4be352ec39ef67"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "603e5790a29db8a50246c1a47b7ff0fa3d12734bf596d0e8be4be352ec39ef67"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C11",
+      "expression": "framework_MethodVerifier.raise(new framework_QualifiedMethod());",
+      "statement": true,
+      "expression_sha256": "9b99ee2d8425c0565d4a70bb78906839aa89c9296b8b3a9e62cdfc055ccb0944",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Missing call: prism.Orbit__sfdc_ApexStub.pulse(String).",
+                "exceptionType": "framework_MethodVerifier.DisplayException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "80f468b0e9782d0b1bfbaddcddf49a562f3032be979f031c48ebce5ab18ad3a2"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Missing call: prism.Orbit__sfdc_ApexStub.pulse(String).",
+                "exceptionType": "framework_MethodVerifier.DisplayException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "80f468b0e9782d0b1bfbaddcddf49a562f3032be979f031c48ebce5ab18ad3a2"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Missing call: prism.Orbit__sfdc_ApexStub.pulse(String).",
+                "exceptionType": "framework_MethodVerifier.DisplayException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "80f468b0e9782d0b1bfbaddcddf49a562f3032be979f031c48ebce5ab18ad3a2"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Missing call: prism.Orbit__sfdc_ApexStub.pulse(String).",
+                "exceptionType": "framework_MethodVerifier.DisplayException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "80f468b0e9782d0b1bfbaddcddf49a562f3032be979f031c48ebce5ab18ad3a2"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Missing call: prism.Orbit__sfdc_ApexStub.pulse(String).",
+                "exceptionType": "framework_MethodVerifier.DisplayException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "80f468b0e9782d0b1bfbaddcddf49a562f3032be979f031c48ebce5ab18ad3a2"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Missing call: prism.Orbit__sfdc_ApexStub.pulse(String).",
+                "exceptionType": "framework_MethodVerifier.DisplayException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "80f468b0e9782d0b1bfbaddcddf49a562f3032be979f031c48ebce5ab18ad3a2"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C12",
+      "expression": "throw new framework_MethodVerifier.DisplayException('Missing call: ' + new framework_QualifiedMethod().toString() + '.');",
+      "statement": true,
+      "expression_sha256": "17c725e6f6c5ca6094684534757c02defa56851de80b81039dfd9d4f678d3cf2",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Missing call: prism.Orbit__sfdc_ApexStub.pulse(String).",
+                "exceptionType": "framework_MethodVerifier.DisplayException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "e59d1c83bc44c1b9bdb4f0ac3a01b4374184a27fb0a446eb191ca060dce92e4c"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Missing call: prism.Orbit__sfdc_ApexStub.pulse(String).",
+                "exceptionType": "framework_MethodVerifier.DisplayException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "e59d1c83bc44c1b9bdb4f0ac3a01b4374184a27fb0a446eb191ca060dce92e4c"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Missing call: prism.Orbit__sfdc_ApexStub.pulse(String).",
+                "exceptionType": "framework_MethodVerifier.DisplayException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "e59d1c83bc44c1b9bdb4f0ac3a01b4374184a27fb0a446eb191ca060dce92e4c"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Missing call: prism.Orbit__sfdc_ApexStub.pulse(String).",
+                "exceptionType": "framework_MethodVerifier.DisplayException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "e59d1c83bc44c1b9bdb4f0ac3a01b4374184a27fb0a446eb191ca060dce92e4c"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Missing call: prism.Orbit__sfdc_ApexStub.pulse(String).",
+                "exceptionType": "framework_MethodVerifier.DisplayException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "e59d1c83bc44c1b9bdb4f0ac3a01b4374184a27fb0a446eb191ca060dce92e4c"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Missing call: prism.Orbit__sfdc_ApexStub.pulse(String).",
+                "exceptionType": "framework_MethodVerifier.DisplayException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "e59d1c83bc44c1b9bdb4f0ac3a01b4374184a27fb0a446eb191ca060dce92e4c"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C13",
+      "expression": "framework_MethodVerifier.viaValue((Object)null)",
+      "statement": false,
+      "expression_sha256": "8408154d35fb1ec340ac80fbadf84c088953de0126e887272064ca8389629253",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": null
+              },
+              "raw_message_sha256": "a1337772eb190d4daf1384c3bb82baebe249579f8ce059a07e7338d747ae77c4"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": null
+              },
+              "raw_message_sha256": "a1337772eb190d4daf1384c3bb82baebe249579f8ce059a07e7338d747ae77c4"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": null
+              },
+              "raw_message_sha256": "a1337772eb190d4daf1384c3bb82baebe249579f8ce059a07e7338d747ae77c4"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": null
+              },
+              "raw_message_sha256": "a1337772eb190d4daf1384c3bb82baebe249579f8ce059a07e7338d747ae77c4"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": null
+              },
+              "raw_message_sha256": "a1337772eb190d4daf1384c3bb82baebe249579f8ce059a07e7338d747ae77c4"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": null
+              },
+              "raw_message_sha256": "a1337772eb190d4daf1384c3bb82baebe249579f8ce059a07e7338d747ae77c4"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C14",
+      "expression": "framework_MethodVerifier.implicit((Object)null)",
+      "statement": false,
+      "expression_sha256": "ab9243b85ae594acb5b9ca8abaaafd7e43a362acc847275c15f0d34db3f37957",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "null"
+              },
+              "raw_message_sha256": "87028493d03bd7e5e7206bf7836c3cca8b7beab344ddd367f0633157cc1bb926"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "null"
+              },
+              "raw_message_sha256": "87028493d03bd7e5e7206bf7836c3cca8b7beab344ddd367f0633157cc1bb926"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "null"
+              },
+              "raw_message_sha256": "87028493d03bd7e5e7206bf7836c3cca8b7beab344ddd367f0633157cc1bb926"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "null"
+              },
+              "raw_message_sha256": "87028493d03bd7e5e7206bf7836c3cca8b7beab344ddd367f0633157cc1bb926"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "null"
+              },
+              "raw_message_sha256": "87028493d03bd7e5e7206bf7836c3cca8b7beab344ddd367f0633157cc1bb926"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "null"
+              },
+              "raw_message_sha256": "87028493d03bd7e5e7206bf7836c3cca8b7beab344ddd367f0633157cc1bb926"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C15",
+      "expression": "framework_MethodVerifier.viaPattern((Object)null)",
+      "statement": false,
+      "expression_sha256": "a976d58c9e74329df538518488b0a4c5699dbcc32dc2c6744df99c73a7ae9910",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "null"
+              },
+              "raw_message_sha256": "a2c233e959d204de8f9839027d3e91299c4d24d51255cb6122fd95cee71c7caf"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "null"
+              },
+              "raw_message_sha256": "a2c233e959d204de8f9839027d3e91299c4d24d51255cb6122fd95cee71c7caf"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "null"
+              },
+              "raw_message_sha256": "a2c233e959d204de8f9839027d3e91299c4d24d51255cb6122fd95cee71c7caf"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "null"
+              },
+              "raw_message_sha256": "a2c233e959d204de8f9839027d3e91299c4d24d51255cb6122fd95cee71c7caf"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "null"
+              },
+              "raw_message_sha256": "a2c233e959d204de8f9839027d3e91299c4d24d51255cb6122fd95cee71c7caf"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "null"
+              },
+              "raw_message_sha256": "a2c233e959d204de8f9839027d3e91299c4d24d51255cb6122fd95cee71c7caf"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C16",
+      "expression": "String.format('{0}', (List<Object>)null)",
+      "statement": false,
+      "expression_sha256": "64b0e741a4f64b562e0a341cdcb465b103439f37d0415ac4b522a85fe2e34876",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "{0}"
+              },
+              "raw_message_sha256": "01102f2fa348e97b055c3155f05858ff7885e70562eba8d974647ef8b65bdfc3"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "{0}"
+              },
+              "raw_message_sha256": "01102f2fa348e97b055c3155f05858ff7885e70562eba8d974647ef8b65bdfc3"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "{0}"
+              },
+              "raw_message_sha256": "01102f2fa348e97b055c3155f05858ff7885e70562eba8d974647ef8b65bdfc3"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "{0}"
+              },
+              "raw_message_sha256": "01102f2fa348e97b055c3155f05858ff7885e70562eba8d974647ef8b65bdfc3"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "{0}"
+              },
+              "raw_message_sha256": "01102f2fa348e97b055c3155f05858ff7885e70562eba8d974647ef8b65bdfc3"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "{0}"
+              },
+              "raw_message_sha256": "01102f2fa348e97b055c3155f05858ff7885e70562eba8d974647ef8b65bdfc3"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C17",
+      "expression": "String.format(null, new List<Object>{'x'})",
+      "statement": false,
+      "expression_sha256": "65090a2e5b903fa8759f6c8de5da374526f226da8d78c7ea37d0ee317ea17263",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Argument cannot be null.",
+                "exceptionType": "System.NullPointerException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "9766b2fa4be528315d7e05e3e3a5c0e7136f2003ca717ed79595480484f2592c"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Argument cannot be null.",
+                "exceptionType": "System.NullPointerException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "9766b2fa4be528315d7e05e3e3a5c0e7136f2003ca717ed79595480484f2592c"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Argument cannot be null.",
+                "exceptionType": "System.NullPointerException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "9766b2fa4be528315d7e05e3e3a5c0e7136f2003ca717ed79595480484f2592c"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Argument cannot be null.",
+                "exceptionType": "System.NullPointerException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "9766b2fa4be528315d7e05e3e3a5c0e7136f2003ca717ed79595480484f2592c"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Argument cannot be null.",
+                "exceptionType": "System.NullPointerException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "9766b2fa4be528315d7e05e3e3a5c0e7136f2003ca717ed79595480484f2592c"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Argument cannot be null.",
+                "exceptionType": "System.NullPointerException",
+                "effectFired": true
+              },
+              "raw_message_sha256": "9766b2fa4be528315d7e05e3e3a5c0e7136f2003ca717ed79595480484f2592c"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C18",
+      "expression": "framework_MethodVerifier.viaValue('')",
+      "statement": false,
+      "expression_sha256": "1219833249edd016fa9e595c3d473c121269bec9de273a61e995947436751a37",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": ""
+              },
+              "raw_message_sha256": "4ae1a5267eaa513fb05b40798d3d5ef7aa35a9629f1d427b9280505f8c6e5647"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": ""
+              },
+              "raw_message_sha256": "4ae1a5267eaa513fb05b40798d3d5ef7aa35a9629f1d427b9280505f8c6e5647"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": ""
+              },
+              "raw_message_sha256": "4ae1a5267eaa513fb05b40798d3d5ef7aa35a9629f1d427b9280505f8c6e5647"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": ""
+              },
+              "raw_message_sha256": "4ae1a5267eaa513fb05b40798d3d5ef7aa35a9629f1d427b9280505f8c6e5647"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": ""
+              },
+              "raw_message_sha256": "4ae1a5267eaa513fb05b40798d3d5ef7aa35a9629f1d427b9280505f8c6e5647"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": ""
+              },
+              "raw_message_sha256": "4ae1a5267eaa513fb05b40798d3d5ef7aa35a9629f1d427b9280505f8c6e5647"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C19",
+      "expression": "framework_MethodVerifier.viaValue('prism.Orbit__sfdc_ApexStub.pulse(String)')",
+      "statement": false,
+      "expression_sha256": "3a8a8be5d77d342eb0421aaa54dea9a528dd7521b38bac5bee09b069a5a1f014",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "41f5b57d9d7a4f2a415be2c43da08dbbfc23fa0fda2e1a6e54b736abcb6b42ed"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "41f5b57d9d7a4f2a415be2c43da08dbbfc23fa0fda2e1a6e54b736abcb6b42ed"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "41f5b57d9d7a4f2a415be2c43da08dbbfc23fa0fda2e1a6e54b736abcb6b42ed"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "41f5b57d9d7a4f2a415be2c43da08dbbfc23fa0fda2e1a6e54b736abcb6b42ed"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "41f5b57d9d7a4f2a415be2c43da08dbbfc23fa0fda2e1a6e54b736abcb6b42ed"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "41f5b57d9d7a4f2a415be2c43da08dbbfc23fa0fda2e1a6e54b736abcb6b42ed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C20",
+      "expression": "framework_MethodVerifier.viaValue('Orbit__sfdc_ApexStub.pulse(String)')",
+      "statement": false,
+      "expression_sha256": "49fa67de53b3cf91705627d14b48dcd5decff4f79ee3f6fe646249870eacefdc",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "dc3fc8ff06431f049b2818faf76e89fad7c097e03e12a008a5ee5351728811bb"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "dc3fc8ff06431f049b2818faf76e89fad7c097e03e12a008a5ee5351728811bb"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "dc3fc8ff06431f049b2818faf76e89fad7c097e03e12a008a5ee5351728811bb"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "dc3fc8ff06431f049b2818faf76e89fad7c097e03e12a008a5ee5351728811bb"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "dc3fc8ff06431f049b2818faf76e89fad7c097e03e12a008a5ee5351728811bb"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "dc3fc8ff06431f049b2818faf76e89fad7c097e03e12a008a5ee5351728811bb"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C21",
+      "expression": "System.assertEquals('Orbit__sfdc_ApexStub.pulse(String)', 'prism.Orbit__sfdc_ApexStub.pulse(String)');",
+      "statement": true,
+      "expression_sha256": "bf157805a58e03a83aff7531ddd528b815a2c80c1c43976a6a3574d5f183555b",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.AssertException: Assertion Failed: Expected: Orbit__sfdc_ApexStub.pulse(String), Actual: prism.Orbit__sfdc_ApexStub.pulse(String)",
+              "exceptionType": "System.AssertException",
+              "raw_message_sha256": "21e6410017c0a9076070e3f92e40a43479018d75df28643c4bb551bdacbb18a0"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "uncaught_test_failure",
+              "exceptionMessage": "System.AssertException: Assertion Failed: Expected: Orbit__sfdc_ApexStub.pulse(String), Actual: prism.Orbit__sfdc_ApexStub.pulse(String)",
+              "exceptionType": "System.AssertException",
+              "raw_message_sha256": "21e6410017c0a9076070e3f92e40a43479018d75df28643c4bb551bdacbb18a0"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.AssertException: Assertion Failed: Expected: Orbit__sfdc_ApexStub.pulse(String), Actual: prism.Orbit__sfdc_ApexStub.pulse(String)",
+              "exceptionType": "System.AssertException",
+              "raw_message_sha256": "21e6410017c0a9076070e3f92e40a43479018d75df28643c4bb551bdacbb18a0"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "uncaught_test_failure",
+              "exceptionMessage": "System.AssertException: Assertion Failed: Expected: Orbit__sfdc_ApexStub.pulse(String), Actual: prism.Orbit__sfdc_ApexStub.pulse(String)",
+              "exceptionType": "System.AssertException",
+              "raw_message_sha256": "21e6410017c0a9076070e3f92e40a43479018d75df28643c4bb551bdacbb18a0"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.AssertException: Assertion Failed: Expected: Orbit__sfdc_ApexStub.pulse(String), Actual: prism.Orbit__sfdc_ApexStub.pulse(String)",
+              "exceptionType": "System.AssertException",
+              "raw_message_sha256": "21e6410017c0a9076070e3f92e40a43479018d75df28643c4bb551bdacbb18a0"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "uncaught_test_failure",
+              "exceptionMessage": "System.AssertException: Assertion Failed: Expected: Orbit__sfdc_ApexStub.pulse(String), Actual: prism.Orbit__sfdc_ApexStub.pulse(String)",
+              "exceptionType": "System.AssertException",
+              "raw_message_sha256": "21e6410017c0a9076070e3f92e40a43479018d75df28643c4bb551bdacbb18a0"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C22",
+      "expression": "FRAMEWORK_methodverifier.VIAVALUE(new FRAMEWORK_qualifiedmethod())",
+      "statement": false,
+      "expression_sha256": "b010e62885ccce673581e79325a3f54f65400cbfb032b57832ebfacaaabf4ea8",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "3433fada08268f104d4dcd52cc614823c7d5deb8d3bd90e8115281e57a4eebc3"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "3433fada08268f104d4dcd52cc614823c7d5deb8d3bd90e8115281e57a4eebc3"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "3433fada08268f104d4dcd52cc614823c7d5deb8d3bd90e8115281e57a4eebc3"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "3433fada08268f104d4dcd52cc614823c7d5deb8d3bd90e8115281e57a4eebc3"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "3433fada08268f104d4dcd52cc614823c7d5deb8d3bd90e8115281e57a4eebc3"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": "prism.Orbit__sfdc_ApexStub.pulse(String)"
+              },
+              "raw_message_sha256": "3433fada08268f104d4dcd52cc614823c7d5deb8d3bd90e8115281e57a4eebc3"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "CTRL_POS",
+      "body": "result.put('value',7);",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": 7
+              },
+              "raw_message_sha256": "09c41f570e83065514c0c8d8d64a515fa696125a3870af136861ee0508967562"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": 7
+              },
+              "raw_message_sha256": "09c41f570e83065514c0c8d8d64a515fa696125a3870af136861ee0508967562"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": 7
+              },
+              "raw_message_sha256": "09c41f570e83065514c0c8d8d64a515fa696125a3870af136861ee0508967562"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": 7
+              },
+              "raw_message_sha256": "09c41f570e83065514c0c8d8d64a515fa696125a3870af136861ee0508967562"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": 7
+              },
+              "raw_message_sha256": "09c41f570e83065514c0c8d8d64a515fa696125a3870af136861ee0508967562"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "value": 7
+              },
+              "raw_message_sha256": "09c41f570e83065514c0c8d8d64a515fa696125a3870af136861ee0508967562"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "body": "try{Integer ignored=1/0;}catch(Exception e){result.put('caught',e.getTypeName());result.put('message',e.getMessage());}",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "message": "Divide by 0",
+                "caught": "System.MathException"
+              },
+              "raw_message_sha256": "9891371074da7e785b1f6a2f528eba43425ec0f0ad6737712c734612974234de"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "message": "Divide by 0",
+                "caught": "System.MathException"
+              },
+              "raw_message_sha256": "9891371074da7e785b1f6a2f528eba43425ec0f0ad6737712c734612974234de"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "message": "Divide by 0",
+                "caught": "System.MathException"
+              },
+              "raw_message_sha256": "9891371074da7e785b1f6a2f528eba43425ec0f0ad6737712c734612974234de"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "message": "Divide by 0",
+                "caught": "System.MathException"
+              },
+              "raw_message_sha256": "9891371074da7e785b1f6a2f528eba43425ec0f0ad6737712c734612974234de"
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "message": "Divide by 0",
+                "caught": "System.MathException"
+              },
+              "raw_message_sha256": "9891371074da7e785b1f6a2f528eba43425ec0f0ad6737712c734612974234de"
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "message": "Divide by 0",
+                "caught": "System.MathException"
+              },
+              "raw_message_sha256": "9891371074da7e785b1f6a2f528eba43425ec0f0ad6737712c734612974234de"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "bare": "Integer ignored=1/0;",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.MathException: Divide by 0",
+              "exceptionType": "System.MathException",
+              "raw_message_sha256": "ac2099ca3a30c98e375afb8a117dc6830e06bf44171b3c7599423c5efae9a64f"
+            },
+            "carryReason": "Escaping MathException currently omits the System prefix; retained outside the override-conversion fix."
+          },
+          "istest": {
+            "native": {
+              "outcome": "uncaught_test_failure",
+              "exceptionMessage": "System.MathException: Divide by 0",
+              "exceptionType": "System.MathException",
+              "raw_message_sha256": "ac2099ca3a30c98e375afb8a117dc6830e06bf44171b3c7599423c5efae9a64f"
+            },
+            "carryReason": "Escaping MathException currently omits the System prefix; retained outside the override-conversion fix."
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.MathException: Divide by 0",
+              "exceptionType": "System.MathException",
+              "raw_message_sha256": "ac2099ca3a30c98e375afb8a117dc6830e06bf44171b3c7599423c5efae9a64f"
+            },
+            "carryReason": "Escaping MathException currently omits the System prefix; retained outside the override-conversion fix."
+          },
+          "istest": {
+            "native": {
+              "outcome": "uncaught_test_failure",
+              "exceptionMessage": "System.MathException: Divide by 0",
+              "exceptionType": "System.MathException",
+              "raw_message_sha256": "ac2099ca3a30c98e375afb8a117dc6830e06bf44171b3c7599423c5efae9a64f"
+            },
+            "carryReason": "Escaping MathException currently omits the System prefix; retained outside the override-conversion fix."
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.MathException: Divide by 0",
+              "exceptionType": "System.MathException",
+              "raw_message_sha256": "ac2099ca3a30c98e375afb8a117dc6830e06bf44171b3c7599423c5efae9a64f"
+            },
+            "carryReason": "Escaping MathException currently omits the System prefix; retained outside the override-conversion fix."
+          },
+          "istest": {
+            "native": {
+              "outcome": "uncaught_test_failure",
+              "exceptionMessage": "System.MathException: Divide by 0",
+              "exceptionType": "System.MathException",
+              "raw_message_sha256": "ac2099ca3a30c98e375afb8a117dc6830e06bf44171b3c7599423c5efae9a64f"
+            },
+            "carryReason": "Escaping MathException currently omits the System prefix; retained outside the override-conversion fix."
+          }
+        }
+      }
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "bare": "Integer ignored='wrong';",
+      "cells": {
+        "62.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "Illegal assignment from String to Integer",
+                "line": "1",
+                "column": "9"
+              }
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "fullName": "PlainP2A62CTRLCOMPILE",
+                  "componentType": "ApexClass",
+                  "lineNumber": 1,
+                  "columnNumber": 83,
+                  "problem": "Illegal assignment from String to Integer",
+                  "problemType": "Error"
+                }
+              ]
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "Illegal assignment from String to Integer",
+                "line": "1",
+                "column": "9"
+              }
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "fullName": "PlainP2A67CTRLCOMPILE",
+                  "componentType": "ApexClass",
+                  "lineNumber": 1,
+                  "columnNumber": 83,
+                  "problem": "Illegal assignment from String to Integer",
+                  "problemType": "Error"
+                }
+              ]
+            }
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "Illegal assignment from String to Integer",
+                "line": "1",
+                "column": "9"
+              }
+            }
+          },
+          "istest": {
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "fullName": "PlainP2A68CTRLCOMPILE",
+                  "componentType": "ApexClass",
+                  "lineNumber": 1,
+                  "columnNumber": 83,
+                  "problem": "Illegal assignment from String to Integer",
+                  "problemType": "Error"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

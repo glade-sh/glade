@@ -2035,7 +2035,21 @@
     "compile": false,
     "expected": "NATIVE_ERROR|System.UnexpectedException|Salesforce System Error",
     "nativeBlocker": "Malformed getChars Unicode aborts the scratch org with System.UnexpectedException: Salesforce System Error; no stable behavioral oracle.",
-    "floorExpected": "UNCAUGHT|System.UnexpectedException: Salesforce System Error: 1868520726-2265372 (-2020499460) (-2020499460)"
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Salesforce System Error: 1868520726-2265372 (-2020499460) (-2020499460)",
+    "api68Observation": {
+      "apiVersion": "68.0",
+      "route": "anonymous",
+      "compiled": true,
+      "success": false,
+      "category": "NATIVE_ERROR|System.UnexpectedException|Salesforce System Error",
+      "qualification": "Captured uncaught native system error; volatile request identifiers remain in private raw evidence. Existing NATIVE_ERROR category retained; no executable local parity assertion.",
+      "source": "native-capture",
+      "resultKey": "A10-R291@68.0",
+      "nativeSHA256": "1bc8b8f835729d211a6bd0e94062fa6be2508466e59437f8025e8bbbe1deb599",
+      "rowsSHA256": "4b271fce42a3d3eff35b5c50ec602959138195c53375c75a1f28e613060eb74f",
+      "anonymousSHA256": "fc6496c9c8b107e37c2754b7f80a3fe256a7d4616e4bdcb30f2431f2c08de876",
+      "codeSHA256": "abd4145e2be76058ad88b972fab7f7bbebe8d74c1510d632428be85ea793c368"
+    }
   },
   {
     "id": "R292",

@@ -1,0 +1,11 @@
+id	api	context	compiled	message	line	source_sha256
+original	62.0	default-field-access	false	Field does not exist: HasOptedOutOfEmail on Contact	6	0e6183b00116de7041f733079526d4ca2c052293dcd44af5fa290317b9a8b40c
+original	67.0	default-field-access	false	Field does not exist: HasOptedOutOfEmail on Contact	6	0e6183b00116de7041f733079526d4ca2c052293dcd44af5fa290317b9a8b40c
+original	62.0	explicit-field-access	false	Illegal assignment from Schema.SObjectField to Boolean	6	0e6183b00116de7041f733079526d4ca2c052293dcd44af5fa290317b9a8b40c
+constructor_token	62.0	explicit-field-access	false	Illegal assignment from Schema.SObjectField to Boolean	1	02532d1d1ad3788900b679fe34957aefb3b6deb6edfbe80b67e57ca296cc662f
+constructor_boolean	62.0	explicit-field-access	false	Illegal assignment from String to Boolean	1	ba0b4a311c31a61f73494b86c660d0c5f8ad20afa47e0eee4b28f118140274c6
+control_constructor	62.0	explicit-field-access	true	compiled	0	c1a628dc7182bfab042ff863cb63922134959d0614dd8187b2154aa4ac68eda4
+original	67.0	explicit-field-access	false	Illegal assignment from Schema.SObjectField to Boolean	6	0e6183b00116de7041f733079526d4ca2c052293dcd44af5fa290317b9a8b40c
+constructor_token	67.0	explicit-field-access	false	Illegal assignment from Schema.SObjectField to Boolean	1	02532d1d1ad3788900b679fe34957aefb3b6deb6edfbe80b67e57ca296cc662f
+constructor_boolean	67.0	explicit-field-access	false	Illegal assignment from String to Boolean	1	ba0b4a311c31a61f73494b86c660d0c5f8ad20afa47e0eee4b28f118140274c6
+control_constructor	67.0	explicit-field-access	true	compiled	0	c1a628dc7182bfab042ff863cb63922134959d0614dd8187b2154aa4ac68eda4

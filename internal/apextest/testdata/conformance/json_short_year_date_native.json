@@ -1,0 +1,1266 @@
+{
+  "apiVersions": [
+    "62.0",
+    "63.0",
+    "67.0"
+  ],
+  "route": "isTest",
+  "transportApi": "62.0",
+  "namespaceContext": "none",
+  "knownRows": 13,
+  "pendingCoverage": [
+    "API68 source",
+    "Three-digit year strings",
+    "Short-year strings with whitespace, time suffix, signs or other separators",
+    "Equality named source62/67 twins",
+    "Anonymous readonly nested DTO conversion",
+    "Anonymous short-versus-padded Date equality"
+  ],
+  "captures": [
+    {
+      "context": "api62",
+      "sourceApi": "62.0",
+      "testClass": "OwnedJsonDateObservation",
+      "marker": "OWNED_JSON_DATE_OBSERVATION|",
+      "deployment": {
+        "id": "0AfRu00000hblyTKAQ",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 4,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 4
+      },
+      "rawSHA256": {
+        "org.tsv": "070249c548851e4e5a3a922e52b453aed4d909588530bbd2d81ceeff698c47e2",
+        "deploy.json": "11968a149a5c0c63921d0749bbfe3e6a978a6d60f0dcb974f17dbc6bbc5f64fb",
+        "ORG-RUN.txt": "abe2d843ef059b9a0d432949f3e6de7ef208ab332f8b11c1faf1d5cc3f5c3366",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09"
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "force-app/main/default/classes/OwnedJsonDateObservation.cls": {
+          "source": "@IsTest\nprivate class OwnedJsonDateObservation {\n    public class Window {\n        public Date starts { get; }\n        public Date ends { get; }\n    }\n    public class Envelope {\n        public Map<String,List<Window>> entries { get; }\n    }\n    private static Object parts(Date value) {\n        if(value==null) return null;\n        return new List<Object>{value.year(),value.month(),value.day(),JSON.serialize(value)};\n    }\n    private static Object scalar(String value) {\n        try { return parts((Date)JSON.deserialize(JSON.serialize(value),Date.class)); }\n        catch(Exception e) { return new List<Object>{e.getTypeName(),e.getMessage()}; }\n    }\n    private static Object nested(String first,String last) {\n        String body='{\"entries\":{\"owned\":[{\"starts\":'+JSON.serialize(first)+',\"ends\":'+JSON.serialize(last)+'}]}}';\n        try {\n            Envelope value=(Envelope)JSON.deserialize(body,Envelope.class);\n            Window row=value.entries.get('owned')[0];\n            return new List<Object>{parts(row.starts),parts(row.ends)};\n        } catch(Exception e) { return new List<Object>{e.getTypeName(),e.getMessage()}; }\n    }\n    private static void observe(String label,String first,String last) {\n        Map<String,Object> result=new Map<String,Object>{\n            'label'=>label,'scalarFirst'=>scalar(first),'scalarLast'=>scalar(last),'nested'=>nested(first,last)\n        };\n        System.assert(false,'OWNED_JSON_DATE_OBSERVATION|'+JSON.serialize(result));\n    }\n    @IsTest static void shortYears() { observe('short','1-12-25','33-04-18'); }\n    @IsTest static void paddedYears() { observe('padded','0001-12-25','0033-04-18'); }\n    @IsTest static void ordinaryISO() { observe('iso','2004-02-29','2025-12-01'); }\n    @IsTest static void invalidAndNull() { observe('controls','2004-02-30',null); }\n}\n",
+          "sha256": "4cb842c382df5bf9cd6d8ae84662b7cee934692c2c13be7ab7ae2ec4223de833"
+        },
+        "force-app/main/default/classes/OwnedJsonDateObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        }
+      },
+      "rows": [
+        {
+          "method": "invalidAndNull",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_OBSERVATION|{\"nested\":[\"System.JSONException\",\"Cannot parse \\\"2004-02-30\\\": Value 30 for dayOfMonth must be in the range [line:1, column:23]\"],\"scalarLast\":[\"System.JSONException\",\"Invalid format: \\\"null\\\"\"],\"scalarFirst\":[\"System.JSONException\",\"Cannot parse \\\"2004-02-30\\\": Value 30 for dayOfMonth must be in the range [1,29]\"],\"label\":\"controls\"}"
+          },
+          "native": {
+            "nested": [
+              "System.JSONException",
+              "Cannot parse \"2004-02-30\": Value 30 for dayOfMonth must be in the range [line:1, column:23]"
+            ],
+            "scalarLast": [
+              "System.JSONException",
+              "Invalid format: \"null\""
+            ],
+            "scalarFirst": [
+              "System.JSONException",
+              "Cannot parse \"2004-02-30\": Value 30 for dayOfMonth must be in the range [1,29]"
+            ],
+            "label": "controls"
+          },
+          "matchedPaths": [
+            "/label",
+            "/scalarFirst/0",
+            "/nested/0",
+            "/scalarLast"
+          ],
+          "carriedPaths": {
+            "/scalarFirst/1": "Invalid-date exception text is observed but outside short-year acceptance.",
+            "/nested/1": "Positioned invalid-date exception text is observed but outside short-year acceptance."
+          }
+        },
+        {
+          "method": "ordinaryISO",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_OBSERVATION|{\"nested\":[[2004,2,29,\"\\\"2004-02-29\\\"\"],[2025,12,1,\"\\\"2025-12-01\\\"\"]],\"scalarLast\":[2025,12,1,\"\\\"2025-12-01\\\"\"],\"scalarFirst\":[2004,2,29,\"\\\"2004-02-29\\\"\"],\"label\":\"iso\"}"
+          },
+          "native": {
+            "nested": [
+              [
+                2004,
+                2,
+                29,
+                "\"2004-02-29\""
+              ],
+              [
+                2025,
+                12,
+                1,
+                "\"2025-12-01\""
+              ]
+            ],
+            "scalarLast": [
+              2025,
+              12,
+              1,
+              "\"2025-12-01\""
+            ],
+            "scalarFirst": [
+              2004,
+              2,
+              29,
+              "\"2004-02-29\""
+            ],
+            "label": "iso"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "method": "paddedYears",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_OBSERVATION|{\"nested\":[[1,12,27,\"\\\"0001-12-25\\\"\"],[33,4,20,\"\\\"0033-04-18\\\"\"]],\"scalarLast\":[33,4,20,\"\\\"0033-04-18\\\"\"],\"scalarFirst\":[1,12,27,\"\\\"0001-12-25\\\"\"],\"label\":\"padded\"}"
+          },
+          "native": {
+            "nested": [
+              [
+                1,
+                12,
+                27,
+                "\"0001-12-25\""
+              ],
+              [
+                33,
+                4,
+                20,
+                "\"0033-04-18\""
+              ]
+            ],
+            "scalarLast": [
+              33,
+              4,
+              20,
+              "\"0033-04-18\""
+            ],
+            "scalarFirst": [
+              1,
+              12,
+              27,
+              "\"0001-12-25\""
+            ],
+            "label": "padded"
+          },
+          "matchedPaths": [
+            "/label",
+            "/scalarFirst/3",
+            "/scalarLast/3",
+            "/nested/0/3",
+            "/nested/1/3",
+            "/scalarFirst/0",
+            "/scalarFirst/1",
+            "/scalarLast/0",
+            "/scalarLast/1",
+            "/nested/0/0",
+            "/nested/0/1",
+            "/nested/1/0",
+            "/nested/1/1"
+          ],
+          "carriedPaths": {
+            "/scalarFirst/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/scalarLast/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/nested/0/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/nested/1/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "method": "shortYears",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_OBSERVATION|{\"nested\":[[1,12,27,\"\\\"0001-12-25\\\"\"],[33,4,20,\"\\\"0033-04-18\\\"\"]],\"scalarLast\":[33,4,20,\"\\\"0033-04-18\\\"\"],\"scalarFirst\":[1,12,27,\"\\\"0001-12-25\\\"\"],\"label\":\"short\"}"
+          },
+          "native": {
+            "nested": [
+              [
+                1,
+                12,
+                27,
+                "\"0001-12-25\""
+              ],
+              [
+                33,
+                4,
+                20,
+                "\"0033-04-18\""
+              ]
+            ],
+            "scalarLast": [
+              33,
+              4,
+              20,
+              "\"0033-04-18\""
+            ],
+            "scalarFirst": [
+              1,
+              12,
+              27,
+              "\"0001-12-25\""
+            ],
+            "label": "short"
+          },
+          "matchedPaths": [
+            "/label",
+            "/scalarFirst/3",
+            "/scalarLast/3",
+            "/nested/0/3",
+            "/nested/1/3",
+            "/scalarFirst/0",
+            "/scalarFirst/1",
+            "/scalarLast/0",
+            "/scalarLast/1",
+            "/nested/0/0",
+            "/nested/0/1",
+            "/nested/1/0",
+            "/nested/1/1"
+          ],
+          "carriedPaths": {
+            "/scalarFirst/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/scalarLast/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/nested/0/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/nested/1/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        }
+      ]
+    },
+    {
+      "context": "api63",
+      "sourceApi": "63.0",
+      "testClass": "OwnedJsonDateObservation",
+      "marker": "OWNED_JSON_DATE_OBSERVATION|",
+      "deployment": {
+        "id": "0AfRu00000hbXh0KAE",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 4,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 4
+      },
+      "rawSHA256": {
+        "org.tsv": "070249c548851e4e5a3a922e52b453aed4d909588530bbd2d81ceeff698c47e2",
+        "deploy.json": "51df6e5d204f99c5c795e7201a8777a2aff71c3e015d3419d2658d5be8cf8200",
+        "ORG-RUN.txt": "cf9edfb0444066d3a857a190dff56bf0503d8c3f14eaa94adf3702814720d4c8",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09"
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"63.0\"\n}\n",
+          "sha256": "3ed6ac4773e0a69178e5624efd765c7cc7d715d18cf65272018acf0a6d44a821"
+        },
+        "force-app/main/default/classes/OwnedJsonDateObservation.cls": {
+          "source": "@IsTest\nprivate class OwnedJsonDateObservation {\n    public class Window {\n        public Date starts { get; }\n        public Date ends { get; }\n    }\n    public class Envelope {\n        public Map<String,List<Window>> entries { get; }\n    }\n    private static Object parts(Date value) {\n        if(value==null) return null;\n        return new List<Object>{value.year(),value.month(),value.day(),JSON.serialize(value)};\n    }\n    private static Object scalar(String value) {\n        try { return parts((Date)JSON.deserialize(JSON.serialize(value),Date.class)); }\n        catch(Exception e) { return new List<Object>{e.getTypeName(),e.getMessage()}; }\n    }\n    private static Object nested(String first,String last) {\n        String body='{\"entries\":{\"owned\":[{\"starts\":'+JSON.serialize(first)+',\"ends\":'+JSON.serialize(last)+'}]}}';\n        try {\n            Envelope value=(Envelope)JSON.deserialize(body,Envelope.class);\n            Window row=value.entries.get('owned')[0];\n            return new List<Object>{parts(row.starts),parts(row.ends)};\n        } catch(Exception e) { return new List<Object>{e.getTypeName(),e.getMessage()}; }\n    }\n    private static void observe(String label,String first,String last) {\n        Map<String,Object> result=new Map<String,Object>{\n            'label'=>label,'scalarFirst'=>scalar(first),'scalarLast'=>scalar(last),'nested'=>nested(first,last)\n        };\n        System.assert(false,'OWNED_JSON_DATE_OBSERVATION|'+JSON.serialize(result));\n    }\n    @IsTest static void shortYears() { observe('short','1-12-25','33-04-18'); }\n    @IsTest static void paddedYears() { observe('padded','0001-12-25','0033-04-18'); }\n    @IsTest static void ordinaryISO() { observe('iso','2004-02-29','2025-12-01'); }\n    @IsTest static void invalidAndNull() { observe('controls','2004-02-30',null); }\n}\n",
+          "sha256": "4cb842c382df5bf9cd6d8ae84662b7cee934692c2c13be7ab7ae2ec4223de833"
+        },
+        "force-app/main/default/classes/OwnedJsonDateObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>63.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "6f7ec8a797339ecf0905557851fc9d857813e3725d83260839eab163a65b54b8"
+        }
+      },
+      "rows": [
+        {
+          "method": "invalidAndNull",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_OBSERVATION|{\"nested\":[\"System.JSONException\",\"Cannot parse \\\"2004-02-30\\\": Value 30 for dayOfMonth must be in the range [line:1, column:23]\"],\"scalarLast\":[\"System.JSONException\",\"Invalid format: \\\"null\\\"\"],\"scalarFirst\":[\"System.JSONException\",\"Cannot parse \\\"2004-02-30\\\": Value 30 for dayOfMonth must be in the range [1,29]\"],\"label\":\"controls\"}"
+          },
+          "native": {
+            "nested": [
+              "System.JSONException",
+              "Cannot parse \"2004-02-30\": Value 30 for dayOfMonth must be in the range [line:1, column:23]"
+            ],
+            "scalarLast": [
+              "System.JSONException",
+              "Invalid format: \"null\""
+            ],
+            "scalarFirst": [
+              "System.JSONException",
+              "Cannot parse \"2004-02-30\": Value 30 for dayOfMonth must be in the range [1,29]"
+            ],
+            "label": "controls"
+          },
+          "matchedPaths": [
+            "/label",
+            "/scalarFirst/0",
+            "/nested/0",
+            "/scalarLast"
+          ],
+          "carriedPaths": {
+            "/scalarFirst/1": "Invalid-date exception text is observed but outside short-year acceptance.",
+            "/nested/1": "Positioned invalid-date exception text is observed but outside short-year acceptance."
+          }
+        },
+        {
+          "method": "ordinaryISO",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_OBSERVATION|{\"nested\":[[2004,2,29,\"\\\"2004-02-29\\\"\"],[2025,12,1,\"\\\"2025-12-01\\\"\"]],\"scalarLast\":[2025,12,1,\"\\\"2025-12-01\\\"\"],\"scalarFirst\":[2004,2,29,\"\\\"2004-02-29\\\"\"],\"label\":\"iso\"}"
+          },
+          "native": {
+            "nested": [
+              [
+                2004,
+                2,
+                29,
+                "\"2004-02-29\""
+              ],
+              [
+                2025,
+                12,
+                1,
+                "\"2025-12-01\""
+              ]
+            ],
+            "scalarLast": [
+              2025,
+              12,
+              1,
+              "\"2025-12-01\""
+            ],
+            "scalarFirst": [
+              2004,
+              2,
+              29,
+              "\"2004-02-29\""
+            ],
+            "label": "iso"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "method": "paddedYears",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_OBSERVATION|{\"nested\":[[1,12,27,\"\\\"0001-12-25\\\"\"],[33,4,20,\"\\\"0033-04-18\\\"\"]],\"scalarLast\":[33,4,20,\"\\\"0033-04-18\\\"\"],\"scalarFirst\":[1,12,27,\"\\\"0001-12-25\\\"\"],\"label\":\"padded\"}"
+          },
+          "native": {
+            "nested": [
+              [
+                1,
+                12,
+                27,
+                "\"0001-12-25\""
+              ],
+              [
+                33,
+                4,
+                20,
+                "\"0033-04-18\""
+              ]
+            ],
+            "scalarLast": [
+              33,
+              4,
+              20,
+              "\"0033-04-18\""
+            ],
+            "scalarFirst": [
+              1,
+              12,
+              27,
+              "\"0001-12-25\""
+            ],
+            "label": "padded"
+          },
+          "matchedPaths": [
+            "/label",
+            "/scalarFirst/3",
+            "/scalarLast/3",
+            "/nested/0/3",
+            "/nested/1/3",
+            "/scalarFirst/0",
+            "/scalarFirst/1",
+            "/scalarLast/0",
+            "/scalarLast/1",
+            "/nested/0/0",
+            "/nested/0/1",
+            "/nested/1/0",
+            "/nested/1/1"
+          ],
+          "carriedPaths": {
+            "/scalarFirst/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/scalarLast/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/nested/0/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/nested/1/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "method": "shortYears",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_OBSERVATION|{\"nested\":[[1,12,27,\"\\\"0001-12-25\\\"\"],[33,4,20,\"\\\"0033-04-18\\\"\"]],\"scalarLast\":[33,4,20,\"\\\"0033-04-18\\\"\"],\"scalarFirst\":[1,12,27,\"\\\"0001-12-25\\\"\"],\"label\":\"short\"}"
+          },
+          "native": {
+            "nested": [
+              [
+                1,
+                12,
+                27,
+                "\"0001-12-25\""
+              ],
+              [
+                33,
+                4,
+                20,
+                "\"0033-04-18\""
+              ]
+            ],
+            "scalarLast": [
+              33,
+              4,
+              20,
+              "\"0033-04-18\""
+            ],
+            "scalarFirst": [
+              1,
+              12,
+              27,
+              "\"0001-12-25\""
+            ],
+            "label": "short"
+          },
+          "matchedPaths": [
+            "/label",
+            "/scalarFirst/3",
+            "/scalarLast/3",
+            "/nested/0/3",
+            "/nested/1/3",
+            "/scalarFirst/0",
+            "/scalarFirst/1",
+            "/scalarLast/0",
+            "/scalarLast/1",
+            "/nested/0/0",
+            "/nested/0/1",
+            "/nested/1/0",
+            "/nested/1/1"
+          ],
+          "carriedPaths": {
+            "/scalarFirst/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/scalarLast/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/nested/0/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/nested/1/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        }
+      ]
+    },
+    {
+      "context": "api67",
+      "sourceApi": "67.0",
+      "testClass": "OwnedJsonDateObservation",
+      "marker": "OWNED_JSON_DATE_OBSERVATION|",
+      "deployment": {
+        "id": "0AfRu00000hbmEbKAI",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 4,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 4
+      },
+      "rawSHA256": {
+        "org.tsv": "070249c548851e4e5a3a922e52b453aed4d909588530bbd2d81ceeff698c47e2",
+        "deploy.json": "3add04745521043ca2a68d70d83bfec7fdb0b484add05b6f3a78be7787124767",
+        "ORG-RUN.txt": "43e8c1e6165ccaa375eac9f1b034c6e45bef54852e691620a6f769483538db30",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09"
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+          "sha256": "2bc58206d0b9c401181c61264ca1a7084dff5c8afdec3c0d7edeea86a65d9484"
+        },
+        "force-app/main/default/classes/OwnedJsonDateObservation.cls": {
+          "source": "@IsTest\nprivate class OwnedJsonDateObservation {\n    public class Window {\n        public Date starts { get; }\n        public Date ends { get; }\n    }\n    public class Envelope {\n        public Map<String,List<Window>> entries { get; }\n    }\n    private static Object parts(Date value) {\n        if(value==null) return null;\n        return new List<Object>{value.year(),value.month(),value.day(),JSON.serialize(value)};\n    }\n    private static Object scalar(String value) {\n        try { return parts((Date)JSON.deserialize(JSON.serialize(value),Date.class)); }\n        catch(Exception e) { return new List<Object>{e.getTypeName(),e.getMessage()}; }\n    }\n    private static Object nested(String first,String last) {\n        String body='{\"entries\":{\"owned\":[{\"starts\":'+JSON.serialize(first)+',\"ends\":'+JSON.serialize(last)+'}]}}';\n        try {\n            Envelope value=(Envelope)JSON.deserialize(body,Envelope.class);\n            Window row=value.entries.get('owned')[0];\n            return new List<Object>{parts(row.starts),parts(row.ends)};\n        } catch(Exception e) { return new List<Object>{e.getTypeName(),e.getMessage()}; }\n    }\n    private static void observe(String label,String first,String last) {\n        Map<String,Object> result=new Map<String,Object>{\n            'label'=>label,'scalarFirst'=>scalar(first),'scalarLast'=>scalar(last),'nested'=>nested(first,last)\n        };\n        System.assert(false,'OWNED_JSON_DATE_OBSERVATION|'+JSON.serialize(result));\n    }\n    @IsTest static void shortYears() { observe('short','1-12-25','33-04-18'); }\n    @IsTest static void paddedYears() { observe('padded','0001-12-25','0033-04-18'); }\n    @IsTest static void ordinaryISO() { observe('iso','2004-02-29','2025-12-01'); }\n    @IsTest static void invalidAndNull() { observe('controls','2004-02-30',null); }\n}\n",
+          "sha256": "4cb842c382df5bf9cd6d8ae84662b7cee934692c2c13be7ab7ae2ec4223de833"
+        },
+        "force-app/main/default/classes/OwnedJsonDateObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        }
+      },
+      "rows": [
+        {
+          "method": "invalidAndNull",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_OBSERVATION|{\"nested\":[\"System.JSONException\",\"Cannot parse \\\"2004-02-30\\\": Value 30 for dayOfMonth must be in the range [line:1, column:23]\"],\"scalarLast\":[\"System.JSONException\",\"Invalid format: \\\"null\\\"\"],\"scalarFirst\":[\"System.JSONException\",\"Cannot parse \\\"2004-02-30\\\": Value 30 for dayOfMonth must be in the range [1,29]\"],\"label\":\"controls\"}"
+          },
+          "native": {
+            "nested": [
+              "System.JSONException",
+              "Cannot parse \"2004-02-30\": Value 30 for dayOfMonth must be in the range [line:1, column:23]"
+            ],
+            "scalarLast": [
+              "System.JSONException",
+              "Invalid format: \"null\""
+            ],
+            "scalarFirst": [
+              "System.JSONException",
+              "Cannot parse \"2004-02-30\": Value 30 for dayOfMonth must be in the range [1,29]"
+            ],
+            "label": "controls"
+          },
+          "matchedPaths": [
+            "/label",
+            "/scalarFirst/0",
+            "/nested/0",
+            "/scalarLast"
+          ],
+          "carriedPaths": {
+            "/scalarFirst/1": "Invalid-date exception text is observed but outside short-year acceptance.",
+            "/nested/1": "Positioned invalid-date exception text is observed but outside short-year acceptance."
+          }
+        },
+        {
+          "method": "ordinaryISO",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_OBSERVATION|{\"nested\":[[2004,2,29,\"\\\"2004-02-29\\\"\"],[2025,12,1,\"\\\"2025-12-01\\\"\"]],\"scalarLast\":[2025,12,1,\"\\\"2025-12-01\\\"\"],\"scalarFirst\":[2004,2,29,\"\\\"2004-02-29\\\"\"],\"label\":\"iso\"}"
+          },
+          "native": {
+            "nested": [
+              [
+                2004,
+                2,
+                29,
+                "\"2004-02-29\""
+              ],
+              [
+                2025,
+                12,
+                1,
+                "\"2025-12-01\""
+              ]
+            ],
+            "scalarLast": [
+              2025,
+              12,
+              1,
+              "\"2025-12-01\""
+            ],
+            "scalarFirst": [
+              2004,
+              2,
+              29,
+              "\"2004-02-29\""
+            ],
+            "label": "iso"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "method": "paddedYears",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_OBSERVATION|{\"nested\":[[1,12,27,\"\\\"0001-12-25\\\"\"],[33,4,20,\"\\\"0033-04-18\\\"\"]],\"scalarLast\":[33,4,20,\"\\\"0033-04-18\\\"\"],\"scalarFirst\":[1,12,27,\"\\\"0001-12-25\\\"\"],\"label\":\"padded\"}"
+          },
+          "native": {
+            "nested": [
+              [
+                1,
+                12,
+                27,
+                "\"0001-12-25\""
+              ],
+              [
+                33,
+                4,
+                20,
+                "\"0033-04-18\""
+              ]
+            ],
+            "scalarLast": [
+              33,
+              4,
+              20,
+              "\"0033-04-18\""
+            ],
+            "scalarFirst": [
+              1,
+              12,
+              27,
+              "\"0001-12-25\""
+            ],
+            "label": "padded"
+          },
+          "matchedPaths": [
+            "/label",
+            "/scalarFirst/3",
+            "/scalarLast/3",
+            "/nested/0/3",
+            "/nested/1/3",
+            "/scalarFirst/0",
+            "/scalarFirst/1",
+            "/scalarLast/0",
+            "/scalarLast/1",
+            "/nested/0/0",
+            "/nested/0/1",
+            "/nested/1/0",
+            "/nested/1/1"
+          ],
+          "carriedPaths": {
+            "/scalarFirst/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/scalarLast/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/nested/0/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/nested/1/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "method": "shortYears",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_OBSERVATION|{\"nested\":[[1,12,27,\"\\\"0001-12-25\\\"\"],[33,4,20,\"\\\"0033-04-18\\\"\"]],\"scalarLast\":[33,4,20,\"\\\"0033-04-18\\\"\"],\"scalarFirst\":[1,12,27,\"\\\"0001-12-25\\\"\"],\"label\":\"short\"}"
+          },
+          "native": {
+            "nested": [
+              [
+                1,
+                12,
+                27,
+                "\"0001-12-25\""
+              ],
+              [
+                33,
+                4,
+                20,
+                "\"0033-04-18\""
+              ]
+            ],
+            "scalarLast": [
+              33,
+              4,
+              20,
+              "\"0033-04-18\""
+            ],
+            "scalarFirst": [
+              1,
+              12,
+              27,
+              "\"0001-12-25\""
+            ],
+            "label": "short"
+          },
+          "matchedPaths": [
+            "/label",
+            "/scalarFirst/3",
+            "/scalarLast/3",
+            "/nested/0/3",
+            "/nested/1/3",
+            "/scalarFirst/0",
+            "/scalarFirst/1",
+            "/scalarLast/0",
+            "/scalarLast/1",
+            "/nested/0/0",
+            "/nested/0/1",
+            "/nested/1/0",
+            "/nested/1/1"
+          ],
+          "carriedPaths": {
+            "/scalarFirst/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/scalarLast/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/nested/0/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior.",
+            "/nested/1/2": "Historical Date day accessor differs natively (day 27/20 versus serialized day 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        }
+      ]
+    },
+    {
+      "context": "equality-api63",
+      "sourceApi": "63.0",
+      "testClass": "OwnedJsonDateEqualityObservation",
+      "marker": "OWNED_JSON_DATE_EQUALITY|",
+      "deployment": {
+        "id": "0AfRu00000hbm9lKAA",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 1,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 1
+      },
+      "rawSHA256": {
+        "org.tsv": "3c45a6a80126b43145c045cdf1d5928730d598337f0d828fdfd627a3272eb02d",
+        "deploy.json": "f19794d98c489f9650ab8c517465c7d7d8da3499417f224a2a7781c74924c486",
+        "ORG-RUN.txt": "c5bef9173171df89ad7e1e28fa7d35ec89c4c8a52e34ea414c3c4457867cf00e",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09"
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"63.0\"\n}\n",
+          "sha256": "3ed6ac4773e0a69178e5624efd765c7cc7d715d18cf65272018acf0a6d44a821"
+        },
+        "force-app/main/default/classes/OwnedJsonDateEqualityObservation.cls": {
+          "source": "@IsTest private class OwnedJsonDateEqualityObservation {\n public class Window { public Date starts {get;} public Date ends {get;} }\n public class Envelope { public Map<String,List<Window>> entries {get;} }\n private static Envelope decode(String first,String last) {\n  String body='{\"entries\":{\"owned\":[{\"starts\":'+JSON.serialize(first)+',\"ends\":'+JSON.serialize(last)+'}]}}';\n  return (Envelope)JSON.deserialize(body,Envelope.class);\n }\n @IsTest static void shortAndPaddedEquality() {\n  Map<String,Object> result=new Map<String,Object>();\n  try {\n   Date one=(Date)JSON.deserialize('\"1-12-25\"',Date.class);\n   Date paddedOne=(Date)JSON.deserialize('\"0001-12-25\"',Date.class);\n   Date thirtyThree=(Date)JSON.deserialize('\"33-04-18\"',Date.class);\n   Date paddedThirtyThree=(Date)JSON.deserialize('\"0033-04-18\"',Date.class);\n   Window a=decode('1-12-25','33-04-18').entries.get('owned')[0];\n   Window b=decode('0001-12-25','0033-04-18').entries.get('owned')[0];\n   result.put('scalarEqual',new List<Boolean>{one==paddedOne,thirtyThree==paddedThirtyThree});\n   result.put('nestedEqual',new List<Boolean>{a.starts==b.starts,a.ends==b.ends});\n   result.put('scalarSerialized',new List<String>{JSON.serialize(one),JSON.serialize(thirtyThree)});\n   result.put('nestedSerialized',new List<String>{JSON.serialize(a.starts),JSON.serialize(a.ends)});\n  } catch(Exception e) {result.put('exception',new List<Object>{e.getTypeName(),e.getMessage()});}\n  System.assert(false,'OWNED_JSON_DATE_EQUALITY|'+JSON.serialize(result));\n }\n}\n",
+          "sha256": "5be901b19ac86c14beb0498a3daca08ef2e3f4dc0ec76a60ebed629a44e16bf2"
+        },
+        "force-app/main/default/classes/OwnedJsonDateEqualityObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>63.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "6f7ec8a797339ecf0905557851fc9d857813e3725d83260839eab163a65b54b8"
+        }
+      },
+      "rows": [
+        {
+          "method": "shortAndPaddedEquality",
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_JSON_DATE_EQUALITY|{\"nestedSerialized\":[\"\\\"0001-12-25\\\"\",\"\\\"0033-04-18\\\"\"],\"scalarSerialized\":[\"\\\"0001-12-25\\\"\",\"\\\"0033-04-18\\\"\"],\"nestedEqual\":[true,true],\"scalarEqual\":[true,true]}"
+          },
+          "native": {
+            "nestedSerialized": [
+              "\"0001-12-25\"",
+              "\"0033-04-18\""
+            ],
+            "scalarSerialized": [
+              "\"0001-12-25\"",
+              "\"0033-04-18\""
+            ],
+            "nestedEqual": [
+              true,
+              true
+            ],
+            "scalarEqual": [
+              true,
+              true
+            ]
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        }
+      ]
+    }
+  ],
+  "anonymousRows": 21,
+  "anonymousCaptures": [
+    {
+      "context": "anonymous-api62",
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "marker": "OWNED_JSON_DATE_OBSERVATION|",
+      "execution": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "exitCode": 0,
+        "parseErrors": [],
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "source": {
+        "source": "List<String> values=new List<String>{'1-12-25','33-04-18','0001-12-25','0033-04-18','2004-02-29','2004-02-30',null};\nfor(String input:values){\n Map<String,Object> row=new Map<String,Object>{'input'=>input};\n try {\n  Date d=(Date)JSON.deserialize(JSON.serialize(input),Date.class);\n  row.put('value',d==null?null:new List<Object>{d.year(),d.month(),d.day(),JSON.serialize(d)});\n } catch(Exception e){row.put('exception',new List<Object>{e.getTypeName(),e.getMessage()});}\n System.debug(LoggingLevel.ERROR,'OWNED_JSON_DATE_OBSERVATION|'+JSON.serialize(row));\n}\n",
+        "sha256": "f23cad28c2dfe40ca89e4c6631f6a437d87093a99dd1d1bcf692c9b1ccaf5ad9"
+      },
+      "rawSHA256": {
+        "run.json": "352a8433db52841ff76c17ab20e0e524178bf3ad509e9fea3795f0c1b61d55bf",
+        "org.tsv": "dfd69d8f3e5bf0c85b25c95f13957e9060e89acde6da8746db58614cf445e319",
+        "source.apex": "f23cad28c2dfe40ca89e4c6631f6a437d87093a99dd1d1bcf692c9b1ccaf5ad9",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "ORG-RUN.txt": "38615533582fd743e28d96144b6705996bf4b122f9cc57b91d4a7458dfc7b5b3"
+      },
+      "parserCorrection": null,
+      "rows": [
+        {
+          "id": "0",
+          "classification": "partial",
+          "native": {
+            "value": [
+              1,
+              12,
+              27,
+              "\"0001-12-25\""
+            ],
+            "input": "1-12-25"
+          },
+          "matchedPaths": [
+            "/input",
+            "/value/0",
+            "/value/1",
+            "/value/3"
+          ],
+          "carriedPaths": {
+            "/value/2": "Historical Date day accessor differs natively (27/20 versus serialized 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "id": "1",
+          "classification": "partial",
+          "native": {
+            "value": [
+              33,
+              4,
+              20,
+              "\"0033-04-18\""
+            ],
+            "input": "33-04-18"
+          },
+          "matchedPaths": [
+            "/input",
+            "/value/0",
+            "/value/1",
+            "/value/3"
+          ],
+          "carriedPaths": {
+            "/value/2": "Historical Date day accessor differs natively (27/20 versus serialized 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "id": "2",
+          "classification": "partial",
+          "native": {
+            "value": [
+              1,
+              12,
+              27,
+              "\"0001-12-25\""
+            ],
+            "input": "0001-12-25"
+          },
+          "matchedPaths": [
+            "/input",
+            "/value/0",
+            "/value/1",
+            "/value/3"
+          ],
+          "carriedPaths": {
+            "/value/2": "Historical Date day accessor differs natively (27/20 versus serialized 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "id": "3",
+          "classification": "partial",
+          "native": {
+            "value": [
+              33,
+              4,
+              20,
+              "\"0033-04-18\""
+            ],
+            "input": "0033-04-18"
+          },
+          "matchedPaths": [
+            "/input",
+            "/value/0",
+            "/value/1",
+            "/value/3"
+          ],
+          "carriedPaths": {
+            "/value/2": "Historical Date day accessor differs natively (27/20 versus serialized 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "id": "4",
+          "classification": "full",
+          "native": {
+            "value": [
+              2004,
+              2,
+              29,
+              "\"2004-02-29\""
+            ],
+            "input": "2004-02-29"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "5",
+          "classification": "partial",
+          "native": {
+            "exception": [
+              "System.JSONException",
+              "Cannot parse \"2004-02-30\": Value 30 for dayOfMonth must be in the range [1,29]"
+            ],
+            "input": "2004-02-30"
+          },
+          "matchedPaths": [
+            "/input",
+            "/exception/0"
+          ],
+          "carriedPaths": {
+            "/exception/1": "Invalid-date exception text is observed but outside short-year acceptance."
+          }
+        },
+        {
+          "id": "6",
+          "classification": "full",
+          "native": {
+            "exception": [
+              "System.JSONException",
+              "Invalid format: \"null\""
+            ],
+            "input": null
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        }
+      ]
+    },
+    {
+      "context": "anonymous-api63",
+      "sourceApi": "63.0",
+      "transportApi": "63.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "marker": "OWNED_JSON_DATE_OBSERVATION|",
+      "execution": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "exitCode": 0,
+        "parseErrors": [],
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "source": {
+        "source": "List<String> values=new List<String>{'1-12-25','33-04-18','0001-12-25','0033-04-18','2004-02-29','2004-02-30',null};\nfor(String input:values){\n Map<String,Object> row=new Map<String,Object>{'input'=>input};\n try {\n  Date d=(Date)JSON.deserialize(JSON.serialize(input),Date.class);\n  row.put('value',d==null?null:new List<Object>{d.year(),d.month(),d.day(),JSON.serialize(d)});\n } catch(Exception e){row.put('exception',new List<Object>{e.getTypeName(),e.getMessage()});}\n System.debug(LoggingLevel.ERROR,'OWNED_JSON_DATE_OBSERVATION|'+JSON.serialize(row));\n}\n",
+        "sha256": "f23cad28c2dfe40ca89e4c6631f6a437d87093a99dd1d1bcf692c9b1ccaf5ad9"
+      },
+      "rawSHA256": {
+        "run.json": "05cd7904db82e0656fbe94a2094c32cdb7a4f85e9b48a6874bfa8a9694ba4f34",
+        "org.tsv": "dfd69d8f3e5bf0c85b25c95f13957e9060e89acde6da8746db58614cf445e319",
+        "source.apex": "f23cad28c2dfe40ca89e4c6631f6a437d87093a99dd1d1bcf692c9b1ccaf5ad9",
+        "errors.json": "eb3b0fbba0b7d2658e8ab134c2c5701ea4eca88e58a3ab21d6c387592428d9a5",
+        "ORG-RUN.txt": "ee6f1e4582adabeba0f0e71048ff5d1ddcf9516f634eacfe4d3f29d5afc7b466"
+      },
+      "parserCorrection": {
+        "reason": "Filter USER_DEBUG records; decode transport HTML pipe entity. Original run.json unchanged; no native rerun.",
+        "initialParserSHA256": {
+          "org.tsv": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "errors.json": "aa3e9f9d22fc593f810ac6d8e48a96eb176810bc3b048f85c05c003b33ad6915",
+          "digests.json": "20a98612c61149a3886160b54503313148ea93b7df5963bfdc64526cfb21541f"
+        },
+        "nativeRunRepeated": false,
+        "rawRunUnchanged": true
+      },
+      "rows": [
+        {
+          "id": "0",
+          "classification": "partial",
+          "native": {
+            "value": [
+              1,
+              12,
+              27,
+              "\"0001-12-25\""
+            ],
+            "input": "1-12-25"
+          },
+          "matchedPaths": [
+            "/input",
+            "/value/0",
+            "/value/1",
+            "/value/3"
+          ],
+          "carriedPaths": {
+            "/value/2": "Historical Date day accessor differs natively (27/20 versus serialized 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "id": "1",
+          "classification": "partial",
+          "native": {
+            "value": [
+              33,
+              4,
+              20,
+              "\"0033-04-18\""
+            ],
+            "input": "33-04-18"
+          },
+          "matchedPaths": [
+            "/input",
+            "/value/0",
+            "/value/1",
+            "/value/3"
+          ],
+          "carriedPaths": {
+            "/value/2": "Historical Date day accessor differs natively (27/20 versus serialized 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "id": "2",
+          "classification": "partial",
+          "native": {
+            "value": [
+              1,
+              12,
+              27,
+              "\"0001-12-25\""
+            ],
+            "input": "0001-12-25"
+          },
+          "matchedPaths": [
+            "/input",
+            "/value/0",
+            "/value/1",
+            "/value/3"
+          ],
+          "carriedPaths": {
+            "/value/2": "Historical Date day accessor differs natively (27/20 versus serialized 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "id": "3",
+          "classification": "partial",
+          "native": {
+            "value": [
+              33,
+              4,
+              20,
+              "\"0033-04-18\""
+            ],
+            "input": "0033-04-18"
+          },
+          "matchedPaths": [
+            "/input",
+            "/value/0",
+            "/value/1",
+            "/value/3"
+          ],
+          "carriedPaths": {
+            "/value/2": "Historical Date day accessor differs natively (27/20 versus serialized 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "id": "4",
+          "classification": "full",
+          "native": {
+            "value": [
+              2004,
+              2,
+              29,
+              "\"2004-02-29\""
+            ],
+            "input": "2004-02-29"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "5",
+          "classification": "partial",
+          "native": {
+            "exception": [
+              "System.JSONException",
+              "Cannot parse \"2004-02-30\": Value 30 for dayOfMonth must be in the range [1,29]"
+            ],
+            "input": "2004-02-30"
+          },
+          "matchedPaths": [
+            "/input",
+            "/exception/0"
+          ],
+          "carriedPaths": {
+            "/exception/1": "Invalid-date exception text is observed but outside short-year acceptance."
+          }
+        },
+        {
+          "id": "6",
+          "classification": "full",
+          "native": {
+            "exception": [
+              "System.JSONException",
+              "Invalid format: \"null\""
+            ],
+            "input": null
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        }
+      ]
+    },
+    {
+      "context": "anonymous-api67",
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "marker": "OWNED_JSON_DATE_OBSERVATION|",
+      "execution": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "exitCode": 0,
+        "parseErrors": [],
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "source": {
+        "source": "List<String> values=new List<String>{'1-12-25','33-04-18','0001-12-25','0033-04-18','2004-02-29','2004-02-30',null};\nfor(String input:values){\n Map<String,Object> row=new Map<String,Object>{'input'=>input};\n try {\n  Date d=(Date)JSON.deserialize(JSON.serialize(input),Date.class);\n  row.put('value',d==null?null:new List<Object>{d.year(),d.month(),d.day(),JSON.serialize(d)});\n } catch(Exception e){row.put('exception',new List<Object>{e.getTypeName(),e.getMessage()});}\n System.debug(LoggingLevel.ERROR,'OWNED_JSON_DATE_OBSERVATION|'+JSON.serialize(row));\n}\n",
+        "sha256": "f23cad28c2dfe40ca89e4c6631f6a437d87093a99dd1d1bcf692c9b1ccaf5ad9"
+      },
+      "rawSHA256": {
+        "run.json": "3d2eb90fb54d1288ed50b36c62338a8ac95d746c93953e8c3065e8a84cdc126c",
+        "org.tsv": "dfd69d8f3e5bf0c85b25c95f13957e9060e89acde6da8746db58614cf445e319",
+        "source.apex": "f23cad28c2dfe40ca89e4c6631f6a437d87093a99dd1d1bcf692c9b1ccaf5ad9",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "ORG-RUN.txt": "96d502031dbf6395ef5222f823eaa4cdfe1c329fb190af8ce15040170d8d27b0"
+      },
+      "parserCorrection": null,
+      "rows": [
+        {
+          "id": "0",
+          "classification": "partial",
+          "native": {
+            "value": [
+              1,
+              12,
+              27,
+              "\"0001-12-25\""
+            ],
+            "input": "1-12-25"
+          },
+          "matchedPaths": [
+            "/input",
+            "/value/0",
+            "/value/1",
+            "/value/3"
+          ],
+          "carriedPaths": {
+            "/value/2": "Historical Date day accessor differs natively (27/20 versus serialized 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "id": "1",
+          "classification": "partial",
+          "native": {
+            "value": [
+              33,
+              4,
+              20,
+              "\"0033-04-18\""
+            ],
+            "input": "33-04-18"
+          },
+          "matchedPaths": [
+            "/input",
+            "/value/0",
+            "/value/1",
+            "/value/3"
+          ],
+          "carriedPaths": {
+            "/value/2": "Historical Date day accessor differs natively (27/20 versus serialized 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "id": "2",
+          "classification": "partial",
+          "native": {
+            "value": [
+              1,
+              12,
+              27,
+              "\"0001-12-25\""
+            ],
+            "input": "0001-12-25"
+          },
+          "matchedPaths": [
+            "/input",
+            "/value/0",
+            "/value/1",
+            "/value/3"
+          ],
+          "carriedPaths": {
+            "/value/2": "Historical Date day accessor differs natively (27/20 versus serialized 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "id": "3",
+          "classification": "partial",
+          "native": {
+            "value": [
+              33,
+              4,
+              20,
+              "\"0033-04-18\""
+            ],
+            "input": "0033-04-18"
+          },
+          "matchedPaths": [
+            "/input",
+            "/value/0",
+            "/value/1",
+            "/value/3"
+          ],
+          "carriedPaths": {
+            "/value/2": "Historical Date day accessor differs natively (27/20 versus serialized 25/18); carried to the Date owner without changing calendar behavior."
+          }
+        },
+        {
+          "id": "4",
+          "classification": "full",
+          "native": {
+            "value": [
+              2004,
+              2,
+              29,
+              "\"2004-02-29\""
+            ],
+            "input": "2004-02-29"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "5",
+          "classification": "partial",
+          "native": {
+            "exception": [
+              "System.JSONException",
+              "Cannot parse \"2004-02-30\": Value 30 for dayOfMonth must be in the range [1,29]"
+            ],
+            "input": "2004-02-30"
+          },
+          "matchedPaths": [
+            "/input",
+            "/exception/0"
+          ],
+          "carriedPaths": {
+            "/exception/1": "Invalid-date exception text is observed but outside short-year acceptance."
+          }
+        },
+        {
+          "id": "6",
+          "classification": "full",
+          "native": {
+            "exception": [
+              "System.JSONException",
+              "Invalid format: \"null\""
+            ],
+            "input": null
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        }
+      ]
+    }
+  ]
+}

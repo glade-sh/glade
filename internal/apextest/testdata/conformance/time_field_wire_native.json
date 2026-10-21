@@ -1,0 +1,53 @@
+{
+  "scope": "Owned Time fields and Time formulas: queried and JSON round-trip equality, ordering, millisecond access, dynamic get and null comparison; explicit system access.",
+  "captures": [
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "status": "Succeeded",
+      "deploymentId": "0Afcb00000CxBBpCAN",
+      "testsCompleted": 1,
+      "testErrors": 0,
+      "receiptSHA256": "505f138125697205954511fbd4d67c08227def2756998b6c880e5779d315a654",
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"namespace\": \"\", \"sourceApiVersion\": \"62.0\"}",
+        "force-app/main/default/classes/OwnedClockReadTest.cls": "@IsTest private class OwnedClockReadTest {\n @IsTest static void compareClock() {\n  Time earlier=Time.newInstance(8,9,10,11); Time later=earlier.addMilliseconds(1);\n  Account row=new Account(Name='owned clock',OwnedClock__c=earlier);Database.insert(row,AccessLevel.SYSTEM_MODE);\n  row=[SELECT OwnedClock__c,OwnedClockFormula__c FROM Account WHERE Id=:row.Id WITH SYSTEM_MODE];\n  System.assert(row.OwnedClock__c < later);System.assert(row.OwnedClock__c <= earlier);\n  System.assert(later > row.OwnedClock__c);System.assert(earlier >= row.OwnedClock__c);\n  System.assertEquals(earlier,row.OwnedClock__c);System.assertEquals(11,row.OwnedClock__c.millisecond());\n  Account decoded=(Account)JSON.deserialize(JSON.serialize(row),Account.class);\n  System.assertEquals(earlier,decoded.OwnedClock__c);System.assert(decoded.OwnedClock__c <= earlier);\n  System.assertEquals('08:09:10.011Z',String.valueOf(decoded.OwnedClock__c));\n  System.assert(row.OwnedClockFormula__c < later);System.assert(row.OwnedClockFormula__c <= earlier);\n  System.assert(later > row.OwnedClockFormula__c);System.assert(earlier >= row.OwnedClockFormula__c);\n  System.assertEquals(earlier,row.OwnedClockFormula__c);System.assertEquals(11,row.OwnedClockFormula__c.millisecond());\n  System.assertEquals(earlier,(Time)row.get('OwnedClockFormula__c'));\n  Time empty=null;System.assertEquals(false,row.OwnedClock__c < empty);System.assertEquals(false,row.OwnedClockFormula__c < empty);\n }\n}",
+        "force-app/main/default/classes/OwnedClockReadTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/Account/fields/OwnedClockFormula__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OwnedClockFormula__c</fullName><label>Owned Clock Formula</label><type>Time</type><formula>OwnedClock__c</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs></CustomField>",
+        "force-app/main/default/objects/Account/fields/OwnedClock__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OwnedClock__c</fullName><label>Owned Clock</label><type>Time</type></CustomField>"
+      }
+    },
+    {
+      "api": "64.0",
+      "route": "isTest",
+      "status": "Succeeded",
+      "deploymentId": "0Afcb00000CxBDRCA3",
+      "testsCompleted": 1,
+      "testErrors": 0,
+      "receiptSHA256": "d02371a61322d04d53f4607d6d1de5fd97cd3087822dda62cab9aa7de8a47342",
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"namespace\": \"\", \"sourceApiVersion\": \"64.0\"}",
+        "force-app/main/default/classes/OwnedClockReadTest.cls": "@IsTest private class OwnedClockReadTest {\n @IsTest static void compareClock() {\n  Time earlier=Time.newInstance(8,9,10,11); Time later=earlier.addMilliseconds(1);\n  Account row=new Account(Name='owned clock',OwnedClock__c=earlier);Database.insert(row,AccessLevel.SYSTEM_MODE);\n  row=[SELECT OwnedClock__c,OwnedClockFormula__c FROM Account WHERE Id=:row.Id WITH SYSTEM_MODE];\n  System.assert(row.OwnedClock__c < later);System.assert(row.OwnedClock__c <= earlier);\n  System.assert(later > row.OwnedClock__c);System.assert(earlier >= row.OwnedClock__c);\n  System.assertEquals(earlier,row.OwnedClock__c);System.assertEquals(11,row.OwnedClock__c.millisecond());\n  Account decoded=(Account)JSON.deserialize(JSON.serialize(row),Account.class);\n  System.assertEquals(earlier,decoded.OwnedClock__c);System.assert(decoded.OwnedClock__c <= earlier);\n  System.assertEquals('08:09:10.011Z',String.valueOf(decoded.OwnedClock__c));\n  System.assert(row.OwnedClockFormula__c < later);System.assert(row.OwnedClockFormula__c <= earlier);\n  System.assert(later > row.OwnedClockFormula__c);System.assert(earlier >= row.OwnedClockFormula__c);\n  System.assertEquals(earlier,row.OwnedClockFormula__c);System.assertEquals(11,row.OwnedClockFormula__c.millisecond());\n  System.assertEquals(earlier,(Time)row.get('OwnedClockFormula__c'));\n  Time empty=null;System.assertEquals(false,row.OwnedClock__c < empty);System.assertEquals(false,row.OwnedClockFormula__c < empty);\n }\n}",
+        "force-app/main/default/classes/OwnedClockReadTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/Account/fields/OwnedClockFormula__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OwnedClockFormula__c</fullName><label>Owned Clock Formula</label><type>Time</type><formula>OwnedClock__c</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs></CustomField>",
+        "force-app/main/default/objects/Account/fields/OwnedClock__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OwnedClock__c</fullName><label>Owned Clock</label><type>Time</type></CustomField>"
+      }
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "status": "Succeeded",
+      "deploymentId": "0Afcb00000CxBF3CAN",
+      "testsCompleted": 1,
+      "testErrors": 0,
+      "receiptSHA256": "c643c1d7506b561eeb6b53628c1b55902f4112a4c909b1b886b35fecf3e25878",
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"namespace\": \"\", \"sourceApiVersion\": \"67.0\"}",
+        "force-app/main/default/classes/OwnedClockReadTest.cls": "@IsTest private class OwnedClockReadTest {\n @IsTest static void compareClock() {\n  Time earlier=Time.newInstance(8,9,10,11); Time later=earlier.addMilliseconds(1);\n  Account row=new Account(Name='owned clock',OwnedClock__c=earlier);Database.insert(row,AccessLevel.SYSTEM_MODE);\n  row=[SELECT OwnedClock__c,OwnedClockFormula__c FROM Account WHERE Id=:row.Id WITH SYSTEM_MODE];\n  System.assert(row.OwnedClock__c < later);System.assert(row.OwnedClock__c <= earlier);\n  System.assert(later > row.OwnedClock__c);System.assert(earlier >= row.OwnedClock__c);\n  System.assertEquals(earlier,row.OwnedClock__c);System.assertEquals(11,row.OwnedClock__c.millisecond());\n  Account decoded=(Account)JSON.deserialize(JSON.serialize(row),Account.class);\n  System.assertEquals(earlier,decoded.OwnedClock__c);System.assert(decoded.OwnedClock__c <= earlier);\n  System.assertEquals('08:09:10.011Z',String.valueOf(decoded.OwnedClock__c));\n  System.assert(row.OwnedClockFormula__c < later);System.assert(row.OwnedClockFormula__c <= earlier);\n  System.assert(later > row.OwnedClockFormula__c);System.assert(earlier >= row.OwnedClockFormula__c);\n  System.assertEquals(earlier,row.OwnedClockFormula__c);System.assertEquals(11,row.OwnedClockFormula__c.millisecond());\n  System.assertEquals(earlier,(Time)row.get('OwnedClockFormula__c'));\n  Time empty=null;System.assertEquals(false,row.OwnedClock__c < empty);System.assertEquals(false,row.OwnedClockFormula__c < empty);\n }\n}",
+        "force-app/main/default/classes/OwnedClockReadTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/Account/fields/OwnedClockFormula__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OwnedClockFormula__c</fullName><label>Owned Clock Formula</label><type>Time</type><formula>OwnedClock__c</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs></CustomField>",
+        "force-app/main/default/objects/Account/fields/OwnedClock__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OwnedClock__c</fullName><label>Owned Clock</label><type>Time</type></CustomField>"
+      }
+    }
+  ]
+}

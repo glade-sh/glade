@@ -2,7 +2,10 @@ package testreport
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -47,6 +50,112 @@ func TestWriteConsoleOmitsLastFailedSuggestionWhenRunPasses(t *testing.T) {
 	}
 	if bytes.Contains([]byte(got), []byte("glade test failed")) {
 		t.Fatalf("console output suggested last-failed rerun after passing run:\n%s", got)
+	}
+}
+
+// A run whose selected tests all pass still fails while the compile gate
+// excludes a class; the console and JSON reports list every excluded class.
+func TestExcludedClassesFailPassingRun(t *testing.T) {
+	run := passingRun()
+	run.ExcludedClasses = []CompileExclusion{
+		{ClassName: "Bad", File: "force-app/main/classes/Bad.cls", Line: 3, Root: "Bad", Message: "Illegal assignment from String to Integer"},
+		{ClassName: "UsesBad", File: "force-app/main/classes/UsesBad.cls", Root: "Bad", DependsOn: "Bad", Message: "Dependent class is invalid and needs recompilation:\n Class Bad : Illegal assignment from String to Integer"},
+	}
+	summary := run.Summary()
+	if summary.ExcludedClasses != 2 || summary.OK() || passingRun().Summary().OK() != true {
+		t.Fatalf("summary = %#v", summary)
+	}
+	var out bytes.Buffer
+	if err := WriteConsole(&out, run); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"Excluded: 2",
+		"Compile errors excluded 2 classes:",
+		"  Bad      Illegal assignment from String to Integer (Bad.cls:3)",
+		"  UsesBad  depends on Bad",
+		"glade test failed",
+	} {
+		if !bytes.Contains(out.Bytes(), []byte(want)) {
+			t.Fatalf("console output missing %q:\n%s", want, out.String())
+		}
+	}
+	out.Reset()
+	if err := WriteJSON(&out, run); err != nil {
+		t.Fatal(err)
+	}
+	var decoded struct {
+		Summary         Summary            `json:"summary"`
+		ExcludedClasses []CompileExclusion `json:"excludedClasses"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if decoded.Summary.ExcludedClasses != 2 || !reflect.DeepEqual(decoded.ExcludedClasses, run.ExcludedClasses) {
+		t.Fatalf("json = %s", out.String())
+	}
+}
+
+// Every report format lists the excluded classes, so a run that excludes a
+// class with no selected test still fails there. A root lists each of its
+// problems; a dependent's line is its root's, so it is not annotated at it.
+func TestExcludedClassesInEveryReport(t *testing.T) {
+	run := Run{Name: "glade test"}
+	run.ExcludedClasses = []CompileExclusion{
+		{ClassName: "Bad", File: "classes/Bad.cls", Line: 3, Root: "Bad", Message: "Illegal assignment from String to Integer", Problems: []CompileProblem{
+			{Line: 3, Message: "Illegal assignment from String to Integer"},
+			{Line: 4, Message: "Illegal assignment from Boolean to Integer"},
+		}},
+		{ClassName: "UsesBad", File: "classes/UsesBad.cls", Line: 3, Root: "Bad", DependsOn: "Bad", Message: "Dependent class is invalid and needs recompilation:\n Class Bad : Illegal assignment from String to Integer"},
+	}
+	var out bytes.Buffer
+	if err := WriteConsole(&out, run); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"  Bad      Illegal assignment from String to Integer (Bad.cls:3)\n           Illegal assignment from Boolean to Integer (Bad.cls:4)\n",
+		"  UsesBad  depends on Bad\n",
+	} {
+		if !strings.Contains(out.String(), want) {
+			t.Fatalf("console output missing %q:\n%s", want, out.String())
+		}
+	}
+	out.Reset()
+	if err := WriteJUnitXML(&out, run); err != nil {
+		t.Fatal(err)
+	}
+	junit := out.String()
+	for _, want := range []string{
+		`<testsuites name="glade test" tests="2" failures="0" errors="2"`,
+		`<testsuite name="compile" tests="2" failures="0" errors="2"`,
+		`<testcase name="compile" classname="Bad" time="0.000">`,
+		`classes/Bad.cls:3: Illegal assignment from String to Integer`,
+		`classes/Bad.cls:4: Illegal assignment from Boolean to Integer`,
+		`<testcase name="compile" classname="UsesBad" time="0.000">`,
+		`depends on Bad</error>`,
+	} {
+		if !strings.Contains(junit, want) {
+			t.Fatalf("junit missing %q:\n%s", want, junit)
+		}
+	}
+	out.Reset()
+	if err := WriteGitHubAnnotations(&out, run); err != nil {
+		t.Fatal(err)
+	}
+	wantAnnotations := "::error file=classes/Bad.cls,line=3,title=CompileError Bad::Illegal assignment from String to Integer\n" +
+		"::error file=classes/Bad.cls,line=4,title=CompileError Bad::Illegal assignment from Boolean to Integer\n" +
+		"::error file=classes/UsesBad.cls,title=CompileError UsesBad::Dependent class is invalid and needs recompilation:%0A Class Bad : Illegal assignment from String to Integer\n"
+	if out.String() != wantAnnotations {
+		t.Fatalf("annotations:\n%s\nwant:\n%s", out.String(), wantAnnotations)
+	}
+	out.Reset()
+	if err := WriteHTML(&out, run, HTMLReportOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"<span>2 excluded</span>", "<h2>Excluded classes</h2>", "<td>UsesBad</td><td>Bad</td><td>Bad</td>", "classes/Bad.cls:4: Illegal assignment from Boolean to Integer"} {
+		if !strings.Contains(out.String(), want) {
+			t.Fatalf("html missing %q:\n%s", want, out.String())
+		}
 	}
 }
 

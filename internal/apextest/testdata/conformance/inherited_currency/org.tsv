@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	field_flags	{"hasDefault":true,"defaulted":true,"calculated":false,"updateable":false,"createable":false}
+62.0	inherited_insert	{"updated":true,"currencyInherited":true,"success":true}
+67.0	field_flags	{"hasDefault":true,"defaulted":true,"calculated":false,"updateable":false,"createable":false}
+67.0	inherited_insert	{"updated":true,"currencyInherited":true,"success":true}

@@ -1,0 +1,400 @@
+{
+  "provenance": "Owned synthetic API62/67/68 GroupMember mixed-DML observations. Named enforcement, setup-only anonymous controls, and explicit anonymous negative carries; no message-format or additional operation inference.",
+  "rowCount": 27,
+  "matchedCount": 21,
+  "carriedCount": 6,
+  "scalarCells": 81,
+  "orgIdSHA256": "63120c8c77873040ea5292a7aec9ab735dec86800e3802135f4ecbdfe04be7bf",
+  "orgContext": {
+    "requestedEdition": "Developer",
+    "featuresRequested": [],
+    "settingsChanged": false,
+    "otherFeatureContext": "UNCAPTURED"
+  },
+  "orgTSVSHA256": "fdebb50d7a2db0ae0b499c48b899786f1104f6ac9c90ec9428869781c99abca8",
+  "orgRunSHA256": "7f76a2b0f92891ca68bb5073b19d19e2171a22a3a7d714d936b973ba4d1bcb76",
+  "anonymousSources": {
+    "GM01": "String token = 'OwnedMd' + String.valueOf(Datetime.now().getTime());\nString stage = 'start';\nMap<String,Object> result = new Map<String,Object>();\ntry {\nUserRole role = new UserRole(Name=token,DeveloperName=token);\nstage='role'; insert role;\nGroup team = new Group(Name=token,DeveloperName=token,Type='Regular');\nstage='group'; insert team;\nstage='member'; insert new GroupMember(GroupId=team.Id,UserOrGroupId=UserInfo.getUserId());\nstage='done'; result.put('members',[SELECT COUNT() FROM GroupMember WHERE GroupId=:team.Id]);\n\n    result.put('outcome','success');\n} catch (DmlException e) {\n    result.put('outcome','dml');\n    result.put('status',String.valueOf(e.getDmlType(0)));\n} catch (Exception e) {\n    result.put('outcome','other');\n    result.put('type',e.getTypeName());\n}\nresult.put('stage',stage);\nSystem.debug(LoggingLevel.ERROR,'MEMBER_DML|GM01|'+JSON.serialize(result));\n",
+    "GM02": "String token = 'OwnedMd' + String.valueOf(Datetime.now().getTime());\nString stage = 'start';\nMap<String,Object> result = new Map<String,Object>();\ntry {\nGroup team = new Group(Name=token,DeveloperName=token,Type='Regular');\nstage='group'; insert team;\nstage='member'; insert new GroupMember(GroupId=team.Id,UserOrGroupId=UserInfo.getUserId());\nUserRole role = new UserRole(Name=token,DeveloperName=token);\nstage='role'; insert role;\nstage='done'; result.put('members',[SELECT COUNT() FROM GroupMember WHERE GroupId=:team.Id]);\n\n    result.put('outcome','success');\n} catch (DmlException e) {\n    result.put('outcome','dml');\n    result.put('status',String.valueOf(e.getDmlType(0)));\n} catch (Exception e) {\n    result.put('outcome','other');\n    result.put('type',e.getTypeName());\n}\nresult.put('stage',stage);\nSystem.debug(LoggingLevel.ERROR,'MEMBER_DML|GM02|'+JSON.serialize(result));\n",
+    "GM03": "String token = 'OwnedMd' + String.valueOf(Datetime.now().getTime());\nString stage = 'start';\nMap<String,Object> result = new Map<String,Object>();\ntry {\nGroup team = new Group(Name=token,DeveloperName=token,Type='Regular');\nstage='group'; insert team;\nstage='member'; insert new GroupMember(GroupId=team.Id,UserOrGroupId=UserInfo.getUserId());\nstage='account'; insert new Account(Name=token);\nstage='done'; result.put('members',[SELECT COUNT() FROM GroupMember WHERE GroupId=:team.Id]);\n\n    result.put('outcome','success');\n} catch (DmlException e) {\n    result.put('outcome','dml');\n    result.put('status',String.valueOf(e.getDmlType(0)));\n} catch (Exception e) {\n    result.put('outcome','other');\n    result.put('type',e.getTypeName());\n}\nresult.put('stage',stage);\nSystem.debug(LoggingLevel.ERROR,'MEMBER_DML|GM03|'+JSON.serialize(result));\n",
+    "GM04": "String token = 'OwnedMd' + String.valueOf(Datetime.now().getTime());\nString stage = 'start';\nMap<String,Object> result = new Map<String,Object>();\ntry {\nstage='account'; insert new Account(Name=token);\nGroup team = new Group(Name=token,DeveloperName=token,Type='Regular');\nstage='group'; insert team;\nstage='member'; insert new GroupMember(GroupId=team.Id,UserOrGroupId=UserInfo.getUserId());\nstage='done'; result.put('members',[SELECT COUNT() FROM GroupMember WHERE GroupId=:team.Id]);\n\n    result.put('outcome','success');\n} catch (DmlException e) {\n    result.put('outcome','dml');\n    result.put('status',String.valueOf(e.getDmlType(0)));\n} catch (Exception e) {\n    result.put('outcome','other');\n    result.put('type',e.getTypeName());\n}\nresult.put('stage',stage);\nSystem.debug(LoggingLevel.ERROR,'MEMBER_DML|GM04|'+JSON.serialize(result));\n"
+  },
+  "anonymousSourceSHA256": {
+    "GM01": "2c57bce2c401fff480a9bd1f1fb66cc2be6e751851262b74e0d51f773f495335",
+    "GM02": "b50ace226d0a03541802d1fc00d9a492d7c4c9de209a2de034da3ed92827a91b",
+    "GM03": "9e22cca3fb2799db512fc18b67f67a0052b2cd21c313445215d0c19d92a2b141",
+    "GM04": "1147b472844de1de152bc7c0002b1938e4ec59917d1030a9c44c1f86678e0d34"
+  },
+  "testClass": "OwnedMemberDmlProbe",
+  "testClassSource": "@IsTest private class OwnedMemberDmlProbe {\n    @IsTest static void gm01() {\nString token = 'OwnedMd' + String.valueOf(Datetime.now().getTime());\nString stage = 'start';\nMap<String,Object> result = new Map<String,Object>();\ntry {\nUserRole role = new UserRole(Name=token,DeveloperName=token);\nstage='role'; insert role;\nGroup team = new Group(Name=token,DeveloperName=token,Type='Regular');\nstage='group'; insert team;\nstage='member'; insert new GroupMember(GroupId=team.Id,UserOrGroupId=UserInfo.getUserId());\nstage='done'; result.put('members',[SELECT COUNT() FROM GroupMember WHERE GroupId=:team.Id]);\n\n    result.put('outcome','success');\n} catch (DmlException e) {\n    result.put('outcome','dml');\n    result.put('status',String.valueOf(e.getDmlType(0)));\n} catch (Exception e) {\n    result.put('outcome','other');\n    result.put('type',e.getTypeName());\n}\nresult.put('stage',stage);\nSystem.assert(false,'MEMBER_DML|GM01|'+JSON.serialize(result));\n    }\n    @IsTest static void gm02() {\nString token = 'OwnedMd' + String.valueOf(Datetime.now().getTime());\nString stage = 'start';\nMap<String,Object> result = new Map<String,Object>();\ntry {\nGroup team = new Group(Name=token,DeveloperName=token,Type='Regular');\nstage='group'; insert team;\nstage='member'; insert new GroupMember(GroupId=team.Id,UserOrGroupId=UserInfo.getUserId());\nUserRole role = new UserRole(Name=token,DeveloperName=token);\nstage='role'; insert role;\nstage='done'; result.put('members',[SELECT COUNT() FROM GroupMember WHERE GroupId=:team.Id]);\n\n    result.put('outcome','success');\n} catch (DmlException e) {\n    result.put('outcome','dml');\n    result.put('status',String.valueOf(e.getDmlType(0)));\n} catch (Exception e) {\n    result.put('outcome','other');\n    result.put('type',e.getTypeName());\n}\nresult.put('stage',stage);\nSystem.assert(false,'MEMBER_DML|GM02|'+JSON.serialize(result));\n    }\n    @IsTest static void gm03() {\nString token = 'OwnedMd' + String.valueOf(Datetime.now().getTime());\nString stage = 'start';\nMap<String,Object> result = new Map<String,Object>();\ntry {\nGroup team = new Group(Name=token,DeveloperName=token,Type='Regular');\nstage='group'; insert team;\nstage='member'; insert new GroupMember(GroupId=team.Id,UserOrGroupId=UserInfo.getUserId());\nstage='account'; insert new Account(Name=token);\nstage='done'; result.put('members',[SELECT COUNT() FROM GroupMember WHERE GroupId=:team.Id]);\n\n    result.put('outcome','success');\n} catch (DmlException e) {\n    result.put('outcome','dml');\n    result.put('status',String.valueOf(e.getDmlType(0)));\n} catch (Exception e) {\n    result.put('outcome','other');\n    result.put('type',e.getTypeName());\n}\nresult.put('stage',stage);\nSystem.assert(false,'MEMBER_DML|GM03|'+JSON.serialize(result));\n    }\n    @IsTest static void gm04() {\nString token = 'OwnedMd' + String.valueOf(Datetime.now().getTime());\nString stage = 'start';\nMap<String,Object> result = new Map<String,Object>();\ntry {\nstage='account'; insert new Account(Name=token);\nGroup team = new Group(Name=token,DeveloperName=token,Type='Regular');\nstage='group'; insert team;\nstage='member'; insert new GroupMember(GroupId=team.Id,UserOrGroupId=UserInfo.getUserId());\nstage='done'; result.put('members',[SELECT COUNT() FROM GroupMember WHERE GroupId=:team.Id]);\n\n    result.put('outcome','success');\n} catch (DmlException e) {\n    result.put('outcome','dml');\n    result.put('status',String.valueOf(e.getDmlType(0)));\n} catch (Exception e) {\n    result.put('outcome','other');\n    result.put('type',e.getTypeName());\n}\nresult.put('stage',stage);\nSystem.assert(false,'MEMBER_DML|GM04|'+JSON.serialize(result));\n    }\n    @IsTest static void gm05() {\nString token = 'OwnedMd' + String.valueOf(Datetime.now().getTime());\nString stage = 'start';\nMap<String,Object> result = new Map<String,Object>();\ntry {\nstage='account'; insert new Account(Name=token);\nGroup team = new Group(Name=token,DeveloperName=token,Type='Regular');\nstage='group'; insert team;\nSystem.runAs(new User(Id=UserInfo.getUserId())) {\nstage='member'; insert new GroupMember(GroupId=team.Id,UserOrGroupId=UserInfo.getUserId());\n}\nstage='done'; result.put('members',[SELECT COUNT() FROM GroupMember WHERE GroupId=:team.Id]);\n\n    result.put('outcome','success');\n} catch (DmlException e) {\n    result.put('outcome','dml');\n    result.put('status',String.valueOf(e.getDmlType(0)));\n} catch (Exception e) {\n    result.put('outcome','other');\n    result.put('type',e.getTypeName());\n}\nresult.put('stage',stage);\nSystem.assert(false,'MEMBER_DML|GM05|'+JSON.serialize(result));\n    }\n}\n",
+  "testClassSourceSHA256": "348eff27bc7351d4656f5c3aeda2b117a89c98f4fe5b4006cc82bd6df5a18ef4",
+  "metadataByAPI": {
+    "62.0": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+    "67.0": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+    "68.0": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+  },
+  "metadataSHA256ByAPI": {
+    "62.0": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+    "67.0": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+    "68.0": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+  },
+  "deployments": {
+    "62.0": {
+      "id": "0Afdh00000AbJKUCA3",
+      "status": "Succeeded",
+      "checkOnly": false,
+      "testOutcome": "Failed",
+      "receiptSHA256": "7535e836108120a3a0db9892b3105827ff4b7260087e5940c1d16992c132b125"
+    },
+    "67.0": {
+      "id": "0Afdh00000AbJp7CAF",
+      "status": "Succeeded",
+      "checkOnly": false,
+      "testOutcome": "Failed",
+      "receiptSHA256": "2793f74b382589f5142c74f5cc2a1af0251acbd9ab41204c15c78098d00750c2"
+    },
+    "68.0": {
+      "id": "0Afdh00000Ab6ruCAB",
+      "status": "Succeeded",
+      "checkOnly": false,
+      "testOutcome": "Failed",
+      "receiptSHA256": "7c4f9e064fec6298429c522ce7024676aa70c4208f8d867d5d93eec2f2982e6c"
+    }
+  },
+  "observations": [
+    {
+      "id": "GM01",
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "d1888a3e7b5f9d05e9a3ad7a5e6d1663dfb6c2df601166aa4cd7c5a9b5d5250d"
+    },
+    {
+      "id": "GM02",
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "ac1e6e6e6c2fe0d1cb7334beaef78a7557faef886ab5fef510031f17c6786186"
+    },
+    {
+      "id": "GM03",
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "native": {
+        "stage": "account",
+        "status": "MIXED_DML_OPERATION",
+        "outcome": "dml"
+      },
+      "receiptSHA256": "ece0d119d07d028996024fdb1ceba49d6b8ddab4a2b240ded0ff3222573760ee",
+      "carryReason": "The existing mixed-DML guard is test-context-only. Anonymous enforcement is outside this change; native MIXED_DML_OPERATION and failed stage are retained without claiming local agreement."
+    },
+    {
+      "id": "GM04",
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "native": {
+        "stage": "member",
+        "status": "MIXED_DML_OPERATION",
+        "outcome": "dml"
+      },
+      "receiptSHA256": "19e874036520d466caa58ab553b155452c45fa66ead878dcb095743540e39808",
+      "carryReason": "The existing mixed-DML guard is test-context-only. Anonymous enforcement is outside this change; native MIXED_DML_OPERATION and failed stage are retained without claiming local agreement."
+    },
+    {
+      "id": "GM01",
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "ea15288a2f5d3d744d6baafb21f1c8a276c38f6a3216341715e3130c3c397c2f"
+    },
+    {
+      "id": "GM02",
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "ea15288a2f5d3d744d6baafb21f1c8a276c38f6a3216341715e3130c3c397c2f"
+    },
+    {
+      "id": "GM03",
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "native": {
+        "stage": "account",
+        "status": "MIXED_DML_OPERATION",
+        "outcome": "dml"
+      },
+      "receiptSHA256": "ea15288a2f5d3d744d6baafb21f1c8a276c38f6a3216341715e3130c3c397c2f"
+    },
+    {
+      "id": "GM04",
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "native": {
+        "stage": "member",
+        "status": "MIXED_DML_OPERATION",
+        "outcome": "dml"
+      },
+      "receiptSHA256": "ea15288a2f5d3d744d6baafb21f1c8a276c38f6a3216341715e3130c3c397c2f"
+    },
+    {
+      "id": "GM05",
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "ea15288a2f5d3d744d6baafb21f1c8a276c38f6a3216341715e3130c3c397c2f"
+    },
+    {
+      "id": "GM01",
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "5547b44c0d8710802b1ee605546bd7ebcfd4f71d7ad86c4e9d0394ec3bffc8d3"
+    },
+    {
+      "id": "GM02",
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "4125391c71b61f181448521d67d11dfd210283595dc98f89cb427176b7979852"
+    },
+    {
+      "id": "GM03",
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "native": {
+        "stage": "account",
+        "status": "MIXED_DML_OPERATION",
+        "outcome": "dml"
+      },
+      "receiptSHA256": "d2c558fafc9dce7168dca9f957b9dc67bb3cd675a9347c289460e7b3a6e17b52",
+      "carryReason": "The existing mixed-DML guard is test-context-only. Anonymous enforcement is outside this change; native MIXED_DML_OPERATION and failed stage are retained without claiming local agreement."
+    },
+    {
+      "id": "GM04",
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "native": {
+        "stage": "member",
+        "status": "MIXED_DML_OPERATION",
+        "outcome": "dml"
+      },
+      "receiptSHA256": "974b1be827289e8c402348370ebabe9edf6b118594133fa7633499b0e1e26776",
+      "carryReason": "The existing mixed-DML guard is test-context-only. Anonymous enforcement is outside this change; native MIXED_DML_OPERATION and failed stage are retained without claiming local agreement."
+    },
+    {
+      "id": "GM01",
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "cecd7e277d3c06d01b9e1a46638b601c5af05e94c0060465687d2613f8db4ebe"
+    },
+    {
+      "id": "GM02",
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "cecd7e277d3c06d01b9e1a46638b601c5af05e94c0060465687d2613f8db4ebe"
+    },
+    {
+      "id": "GM03",
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "native": {
+        "stage": "account",
+        "status": "MIXED_DML_OPERATION",
+        "outcome": "dml"
+      },
+      "receiptSHA256": "cecd7e277d3c06d01b9e1a46638b601c5af05e94c0060465687d2613f8db4ebe"
+    },
+    {
+      "id": "GM04",
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "native": {
+        "stage": "member",
+        "status": "MIXED_DML_OPERATION",
+        "outcome": "dml"
+      },
+      "receiptSHA256": "cecd7e277d3c06d01b9e1a46638b601c5af05e94c0060465687d2613f8db4ebe"
+    },
+    {
+      "id": "GM05",
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "cecd7e277d3c06d01b9e1a46638b601c5af05e94c0060465687d2613f8db4ebe"
+    },
+    {
+      "id": "GM01",
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "73bba27207c8f0143349e00a7fceff0037188077681e27f5d241a3112d578249"
+    },
+    {
+      "id": "GM02",
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "d7242e6fa36c5443d29592030234110003426856015c17638bed72ffb54cb1c9"
+    },
+    {
+      "id": "GM03",
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "native": {
+        "stage": "account",
+        "status": "MIXED_DML_OPERATION",
+        "outcome": "dml"
+      },
+      "receiptSHA256": "38804cf5d6ef8c949a71d0bebc118e35a3e5e692ef531290e25962c5c8b85440",
+      "carryReason": "The existing mixed-DML guard is test-context-only. Anonymous enforcement is outside this change; native MIXED_DML_OPERATION and failed stage are retained without claiming local agreement."
+    },
+    {
+      "id": "GM04",
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "native": {
+        "stage": "member",
+        "status": "MIXED_DML_OPERATION",
+        "outcome": "dml"
+      },
+      "receiptSHA256": "e15eecb1196cdbeed166c17f6d9542385a5794f24673381d030e7e9cfbb3f8c0",
+      "carryReason": "The existing mixed-DML guard is test-context-only. Anonymous enforcement is outside this change; native MIXED_DML_OPERATION and failed stage are retained without claiming local agreement."
+    },
+    {
+      "id": "GM01",
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "c5d3b267ef6d90203c8d3afcd9950787c656fb76dd4902ae8b529c9698c933c0"
+    },
+    {
+      "id": "GM02",
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "c5d3b267ef6d90203c8d3afcd9950787c656fb76dd4902ae8b529c9698c933c0"
+    },
+    {
+      "id": "GM03",
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "native": {
+        "stage": "account",
+        "status": "MIXED_DML_OPERATION",
+        "outcome": "dml"
+      },
+      "receiptSHA256": "c5d3b267ef6d90203c8d3afcd9950787c656fb76dd4902ae8b529c9698c933c0"
+    },
+    {
+      "id": "GM04",
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "native": {
+        "stage": "member",
+        "status": "MIXED_DML_OPERATION",
+        "outcome": "dml"
+      },
+      "receiptSHA256": "c5d3b267ef6d90203c8d3afcd9950787c656fb76dd4902ae8b529c9698c933c0"
+    },
+    {
+      "id": "GM05",
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "native": {
+        "stage": "done",
+        "outcome": "success",
+        "members": 1
+      },
+      "receiptSHA256": "c5d3b267ef6d90203c8d3afcd9950787c656fb76dd4902ae8b529c9698c933c0"
+    }
+  ],
+  "uncaptured": [
+    "GM05 anonymous was not executed; no anonymous runAs observation is inferred.",
+    "GroupMember update/delete/upsert, bulk mixed batches and exact exception text were not captured."
+  ]
+}

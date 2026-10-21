@@ -1,0 +1,2 @@
+source_api	route	observation
+67.0	isTest	"{""exceptionMessage"":""Custom AccessLevel usage requires ApexUserModeWithPermset enabled in a scratch org."",""exceptionType"":""System.SecurityException""}"

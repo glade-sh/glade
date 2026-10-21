@@ -1,0 +1,17 @@
+source_api	method	observation
+62.0	date_controls	{"0000-01-01":"System.TypeException","10000-01-01":"10000-01-01","2008-20-58":"System.TypeException","2008-20-58T12:20:20Z":"System.TypeException","2024-02-30":"System.TypeException","2024-02-30 01:00:00":"2024-03-01","2026-00-00":"System.TypeException","2026-00-00 00:00:00":"2025-11-30","2026-05-04 23:59:580":"2026-05-04","not-a-date":"System.TypeException"}
+62.0	extended_year	{"difference":1,"next":"10000-01-02","same":"10000-01-01","year":10000}
+62.0	format_controls	{"'quoted' {0}":"'quoted' {0}","'{0}'":"{0}","literalNull":"prefix {0}","stringsList":"prefix {0}","{0,choice,0#{1}|1#x}":"{0}","{0,number,#.0}":"{0}","{0,number}":"{0}","{bad}":"System.StringException:This method is not available in MessageFormat objects that use alphanumeric argument names.","}":"}"}
+62.0	nan_controls	{"methodEquals":true,"operatorEquals":true}
+62.0	null_format	{"before {0} after":"before {0} after","plain":"plain","prefix {0} suffix":"prefix {0} suffix","{":"System.StringException:Unmatched '{' braces in message \"{\"","{0}":"{0}","{1}":"{1}"}
+62.0	null_relations	{"bothNull":false,"idGreater":true,"idGreaterEqual":true,"idLess":false,"nullLessId":true,"nullLessString":true,"numberGreater":false,"stringGreater":true}
+62.0	numeric_assertions	{"date":"2009-09-27","listEquality":false,"nan":"equal"}
+62.0	text_relations	{"encodedGreater":true,"encodedLess":false,"equalCaseGreater":false,"equalCaseLess":false,"greater":true,"less":false}
+67.0	date_controls	{"0000-01-01":"System.TypeException","10000-01-01":"10000-01-01","2008-20-58":"System.TypeException","2008-20-58T12:20:20Z":"System.TypeException","2024-02-30":"System.TypeException","2024-02-30 01:00:00":"2024-03-01","2026-00-00":"System.TypeException","2026-00-00 00:00:00":"2025-11-30","2026-05-04 23:59:580":"2026-05-04","not-a-date":"System.TypeException"}
+67.0	extended_year	{"difference":1,"next":"10000-01-02","same":"10000-01-01","year":10000}
+67.0	format_controls	{"'quoted' {0}":"'quoted' {0}","'{0}'":"{0}","literalNull":"prefix {0}","stringsList":"prefix {0}","{0,choice,0#{1}|1#x}":"{0}","{0,number,#.0}":"{0}","{0,number}":"{0}","{bad}":"System.StringException:This method is not available in MessageFormat objects that use alphanumeric argument names.","}":"}"}
+67.0	nan_controls	{"methodEquals":true,"operatorEquals":true}
+67.0	null_format	{"before {0} after":"before {0} after","plain":"plain","prefix {0} suffix":"prefix {0} suffix","{":"System.StringException:Unmatched '{' braces in message \"{\"","{0}":"{0}","{1}":"{1}"}
+67.0	null_relations	{"bothNull":false,"idGreater":true,"idGreaterEqual":true,"idLess":false,"nullLessId":true,"nullLessString":true,"numberGreater":false,"stringGreater":true}
+67.0	numeric_assertions	{"date":"2009-09-27","listEquality":false,"nan":"equal"}
+67.0	text_relations	{"encodedGreater":true,"encodedLess":false,"equalCaseGreater":false,"equalCaseLess":false,"greater":true,"less":false}

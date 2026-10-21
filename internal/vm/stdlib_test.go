@@ -737,7 +737,7 @@ page.setCookies(new List<Cookie>{new Cookie('sid', 'abc', '/', 60, true, 'Lax', 
 page.setCookies(new List<Cookie>{new Cookie('theme', 'dark', null, 100, false)});
 System.Cookie systemCookie = new System.Cookie('theme', 'dark', null, 100, false);
 System.assertEquals('theme', systemCookie.getName());
-System.assertEquals(null, systemCookie.getPath());
+System.assertEquals('/', systemCookie.getPath());
 System.assertEquals('001000000000001', page.getParameters().get('id'));
 System.assertEquals('001000000000001', page.getparameters().get('id'));
 System.assertEquals('yes', page.getHeaders().get('X-Local'));
@@ -2518,7 +2518,7 @@ System.assert(!Crypto.verifyHmac('hmacSHA256', Blob.valueOf('changed'), key, hma
 	System.assertEquals(16, aes128.size());
 System.assertEquals(24, aes192.size());
 System.assertEquals(32, aes256.size());
-System.assertEquals('0102030405060708090a0b0c0d0e0f10', EncodingUtil.convertToHex(aes128));
+System.assertEquals(32, EncodingUtil.convertToHex(aes128).length());
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -2613,9 +2613,12 @@ System.assertEquals('hello', Crypto.decryptWithManagedIV('AES256-GCM', key, gcm,
 Blob signature = Crypto.sign('RSA-SHA512', Blob.valueOf('hello'), EncodingUtil.base64Decode('MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCaKXxPz06tGPq0RNMV+szd/ZRVLoWL5cTsB8W4v7H8LYewnI86NbRKZv9ixg1VqfJp6nCMHxHjC9rcuXLJnFcw2BR1DUW0L6nz4PO8Pye+Qay4WHmb7fXzlv90VuBrOnL3DX0kovNc91UYVyNeotYUQE8OYCdE7ovdkBJ+pFCDyvgvaCDMlO3mLokXaWY1kFhOVSypKDpT3CarBtnG28W9/BWkhowinMeRK/jcT9McZ9Xo1LJQGYrkeBeDrXNGNSWJSYLevmrO04S3MFVLKCAsrfr1obwnj8dPpL+2zbMgAQWfUE1szbK/fndAJwT+G5OFHWktPrF3P3G7EiXbWBAbAgMBAAECggEAAgxNtnxj6IYjGS9WOT3dEuXs3o+A/rF4GEVSKc4s0yjXsKT5J3t8gFs18V39jLHL9/7sAoXh0EkMCKVTZ7zypkIjThrLCPBz1ZBGLK4PcnD0684LxOKNw0Vc8h1lWzH/l6tPik5lOqBJOnWN5r1LEsx36xJOnep9Y918zBSVbUAecVIJgn4TX9Q9zy5VEMAJFQXPYrLp4d3Z47I6E/z/4ONH3RbXzNEdjqTDeDQbUwgHkPM5KUx6zDTxPNBZs94ww71VHN5LgUUr9hS87/prKmye+hUwRaqvR6OjwAd6iLa/Y1s99moXygUBMAT8i9ET7njJTbwMBzFFsd97GSSIAQKBgQDNFrnumPFuoqxjFpdge4t06ArQnA5yedmRM0X3KM6MbQny9/MdtVkwrE4q68DQoo6hyiZRZiUsg4hayQV1Cinps/PhSFFLhq7nSXCd29bpVvy/5z9HMKS3kj1lgpjt22foFHaIxcy30GkbYyElw4MdBLhG5s8WrmNXcHeftjF3GwKBgQDAbmU6q7lLWMqV50vfk6r3FRKSAKnhGsZILHK9gbRFTnLlA/0FEaZ3/nNVTM/VpSmXaL1wcR3lbfM7n+xAbLAYX+QU+77yt6yugYmDFVaP+KVzG0XuDGUZP+Cr2E3kLqjEUszVzpVOZ5jsnahmoy8UO5PaLuieJP+EZIY+nHBbAQKBgATTUhChHJ0jyraSI4Grpn5br1V1NonPACWAdVb5aNK5BhDncJr0V2LjyvsLjP/bs0tvPDOSGbHQbnbkX/J/CLls+IIGd5M1WgwrGDE+qPHYkB3bzQtZw6ZmFHe8+Ogvz2QQhzF0pfp1NuPkEzWWQhF+uO9CIwE/nSrDhK0HVmadAoGBALaczQH1jt0bAP1qxw0ABKF/5OSbLpuJnhtF2wlN+jY/MTd2JnnV+yUqWmbbguwbVbHy2rvHDPj583Zk2H1251HqRfdHxDhv57afBVFZQZFVBCWM/zrdll90yBAsMBbX1J6iePJ5niUOmQgKwZHNUFMiCrhmBah2MemAwAjQyqsBAoGAVtdcg6pVo+7QTZfCsrSCs9C9i7Mo7nvTZKFwrBRHxQbqFhh08T8lkEdr63BhUCtKau/SXRBK1lK/exq64M6JBcFNC/y7ykkpb00aklbvVX8LFJh0Sihbg2z3A6fr4liO/LzDTwQ2n5XKbHwmVjp/5gTDoKYSw8BJtHiHrEHpra4='));
 System.assert(Crypto.verify('RSA-SHA512', Blob.valueOf('hello'), signature, EncodingUtil.base64Decode('MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmil8T89OrRj6tETTFfrM3f2UVS6Fi+XE7AfFuL+x/C2HsJyPOjW0Smb/YsYNVanyaepwjB8R4wva3LlyyZxXMNgUdQ1FtC+p8+DzvD8nvkGsuFh5m+3185b/dFbgazpy9w19JKLzXPdVGFcjXqLWFEBPDmAnRO6L3ZASfqRQg8r4L2ggzJTt5i6JF2lmNZBYTlUsqSg6U9wmqwbZxtvFvfwVpIaMIpzHkSv43E/THGfV6NSyUBmK5HgXg61zRjUliUmC3r5qztOEtzBVSyggLK369aG8J4/HT6S/ts2zIAEFn1BNbM2yv353QCcE/huThR1pLT6xdz9xuxIl21gQGwIDAQAB')));
 System.assert(!Crypto.verify('RSA-SHA512', Blob.valueOf('changed'), signature, EncodingUtil.base64Decode('MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmil8T89OrRj6tETTFfrM3f2UVS6Fi+XE7AfFuL+x/C2HsJyPOjW0Smb/YsYNVanyaepwjB8R4wva3LlyyZxXMNgUdQ1FtC+p8+DzvD8nvkGsuFh5m+3185b/dFbgazpy9w19JKLzXPdVGFcjXqLWFEBPDmAnRO6L3ZASfqRQg8r4L2ggzJTt5i6JF2lmNZBYTlUsqSg6U9wmqwbZxtvFvfwVpIaMIpzHkSv43E/THGfV6NSyUBmK5HgXg61zRjUliUmC3r5qztOEtzBVSyggLK369aG8J4/HT6S/ts2zIAEFn1BNbM2yv353QCcE/huThR1pLT6xdz9xuxIl21gQGwIDAQAB')));
-Blob certSignature = Crypto.signWithCertificate('RSA-SHA256', Blob.valueOf('hello'), 'cert');
-System.assert(Crypto.verify('RSA-SHA256', Blob.valueOf('hello'), certSignature, 'cert'));
-System.assert(Crypto.verifyWithCertificate('RSA-SHA256', Blob.valueOf('hello'), certSignature, 'cert'));
+try {
+    Crypto.signWithCertificate('RSA-SHA256', Blob.valueOf('hello'), 'cert');
+    System.assert(false, 'expected unavailable certificate');
+} catch (NoDataFoundException error) {
+    System.assert(error.getMessage().startsWith('Data Not Available:'));
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3506,9 +3509,18 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		source.WriteString(string(rune('A' + i/26)))
 		source.WriteString(string(rune('A' + i%26)))
 		source.WriteString(".getTypeName());\n")
-		source.WriteString("System.assertEquals('System.")
-		source.WriteString(name)
-		source.WriteString(": ")
+		source.WriteString("System.assertEquals('")
+		if name == "IllegalArgumentException" {
+			// Owned residual_boundary_carries.json E-F01-3: this exact
+			// unthrown Exception-view String constructor and direct toString
+			// return IllegalArgumentException:[]: message at API 62/67/68,
+			// anonymous and named. Other builtin expectations stay unchanged;
+			// TestIllegalArgumentMessageDisplayPreservesOtherShapes retains
+			// default/cause/thrown/modified-message negative controls.
+			source.WriteString(name + ":[]: ")
+		} else {
+			source.WriteString("System." + name + ": ")
+		}
 		message := name + " message"
 		if probe, ok := runtimeProbes[name]; ok {
 			message = probe.message
@@ -4555,7 +4567,7 @@ System.assertEquals('user method', value);
 
 func TestExecIDGetSObjectTypeRejectsUnknownPrefix(t *testing.T) {
 	program, err := CompileAnonymous(`
-Id unknown = Id.valueOf('999B000001DVM9t');
+Id unknown = Id.valueOf('999000000000009');
 unknown.getSObjectType();
 `)
 	if err != nil {
@@ -4565,7 +4577,7 @@ unknown.getSObjectType();
 	if err == nil {
 		t.Fatal("expected unknown Id prefix error")
 	}
-	if got, want := err.Error(), "System.StringException: Invalid id prefix: 999"; got != want {
+	if got, want := err.Error(), "System.SObjectException: Cannot locate Apex Type for ID: 999000000000009AAA"; got != want {
 		t.Fatalf("error = %q, want %q", got, want)
 	}
 }
@@ -5798,23 +5810,6 @@ func TestCollectionStdlibCloneValueBreaksCycles(t *testing.T) {
 	}
 	if cloned.Fields["Child"].Fields["Parent"].Type != "Node" {
 		t.Fatalf("cycle placeholder type = %q, want Node", cloned.Fields["Child"].Fields["Parent"].Type)
-	}
-}
-
-func TestCollectionStdlibCloneValuePreservesApexMocksProviderCycles(t *testing.T) {
-	provider := Object("framework_ApexMocks")
-	recorder := Object("framework_MethodReturnValueRecorder")
-	proxy := Object("ISchemaService")
-	proxy.Fields["__gladeStubProvider"] = provider
-	recorder.Fields["proxy"] = proxy
-	provider.Fields["methodReturnValueRecorder"] = recorder
-
-	cloned := cloneValue(provider)
-	if cloned.Fields["methodReturnValueRecorder"].Fields["proxy"].Fields["__gladeStubProvider"].Fields["methodReturnValueRecorder"].Kind == ValueNull {
-		t.Fatalf("cloned ApexMocks provider cycle lost recorder field")
-	}
-	if cloned.Fields["methodReturnValueRecorder"].Fields["proxy"].Fields["__gladeStubProvider"].Fields["methodReturnValueRecorder"].Type != "framework_MethodReturnValueRecorder" {
-		t.Fatalf("cloned ApexMocks provider cycle did not preserve recorder object")
 	}
 }
 

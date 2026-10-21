@@ -1,0 +1,3205 @@
+{
+  "productBase": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+  "method": "Static code reading only; no Glade execution, tests or probes. Counts predict row-cell failures, not individual differing JSON keys. Root groups can overlap.",
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "nativeObservationCount": 774,
+  "predictedFailingCellCount": 540,
+  "predictedMatchingCellCount": 234,
+  "rootCauses": [
+    {
+      "id": "token-runtime-identity",
+      "rows": [
+        "C155NI_001",
+        "C155NI_004",
+        "C155NI_006",
+        "C155NI_011"
+      ],
+      "cause": "Token get does not distinguish the original Integer/Long input from the Decimal string/typed read view. Dynamic put round-trips the input through Decimal storage, destroying the original scalar identity.",
+      "code": [
+        "internal/vm/sobject_member_dispatch.go:603",
+        "internal/vm/sobject_member_dispatch.go:727",
+        "internal/vm/dml_runtime.go:4823",
+        "internal/vm/dml_runtime.go:4743"
+      ],
+      "proposal": "Retain input scalar identity for the captured caller-owned writes; project token reads separately from string/typed reads. Row 011 requires original Integer identity even after a string put. Leave constructor, boxed/string get, queried and trigger Decimal views unchanged. Capture token reads after typed/constructor writes and after DML before extending that projection.",
+      "cells": [
+        {
+          "row": "C155NI_001",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_001",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_001",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_001",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_001",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_001",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_004",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_004",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_004",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_004",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_004",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_004",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_006",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_006",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_006",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_006",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_006",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_006",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_011",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_011",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_011",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_011",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_011",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_011",
+          "api": "68.0",
+          "route": "istest"
+        }
+      ],
+      "predictedFailingCellCount": 24
+    },
+    {
+      "id": "boxed-decimal-long-cast",
+      "rows": [
+        "C155NI_002",
+        "C155NI_003",
+        "C155NI_005",
+        "C155NI_007",
+        "C155NI_008",
+        "C155NI_009",
+        "C155NI_010",
+        "C155NI_014",
+        "C155NI_015",
+        "C155NI_016",
+        "C155NI_017",
+        "C155NI_018",
+        "C155NI_019",
+        "C155NI_020",
+        "C155NI_021",
+        "C155NI_022",
+        "C155NI_023",
+        "C155NI_024",
+        "C155NI_025",
+        "C155NI_026",
+        "C155NI_027",
+        "C155NI_028",
+        "C155NI_029",
+        "C155NI_030",
+        "C155NI_031",
+        "C155NI_032",
+        "C155NI_036",
+        "C155NI_038",
+        "C155NI_039",
+        "C155NI_040",
+        "C155NI_041",
+        "C155NI_042",
+        "C155NI_043",
+        "C155NI_044",
+        "C155NI_047",
+        "C155NI_048",
+        "C155NI_049",
+        "C155NI_050",
+        "C155NI_051",
+        "C155NI_052",
+        "C155NI_053",
+        "C155NI_056",
+        "C155NI_060",
+        "C155NI_062",
+        "C155NI_063",
+        "C155NI_064",
+        "C155NI_065",
+        "C155NI_066",
+        "C155NI_067",
+        "C155NI_069",
+        "C155NI_070",
+        "C155NI_072",
+        "C155NI_074",
+        "C155NI_075",
+        "C155NI_098",
+        "C155NI_099",
+        "C155NI_100",
+        "C155NI_101",
+        "C155NI_102",
+        "C155NI_103",
+        "C155NI_104",
+        "C155NI_105",
+        "C155NI_110",
+        "C155NI_111",
+        "C155NI_112",
+        "C155NI_113",
+        "C155NI_118",
+        "C155NI_119",
+        "C155NI_120",
+        "C155NI_121",
+        "C155NI_122",
+        "C155NI_123",
+        "C155NI_124",
+        "C155NI_125"
+      ],
+      "cause": "coerceCast rejects boxed Decimal-to-Integer but has no corresponding boxed Decimal-to-Long guard. Its fallback explicitly converts a Decimal into Long even when the expression is statically Object.",
+      "code": [
+        "internal/vm/vm.go:4376",
+        "internal/vm/vm.go:4414",
+        "internal/vm/lookup_assign.go:2617"
+      ],
+      "proposal": "Reject the captured Object-held Decimal-to-Long cast before numeric conversion; preserve direct statically Decimal field casts (077-094), Integer widening (001/004/011/054/055/057/059/061), token Long widening (006), and null controls. Do not change all numeric casts or field types.",
+      "cells": [
+        {
+          "row": "C155NI_002",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_002",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_002",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_002",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_002",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_002",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_003",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_003",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_003",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_003",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_003",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_003",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_005",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_005",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_005",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_005",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_005",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_005",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_007",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_007",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_007",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_007",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_007",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_007",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_008",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_008",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_008",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_008",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_008",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_008",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_009",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_009",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_009",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_009",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_009",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_009",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_010",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_010",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_010",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_010",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_010",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_010",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_014",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_014",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_014",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_014",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_014",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_014",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_015",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_015",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_015",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_015",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_015",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_015",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_016",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_016",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_016",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_016",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_016",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_016",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_017",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_017",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_017",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_017",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_017",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_017",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_018",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_018",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_018",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_018",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_018",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_018",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_019",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_019",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_019",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_019",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_019",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_019",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_020",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_020",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_020",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_020",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_020",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_020",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_021",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_021",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_021",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_021",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_021",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_021",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_022",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_022",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_022",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_022",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_022",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_022",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_023",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_023",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_023",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_023",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_023",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_023",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_024",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_024",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_024",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_024",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_024",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_024",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_025",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_025",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_025",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_025",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_025",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_025",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_026",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_026",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_026",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_026",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_026",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_026",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_027",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_027",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_027",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_027",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_027",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_027",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_028",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_028",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_028",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_028",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_028",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_028",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_029",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_029",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_029",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_029",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_029",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_029",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_030",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_030",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_030",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_030",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_030",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_030",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_031",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_031",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_031",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_031",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_031",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_031",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_032",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_032",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_032",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_032",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_032",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_032",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_036",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_036",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_036",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_036",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_036",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_036",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_038",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_038",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_038",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_038",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_038",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_038",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_039",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_039",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_039",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_039",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_039",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_039",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_040",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_040",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_040",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_040",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_040",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_040",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_041",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_041",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_041",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_041",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_041",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_041",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_042",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_042",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_042",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_042",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_042",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_042",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_043",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_043",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_043",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_043",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_043",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_043",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_044",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_044",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_044",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_044",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_044",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_044",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_047",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_047",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_047",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_047",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_047",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_047",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_048",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_048",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_048",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_048",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_048",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_048",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_049",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_049",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_049",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_049",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_049",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_049",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_050",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_050",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_050",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_050",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_050",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_050",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_051",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_051",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_051",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_051",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_051",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_051",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_052",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_052",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_052",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_052",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_052",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_052",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_053",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_053",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_053",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_053",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_053",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_053",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_056",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_056",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_056",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_056",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_056",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_056",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_060",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_060",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_060",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_060",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_060",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_060",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_062",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_062",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_062",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_062",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_062",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_062",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_063",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_063",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_063",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_063",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_063",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_063",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_064",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_064",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_064",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_064",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_064",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_064",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_065",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_065",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_065",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_065",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_065",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_065",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_066",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_066",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_066",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_066",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_066",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_066",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_067",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_067",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_067",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_067",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_067",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_067",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_069",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_069",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_069",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_069",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_069",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_069",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_070",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_070",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_070",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_070",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_070",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_070",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_072",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_072",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_072",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_072",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_072",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_072",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_074",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_074",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_074",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_074",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_074",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_074",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_075",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_075",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_075",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_075",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_075",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_075",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_098",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_098",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_098",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_098",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_098",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_098",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_099",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_099",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_099",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_099",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_099",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_099",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_100",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_100",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_100",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_100",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_100",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_100",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_101",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_101",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_101",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_101",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_101",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_101",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_102",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_102",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_102",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_102",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_102",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_102",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_103",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_103",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_103",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_103",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_103",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_103",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_104",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_104",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_104",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_104",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_104",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_104",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_105",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_105",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_105",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_105",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_105",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_105",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_110",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_110",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_110",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_110",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_110",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_110",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_111",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_111",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_111",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_111",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_111",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_111",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_112",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_112",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_112",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_112",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_112",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_112",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_113",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_113",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_113",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_113",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_113",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_113",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_118",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_118",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_118",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_118",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_118",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_118",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_119",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_119",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_119",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_119",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_119",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_119",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_120",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_120",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_120",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_120",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_120",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_120",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_121",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_121",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_121",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_121",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_121",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_121",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_122",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_122",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_122",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_122",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_122",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_122",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_123",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_123",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_123",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_123",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_123",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_123",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_124",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_124",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_124",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_124",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_124",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_124",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_125",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_125",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_125",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_125",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_125",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_125",
+          "api": "68.0",
+          "route": "istest"
+        }
+      ],
+      "predictedFailingCellCount": 444
+    },
+    {
+      "id": "numeric-dynamic-put-rejection",
+      "rows": [
+        "C155NI_033",
+        "C155NI_034"
+      ],
+      "cause": "Ordinary custom Decimal-field dynamic put has no String/Boolean type check; numeric checks at this dispatcher are restricted to platform events. Storage conversion falls back to the supplied scalar rather than rejecting it.",
+      "code": [
+        "internal/vm/sobject_member_dispatch.go:692",
+        "internal/vm/sobject_member_dispatch.go:715",
+        "internal/vm/dml_runtime.go:4768"
+      ],
+      "proposal": "Apply the captured Number-field String/Boolean rejection at dynamic put, preserving numeric and null writes. Assert native SObjectException wording; broader String coercion or other field categories need captures.",
+      "cells": [
+        {
+          "row": "C155NI_033",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_033",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_033",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_033",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_033",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_033",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_034",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_034",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_034",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_034",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_034",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_034",
+          "api": "68.0",
+          "route": "istest"
+        }
+      ],
+      "predictedFailingCellCount": 12
+    },
+    {
+      "id": "dynamic-long-dml-origin",
+      "rows": [
+        "C155NI_071",
+        "C155NI_073",
+        "C155NI_106",
+        "C155NI_107",
+        "C155NI_108",
+        "C155NI_109",
+        "C155NI_114",
+        "C155NI_115",
+        "C155NI_116",
+        "C155NI_117"
+      ],
+      "cause": "String put normalizes Long into Decimal, and DML serializes that Decimal without knowing the original dynamic Long input. Native reads Decimal but rejects these two Long inputs at insert before any trigger observation.",
+      "code": [
+        "internal/vm/sobject_member_dispatch.go:727",
+        "internal/vm/dml_runtime.go:4743",
+        "internal/vm/dml_runtime.go:3540"
+      ],
+      "proposal": "Preserve dynamic-write origin independently from the visible Decimal view and reject the two captured Long insert inputs using the native INVALID_TYPE_ON_FIELD_IN_RECORD error. Typed Long assignment remains accepted (017/022/024/026/048) and constructor Long remains accepted for the captured in-memory read (018), which does not establish constructor-Long DML behavior. Do not blanket-reject Long fields or infer the boundary from a field name. Capture other numeric fields, update and overwrite transitions before extending the rule.",
+      "cells": [
+        {
+          "row": "C155NI_071",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_071",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_071",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_071",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_071",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_071",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_073",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_073",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_073",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_073",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_073",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_073",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_106",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_106",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_106",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_106",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_106",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_106",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_107",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_107",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_107",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_107",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_107",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_107",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_108",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_108",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_108",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_108",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_108",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_108",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_109",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_109",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_109",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_109",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_109",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_109",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_114",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_114",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_114",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_114",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_114",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_114",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_115",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_115",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_115",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_115",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_115",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_115",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_116",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_116",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_116",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_116",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_116",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_116",
+          "api": "68.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_117",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_117",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_117",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_117",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_117",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_117",
+          "api": "68.0",
+          "route": "istest"
+        }
+      ],
+      "predictedFailingCellCount": 60
+    },
+    {
+      "id": "sum-crossing-text-scale",
+      "rows": [
+        "C155NI_060"
+      ],
+      "cause": "SUM always appends .0 to an integral aggregate result. The captured crossing sum is Decimal text/JSON 2147483648, while small sums 053/056 return 3.0.",
+      "code": [
+        "internal/soql/soql.go:1096",
+        "internal/soql/soql.go:1099"
+      ],
+      "proposal": "Repair the SUM result rendering only after a native boundary sweep explains why this captured total loses .0. Proposed next captures: sums 2147483646/2147483647/2147483648/2147483649 and negative twins, different input scales, and anonymous/isTest at 62/67/68. Do not infer an Integer-size threshold from these two totals.",
+      "cells": [
+        {
+          "row": "C155NI_060",
+          "api": "62.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_060",
+          "api": "62.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_060",
+          "api": "67.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_060",
+          "api": "67.0",
+          "route": "istest"
+        },
+        {
+          "row": "C155NI_060",
+          "api": "68.0",
+          "route": "anonymous"
+        },
+        {
+          "row": "C155NI_060",
+          "api": "68.0",
+          "route": "istest"
+        }
+      ],
+      "predictedFailingCellCount": 6
+    }
+  ],
+  "clusters": [
+    {
+      "cluster": "memory",
+      "shapeCount": 20,
+      "cellCount": 120,
+      "predictedFailingRows": [
+        "C155NI_001",
+        "C155NI_002",
+        "C155NI_003",
+        "C155NI_004",
+        "C155NI_005",
+        "C155NI_006",
+        "C155NI_007",
+        "C155NI_008",
+        "C155NI_009",
+        "C155NI_010",
+        "C155NI_011",
+        "C155NI_014",
+        "C155NI_015",
+        "C155NI_016",
+        "C155NI_017",
+        "C155NI_018",
+        "C155NI_019",
+        "C155NI_020"
+      ],
+      "predictedFailingCellCount": 108
+    },
+    {
+      "cluster": "boundaries",
+      "shapeCount": 17,
+      "cellCount": 102,
+      "predictedFailingRows": [
+        "C155NI_021",
+        "C155NI_022",
+        "C155NI_023",
+        "C155NI_024",
+        "C155NI_025",
+        "C155NI_026",
+        "C155NI_027",
+        "C155NI_028",
+        "C155NI_029",
+        "C155NI_030",
+        "C155NI_031",
+        "C155NI_032",
+        "C155NI_033",
+        "C155NI_034",
+        "C155NI_036"
+      ],
+      "predictedFailingCellCount": 90
+    },
+    {
+      "cluster": "persisted-query",
+      "shapeCount": 15,
+      "cellCount": 90,
+      "predictedFailingRows": [
+        "C155NI_038",
+        "C155NI_039",
+        "C155NI_040",
+        "C155NI_041",
+        "C155NI_042",
+        "C155NI_043",
+        "C155NI_044",
+        "C155NI_047",
+        "C155NI_048",
+        "C155NI_049",
+        "C155NI_050",
+        "C155NI_051",
+        "C155NI_052"
+      ],
+      "predictedFailingCellCount": 78
+    },
+    {
+      "cluster": "aggregate",
+      "shapeCount": 8,
+      "cellCount": 48,
+      "predictedFailingRows": [
+        "C155NI_053",
+        "C155NI_056",
+        "C155NI_060"
+      ],
+      "predictedFailingCellCount": 18
+    },
+    {
+      "cluster": "equality-map",
+      "shapeCount": 8,
+      "cellCount": 48,
+      "predictedFailingRows": [
+        "C155NI_062",
+        "C155NI_063",
+        "C155NI_064",
+        "C155NI_065",
+        "C155NI_066",
+        "C155NI_067"
+      ],
+      "predictedFailingCellCount": 36
+    },
+    {
+      "cluster": "trigger",
+      "shapeCount": 40,
+      "cellCount": 240,
+      "predictedFailingRows": [
+        "C155NI_069",
+        "C155NI_070",
+        "C155NI_071",
+        "C155NI_072",
+        "C155NI_073",
+        "C155NI_074",
+        "C155NI_075",
+        "C155NI_098",
+        "C155NI_099",
+        "C155NI_100",
+        "C155NI_101",
+        "C155NI_102",
+        "C155NI_103",
+        "C155NI_104",
+        "C155NI_105",
+        "C155NI_106",
+        "C155NI_107",
+        "C155NI_108",
+        "C155NI_109",
+        "C155NI_110",
+        "C155NI_111",
+        "C155NI_112",
+        "C155NI_113",
+        "C155NI_114",
+        "C155NI_115",
+        "C155NI_116",
+        "C155NI_117",
+        "C155NI_118",
+        "C155NI_119",
+        "C155NI_120",
+        "C155NI_121",
+        "C155NI_122",
+        "C155NI_123",
+        "C155NI_124",
+        "C155NI_125"
+      ],
+      "predictedFailingCellCount": 210
+    },
+    {
+      "cluster": "direct-cast",
+      "shapeCount": 18,
+      "cellCount": 108,
+      "predictedFailingRows": [],
+      "predictedFailingCellCount": 0
+    },
+    {
+      "cluster": "transport-control",
+      "shapeCount": 1,
+      "cellCount": 6,
+      "predictedFailingRows": [],
+      "predictedFailingCellCount": 0
+    },
+    {
+      "cluster": "object-instanceof",
+      "shapeCount": 2,
+      "cellCount": 12,
+      "predictedFailingRows": [],
+      "predictedFailingCellCount": 0
+    }
+  ],
+  "unverified": [
+    "All predicted outcomes require coordinator before-runs. Compilation/setup failures can mask the runtime predictions.",
+    "No API59 answers exist in r3. No API68-only behavior is claimed; values/outcomes agree at same-release 62/67/68. Intermediate supported APIs 63-66 have not been captured in this packet.",
+    "Only insert trigger contexts are captured, not update/delete/undelete/async or all precisions. Rows069-076 are r3 caller-only snapshots; 098-129 are independent trigger-view transactions.",
+    "No row-errors.json was present. capture-completion.json reports zero no_answer_rows and 774 native_answers. No artifact outcomes occur in this r3 matrix.",
+    "SUM row060 overlaps boxed cast failures and needs additional native formatting boundaries before a general fix.",
+    "No product behavior, ABI, board, queue or coordinator state changed."
+  ],
+  "harnessBeforeRun": {
+    "head": "capture-revision-072197422302637538985142681621120249895537132619113236946903366731700637725298",
+    "failedClusterAPIGates": 27,
+    "nativeCellsExecuted": 0,
+    "observedProductMismatches": null,
+    "cause": "The harness counted compiled event registrations as trigger declarations. One native before/after insert declaration expands into two runtime registrations.",
+    "repair": "Assert one indexed declaration, then validate the two unique before/after insert registrations, including name, object and API. Keep the existing request-runtime shared base and named clone inheritance.",
+    "evidence": [
+      "internal/apextest/project_setup.go:468",
+      "internal/apextest/runner.go:3108",
+      "internal/apextest/triggers_conformance_test.go:175",
+      "internal/apextest/conformance_runner_test.go:99"
+    ],
+    "verification": "Code/log/fixture analysis only. Coordinator rerun required. All per-cluster predictions are unchanged."
+  },
+  "fixPhase": {
+    "implementedRootCauses": [
+      "token-runtime-identity",
+      "boxed-decimal-long-cast",
+      "numeric-dynamic-put-rejection",
+      "dynamic-long-dml-origin",
+      "unknown-custom-field-get"
+    ],
+    "pendingRootCauses": [
+      {
+        "id": "sum-crossing-text-scale",
+        "reason": "boundary sweep for SUM text/JSON/castDecimal scale not captured",
+        "remainingCells": 0,
+        "carriedCells": 6
+      }
+    ],
+    "expectedPassingCells": 768,
+    "expectedFailingCells": 0,
+    "observedAfterRun": null,
+    "clusters": [
+      {
+        "cluster": "memory",
+        "expectedPassingCells": 120,
+        "nativeCellCount": 120,
+        "carriedCells": 0,
+        "exactDenominator": 120
+      },
+      {
+        "cluster": "boundaries",
+        "expectedPassingCells": 102,
+        "nativeCellCount": 102,
+        "carriedCells": 0,
+        "exactDenominator": 102
+      },
+      {
+        "cluster": "persisted-query",
+        "expectedPassingCells": 90,
+        "nativeCellCount": 90,
+        "carriedCells": 0,
+        "exactDenominator": 90
+      },
+      {
+        "cluster": "aggregate",
+        "expectedPassingCells": 42,
+        "nativeCellCount": 48,
+        "carriedCells": 6,
+        "exactDenominator": 42
+      },
+      {
+        "cluster": "equality-map",
+        "expectedPassingCells": 48,
+        "nativeCellCount": 48,
+        "carriedCells": 0,
+        "exactDenominator": 48
+      },
+      {
+        "cluster": "trigger",
+        "expectedPassingCells": 240,
+        "nativeCellCount": 240,
+        "carriedCells": 0,
+        "exactDenominator": 240
+      },
+      {
+        "cluster": "direct-cast",
+        "expectedPassingCells": 108,
+        "nativeCellCount": 108,
+        "carriedCells": 0,
+        "exactDenominator": 108
+      },
+      {
+        "cluster": "transport-control",
+        "expectedPassingCells": 6,
+        "nativeCellCount": 6,
+        "carriedCells": 0,
+        "exactDenominator": 6
+      },
+      {
+        "cluster": "object-instanceof",
+        "expectedPassingCells": 12,
+        "nativeCellCount": 12,
+        "carriedCells": 0,
+        "exactDenominator": 12
+      }
+    ],
+    "verification": "Read-only source/native-fixture/hash analysis and git diff --check only; coordinator validation required. CHANGES.md maps each behavior and unchanged neighbor to both routes and all captured APIs.",
+    "carriedCells": 6,
+    "exactDenominator": 768
+  },
+  "validationAt98931115": {
+    "source": "Fix desk reported capture-host after-run beside a before-tree",
+    "nativeCells": 774,
+    "failingCells": 12,
+    "failingRows": [
+      "C155NI_035",
+      "C155NI_060"
+    ],
+    "note": "035 was an unpredicted unknown-field getter mismatch; no assertion of a newly introduced regression is made."
+  },
+  "sumProjection": {
+    "newNativeCells": 192,
+    "newPredictedBaselineFailingCells": 72,
+    "uncarriedCells": 6,
+    "expectedExistingPassingCells": 774,
+    "expectedNewPassingCells": 192,
+    "scope": "API 62+; one ungrouped SUM over precision-18 custom Number scales 0-8, Currency scale 2, Percent scale 8. Other APIs and field/query shapes retain the existing projection.",
+    "verification": "Static source/native analysis only; coordinator validation required."
+  }
+}

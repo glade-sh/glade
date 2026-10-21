@@ -1,0 +1,14 @@
+context=istest
+transport=intentional result-bearing assertion; not native test-pass credit
+api=62.0
+source_sha256:62.0:force-app/main/default/classes/GroveTypedOwnerObservationTest.cls=9cc45ed32b2927affd1fe4660e6f75b352c944a913d245e1921531e8913148f3
+source_sha256:62.0:force-app/main/default/classes/GroveTypedOwnerObservationTest.cls-meta.xml=3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51
+source_sha256:62.0:force-app/main/default/flows/Grove_Typed_Owner.flow-meta.xml=4595d187b83427f9bfd2fa6ca76074078859764f81452c20e84bb86292f3e272
+source_sha256:62.0:sfdx-project.json=d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4
+api=67.0
+source_sha256:67.0:force-app/main/default/classes/GroveTypedOwnerObservationTest.cls=9cc45ed32b2927affd1fe4660e6f75b352c944a913d245e1921531e8913148f3
+source_sha256:67.0:force-app/main/default/classes/GroveTypedOwnerObservationTest.cls-meta.xml=a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32
+source_sha256:67.0:force-app/main/default/flows/Grove_Typed_Owner.flow-meta.xml=bc1d1fb98b1a36e7d15fde8479cb6587166e63efa8fc4e7739e7484b6accced7
+source_sha256:67.0:sfdx-project.json=626c7c456c32aa5939840aa0d14ba9c1ef860038c28c39bdb8375f8995b96c66
+native_complete=true
+rows=4

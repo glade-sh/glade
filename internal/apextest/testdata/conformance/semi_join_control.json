@@ -1,0 +1,710 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "packetRowsSha256": "1b3b9e49047b3a8b156268d7d4fcdef858b43ce15190b0202e5e42846f48ea9f",
+  "sourceManifestSha256": "9bcfac705a75ce2d060e88f587fa1a45f7dc07bc55723a7648aea87f13192392",
+  "completionSha256": "184fc9ac1c9d038ac782179333a620c31838c860dbf93004d4ca73aac94a2aff",
+  "evidenceByAPI": {
+    "62.0": {
+      "anonymous": {
+        "orgTsvSha256": "b892f47513c97daa56d854673ff384bc90784c7070d81284fe50dbaa2136fa50",
+        "orgRunSha256": "154f6ea6ac83559cfc1c3a5115ece17eec3d64ed9f8827487dd611ce0697b88f",
+        "observations": 69
+      },
+      "isTest": {
+        "orgTsvSha256": "a5d75d995cc300e1b26bdd0ff3089d3624e19b32e59b130334de93f0153a89df",
+        "orgRunSha256": "3867aeef5e38191a4a16594a73a94dae4ddc67ee0f40e4ef3f0e68fe4a3fac1e",
+        "observations": 69
+      }
+    },
+    "67.0": {
+      "anonymous": {
+        "orgTsvSha256": "b892f47513c97daa56d854673ff384bc90784c7070d81284fe50dbaa2136fa50",
+        "orgRunSha256": "73b6a4a7fe1e8ad0ae4ebee48057ae9f2b5c133efb5dfb054ef5e6f40ee9d31b",
+        "observations": 69
+      },
+      "isTest": {
+        "orgTsvSha256": "a5d75d995cc300e1b26bdd0ff3089d3624e19b32e59b130334de93f0153a89df",
+        "orgRunSha256": "9ed2202ac056b46a4b721d1c875f11c6c3a0eb9fa10e782bd0c1f06ad068ede0",
+        "observations": 69
+      }
+    },
+    "68.0": {
+      "anonymous": {
+        "orgTsvSha256": "b892f47513c97daa56d854673ff384bc90784c7070d81284fe50dbaa2136fa50",
+        "orgRunSha256": "636b3ece624236a1324464abe52d8d056d4d18227b7d59fed06ccb8039fa83e5",
+        "observations": 69
+      },
+      "isTest": {
+        "orgTsvSha256": "a5d75d995cc300e1b26bdd0ff3089d3624e19b32e59b130334de93f0153a89df",
+        "orgRunSha256": "30f324b07072a9d6187f460ba9bd787b737f6e690188eda2338e54d5fb35ae3f",
+        "observations": 69
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "C157SJ_001",
+      "question": "ordinary-or",
+      "query": "SELECT Id,Name FROM Account WHERE (Name = :aName OR Name = :bName)",
+      "variant": "dynamic",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_001",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "anonymous": "8dbf371b5e4bf9b95122e943137b2943244ec8fb563018657b40ad5f45480597"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nv.put('phase','query');List<SObject> selected=Database.query('SELECT Id,Name FROM Account WHERE (Name = :aName OR Name = :bName)');Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!accountScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_001|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C157SJ_001",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "class:C157SJ001Test": "994565100ec8f6096457f46423ee66aabb94ece7cbb97e7f150923531eb9b6f2"
+          },
+          "classes": {
+            "C157SJ001Test": "@IsTest private class C157SJ001Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nv.put('phase','query');List<SObject> selected=Database.query('SELECT Id,Name FROM Account WHERE (Name = :aName OR Name = :bName)');Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!accountScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_001|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ001Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C157SJ_002",
+      "question": "ordinary-or",
+      "query": "SELECT Id,Name FROM Account WHERE (Name = :aName OR Name = :bName)",
+      "variant": "static",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_002",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "anonymous": "a3110c827b5e2fe6b6452fca71814a9bec195b043ef47d3215307b346c76311e"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nv.put('phase','query');List<SObject> selected=[SELECT Id,Name FROM Account WHERE (Name = :aName OR Name = :bName)];Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!accountScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_002|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C157SJ_002",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "class:C157SJ002Test": "4e54e394a3c13acea5b77cf2de8d2e839b6e38208590678f60d389458e76fd33"
+          },
+          "classes": {
+            "C157SJ002Test": "@IsTest private class C157SJ002Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nv.put('phase','query');List<SObject> selected=[SELECT Id,Name FROM Account WHERE (Name = :aName OR Name = :bName)];Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!accountScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_002|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ002Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C157SJ_003",
+      "question": "bind-set-or",
+      "query": "SELECT Id,Name FROM Account WHERE Id IN :ids AND (Name = :aName OR Name = :bName)",
+      "variant": "dynamic",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_003",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "anonymous": "42091ce340b0d9f81f73e2061e1a0ad2133eb628ed2c5ca0afe837403a3e4e2e"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nv.put('phase','query');List<SObject> selected=Database.query('SELECT Id,Name FROM Account WHERE Id IN :ids AND (Name = :aName OR Name = :bName)');Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!accountScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_003|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C157SJ_003",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "class:C157SJ003Test": "fa578402d1accd87231b1feda06390c36bb24bedb0a989a7a42e494ad1af8e06"
+          },
+          "classes": {
+            "C157SJ003Test": "@IsTest private class C157SJ003Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nv.put('phase','query');List<SObject> selected=Database.query('SELECT Id,Name FROM Account WHERE Id IN :ids AND (Name = :aName OR Name = :bName)');Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!accountScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_003|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ003Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C157SJ_004",
+      "question": "bind-set-or",
+      "query": "SELECT Id,Name FROM Account WHERE Id IN :ids AND (Name = :aName OR Name = :bName)",
+      "variant": "static",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_004",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "anonymous": "91cb9f54c048c81392911a93f0584d6d31d65d70312bce986cecf3b54d92ed70"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nv.put('phase','query');List<SObject> selected=[SELECT Id,Name FROM Account WHERE Id IN :ids AND (Name = :aName OR Name = :bName)];Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!accountScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_004|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C157SJ_004",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "class:C157SJ004Test": "3bd1337545b41de096632be7f7861949e2316ed914da460a53e17d6ee9959dac"
+          },
+          "classes": {
+            "C157SJ004Test": "@IsTest private class C157SJ004Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nv.put('phase','query');List<SObject> selected=[SELECT Id,Name FROM Account WHERE Id IN :ids AND (Name = :aName OR Name = :bName)];Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!accountScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_004|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ004Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C157SJ_005",
+      "question": "bare-semi",
+      "query": "SELECT Id,Name FROM Account WHERE Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope )",
+      "variant": "dynamic",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_005",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "anonymous": "ded37cec03a7d865c042f4b653f7c8d2ff28313abdead19702b8dd3130dfce8f"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nv.put('phase','query');List<SObject> selected=Database.query('SELECT Id,Name FROM Account WHERE Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope )');Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!accountScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_005|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C157SJ_005",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "class:C157SJ005Test": "ce6967204820c8b1ee3a1e422e95dfe26d0116aa5f4bde70f2a88d5603e6bcfe"
+          },
+          "classes": {
+            "C157SJ005Test": "@IsTest private class C157SJ005Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nv.put('phase','query');List<SObject> selected=Database.query('SELECT Id,Name FROM Account WHERE Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope )');Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!accountScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_005|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ005Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C157SJ_006",
+      "question": "bare-semi",
+      "query": "SELECT Id,Name FROM Account WHERE Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope )",
+      "variant": "static",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_006",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "anonymous": "ede1b0a32a5794f53d8a6430ff4cd5b61385d7a7a79c66e81249869e6bc3e1ca"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nv.put('phase','query');List<SObject> selected=[SELECT Id,Name FROM Account WHERE Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope )];Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!accountScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_006|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C157SJ_006",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "outOfScope": 0,
+                "keys": [
+                  "SJ-Aster",
+                  "SJ-Birch"
+                ],
+                "rows": 2,
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "class:C157SJ006Test": "9f78a194d2e62c2839a8d643c9cc3bdc92b707e6c936ab21ca3d4f6d7bf7ec12"
+          },
+          "classes": {
+            "C157SJ006Test": "@IsTest private class C157SJ006Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{String seedName='SJ-'+String.valueOf(Crypto.getRandomLong())+'-';\nString aName=seedName+'Aster',bName=seedName+'Birch',cName=seedName+'Cedar';\nAccount a=new Account(Name=aName,Industry='Technology');\nAccount b=new Account(Name=bName,Industry='Retail');\nAccount c=new Account(Name=cName,Industry='Technology');\ninsert new List<Account>{a,b,c};\nContact ca=new Contact(LastName='SJ-Aster-1',AccountId=a.Id);\nContact cb=new Contact(LastName='SJ-Birch-1',AccountId=b.Id);\nContact cc=new Contact(LastName='SJ-Aster-2',AccountId=a.Id);\nContact loose=new Contact(LastName='SJ-Unlinked');\ninsert new List<Contact>{ca,cb,cc,loose};\nSet<Id> ids=new Set<Id>{a.Id,b.Id};\nSet<Id> accountScope=new Set<Id>{a.Id,b.Id,c.Id};\nSet<Id> contactScope=new Set<Id>{ca.Id,cb.Id,cc.Id,loose.Id};\nInteger l=1,o=1;\nv.put('phase','query');List<SObject> selected=[SELECT Id,Name FROM Account WHERE Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope )];Integer outOfScope=0;List<String> keys=new List<String>();List<String> children=new List<String>();for(SObject item:selected){if(!accountScope.contains(item.Id)){outOfScope++;continue;}String key=String.valueOf(item.get('Name'));if(item.Id==a.Id){key='SJ-Aster';}else if(item.Id==b.Id){key='SJ-Birch';}else if(item.Id==c.Id){key='SJ-Cedar';}keys.add(key);}keys.sort();children.sort();v.put('rows',selected.size());v.put('keys',keys);v.put('outOfScope',outOfScope);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_006|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ006Test"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 package visualforce
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -172,7 +173,7 @@ func TestVisualforceNamespacedStandardControllerFieldAliasAPI67(t *testing.T) {
 	page, _ := fixture.index.Page("RecordAccess")
 	writeFile(t, page.File, markup)
 	var err error
-	fixture.index, err = LoadProject(fixture.project)
+	fixture.index, err = LoadProjectForRender(fixture.project)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,5 +243,80 @@ func TestVisualforceUnsupportedRelationshipPathDoesNotReadRawRecordAPI67(t *test
 	html := fixture.render(t, "RecordAccess", "001000000000001AAA")
 	if strings.Contains(html, "VF_RELATIONSHIP_CANARY") {
 		t.Fatalf("unsupported relationship field leaked raw record data: %s", html)
+	}
+}
+
+// lookup_standard_owner_name_runtime at API59/67 renders the authorized target
+// Name. These local guards ensure the projection cannot use raw relationships
+// or bypass the source/target authorization used by the existing bridge.
+func TestVisualforceAuthorizedRelationshipNameProjectionAPI67(t *testing.T) {
+	const markup = `<apex:page standardController="Account"><apex:outputField value="{!Account.Owner.Name}"/><apex:outputText value="{!Account.Owner.Name}"/>{!Account.Owner.Name}</apex:page>`
+	const targetName = "VF Authorized Target Name"
+	// Account.OwnerId is non-permissionable in the native describe catalog;
+	// a synthetic FLS denial cannot represent a native source-field state.
+	// Captured custom lookup denials are covered by TestV09SalesforceConformance.
+	for _, test := range []struct {
+		name                                           string
+		denyTarget, unsharedSource, wrongCatalogTarget bool
+	}{
+		{name: "authorized"},
+		{name: "denied target name", denyTarget: true},
+		{name: "unshared source", unsharedSource: true},
+		{name: "catalog target must match", wrongCatalogTarget: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			ownerID := accessTestUserID
+			if test.unsharedSource {
+				ownerID = "005000000000002AAA"
+			}
+			fixture := newRecordAccessRenderFixture(t, markup, ownerID)
+			account := fixture.org.Objects["Account"]
+			reference := storage.Field{APIName: "OwnerId", Type: storage.FieldReference, RelationshipName: "Owner", ReferenceTo: []string{"User"}}
+			if test.wrongCatalogTarget {
+				reference.ReferenceTo = []string{"Account"}
+			}
+			account.Definition.Fields["OwnerId"] = reference
+			row := account.Records["001000000000001AAA"]
+			row.Fields["OwnerId"] = storage.IDValue(accessTestUserID)
+			row.Fields["Owner.Name"] = storage.StringValue("RAW_RELATIONSHIP_CANARY")
+			row.ParentRelationships = map[string]storage.Record{"Owner": {
+				ID: accessTestUserID, Object: "User", Fields: map[string]storage.Value{"Name": storage.StringValue("RAW_RELATIONSHIP_CANARY")},
+			}}
+			account.Records[row.ID] = row
+			fixture.org.Objects["Account"] = account
+			users := fixture.org.Objects["User"]
+			users.Definition.Fields = map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}
+			user := users.Records[accessTestUserID]
+			user.Fields["Name"] = storage.StringValue(targetName)
+			users.Records[user.ID] = user
+			fixture.org.Objects["User"] = users
+			objects := fixture.org.Objects["ObjectPermissions"]
+			objects.Records["110000000000002"] = storage.Record{ID: "110000000000002", Object: "ObjectPermissions", Fields: map[string]storage.Value{
+				"ParentId": accessTestProfileIDValue(), "SObjectType": storage.StringValue("User"), "PermissionsRead": storage.BooleanValue(true),
+			}}
+			fixture.org.Objects["ObjectPermissions"] = objects
+			permissions := fixture.org.Objects["FieldPermissions"]
+			for i, grant := range []struct {
+				object, field string
+				read          bool
+			}{
+				{"Account", "OwnerId", true}, {"User", "Name", !test.denyTarget},
+			} {
+				id := storage.ID(fmt.Sprintf("12000000000000%d", i+3))
+				permissions.Records[id] = storage.Record{ID: id, Object: "FieldPermissions", Fields: map[string]storage.Value{
+					"ParentId": accessTestProfileIDValue(), "SObjectType": storage.StringValue(grant.object),
+					"Field": storage.StringValue(grant.object + "." + grant.field), "PermissionsRead": storage.BooleanValue(grant.read),
+				}}
+			}
+			fixture.org.Objects["FieldPermissions"] = permissions
+			html := fixture.render(t, "RecordAccess", row.ID)
+			want := 0
+			if test.name == "authorized" {
+				want = 3
+			}
+			if got := strings.Count(html, targetName); got != want || strings.Contains(html, "RAW_RELATIONSHIP_CANARY") {
+				t.Fatalf("authorized Name count=%d, want %d; raw relationships must stay hidden: %s", got, want, html)
+			}
+		})
 	}
 }

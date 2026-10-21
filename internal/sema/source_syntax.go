@@ -14,6 +14,9 @@ var sourceSyntaxTokenPattern = regexp.MustCompile(`[a-zA-Z_][a-zA-Z_0-9]*|[^\s]`
 
 func sourceSyntaxDiagnostics(typ typesys.TypeSymbol, body string, bodyOffset int, source string, anonymous bool) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
+	if diagnostics := singleQuotedStringLineBreakDiagnostics(typ, body, bodyOffset, source); len(diagnostics) != 0 {
+		return diagnostics
+	}
 	code := sourceSyntaxCodeText(body)
 	diagnostics = append(diagnostics, sourceSyntaxStatementDiagnostics(typ, code, bodyOffset, source)...)
 	// R071/R072 reject direct member access on a parameterized .class literal.

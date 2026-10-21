@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	directCreatedCursor	{"sameId":1,"lowerIdOnly":2,"equalStamp":3,"olderOnly":0,"cursorMatches":true,"cursorMillisDelta":0,"cursorFraction":0,"storedFraction":0,"repeatsCursor":false,"remaining":2}
+62.0	jsonCreatedCursor	{"sameId":1,"lowerIdOnly":2,"equalStamp":3,"olderOnly":0,"cursorMatches":true,"cursorMillisDelta":0,"cursorFraction":0,"storedFraction":0,"repeatsCursor":false,"remaining":2}
+67.0	directCreatedCursor	{"sameId":1,"lowerIdOnly":2,"equalStamp":3,"olderOnly":0,"cursorMatches":true,"cursorMillisDelta":0,"cursorFraction":0,"storedFraction":0,"repeatsCursor":false,"remaining":2}
+67.0	jsonCreatedCursor	{"sameId":1,"lowerIdOnly":2,"equalStamp":3,"olderOnly":0,"cursorMatches":true,"cursorMillisDelta":0,"cursorFraction":0,"storedFraction":0,"repeatsCursor":false,"remaining":2}

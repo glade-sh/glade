@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"probe_delete":{"inner":"SELF_REFERENCE_FROM_TRIGGER","outer":"success","remaining":1},"probe_statement":{"inner":"SELF_REFERENCE_FROM_TRIGGER","outer":"success","remaining":1},"probe_update":{"inner":"SELF_REFERENCE_FROM_TRIGGER","outer":"success","remaining":1}}
+62.0	isTest	{"probe_delete":{"inner":"SELF_REFERENCE_FROM_TRIGGER","outer":"success","remaining":1},"probe_statement":{"inner":"SELF_REFERENCE_FROM_TRIGGER","outer":"success","remaining":1},"probe_update":{"inner":"SELF_REFERENCE_FROM_TRIGGER","outer":"success","remaining":1}}
+67.0	anonymous	{"probe_delete":{"inner":"SELF_REFERENCE_FROM_TRIGGER","outer":"success","remaining":1},"probe_statement":{"inner":"SELF_REFERENCE_FROM_TRIGGER","outer":"success","remaining":1},"probe_update":{"inner":"SELF_REFERENCE_FROM_TRIGGER","outer":"success","remaining":1}}
+67.0	isTest	{"probe_delete":{"inner":"SELF_REFERENCE_FROM_TRIGGER","outer":"success","remaining":1},"probe_statement":{"inner":"SELF_REFERENCE_FROM_TRIGGER","outer":"success","remaining":1},"probe_update":{"inner":"SELF_REFERENCE_FROM_TRIGGER","outer":"success","remaining":1}}

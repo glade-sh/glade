@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import test from "node:test";
-import { chromium } from "playwright";
+import { chromium } from "./shared-playwright.mjs";
 import { harnessHTML, requireLWCToolchain, repoRoot, startLightningServer, testTempDir } from "./helpers.mjs";
 
 const gladeOutJS = path.join(repoRoot, "internal/lwcruntime/embed/glade.out.js");

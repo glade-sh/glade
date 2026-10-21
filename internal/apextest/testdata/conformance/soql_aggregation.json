@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "declarations": {
     "SAContext": "public class SAContext { public Account account; }",
@@ -1688,5 +1689,88 @@
       "reason": "Explicit SYSTEM_MODE queryWithBinds is rejected in native anonymous Apex; Glade permits it, requiring access-mode enforcement outside aggregation.",
       "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
     }
-  ]
+  ],
+  "ceilingOracle": {
+    "apiVersion": "68.0",
+    "route": "anonymous",
+    "rows": 237,
+    "observed": 231,
+    "orgTSVMissing": [
+      "R116",
+      "R212",
+      "R213",
+      "R217",
+      "R218",
+      "R219"
+    ],
+    "orgTSVMissingReason": "The API 68.0 org.tsv records no answer for these rows. R218 is also carried.",
+    "controlsUnobserved": [
+      "N001",
+      "N002",
+      "N003",
+      "N004",
+      "N005",
+      "N006",
+      "N007",
+      "N008",
+      "N009",
+      "N010",
+      "N011",
+      "N012",
+      "N013",
+      "N014",
+      "N017",
+      "N018",
+      "N019",
+      "N020",
+      "N021",
+      "N022",
+      "Q001",
+      "Q002",
+      "Q003",
+      "Q004",
+      "Q005",
+      "Q006",
+      "Q007",
+      "Q008",
+      "Q009",
+      "Q010",
+      "S001",
+      "S002",
+      "S003",
+      "S004",
+      "S005",
+      "S006"
+    ],
+    "controlsUnobservedReason": "Native controls were captured at API 62.0 and 67.0 only.",
+    "uncaughtRecapture": {
+      "route": "anonymous",
+      "rows": [
+        "R116",
+        "R212",
+        "R213",
+        "R217",
+        "R218",
+        "R219",
+        "Q007"
+      ],
+      "result": "Each row compiled and failed uncaught. R116, R212, R213, R217, R219 and supplemental control Q007 equal their stored expected answers exactly. R218 returns the stored backend message followed by a position and per-connection identifier suffix.",
+      "asserted": [
+        "R116",
+        "R212",
+        "R213",
+        "R217",
+        "R219",
+        "Q007"
+      ],
+      "carried": [
+        "R218"
+      ],
+      "carriedReason": "R218 keeps its existing query locators and cursors carry; its native text also carries a per-connection identifier that is not deterministic.",
+      "source": "native-capture",
+      "sha256": "7094d729dfb3c868b810c4b000f3693d2a24b38d6ed47582ecd7c9c98bd91b20"
+    },
+    "orgTSV": "native-capture",
+    "orgRowsSHA256": "49af6d3b99581b35429d64b153d31b9c671b053abafaea8f4238b4436ab44189"
+  }
 }

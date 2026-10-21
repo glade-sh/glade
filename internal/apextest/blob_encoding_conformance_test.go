@@ -17,7 +17,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Owned Salesforce observations at both API endpoints. CI needs no org or tools.
+// Owned Salesforce observations at API 62/67/68. CI needs no org or tools.
 func TestBlobEncodingOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected  string
@@ -38,7 +38,7 @@ func TestBlobEncodingOrgConformance(t *testing.T) {
 	if len(data.Cases) != 262 || len(data.Controls) != 0 {
 		t.Fatalf("oracle rows: %d + %d", len(data.Cases), len(data.Controls))
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle versions: %v", data.APIVersions)
 	}
 	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)

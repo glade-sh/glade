@@ -39,15 +39,17 @@ type l12Case struct {
 	DiagnosticExpected map[string]string `json:"diagnostic_expected"`
 }
 
-// TestL12SalesforceConformance compares every native org.tsv row as exact text.
-// Inputs and API 59/67 observations are exported from the native GraphQL
-// capture: 42 compile/metadata and 178 native DOM rows per API.
-// The original metadata target row uses a separately captured isolated replay.
-// Thirty additional API 59/67 review controls assert empty/null selection
-// validation and the retained or/not/nin/like predicates.
-// Comparison predicates were removed; their observations remain in the raw
-// evidence export and are not counted as local support or carried assertions.
-// Matching rows are asserted; named L07 differences are logged with their owner.
+// TestL12SalesforceConformance compares the retained native rows as exact text.
+// Winter '27 observations cover APIs 59/67/68: 42 original compile/metadata,
+// 178 original DOM, 30 retained review DOM and three isolated metadata controls.
+// l12_w27_evidence.json binds the sources, native routes and raw diagnostics.
+// Changed prior-release answers remain in historical_expected and
+// historical_diagnostic_expected; older raw capture files are also retained.
+// The same-release twins establish service drift, not an API 68 gate.
+// Bounded no-data means no envelope within 4000ms (+200ms settle), not successful
+// execution or permanent silence. The full observation is still asserted.
+// Forty comparison-predicate observations are not counted as local support.
+// Existing L07 carries are preserved; new service differences are failures.
 // GLADE_L12_REPORT selects the TSV destination, without changing assertions.
 // CI never calls Salesforce.
 func TestL12SalesforceConformance(t *testing.T) {
@@ -69,7 +71,7 @@ func l12MetadataTargets(t *testing.T) {
 	if len(cases) != 3 {
 		t.Fatalf("L12 requires three isolated metadata target controls, got %d", len(cases))
 	}
-	for _, api := range []string{"59.0", "67.0"} {
+	for _, api := range []string{"59.0", "67.0", "68.0"} {
 		t.Run(api, func(t *testing.T) {
 			compiled := l12CompileCases(t, api, cases)
 			matches := 0
@@ -134,7 +136,7 @@ func l12SalesforceConformance(t *testing.T) {
 		reviewIDs[c.ID] = true
 	}
 	cases = append(cases, reviewCases...)
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var compileCases, runtimeCases []l12Case
 	for _, c := range cases {
@@ -328,8 +330,9 @@ func l12SalesforceConformance(t *testing.T) {
 	}
 }
 
-// Only the differing diagnostic is carried; each wire
-// compile outcome is still asserted. A matching diagnostic is never carried.
+// Existing carries predate this export; no new carry is added.
+// Only the differing diagnostic is carried; each wire compile outcome remains
+// asserted. A matching diagnostic is never carried.
 var l12WireDiagnosticCarries = map[string]string{
 	"c_wire_wire_duplicate": "wire transform lacks the native duplicate-decorator deployment envelope and formatted source frame",
 	"c_wire_wire_public":    "wire transform lacks the native api/wire conflict deployment envelope and formatted source frame",

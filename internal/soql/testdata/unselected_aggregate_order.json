@@ -1,0 +1,80 @@
+[
+  {
+    "query": "SELECT Name FROM Account GROUP BY Name ORDER BY MIN(CreatedDate) DESC LIMIT 2",
+    "names": [
+      "Gamma",
+      "Beta"
+    ]
+  },
+  {
+    "query": "SELECT Name FROM Account GROUP BY Name ORDER BY MIN(AnnualRevenue) DESC NULLS LAST",
+    "names": [
+      "Beta",
+      "Alpha",
+      "Gamma"
+    ]
+  },
+  {
+    "query": "SELECT Name FROM Account GROUP BY Name ORDER BY MAX(AnnualRevenue) DESC NULLS LAST",
+    "names": [
+      "Alpha",
+      "Beta",
+      "Gamma"
+    ]
+  },
+  {
+    "query": "SELECT Name FROM Account GROUP BY Name ORDER BY SUM(AnnualRevenue) DESC NULLS LAST",
+    "names": [
+      "Alpha",
+      "Beta",
+      "Gamma"
+    ]
+  },
+  {
+    "query": "SELECT Name FROM Account GROUP BY Name ORDER BY AVG(AnnualRevenue) DESC NULLS LAST",
+    "names": [
+      "Alpha",
+      "Beta",
+      "Gamma"
+    ]
+  },
+  {
+    "query": "SELECT Name FROM Account GROUP BY Name ORDER BY COUNT(Id) DESC, Name",
+    "names": [
+      "Alpha",
+      "Beta",
+      "Gamma"
+    ]
+  },
+  {
+    "query": "SELECT Name FROM Account GROUP BY Name HAVING MIN(AnnualRevenue) > 0 ORDER BY MIN(AnnualRevenue) DESC",
+    "names": [
+      "Beta",
+      "Alpha"
+    ]
+  },
+  {
+    "query": "SELECT Name, COUNT(Id) total FROM Account GROUP BY Name ORDER BY MIN(CreatedDate) DESC",
+    "names": [
+      "Gamma",
+      "Beta",
+      "Alpha"
+    ]
+  },
+  {
+    "query": "SELECT Name, MIN(AnnualRevenue) lowest FROM Account GROUP BY Name ORDER BY MIN(AnnualRevenue) DESC NULLS LAST",
+    "names": [
+      "Beta",
+      "Alpha",
+      "Gamma"
+    ]
+  },
+  {
+    "query": "SELECT Name FROM Account GROUP BY Name ORDER BY MIN(AnnualRevenue) ASC NULLS FIRST",
+    "names": [
+      "Gamma",
+      "Alpha",
+      "Beta"
+    ]
+  }
+]

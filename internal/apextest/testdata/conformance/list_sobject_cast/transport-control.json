@@ -1,0 +1,303 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "transport-control",
+  "shapeCount": 3,
+  "nativeObservationCount": 18,
+  "rows": [
+    {
+      "id": "C14CONTROL_001",
+      "disposition": "transport-control",
+      "label": "complete row-bound marker",
+      "twin": "C14CONTROL_001",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Integer r;r=7;String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C14CONTROL_001|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C14CONTROL_001|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "7c60ae992819c1cf964999c3df9de9888adcd6483db5e621e0db7241fcb7538b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C14Transport001": "@IsTest private class C14Transport001{@IsTest static void observe(){Integer r;r=7;String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C14CONTROL_001|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C14CONTROL_001|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C14Transport001"
+          ],
+          "sourceSha256": {
+            "class:C14Transport001": "a87fc18d2cf161baea8d10ec19ff03dcb7da716304df833b26689e1f8c527690"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C14CONTROL_002",
+      "disposition": "transport-control",
+      "label": "caught ListException marker",
+      "twin": "C14CONTROL_002",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;try{List<Integer> missing=new List<Integer>();r=String.valueOf(missing[0]);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C14CONTROL_002|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C14CONTROL_002|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "f503b4c08a313243d825095719f52e2ceb7b07f4287e19a8aac95042258ae88d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.ListException|List index out of bounds: 0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.ListException|List index out of bounds: 0\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.ListException|List index out of bounds: 0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.ListException|List index out of bounds: 0\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.ListException|List index out of bounds: 0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.ListException|List index out of bounds: 0\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C14Transport002": "@IsTest private class C14Transport002{@IsTest static void observe(){String r;try{List<Integer> missing=new List<Integer>();r=String.valueOf(missing[0]);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C14CONTROL_002|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C14CONTROL_002|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C14Transport002"
+          ],
+          "sourceSha256": {
+            "class:C14Transport002": "a7f6a82e806f5f57ea74bd2e01f825ccd09d4769de363bba95926c71a2a35424"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.ListException|List index out of bounds: 0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.ListException|List index out of bounds: 0\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.ListException|List index out of bounds: 0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.ListException|List index out of bounds: 0\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.ListException|List index out of bounds: 0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.ListException|List index out of bounds: 0\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C14CONTROL_003",
+      "disposition": "transport-control",
+      "label": "genuine uncaught ListException",
+      "twin": "C14CONTROL_003",
+      "routes": {
+        "anonymous": {
+          "anonymous": "List<Integer> missing=new List<Integer>();Integer absent=missing[0];",
+          "sourceSha256": {
+            "anonymous": "b364bfc0d769b3a5a797c6d8a5b62864d36e09de3d1777caabf8c3f7915d501f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.ListException: List index out of bounds: 0",
+                "exceptionType": "System.ListException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 0"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.ListException: List index out of bounds: 0",
+                "exceptionType": "System.ListException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 0"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.ListException: List index out of bounds: 0",
+                "exceptionType": "System.ListException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 0"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C14Transport003": "@IsTest private class C14Transport003{@IsTest static void observe(){List<Integer> missing=new List<Integer>();Integer absent=missing[0];}}"
+          },
+          "tests": [
+            "C14Transport003"
+          ],
+          "sourceSha256": {
+            "class:C14Transport003": "710135ced232e32de0722277b1a4ef9c1545094e255e08566217bb2d1a8cfd2f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C14Transport003",
+                    "method": "observe",
+                    "message": "System.ListException: List index out of bounds: 0",
+                    "exceptionType": "System.ListException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 0"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C14Transport003",
+                    "method": "observe",
+                    "message": "System.ListException: List index out of bounds: 0",
+                    "exceptionType": "System.ListException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 0"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C14Transport003",
+                    "method": "observe",
+                    "message": "System.ListException: List index out of bounds: 0",
+                    "exceptionType": "System.ListException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 0"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

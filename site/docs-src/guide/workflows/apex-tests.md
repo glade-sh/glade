@@ -18,6 +18,18 @@ Run from a Salesforce DX project root. Make sure `glade doctor --project .` can 
 toolchain. Use committed fixtures for records, metadata, and mocks that the test
 expects.
 
+## Compile errors and test context
+
+A compile error excludes the invalid class, its dependents, and triggers that
+reference it. Unrelated tests still run. Excluded tests report `compile_error`;
+`excludedClasses` also includes invalid non-test classes and triggers. The
+command exits `1` while any exclusion remains, even if all executed tests pass.
+Unattributed errors and invalid class metadata can still block the project.
+
+The default running user uses `America/Los_Angeles`. Set `TimeZoneSidKey`
+explicitly for inserted `System.runAs` users. See [local test outcomes and
+limits](/guide/local-testing#running-user-and-limits).
+
 ## Steps
 
 Run the full local suite:
@@ -53,7 +65,31 @@ glade test --project . --test-timeout 2m
 Class files contain one exact class per line. Duration history balances later
 shards; the assignment is deterministic for the same selected classes, shard
 count, and history. `--write-class-shards` writes `shard-NNN.txt` class lists
-and exits. The default per-test timeout is five minutes.
+and exits.
+
+The per-test wall-clock cap defaults to **10 minutes** and also applies to
+`@TestSetup`. Choose a Go duration such as `90s` or `15m` with
+`GLADE_TEST_TIMEOUT`; `--test-timeout` takes precedence over the environment,
+then the default. Invalid or negative settings are errors. `0` disables the
+per-test cap. This policy also applies to daemon, watch, and `glade dev`
+test/watch runs. CPU and governor limits are independent and unchanged.
+Timeout failures name the applied setting and explain how to raise or disable it.
+The VM checks cancellation every 64 Apex statements. A long native operation
+(such as a SOQL/DML scan, JSON conversion, regex or sort) can run beyond the
+cap before reaching the next cancellation check.
+
+Keep an explicit cap in CI:
+
+```bash
+glade test --test-timeout 2m
+```
+
+For a longer local run or to disable the cap:
+
+```bash
+GLADE_TEST_TIMEOUT=15m glade test
+GLADE_TEST_TIMEOUT=0 glade test
+```
 
 Run tests affected by a git ref:
 

@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>67.0</apiVersion>
+  <assignments>
+    <name>Echo</name>
+    <label>Echo</label>
+    <locationX>0</locationX>
+    <locationY>0</locationY>
+    <assignmentItems>
+      <assignToReference>result</assignToReference>
+      <operator>Assign</operator>
+      <value>
+        <elementReference>seed</elementReference>
+      </value>
+    </assignmentItems>
+  </assignments>
+  <interviewLabel>SproutScalar {!$Flow.CurrentDateTime}</interviewLabel>
+  <label>SproutScalar</label>
+  <processType>AutoLaunchedFlow</processType>
+  <start>
+    <locationX>0</locationX>
+    <locationY>0</locationY>
+    <connector>
+      <targetReference>Echo</targetReference>
+    </connector>
+  </start>
+  <status>Active</status>
+  <variables>
+    <name>seed</name>
+    <dataType>String</dataType>
+    <isCollection>false</isCollection>
+    <isInput>true</isInput>
+    <isOutput>false</isOutput>
+  </variables>
+  <variables>
+    <name>result</name>
+    <dataType>String</dataType>
+    <isCollection>false</isCollection>
+    <isInput>false</isInput>
+    <isOutput>true</isOutput>
+  </variables>
+</Flow>

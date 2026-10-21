@@ -21,13 +21,18 @@ func checkCustomExceptionNames(index typesys.Index, model *semaTypeMemberView) [
 
 func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member typesys.MemberSymbol, instructions []ir.Instruction, scope irSemaScope, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	scope = cloneIRStatementScope(scope)
+	nativeReachability := typeUsesAPIVersionAtLeast(typ, 62)
 	var diagnostics []diagnostic.Diagnostic
 	var walk func([]ir.Instruction, irStatementContext, *irSemaScope)
 	walk = func(items []ir.Instruction, context irStatementContext, currentScope *irSemaScope) {
 		terminated := false
 		for _, inst := range items {
 			if terminated {
-				diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, "instruction is unreachable", bodyOffset+inst.Pos, source))
+				d := statementContractDiagnostic(typ, member, "instruction is unreachable", bodyOffset+inst.Pos, source)
+				if nativeReachability {
+					d.NativeMessage = "Unreachable statement"
+				}
+				diagnostics = append(diagnostics, d)
 				continue
 			}
 			switch inst.Op {
@@ -122,6 +127,9 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 			case ir.OpTry:
 				tryScope := *currentScope
 				tryScope.push()
+				if !nativeReachability {
+					diagnostics = append(diagnostics, a.capturedTryThrowSuccessor(typ, member, inst.Then, tryScope, bodyOffset, source, model)...)
+				}
 				walk(inst.Then, context, &tryScope)
 				seenCatchTypes := make(map[string]bool)
 				var priorCatchTypes []string
@@ -174,10 +182,17 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 				currentScope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type))
 			}
 			terminates := irInstructionTerminates(inst)
-			if inst.Op == ir.OpTry && len(inst.Finally) == 0 {
-				terminates = false
+			if inst.Op == ir.OpTry {
+				if nativeReachability {
+					// Native reachability uses the try and catch exits, even
+					// when finally always throws.
+					inst.Finally = nil
+					terminates = irInstructionTerminates(inst)
+				} else if len(inst.Finally) == 0 {
+					terminates = false
+				}
 			}
-			if inst.Op != ir.OpThrow && terminates {
+			if terminates && (nativeReachability || inst.Op != ir.OpThrow) {
 				terminated = true
 			}
 		}

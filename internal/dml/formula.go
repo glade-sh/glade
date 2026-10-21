@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -103,6 +104,7 @@ func EvaluateRecordFormulaValueInOrg(formula string, field storage.Field, org *s
 type FormulaEvaluationOptions struct {
 	PreserveNumericNull bool
 	Template            bool
+	UserID              storage.ID
 	// FormulaSurface selects FormulaEval/recalculateFormulas result semantics.
 	// Validation rules and workflow formulas retain their existing defaults.
 	FormulaSurface bool
@@ -149,6 +151,7 @@ func EvaluateRecordFormulaValueInOrgWithOptions(formula string, field storage.Fi
 		formulaSurface:      options.FormulaSurface,
 		failure:             options.Error,
 		storedFormula:       options.FormulaSurface && field.Type == storage.FieldCalculated,
+		userID:              options.UserID,
 	}
 	if options.FormulaSurface {
 		parser.blankNumericAsZero = !options.PreserveNumericNull
@@ -441,6 +444,9 @@ type formulaParser struct {
 	validationMessage   string
 	failure             *FormulaError
 	storedFormula       bool
+	flowTextNulls       bool
+	flowReference       func(string) (formulaValue, bool, bool)
+	userID              storage.ID
 }
 
 func (p *formulaParser) resolutionNamespace(definition storage.ObjectDefinition) string {
@@ -519,7 +525,13 @@ func (p *formulaParser) parseComparison() (formulaValue, bool) {
 		if !ok {
 			return formulaValue{}, false
 		}
-		left = formulaValue{kind: formulaBool, bool: compareFormulaValues(left, right, op)}
+		comparison := compareFormulaValues(left, right, op)
+		if p.flowTextNulls {
+			if value, handled := compareFlowTextNulls(left, right, op); handled {
+				comparison = value
+			}
+		}
+		left = formulaValue{kind: formulaBool, bool: comparison}
 	}
 }
 
@@ -566,6 +578,11 @@ func (p *formulaParser) parseAdditive() (formulaValue, bool) {
 		// coercion must not manufacture an invalid Date from the day count.
 		if op == "+" && left.kind == formulaNull && rightOK &&
 			(left.fieldType == storage.FieldDate || left.display == "DATE") {
+			continue
+		}
+		if op == "-" && left.kind == formulaDate && right.kind == formulaNull &&
+			(right.fieldType == storage.FieldDate || right.display == "DATE") {
+			left = formulaValue{kind: formulaNull}
 			continue
 		}
 		if op == "-" && left.kind == formulaDate && right.kind == formulaDate {
@@ -774,6 +791,11 @@ func (p *formulaParser) parsePrimary() (formulaValue, bool) {
 		case "NULL":
 			return formulaValue{kind: formulaNull}, true
 		}
+		if p.flowReference != nil {
+			if value, handled, ok := p.flowReference(token.text); handled {
+				return value, ok
+			}
+		}
 		return p.fieldValue(token.text), true
 	case formulaTokenSymbol:
 		if p.matchSymbol("(") {
@@ -918,6 +940,13 @@ func (p *formulaParser) fieldValue(field string) formulaValue {
 }
 
 func (p *formulaParser) valueForRecordField(record storage.Record, field string) formulaValue {
+	if strings.EqualFold(field, "$User.Id") {
+		id := p.userID
+		if id == "" {
+			id = storage.DefaultUserID
+		}
+		return formulaValue{kind: formulaString, text: string(id)}
+	}
 	if p.org == nil {
 		return formulaFieldValue(record, field)
 	}
@@ -1025,7 +1054,7 @@ func (p *formulaParser) setupFieldValue(field string) (formulaValue, bool) {
 func setupCustomSettingRecord(org storage.OrgState, object storage.ObjectState) (storage.Record, bool) {
 	orgID := strings.TrimSpace(org.OrgID)
 	if orgID == "" {
-		orgID = "00D000000000001"
+		orgID = storage.DefaultOrgID
 	}
 	records := make([]storage.Record, 0, len(object.Records))
 	for _, record := range object.Records {
@@ -1056,6 +1085,9 @@ func formulaRecordTypeValue(definition storage.ObjectDefinition, record storage.
 	recordTypeID := ""
 	if value, ok := record.GetField("RecordTypeId"); ok {
 		recordTypeID = strings.TrimSpace(workflowValueString(value))
+	}
+	if recordTypeID == "" && UsesImplicitMasterRecordType(definition) {
+		return ""
 	}
 	for _, recordType := range definition.RecordTypes {
 		if recordTypeID != "" && string(recordType.ID) != recordTypeID {
@@ -1139,12 +1171,41 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if len(args) != 2 {
 			return formulaValue{}, false
 		}
+		if p.formulaApexTypeContainsNull(args) {
+			return formulaValue{kind: formulaNull}, true
+		}
 		return formulaValue{kind: formulaBool, bool: strings.Contains(args[0].asString(), args[1].asString())}, true
 	case "BEGINS":
 		if len(args) != 2 {
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaBool, bool: strings.HasPrefix(args[0].asString(), args[1].asString())}, true
+	case "FIND":
+		if len(args) != 2 && len(args) != 3 {
+			return formulaValue{}, false
+		}
+		start := 1
+		if len(args) == 3 {
+			var ok bool
+			start, ok = formulaIntArg(args[2])
+			if !ok {
+				return formulaValue{}, false
+			}
+		}
+		text := []rune(args[1].asString())
+		// Native FIND treats a zero start as the first character.
+		if start == 0 {
+			start = 1
+		}
+		if start < 0 || start > len(text) {
+			return formulaNumberValue(0), true
+		}
+		suffix := string(text[start-1:])
+		match := strings.Index(suffix, args[0].asString())
+		if match < 0 {
+			return formulaNumberValue(0), true
+		}
+		return formulaNumberValue(float64(start + utf8.RuneCountInString(suffix[:match]))), true
 	case "LEFT":
 		if len(args) != 2 {
 			return formulaValue{}, false
@@ -1257,6 +1318,11 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if len(args) != 1 {
 			return formulaValue{}, false
 		}
+		if args[0].kind == formulaDate {
+			if value, err := time.Parse(time.RFC3339Nano, args[0].text); err == nil {
+				return formulaValue{kind: formulaString, text: value.UTC().Format("2006-01-02 15:04:05Z")}, true
+			}
+		}
 		return formulaValue{kind: formulaString, text: args[0].asString()}, true
 	case "LOWER":
 		if len(args) != 1 {
@@ -1310,7 +1376,7 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		}
 		date := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
 		return formulaValue{kind: formulaDate, text: date.Format("2006-01-02")}, true
-	case "DAY", "MONTH", "YEAR":
+	case "DAY", "DAYOFYEAR", "MONTH", "YEAR":
 		if len(args) != 1 {
 			return formulaValue{}, false
 		}
@@ -1321,6 +1387,8 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		switch strings.ToUpper(name) {
 		case "DAY":
 			return formulaValue{kind: formulaNumber, number: float64(date.Day())}, true
+		case "DAYOFYEAR":
+			return formulaValue{kind: formulaNumber, number: float64(date.YearDay())}, true
 		case "MONTH":
 			return formulaValue{kind: formulaNumber, number: float64(int(date.Month()))}, true
 		default:
@@ -1429,6 +1497,9 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 			return formulaValue{}, false
 		}
 		value, ok := formulaRecordField(currentRecord, lookupField.APIName)
+		if !ok && !currentRecord.HasExplicitNull(lookupField.APIName) {
+			value, ok = existingSystemFieldValue(currentRecord, lookupField.APIName)
+		}
 		if ok && value.Kind != storage.ValueNull {
 			parentID := idFromStorageValue(value)
 			if parentID == "" {

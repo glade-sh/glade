@@ -1,0 +1,129 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 1,
+  "nativeObservationCount": 6,
+  "rows": [
+    {
+      "id": "SB01",
+      "expected": {
+        "outcome": "runtime",
+        "value": "scalar:0|list:0|nested:0|field:0"
+      },
+      "routes": {
+        "anonymous": {
+          "id": "SB01A",
+          "anonymous": "System.assert(false, 'P|SB01A|' + InitializerBindProbe.observe());\n",
+          "setupClasses": {
+            "InitializerBindProbe": "public class InitializerBindProbe {\n    private static List<String> observed = new List<String>();\n    private static String sharedName = 'OwnedInitializerNoMatch';\n    static {\n        for (Account unused : [SELECT Id FROM Account WHERE Id = null WITH SYSTEM_MODE]) {}\n        String scalarName = 'OwnedInitializerNoMatch';\n        List<Account> scalarRows = [SELECT Id FROM Account WHERE Name = :scalarName WITH SYSTEM_MODE];\n        observed.add('scalar:' + scalarRows.size());\n        List<String> names = new List<String>{scalarName};\n        Integer count = 0;\n        for (Account row : [SELECT Id FROM Account WHERE Name IN :names WITH SYSTEM_MODE]) count++;\n        observed.add('list:' + count);\n        {\n            Set<Id> ids = new Set<Id>();\n            List<Account> nestedRows = [SELECT Id FROM Account WHERE Id IN :ids WITH SYSTEM_MODE];\n            observed.add('nested:' + nestedRows.size());\n        }\n    }\n    static /* executable scope */ {\n        List<Account> fieldRows = [SELECT Id FROM Account WHERE Name = :sharedName WITH SYSTEM_MODE];\n        observed.add('field:' + fieldRows.size());\n    }\n    public static String observe() { return String.join(observed, '|'); }\n}\n"
+          },
+          "stage": "runtime",
+          "sourceSha256": {
+            "anonymous": "9d6ab89d313c8136ae26125ec4d11e48747c59061b15e691804f628a6dd50fba",
+            "setupClass:InitializerBindProbe": "93bfee1ee931531ec6c5b30512e810a8ad8651b98f23016d6b64c9ca27c45116"
+          }
+        },
+        "isTest": {
+          "id": "SB01T",
+          "classes": {
+            "InitializerBindProbe": "public class InitializerBindProbe {\n    private static List<String> observed = new List<String>();\n    private static String sharedName = 'OwnedInitializerNoMatch';\n    static {\n        for (Account unused : [SELECT Id FROM Account WHERE Id = null WITH SYSTEM_MODE]) {}\n        String scalarName = 'OwnedInitializerNoMatch';\n        List<Account> scalarRows = [SELECT Id FROM Account WHERE Name = :scalarName WITH SYSTEM_MODE];\n        observed.add('scalar:' + scalarRows.size());\n        List<String> names = new List<String>{scalarName};\n        Integer count = 0;\n        for (Account row : [SELECT Id FROM Account WHERE Name IN :names WITH SYSTEM_MODE]) count++;\n        observed.add('list:' + count);\n        {\n            Set<Id> ids = new Set<Id>();\n            List<Account> nestedRows = [SELECT Id FROM Account WHERE Id IN :ids WITH SYSTEM_MODE];\n            observed.add('nested:' + nestedRows.size());\n        }\n    }\n    static /* executable scope */ {\n        List<Account> fieldRows = [SELECT Id FROM Account WHERE Name = :sharedName WITH SYSTEM_MODE];\n        observed.add('field:' + fieldRows.size());\n    }\n    public static String observe() { return String.join(observed, '|'); }\n}\n",
+            "InitializerBindSpec": "@IsTest private class InitializerBindSpec { @IsTest static void observe(){ System.assert(false, 'P|SB01T|' + InitializerBindProbe.observe()); } }\n"
+          },
+          "tests": [
+            "InitializerBindSpec"
+          ],
+          "stage": "runtime",
+          "sourceSha256": {
+            "class:InitializerBindProbe": "93bfee1ee931531ec6c5b30512e810a8ad8651b98f23016d6b64c9ca27c45116",
+            "class:InitializerBindSpec": "6613ac42e0269bff2879ce97a5ab8db87f78756a3c88b3863c9eb5c9be1c13af"
+          }
+        }
+      }
+    }
+  ],
+  "cells": [
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "SB01A",
+      "native": "scalar:0|list:0|nested:0|field:0",
+      "nativeSHA256": "5f3b795172bda72d97cbd7c279bac0e1f0c6140aca5ea24f0e77bc217a2e978f",
+      "rawReceiptSHA256": "d173e88114aba2265c42480fa20630e4135fc6e392393ff2f951db7ad7ef18cf"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "SB01T",
+      "native": "scalar:0|list:0|nested:0|field:0",
+      "nativeSHA256": "5f3b795172bda72d97cbd7c279bac0e1f0c6140aca5ea24f0e77bc217a2e978f",
+      "rawReceiptSHA256": "e2a6b6277e8787b56cc5c693d1664cc423e603ea904c0ef0da58bb3b517b089e"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "SB01A",
+      "native": "scalar:0|list:0|nested:0|field:0",
+      "nativeSHA256": "5f3b795172bda72d97cbd7c279bac0e1f0c6140aca5ea24f0e77bc217a2e978f",
+      "rawReceiptSHA256": "218e945a82c62ed7fbffd91ebe4d219f916619851be5ec26b2ac5c0239379372"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "SB01T",
+      "native": "scalar:0|list:0|nested:0|field:0",
+      "nativeSHA256": "5f3b795172bda72d97cbd7c279bac0e1f0c6140aca5ea24f0e77bc217a2e978f",
+      "rawReceiptSHA256": "7976dacf32a267178c06ca0c4df90f4b9fcaf5e7190d027a3935eba41c6820fd"
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "id": "SB01A",
+      "native": "scalar:0|list:0|nested:0|field:0",
+      "nativeSHA256": "5f3b795172bda72d97cbd7c279bac0e1f0c6140aca5ea24f0e77bc217a2e978f",
+      "rawReceiptSHA256": "17a24a3cb77bf0cfc2ae2686f5ce528da6e65f29d3f7aac9a1bc445d37b59acc"
+    },
+    {
+      "api": "68.0",
+      "route": "isTest",
+      "id": "SB01T",
+      "native": "scalar:0|list:0|nested:0|field:0",
+      "nativeSHA256": "5f3b795172bda72d97cbd7c279bac0e1f0c6140aca5ea24f0e77bc217a2e978f",
+      "rawReceiptSHA256": "7921838c52acf62775b8ed95d8ee6c616c9d0ee343735688686673f63d58dbb0"
+    }
+  ],
+  "classMetadataByAPI": {
+    "62.0": {
+      "InitializerBindProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "InitializerBindSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "67.0": {
+      "InitializerBindProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "InitializerBindSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "68.0": {
+      "InitializerBindProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "InitializerBindSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+    }
+  },
+  "classMetadataSHA256": {
+    "62.0": {
+      "InitializerBindProbe": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "InitializerBindSpec": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+    },
+    "67.0": {
+      "InitializerBindProbe": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "InitializerBindSpec": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+    },
+    "68.0": {
+      "InitializerBindProbe": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "InitializerBindSpec": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+    }
+  }
+}

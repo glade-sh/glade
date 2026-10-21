@@ -31,8 +31,8 @@ func TestPrefilterSourceAvoidsPrivateMarkers(t *testing.T) {
 
 func TestPrivateNameTableIsWellFormed(t *testing.T) {
 	patterns := privateExamplePackagePatterns()
-	if len(patterns) != 22 {
-		t.Fatalf("pattern count = %d, want 22", len(patterns))
+	if len(patterns) != 24 {
+		t.Fatalf("pattern count = %d, want 24", len(patterns))
 	}
 	label := regexp.MustCompile(`^private-pattern-[0-9]{2}$`)
 	labels := map[string]bool{}
@@ -46,7 +46,7 @@ func TestPrivateNameTableIsWellFormed(t *testing.T) {
 			t.Errorf("pattern %q repeats a digest", pattern.label)
 		}
 		digests[pattern.digest] = true
-		if pattern.length <= 0 || pattern.kind > privateNameNamespace {
+		if pattern.length <= 0 || pattern.kind > privateNamePhrase {
 			t.Errorf("pattern %q has length %d and kind %d", pattern.label, pattern.length, pattern.kind)
 		}
 	}
@@ -108,6 +108,7 @@ var privateStandInNames = []struct {
 	{kind: privateNamePackage, name: "kits"},
 	{kind: privateNameProduct, name: "kitesurfer"},
 	{kind: privateNameNamespace, name: "KS"},
+	{kind: privateNamePhrase, name: "ks desk pattern"},
 }
 
 // newPrivateNamePattern hashes a stand-in name the way the table was built.
@@ -137,7 +138,7 @@ func privateNameRegexp(kind privateNameKind, name string) *regexp.Regexp {
 	switch kind {
 	case privateNameHyphenated:
 		return regexp.MustCompile(`(?i)` + name)
-	case privateNameWord:
+	case privateNameWord, privateNamePhrase:
 		return regexp.MustCompile(`(?i)\b` + name + `\b`)
 	case privateNameWordPrefix:
 		return regexp.MustCompile(`(?i)\b` + name + `[[:alnum:]_]*\b`)
@@ -167,6 +168,15 @@ var privateStandInFixtures = []struct {
 	text string
 	want bool
 }{
+	{name: "ks desk pattern", text: "// class (the ks desk pattern, where names overlap)", want: true},
+	{name: "ks desk pattern", text: "KS DESK PATTERN", want: true},
+	{name: "ks desk pattern", text: "k\u017f de\u017fk pattern", want: true},
+	{name: "ks desk pattern", text: "xks desk pattern", want: false},
+	{name: "ks desk pattern", text: "ks desk patterns", want: false},
+	{name: "ks desk pattern", text: "_ks desk pattern", want: false},
+	{name: "ks desk pattern", text: "ks desk pattern_", want: false},
+	{name: "ks desk pattern", text: "ks  desk pattern", want: false},
+	{name: "ks desk pattern", text: "ks\ndesk pattern", want: false},
 	{name: "desk-kit", text: "desk-kit", want: true},
 	{name: "desk-kit", text: "my-desk-kit-fork", want: true},
 	{name: "desk-kit", text: "xdesk-kitx", want: true},
@@ -515,5 +525,44 @@ func TestRepoGuardPrefilterFindingsEquivalent(t *testing.T) {
 	}
 	if !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("ordered findings differ:\nhashed: %#v\nregexp: %#v", actual, expected)
+	}
+}
+
+// SHA-256 cannot reconstruct the removed wording. Use a synthetic phrase with
+// the same kind and length to exercise the reporter without storing that text.
+func TestPrivateNamePhraseReportsSyntheticComment(t *testing.T) {
+	patterns := privateExamplePackagePatterns()
+	pattern := patterns[22]
+	if pattern.kind != privateNamePhrase || pattern.length != 15 || pattern.fingerprint != 0x88a4 ||
+		fmt.Sprintf("%x", pattern.digest) != "dd538701916e4588093d6b1ac427561ad5250bc03ef812cb0940f99c66526414" {
+		t.Fatal("removed comment phrase is missing from the hashed table")
+	}
+	standIn := newPrivateNamePattern(pattern.label, pattern.kind, "ks desk pattern")
+	if standIn.length != pattern.length {
+		t.Fatal("stand-in phrase length differs from the guarded phrase")
+	}
+	patterns[22] = standIn
+	const rel = "internal/vm/synthetic_dispatch.go"
+	const text = "// A local class uses the ks desk pattern when names overlap."
+	var recorder prefilterFindingRecorder
+	checkPrivateNameText(&recorder, patterns, rel, text)
+	if len(recorder.findings) != 1 || recorder.findings[0].file != rel || recorder.findings[0].label != pattern.label {
+		t.Fatalf("synthetic comment findings = %#v, want one phrase finding", recorder.findings)
+	}
+	if strings.Contains(recorder.findings[0].message, "ks desk pattern") {
+		t.Fatal("finding message discloses the matched phrase")
+	}
+	var clean prefilterFindingRecorder
+	checkPrivateNameText(&clean, patterns, rel, "// A local class takes precedence over a dependency class of the same name.")
+	if len(clean.findings) != 0 {
+		t.Fatalf("synthetic behavior comment findings = %#v, want none", clean.findings)
+	}
+}
+
+func TestPrivateNamePhraseTableKeepsDiagnosticComment(t *testing.T) {
+	pattern := privateExamplePackagePatterns()[23]
+	if pattern.kind != privateNamePhrase || pattern.length != 30 || pattern.fingerprint != 0x1011 ||
+		fmt.Sprintf("%x", pattern.digest) != "0063f9509f624b3f44c98edf0ec395238beaf73b2517d11b45486e151f46bcc7" {
+		t.Fatal("removed diagnostic comment phrase is missing from the hashed table")
 	}
 }

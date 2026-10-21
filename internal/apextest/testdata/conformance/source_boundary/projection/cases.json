@@ -1,0 +1,78 @@
+[
+  {
+    "api": "62.0",
+    "id": "order",
+    "route": "isTest",
+    "className": "ProjectionObservation62",
+    "source": "@IsTest private class ProjectionObservation62 { @IsTest static void observe(){SparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c first=[SELECT Id,Name FROM SparseSample__c WHERE Id=:sample.Id];SparseSample__c second=[SELECT Name,Id FROM SparseSample__c WHERE Id=:sample.Id];System.assert(false,'OBS|'+JSON.serialize(new List<String>{String.valueOf(first).replace(String.valueOf(first.Id),'[RECORD_ID]'),String.valueOf(second).replace(String.valueOf(second.Id),'[RECORD_ID]')}));} }",
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": {
+      "tests": [
+        {
+          "MethodName": "observe",
+          "Outcome": "Fail",
+          "Message": "System.AssertException: Assertion Failed: OBS|[\"SparseSample__c:{Id=[RECORD_ID], Name=sample}\",\"SparseSample__c:{Name=sample, Id=[RECORD_ID]}\"]",
+          "StackTrace": "Class.ProjectionObservation62.observe: line 1, column 1"
+        }
+      ]
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "order",
+    "route": "anonymous",
+    "source": "SparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c first=[SELECT Id,Name FROM SparseSample__c WHERE Id=:sample.Id];SparseSample__c second=[SELECT Name,Id FROM SparseSample__c WHERE Id=:sample.Id];System.assert(false,'OBS|'+JSON.serialize(new List<String>{String.valueOf(first).replace(String.valueOf(first.Id),'[RECORD_ID]'),String.valueOf(second).replace(String.valueOf(second.Id),'[RECORD_ID]')}));",
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|[\"SparseSample__c:{Id=[RECORD_ID], Name=sample}\",\"SparseSample__c:{Name=sample, Id=[RECORD_ID]}\"]",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "order",
+    "route": "isTest",
+    "className": "ProjectionObservation67",
+    "source": "@IsTest private class ProjectionObservation67 { @IsTest static void observe(){SparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c first=[SELECT Id,Name FROM SparseSample__c WHERE Id=:sample.Id];SparseSample__c second=[SELECT Name,Id FROM SparseSample__c WHERE Id=:sample.Id];System.assert(false,'OBS|'+JSON.serialize(new List<String>{String.valueOf(first).replace(String.valueOf(first.Id),'[RECORD_ID]'),String.valueOf(second).replace(String.valueOf(second.Id),'[RECORD_ID]')}));} }",
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": {
+      "tests": [
+        {
+          "MethodName": "observe",
+          "Outcome": "Fail",
+          "Message": "System.AssertException: Assertion Failed: OBS|[\"SparseSample__c:{Id=[RECORD_ID], Name=sample}\",\"SparseSample__c:{Name=sample, Id=[RECORD_ID]}\"]",
+          "StackTrace": "Class.ProjectionObservation67.observe: line 1, column 1"
+        }
+      ]
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "order",
+    "route": "anonymous",
+    "source": "SparseSample__c sample=new SparseSample__c(Name='sample');insert sample;SparseSample__c first=[SELECT Id,Name FROM SparseSample__c WHERE Id=:sample.Id];SparseSample__c second=[SELECT Name,Id FROM SparseSample__c WHERE Id=:sample.Id];System.assert(false,'OBS|'+JSON.serialize(new List<String>{String.valueOf(first).replace(String.valueOf(first.Id),'[RECORD_ID]'),String.valueOf(second).replace(String.valueOf(second.Id),'[RECORD_ID]')}));",
+    "objects": {
+      "SparseSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|[\"SparseSample__c:{Id=[RECORD_ID], Name=sample}\",\"SparseSample__c:{Name=sample, Id=[RECORD_ID]}\"]",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  }
+]

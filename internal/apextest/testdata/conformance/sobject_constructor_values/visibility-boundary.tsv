@@ -1,0 +1,11 @@
+api	route	case	accepted	problems	source_sha256
+62.0	anonymous	tokenBoolean	false	["Field does not exist: HasOptedOutOfEmail on Contact"]	8d5bdfe402d8bfdaede040c86d763323034f3a6ded9aeea59c0c4082ec9f8517
+62.0	anonymous	stringBoolean	false	["Field does not exist: HasOptedOutOfEmail on Contact"]	c762cb1a9d3edc2e925d3ad8bb48f6b9517b88d26184f1464dd52b5146edff13
+62.0	anonymous	boolean	false	["Field does not exist: HasOptedOutOfEmail on Contact"]	72b9d3e1d5bcf0b35ffb189a962e86dc8f2d2c7f8405ee3c277d9bb2a67c86de
+62.0	anonymous	nullBoolean	false	["Field does not exist: HasOptedOutOfEmail on Contact"]	252d67019f6f6238c272e9b2d9113ea55fae57328e606ba688130f31daf3332b
+62.0	anonymous	objectBoolean	false	["Field does not exist: HasOptedOutOfEmail on Contact"]	f3e978f63178a006969e49de791835db37ba3308206ce99f5a121b74780d9872
+67.0	anonymous	tokenBoolean	false	["Field does not exist: HasOptedOutOfEmail on Contact"]	8d5bdfe402d8bfdaede040c86d763323034f3a6ded9aeea59c0c4082ec9f8517
+67.0	anonymous	stringBoolean	false	["Field does not exist: HasOptedOutOfEmail on Contact"]	c762cb1a9d3edc2e925d3ad8bb48f6b9517b88d26184f1464dd52b5146edff13
+67.0	anonymous	boolean	false	["Field does not exist: HasOptedOutOfEmail on Contact"]	72b9d3e1d5bcf0b35ffb189a962e86dc8f2d2c7f8405ee3c277d9bb2a67c86de
+67.0	anonymous	nullBoolean	false	["Field does not exist: HasOptedOutOfEmail on Contact"]	252d67019f6f6238c272e9b2d9113ea55fae57328e606ba688130f31daf3332b
+67.0	anonymous	objectBoolean	false	["Field does not exist: HasOptedOutOfEmail on Contact"]	f3e978f63178a006969e49de791835db37ba3308206ce99f5a121b74780d9872

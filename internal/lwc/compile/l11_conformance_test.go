@@ -7,11 +7,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
+	"regexp"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -52,9 +56,13 @@ type l11CompileResult struct {
 	Diagnostics []string
 }
 
-// TestL11SalesforceConformance replays all 285 captured rows at API 59/67:
+// TestL11SalesforceConformance replays all 285 captured rows at API 59/67/68:
 // 64 LWC compile, eight ListView metadata and 213 native DOM observations.
 // Runtime inputs retain the original API 67 null/empty related-record reads.
+// API 68 uses capture-repair's 72 compiler and 213 browser answers.
+// Fresh ctrl_metadata_child_edit and user context bind the layout/locale inputs.
+// Enumerated API 68 request IDs and release URLs are qualified separately from
+// exact matches; every other response field remains exact.
 // GLADE_L11_CAPTURE=1 reports mismatches without failing; GLADE_L11_REPORT
 // selects the TSV destination. CI needs only these credential-free exports.
 func TestL11SalesforceConformance(t *testing.T) {
@@ -73,7 +81,8 @@ func l11SalesforceConformance(t *testing.T) {
 	if err := decoder.Decode(&cases); err != nil {
 		t.Fatal(err)
 	}
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
+	context := l11ReadAPI68Context(t, cases)
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var compileCases, runtimeCases []l11Case
 	metadataRows, diagnosticRows := 0, 0
@@ -150,9 +159,18 @@ func l11SalesforceConformance(t *testing.T) {
 	var report strings.Builder
 	fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason\tdiagnostic_status\tdiagnostic_actual\tdiagnostic_expected\tdiagnostic_reason\toracle")
 	matches, compileMatches, metadataMatches, domMatches, localDOMRows, diagnosticMatches := 0, 0, 0, 0, 0, 0
-	for _, api := range versions {
-		compiled := l11CompileCases(t, api, compileCases)
-		dom, domErrors, runtimeCompileErrors := map[string]json.RawMessage{}, map[string]string{}, map[string]error{}
+	qualifiedRows, qualifiedIDs, qualifiedURLs := 0, 0, 0
+	// The original first compile initializes any missing shared toolchain before
+	// concurrent runtime compiles read those assets, with the same fatal errors.
+	firstCompiled := l11CompileCases(t, versions[0], compileCases)
+	parallel := browserAPIParallelism(len(versions))
+	// Each observation owns its temp project/output, org, source metadata, VM,
+	// server port and browser context. Captured layouts are read-only; list view
+	// and preference mutations write only that observation's temporary project.
+	// No environment is mutated. Keep source/group order within each API pass.
+	observe := func(pass int) []l11DOMObservation {
+		api := versions[pass]
+		var observations []l11DOMObservation
 		for _, source := range []string{"api" + api[:2], "api67_original"} {
 			var selected []l11Case
 			for _, c := range runtimeCases {
@@ -163,21 +181,73 @@ func l11SalesforceConformance(t *testing.T) {
 			if len(selected) == 0 {
 				continue
 			}
-			values, failures, compileErr, browserErr := l11ObserveDOM(t, api, source, selected, dependencyRoot)
-			if browserErr != nil {
-				t.Fatalf("L11 browser environment: %v", browserErr)
+			groups := [][]l11Case{selected}
+			if api == "68.0" {
+				for index, c := range selected {
+					if c.ID == "r_relatedRecords_normal" {
+						// This retained row predates the legacy audit snapshot.
+						// Separate orgs keep concurrent browser reads isolated.
+						others := append([]l11Case{}, selected[:index]...)
+						others = append(others, selected[index+1:]...)
+						groups = [][]l11Case{{c}, others}
+						break
+					}
+				}
 			}
-			for id, value := range values {
-				dom[id] = value
-			}
-			for id, failure := range failures {
-				domErrors[id] = failure
-			}
-			for _, c := range selected {
-				runtimeCompileErrors[c.ID] = compileErr
+			for _, rows := range groups {
+				values, failures, compileErr, browserErr := l11ObserveDOM(t, api, source, rows, selected, dependencyRoot, parallel == 1)
+				if parallel == 1 {
+					// Stop immediately, before observing another group or API.
+					l07CheckCompilerEnvironment(t, compileErr)
+					if browserErr != nil {
+						t.Fatalf("L11 browser environment: %v", browserErr)
+					}
+				}
+				observations = append(observations, l11DOMObservation{
+					Rows: rows, Values: values, Errors: failures,
+					CompileErr: compileErr, BrowserErr: browserErr,
+				})
+				if browserErr != nil {
+					return observations
+				}
 			}
 		}
-		apiMatches, apiDOMRows := 0, 0
+		return observations
+	}
+	var observedPasses [][]l11DOMObservation
+	if parallel > 1 {
+		observedPasses = runBrowserPasses(len(versions), parallel, observe)
+	}
+	for pass, api := range versions {
+		compiled := firstCompiled
+		if pass != 0 {
+			compiled = l11CompileCases(t, api, compileCases)
+		}
+		var observations []l11DOMObservation
+		if parallel == 1 {
+			// Keep compile/observe/report interleaved in the legacy capped mode.
+			observations = observe(pass)
+		} else {
+			observations = observedPasses[pass]
+		}
+		dom, domErrors, runtimeCompileErrors := map[string]json.RawMessage{}, map[string]string{}, map[string]error{}
+		for _, observed := range observations {
+			// Fail and report on the test goroutine, in the original API/group order.
+			l07CheckCompilerEnvironment(t, observed.CompileErr)
+			if observed.BrowserErr != nil {
+				t.Fatalf("L11 browser environment: %v", observed.BrowserErr)
+			}
+			for id, value := range observed.Values {
+				dom[id] = value
+			}
+			for id, failure := range observed.Errors {
+				domErrors[id] = failure
+			}
+			for _, c := range observed.Rows {
+				runtimeCompileErrors[c.ID] = observed.CompileErr
+			}
+		}
+		apiMatches, apiDOMRows, apiQualified := 0, 0, 0
 		for _, c := range cases {
 			want, got, reason := c.Expected[api], "", ""
 			diagnosticGot, diagnosticWant, diagnosticStatus := "", "", ""
@@ -235,19 +305,221 @@ func l11SalesforceConformance(t *testing.T) {
 						metadataMatches++
 					}
 				}
-			} else if !capture {
-				t.Errorf("%s API %s expected <%s> actual <%s>: %s", c.ID, api, want, got, l07OneLine(reason))
+			} else {
+				if api == "68.0" && (len(context.ErrorIDPaths[c.ID]) != 0 || len(context.ReleaseURLPaths[c.ID]) != 0) {
+					ids, urls, err := context.compare(c.ID, got, want)
+					if err == nil {
+						status, reason = "QUALIFIED", "L11 API 68: enumerated request-ID presence/type and release URL prefix; all remaining JSON exact"
+						qualifiedRows++
+						apiQualified++
+						qualifiedIDs += ids
+						qualifiedURLs += urls
+					} else {
+						reason += "; " + err.Error()
+					}
+				}
+				if status == "MISMATCH" && !capture {
+					t.Errorf("%s API %s expected <%s> actual <%s>: %s", c.ID, api, want, got, l07OneLine(reason))
+				}
 			}
 			fmt.Fprintf(&report, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", api, c.ID, c.Kind, status, l07OneLine(got), l07OneLine(want), l07OneLine(reason), diagnosticStatus, l07OneLine(diagnosticGot), l07OneLine(diagnosticWant), l07OneLine(diagnosticReason), c.Oracle[api])
 		}
-		fmt.Fprintf(&report, "API_TOTAL\t%s\t%d/%d\nLOCAL_DOM_ROWS\t%s\t%d/%d\n", api, apiMatches, len(cases), api, apiDOMRows, len(runtimeCases))
-		t.Logf("L11 API %s matches %d/%d; observed local DOM %d/%d", api, apiMatches, len(cases), apiDOMRows, len(runtimeCases))
+		fmt.Fprintf(&report, "API_TOTAL\t%s\t%d/%d\nAPI_QUALIFIED\t%s\t%d\nLOCAL_DOM_ROWS\t%s\t%d/%d\n", api, apiMatches, len(cases), api, apiQualified, api, apiDOMRows, len(runtimeCases))
+		t.Logf("L11 API %s exact matches %d/%d; qualified %d; observed local DOM %d/%d", api, apiMatches, len(cases), apiQualified, apiDOMRows, len(runtimeCases))
 	}
 	fmt.Fprintf(&report, "TOTAL\t%d/%d\nCOMPILE_TOTAL\t%d/%d\nMETADATA_TOTAL\t%d/%d\nDOM_TOTAL\t%d/%d\nDIAGNOSTIC_TOTAL\t%d/%d\nLOCAL_DOM_ROWS\t%d/%d\n", matches, len(cases)*len(versions), compileMatches, len(compileCases)*len(versions), metadataMatches, metadataRows*len(versions), domMatches, len(runtimeCases)*len(versions), diagnosticMatches, diagnosticRows*len(versions), localDOMRows, len(runtimeCases)*len(versions))
 	t.Logf("L11 matches %d/%d; compile/metadata %d/%d; DOM %d/%d; diagnostics %d/%d", matches, len(cases)*len(versions), compileMatches, len(compileCases)*len(versions), domMatches, len(runtimeCases)*len(versions), diagnosticMatches, diagnosticRows*len(versions))
+	fmt.Fprintf(&report, "QUALIFIED_TOTAL\t%d\nQUALIFIED_ERROR_ID_PATHS\t%d\nQUALIFIED_RELEASE_URL_PATHS\t%d\n", qualifiedRows, qualifiedIDs, qualifiedURLs)
+	t.Logf("L11 qualified %d rows separately from exact matches; request-ID paths %d; release URL paths %d", qualifiedRows, qualifiedIDs, qualifiedURLs)
 	if path := os.Getenv("GLADE_L11_REPORT"); path != "" {
 		l07Write(t, path, []byte(report.String()))
 	}
+}
+
+type l11API68Context struct {
+	API                 string              `json:"api"`
+	NativeReleasePrefix string              `json:"native_release_url_prefix"`
+	LocalReleasePrefix  string              `json:"local_release_url_prefix"`
+	ErrorIDPaths        map[string][]string `json:"error_id_paths"`
+	ReleaseURLPaths     map[string][]string `json:"release_url_paths"`
+}
+
+func l11ReadAPI68Context(t *testing.T, cases []l11Case) l11API68Context {
+	t.Helper()
+	data, err := os.ReadFile("testdata/l11_api68_context.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var context l11API68Context
+	if err := json.Unmarshal(data, &context); err != nil {
+		t.Fatal(err)
+	}
+	if context.API != "68.0" || context.NativeReleasePrefix != "/services/data/v68.0/" || context.LocalReleasePrefix != "/services/data/v67.0/" || len(context.ErrorIDPaths) != 34 || len(context.ReleaseURLPaths) != 10 {
+		t.Fatal("invalid native L11 API 68 context scope")
+	}
+	runtime := map[string]bool{}
+	for _, c := range cases {
+		runtime[c.ID] = c.Kind == "runtime"
+	}
+	for kind, rows := range map[string]map[string][]string{"request-ID": context.ErrorIDPaths, "release URL": context.ReleaseURLPaths} {
+		count := 0
+		for id, paths := range rows {
+			if !runtime[id] || len(paths) == 0 || (kind == "request-ID" && len(context.ReleaseURLPaths[id]) != 0) {
+				t.Fatalf("invalid L11 API 68 context row %s", id)
+			}
+			seen := map[string]bool{}
+			for _, path := range paths {
+				if seen[path] || !strings.HasPrefix(path, "/") || (kind == "request-ID" && !strings.HasSuffix(path, "/body/id")) || (kind == "release URL" && !l11API68ReleaseURLPath(path)) {
+					t.Fatalf("invalid L11 API 68 %s path %s: %s", kind, id, path)
+				}
+				seen[path] = true
+				count++
+			}
+		}
+		if count != 49 {
+			t.Fatalf("L11 API 68 requires 49 observed %s paths, got %d", kind, count)
+		}
+	}
+	return context
+}
+
+func l11API68ReleaseURLPath(path string) bool {
+	return strings.HasPrefix(path, "/") && (strings.HasSuffix(path, "/relatedListInfoUrl") || strings.HasSuffix(path, "/url") || strings.HasSuffix(path, "/listUiUrl"))
+}
+
+var l11NativeRequestID = regexp.MustCompile(`(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+
+func TestL11API68ContextGuards(t *testing.T) {
+	for _, tc := range []struct {
+		path string
+		want bool
+	}{
+		{"/returned/data/relatedLists/0/relatedListInfoUrl", true},
+		{"/returned/data/listViews/0/url", true},
+		{"/returned/data/listUiUrl", true},
+		{"/returned/data/resourceUrl", false},
+	} {
+		t.Run(tc.path, func(t *testing.T) {
+			if got := l11API68ReleaseURLPath(tc.path); got != tc.want {
+				t.Fatalf("release URL path allowed=%t, want %t", got, tc.want)
+			}
+		})
+	}
+	context := l11API68Context{ErrorIDPaths: map[string][]string{"row": {"/returned/error/body/id"}}}
+	actual := `BROWSER|{"returned":{"error":{"body":{"id":"local-short-id"}}}}`
+	for _, tc := range []struct {
+		id   string
+		want bool
+	}{
+		{"af93662b-a647-42c2-a405-f4b5263c8afb", true},
+		{"native-non-uuid", false},
+	} {
+		t.Run(tc.id, func(t *testing.T) {
+			expected := `BROWSER|{"returned":{"error":{"body":{"id":"` + tc.id + `"}}}}`
+			ids, urls, err := context.compare("row", actual, expected)
+			if (err == nil) != tc.want || (tc.want && (ids != 1 || urls != 0)) {
+				t.Fatalf("request-ID guard: paths=%d/%d error=%v", ids, urls, err)
+			}
+		})
+	}
+}
+
+// compare visits complete JSON without rewriting either captured or local text.
+// Only the enumerated leaves have qualified assertions; keys, arrays, nulls and
+// every other leaf must agree exactly. Missing context paths fail the row.
+func (c l11API68Context) compare(id, actual, expected string) (int, int, error) {
+	decode := func(text string) (any, error) {
+		if !strings.HasPrefix(text, "BROWSER|") {
+			return nil, fmt.Errorf("missing browser observation")
+		}
+		decoder := json.NewDecoder(strings.NewReader(strings.TrimPrefix(text, "BROWSER|")))
+		decoder.UseNumber()
+		var value any
+		err := decoder.Decode(&value)
+		return value, err
+	}
+	got, err := decode(actual)
+	if err != nil {
+		return 0, 0, err
+	}
+	want, err := decode(expected)
+	if err != nil {
+		return 0, 0, err
+	}
+	paths := map[string]string{}
+	for _, path := range c.ErrorIDPaths[id] {
+		paths[path] = "request-ID"
+	}
+	for _, path := range c.ReleaseURLPaths[id] {
+		paths[path] = "release URL"
+	}
+	ids, urls := 0, 0
+	var visit func(any, any, string) error
+	visit = func(got, want any, path string) error {
+		if kind := paths[path]; kind != "" {
+			g, gok := got.(string)
+			w, wok := want.(string)
+			if !gok || !wok || g == "" || w == "" {
+				return fmt.Errorf("%s must be a present nonempty string at %s", kind, path)
+			}
+			if kind == "request-ID" {
+				if !l11NativeRequestID.MatchString(w) {
+					return fmt.Errorf("native request-ID must have UUID shape at %s", path)
+				}
+				ids++
+				return nil
+			}
+			if !strings.HasPrefix(g, c.LocalReleasePrefix) || !strings.HasPrefix(w, c.NativeReleasePrefix) || strings.TrimPrefix(g, c.LocalReleasePrefix) != strings.TrimPrefix(w, c.NativeReleasePrefix) {
+				return fmt.Errorf("release URL prefix or exact suffix/query differs at %s", path)
+			}
+			urls++
+			return nil
+		}
+		switch w := want.(type) {
+		case map[string]any:
+			g, ok := got.(map[string]any)
+			if !ok || len(g) != len(w) {
+				return fmt.Errorf("object keys differ at %s", path)
+			}
+			keys := make([]string, 0, len(w))
+			for key := range w {
+				keys = append(keys, key)
+			}
+			sort.Strings(keys)
+			for _, key := range keys {
+				value, ok := g[key]
+				if !ok {
+					return fmt.Errorf("missing key at %s/%s", path, key)
+				}
+				pointer := strings.NewReplacer("~", "~0", "/", "~1").Replace(key)
+				if err := visit(value, w[key], path+"/"+pointer); err != nil {
+					return err
+				}
+			}
+		case []any:
+			g, ok := got.([]any)
+			if !ok || len(g) != len(w) {
+				return fmt.Errorf("array differs at %s", path)
+			}
+			for i := range w {
+				if err := visit(g[i], w[i], fmt.Sprintf("%s/%d", path, i)); err != nil {
+					return err
+				}
+			}
+		default:
+			if !reflect.DeepEqual(got, want) {
+				return fmt.Errorf("value differs at %s", path)
+			}
+		}
+		return nil
+	}
+	if err := visit(got, want, ""); err != nil {
+		return 0, 0, err
+	}
+	if ids+urls != len(paths) {
+		return 0, 0, fmt.Errorf("qualified context path missing")
+	}
+	return ids, urls, nil
 }
 
 func l11DiagnosticsText(t *testing.T, messages []string) string {
@@ -341,17 +613,63 @@ func l11ErrorMessages(err error) []string {
 	return []string{err.Error()}
 }
 
-func l11ObserveDOM(t *testing.T, api, sourceDirectory string, cases []l11Case, dependencyRoot string) (map[string]json.RawMessage, map[string]string, error, error) {
+// l11DOMObservation carries failures back to the test goroutine without FailNow.
+type l11DOMObservation struct {
+	Rows       []l11Case
+	Values     map[string]json.RawMessage
+	Errors     map[string]string
+	CompileErr error
+	BrowserErr error
+}
+
+// Match l07Copy/l07Write's file traversal and modes without failing a worker.
+func l11CopyRuntime(source, target string) error {
+	return filepath.WalkDir(source, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		rel, err := filepath.Rel(source, path)
+		if err != nil {
+			return err
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return l11WriteRuntimeFile(filepath.Join(target, rel), data)
+	})
+}
+
+func l11WriteRuntimeFile(path string, data []byte) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0600)
+}
+
+func l11ObserveDOM(t *testing.T, api, sourceDirectory string, cases, fixtureCases []l11Case, dependencyRoot string, inline bool) (map[string]json.RawMessage, map[string]string, error, error) {
 	t.Helper()
 	root := t.TempDir()
-	l07Copy(t, filepath.Join("testdata", "l11_runtime", sourceDirectory), root)
-	l11SeedNativeLayout(t, root, api)
+	if err := l11CopyRuntime(filepath.Join("testdata", "l11_runtime", sourceDirectory), root); err != nil {
+		if inline {
+			t.Fatal(err)
+		}
+		return nil, nil, nil, err
+	}
+	if err := l11SeedNativeLayout(root, api); err != nil {
+		if inline {
+			t.Fatal(err)
+		}
+		return nil, nil, nil, err
+	}
 	p, err := project.Load(root)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	manifest, err := compile.Compile(p, compile.Options{OutDir: filepath.Join(root, "dist")})
-	l07CheckCompilerEnvironment(t, err)
 	if err != nil {
 		return nil, nil, err, nil
 	}
@@ -386,12 +704,12 @@ func l11ObserveDOM(t *testing.T, api, sourceDirectory string, cases []l11Case, d
 		return nil, nil, nil, err
 	}
 	if !strings.HasSuffix(sourceDirectory, "_original") {
-		if err := l11SeedNativeObjectPrefixes(&org, api, cases); err != nil {
+		if err := l11SeedNativeObjectPrefixes(&org, api, fixtureCases); err != nil {
 			return nil, nil, nil, err
 		}
 	}
 	org.Metadata = registry
-	if err := l11SeedNativeNavigationIdentity(&org.Metadata, api, cases); err != nil {
+	if err := l11SeedNativeNavigationIdentity(&org.Metadata, api, fixtureCases); err != nil {
 		return nil, nil, nil, err
 	}
 	product := server.NewWithSource(&org, source)
@@ -404,7 +722,7 @@ func l11ObserveDOM(t *testing.T, api, sourceDirectory string, cases []l11Case, d
 		if err := l11SetUpNativeFixture(runtime, &org, root, api); err != nil {
 			return nil, nil, nil, err
 		}
-		if err := l11SeedCapturedAuditFields(&org, api, cases); err != nil {
+		if err := l11SeedCapturedAuditFields(&org, api, fixtureCases, cases); err != nil {
 			return nil, nil, nil, err
 		}
 	}
@@ -517,11 +835,10 @@ func l11SeedNativeNavigationIdentity(metadata *storage.MetadataRegistry, api str
 // The native object has an org-generated child layout absent from the deployed
 // project. Seed its captured Full Edit field membership/behavior as org input,
 // just like the captured key prefix, user context and system timestamps.
-func l11SeedNativeLayout(t *testing.T, root, api string) {
-	t.Helper()
+func l11SeedNativeLayout(root, api string) error {
 	data, err := os.ReadFile("testdata/l11_native_layouts/provenance.json")
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
 	var versions map[string]struct {
 		Oracle        string `json:"oracle"`
@@ -534,25 +851,25 @@ func l11SeedNativeLayout(t *testing.T, root, api string) {
 		} `json:"layout"`
 	}
 	if err := json.Unmarshal(data, &versions); err != nil {
-		t.Fatal(err)
+		return err
 	}
 	snapshot, ok := versions[api]
-	if !ok || len(versions) != 2 || snapshot.Oracle == "" ||
+	if !ok || len(versions) != 3 || snapshot.Oracle == "" ||
 		snapshot.Layout.ObjectAPIName != "FamilyL11Child__c" || snapshot.Layout.Mode != "Edit" || snapshot.Layout.LayoutType != "Full" {
-		t.Fatalf("invalid native L11 layout input API %s", api)
+		return fmt.Errorf("invalid native L11 layout input API %s", api)
 	}
 	name := filepath.Base(snapshot.Fixture)
 	if name != snapshot.Layout.ObjectAPIName+"-Captured Full Edit.layout-meta.xml" {
-		t.Fatal("invalid captured layout fixture path")
+		return fmt.Errorf("invalid captured layout fixture path")
 	}
 	layout, err := os.ReadFile(filepath.Join("testdata", "l11_native_layouts", "api"+api[:2], name))
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
 	if fmt.Sprintf("%x", sha256.Sum256(layout)) != snapshot.FixtureSHA256 {
-		t.Fatal("captured layout fixture hash changed")
+		return fmt.Errorf("captured layout fixture hash changed")
 	}
-	l07Write(t, filepath.Join(root, "force-app", "main", "default", "layouts", name), layout)
+	return l11WriteRuntimeFile(filepath.Join(root, "force-app", "main", "default", "layouts", name), layout)
 }
 
 func l11SeedNativeObjectPrefixes(org *storage.OrgState, api string, cases []l11Case) error {
@@ -697,7 +1014,7 @@ func l11SeedNativeUserContext(org *storage.OrgState, api string) error {
 	user := org.Objects["User"]
 	matches := 0
 	for id, record := range user.Records {
-		if !storage.IDsEqual(id, "005000000000001") {
+		if !storage.IDsEqual(id, storage.DefaultUserID) {
 			continue
 		}
 		for key, value := range context.Settings {
@@ -717,9 +1034,10 @@ func l11SeedNativeUserContext(org *storage.OrgState, api string) error {
 }
 
 // Capture-time system values are fixture inputs, not comparison exemptions.
-// Read them from the unchanged native legacy projection and seed the matching
-// fixture records after replaying the exported setup invocation.
-func l11SeedCapturedAuditFields(org *storage.OrgState, api string, cases []l11Case) error {
+// Read them from the unchanged native projections and seed the matching fixture
+// records after replaying setup. The isolated earlier API 68 related-record row
+// retains its own systemModstamp; other reads use the legacy audit snapshot.
+func l11SeedCapturedAuditFields(org *storage.OrgState, api string, cases, replay []l11Case) error {
 	var expected string
 	for _, c := range cases {
 		if c.ID == "r_legacy_normal" {
@@ -727,17 +1045,18 @@ func l11SeedCapturedAuditFields(org *storage.OrgState, api string, cases []l11Ca
 			break
 		}
 	}
+	type auditRecord struct {
+		APIName        string `json:"apiName"`
+		SystemModstamp string `json:"systemModstamp"`
+		Fields         map[string]struct {
+			Value any `json:"value"`
+		} `json:"fields"`
+	}
 	var native struct {
 		Returned struct {
 			Data struct {
 				Records struct {
-					Records []struct {
-						APIName        string `json:"apiName"`
-						SystemModstamp string `json:"systemModstamp"`
-						Fields         map[string]struct {
-							Value any `json:"value"`
-						} `json:"fields"`
-					} `json:"records"`
+					Records []auditRecord `json:"records"`
 				} `json:"records"`
 			} `json:"data"`
 		} `json:"returned"`
@@ -748,12 +1067,42 @@ func l11SeedCapturedAuditFields(org *storage.OrgState, api string, cases []l11Ca
 	if len(native.Returned.Data.Records.Records) != 3 {
 		return fmt.Errorf("L11 captured audit fixture missing records")
 	}
+	contextStamps := map[string]string{}
+	if api == "68.0" && len(replay) == 1 && replay[0].ID == "r_relatedRecords_normal" {
+		var earlier struct {
+			Returned struct {
+				Data struct {
+					Records []auditRecord `json:"records"`
+				} `json:"data"`
+			} `json:"returned"`
+		}
+		if err := json.Unmarshal([]byte(strings.TrimPrefix(replay[0].Expected[api], "BROWSER|")), &earlier); err != nil {
+			return fmt.Errorf("L11 earlier audit fixture: %w", err)
+		}
+		for _, row := range earlier.Returned.Data.Records {
+			name, ok := row.Fields["Name"].Value.(string)
+			if !ok || row.APIName != "FamilyL11Child__c" || row.SystemModstamp == "" || contextStamps[name] != "" {
+				return fmt.Errorf("L11 earlier audit fixture missing or duplicate values")
+			}
+			contextStamps[name] = row.SystemModstamp
+		}
+		if len(contextStamps) != 3 {
+			return fmt.Errorf("L11 earlier audit fixture missing records")
+		}
+	}
 	for _, row := range native.Returned.Data.Records.Records {
 		name, nameOK := row.Fields["Name"].Value.(string)
 		created, createdOK := row.Fields["CreatedDate"].Value.(string)
 		modified, modifiedOK := row.Fields["LastModifiedDate"].Value.(string)
 		if !nameOK || !createdOK || !modifiedOK || row.SystemModstamp == "" {
 			return fmt.Errorf("L11 captured audit fixture missing values")
+		}
+		if len(contextStamps) != 0 {
+			stamp, ok := contextStamps[name]
+			if !ok {
+				return fmt.Errorf("L11 earlier audit fixture has no matching record %s", name)
+			}
+			row.SystemModstamp = stamp
 		}
 		object := org.Objects[row.APIName]
 		matches := 0

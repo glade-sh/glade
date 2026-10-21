@@ -17,6 +17,12 @@ import (
 
 // InstallFrom copies source-built toolchain assets from a glade checkout into UserShareDir().
 func InstallFrom(src string) error {
+	installMu.Lock()
+	defer installMu.Unlock()
+	return installFrom(src)
+}
+
+func installFrom(src string) error {
 	src, ok := validateRoot(src)
 	if !ok {
 		return fmt.Errorf("source %q is not a glade checkout with an installed LWC toolchain (run npm install in third_party/lwc)", src)
@@ -68,34 +74,68 @@ func InstallFrom(src string) error {
 	return nil
 }
 
+// lwcPreparationScripts lists the current @lwc/shared preparation script
+// first, then the earlier API 67-only name that older checkouts still carry.
+var lwcPreparationScripts = []string{"prepare-lwc-shared.mjs", "apply-lwc-shared-api67.mjs"}
+
 func verifyLWCToolchainPreparation(src string, check func(string, string) error) error {
 	toolchain := filepath.Join(src, "third_party", "lwc")
-	script := filepath.Join(toolchain, "scripts", "apply-lwc-shared-api67.mjs")
-	if _, err := os.Stat(script); err != nil {
-		if !os.IsNotExist(err) {
-			return fmt.Errorf("inspect LWC preparation: %w", err)
+	scriptPath := func(name string) string { return filepath.Join(toolchain, "scripts", name) }
+	exists := func(path string) (bool, error) {
+		if _, err := os.Stat(path); err != nil {
+			if os.IsNotExist(err) {
+				return false, nil
+			}
+			return false, fmt.Errorf("inspect LWC preparation: %w", err)
 		}
-		// Older toolchains remain installable; this grants no API67 support.
-		// Current packages declaring the preparation hook may not omit its file.
-		data, readErr := os.ReadFile(filepath.Join(toolchain, "package.json"))
-		if readErr != nil && !os.IsNotExist(readErr) {
-			return fmt.Errorf("read LWC package: %w", readErr)
-		}
-		if readErr == nil {
-			var pkg struct {
-				Scripts map[string]string `json:"scripts"`
-			}
-			if err := json.Unmarshal(data, &pkg); err != nil {
-				return fmt.Errorf("read LWC package: %w", err)
-			}
-			if strings.Contains(pkg.Scripts["postinstall"], "apply-lwc-shared-api67.mjs") {
-				return fmt.Errorf("LWC preparation script missing: %s", script)
-			}
+		return true, nil
+	}
+	verify := func(script string) error {
+		if err := check(script, toolchain); err != nil {
+			return fmt.Errorf("LWC toolchain is not prepared; run its pinned npm preparation before install: %w", err)
 		}
 		return nil
 	}
-	if err := check(script, toolchain); err != nil {
-		return fmt.Errorf("LWC toolchain is not prepared; run its pinned npm preparation before install: %w", err)
+	data, readErr := os.ReadFile(filepath.Join(toolchain, "package.json"))
+	if readErr != nil && !os.IsNotExist(readErr) {
+		return fmt.Errorf("read LWC package: %w", readErr)
+	}
+	if readErr == nil {
+		var pkg struct {
+			Scripts map[string]string `json:"scripts"`
+		}
+		if err := json.Unmarshal(data, &pkg); err != nil {
+			return fmt.Errorf("read LWC package: %w", err)
+		}
+		// A declared preparation hook is authoritative: verify with that script
+		// and never fall back to another script left in the tree.
+		for _, name := range lwcPreparationScripts {
+			if !strings.Contains(pkg.Scripts["postinstall"], name) {
+				continue
+			}
+			script := scriptPath(name)
+			ok, err := exists(script)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				return fmt.Errorf("LWC preparation script missing: %s", script)
+			}
+			return verify(script)
+		}
+	}
+	// Without a declared hook, verify with whichever known script the tree has.
+	// Older toolchains with neither remain installable; this grants no API 67
+	// or 68 support.
+	for _, name := range lwcPreparationScripts {
+		script := scriptPath(name)
+		ok, err := exists(script)
+		if err != nil {
+			return err
+		}
+		if ok {
+			return verify(script)
+		}
 	}
 	return nil
 }

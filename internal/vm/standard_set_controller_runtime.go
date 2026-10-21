@@ -128,14 +128,23 @@ func standardSetListViewColumnField(column string) (string, error) {
 // LoadStandardSetListViews connects project metadata to the request's org.
 // Existing ListView identities remain stable across fresh GET/postback VMs.
 func (vm *VM) LoadStandardSetListViews(paths []string) error {
-	if vm.Org == nil || len(paths) == 0 {
+	return LoadListViewMetadata(vm.Org, paths, nil)
+}
+
+// LoadListViewMetadata exposes deployed list-view identity to every Apex entry
+// point. A supplied reader keeps cached test orgs on their captured metadata.
+func LoadListViewMetadata(org *storage.OrgState, paths []string, readFile func(string) ([]byte, error)) error {
+	if org == nil || len(paths) == 0 {
 		return nil
 	}
-	storage.EnsureStandardObject(vm.Org, "ListView")
-	views := vm.Org.Objects["ListView"]
-	generator := storage.NewRuntimeIDGeneratorForOrg(vm.Org)
+	if readFile == nil {
+		readFile = os.ReadFile
+	}
+	storage.EnsureStandardObject(org, "ListView")
+	views := org.Objects["ListView"]
+	generator := storage.NewRuntimeIDGeneratorForOrg(org)
 	for _, path := range paths {
-		data, err := os.ReadFile(path)
+		data, err := readFile(path)
 		if err != nil {
 			return err
 		}
@@ -168,10 +177,10 @@ func (vm *VM) LoadStandardSetListViews(paths []string) error {
 		}
 		views.Records[id] = storage.Record{ID: id, Object: "ListView", Fields: map[string]storage.Value{
 			"DeveloperName": storage.StringValue(metadata.Name), "Name": storage.StringValue(metadata.Label),
-			"SobjectType": storage.StringValue(objectType), "__glade_list_view_metadata": storage.StringValue(string(data)),
+			"SobjectType": storage.StringValue(objectType), "IsSoqlCompatible": storage.BooleanValue(true), "__glade_list_view_metadata": storage.StringValue(string(data)),
 		}}
 	}
-	vm.Org.Objects["ListView"] = views
+	org.Objects["ListView"] = views
 	return nil
 }
 

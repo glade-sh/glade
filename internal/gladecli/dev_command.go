@@ -61,6 +61,9 @@ Usage:
   glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]
   glade dev lwc [--project <root>] [--db <path>] [--port <port>|--addr <host:port>] [--ready-file <path>]
 
+Test wall-clock cap:
+  --test-timeout <dur> overrides GLADE_TEST_TIMEOUT (default 10m; 0 disables).
+
 Preview features:
   Visualforce local rendering and the LWC local shell are useful local previews.
   They do not promise full hosted Salesforce parity.
@@ -166,6 +169,8 @@ func runDevTest(ctx context.Context, args []string, w io.Writer, progressW io.Wr
 	watchMode := false
 	watchOnce := false
 	progressArgs := []string{}
+	timeoutValue := ""
+	timeoutSet := false
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--project":
@@ -180,6 +185,12 @@ func runDevTest(ctx context.Context, args []string, w io.Writer, progressW io.Wr
 				return testreport.Run{}, err
 			}
 			outRoot = value
+		case "--test-timeout":
+			value, err := takeFlagValue(args, &i, "--test-timeout requires a value")
+			if err != nil {
+				return testreport.Run{}, err
+			}
+			timeoutValue, timeoutSet = value, true
 		case "--all":
 		case "--class":
 			value, err := takeFlagValue(args, &i, "--class requires a value")
@@ -205,13 +216,24 @@ func runDevTest(ctx context.Context, args []string, w io.Writer, progressW io.Wr
 		case "--progress", "--progress-json", "--no-progress", "--quiet":
 			progressArgs = append(progressArgs, args[i])
 		default:
+			if strings.HasPrefix(args[i], "--test-timeout=") {
+				timeoutValue, timeoutSet = strings.TrimPrefix(args[i], "--test-timeout="), true
+				continue
+			}
 			return testreport.Run{}, fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
 	if watchMode {
-		return runDevWatch(ctx, root, outRoot, watchOnce, w)
+		duration, source, err := resolveTestTimeout(timeoutValue, timeoutSet)
+		if err != nil {
+			return testreport.Run{}, err
+		}
+		return runDevWatch(ctx, root, outRoot, watchOnce, testTimeoutOptions(duration, source), w)
 	}
 	testArgs := []string{"--project", root}
+	if timeoutSet {
+		testArgs = append(testArgs, "--test-timeout", timeoutValue)
+	}
 	if filter != "" {
 		testArgs = append(testArgs, "--filter", filter)
 	}
@@ -322,7 +344,7 @@ func writeDevTestArtifacts(outRoot, projectRoot string, result testreport.Run, e
 	return run, nil
 }
 
-func runDevWatch(ctx context.Context, root, outRoot string, once bool, w io.Writer) (testreport.Run, error) {
+func runDevWatch(ctx context.Context, root, outRoot string, once bool, opts apextest.Options, w io.Writer) (testreport.Run, error) {
 	p, index, err := loadProjectIndex(root)
 	if err != nil {
 		return testreport.Run{}, err
@@ -339,7 +361,7 @@ func runDevWatch(ctx context.Context, root, outRoot string, once bool, w io.Writ
 	fmt.Fprintln(w, "Press Ctrl-C to stop.")
 	fmt.Fprintln(w)
 	var events bytes.Buffer
-	result, err := runWatchTests(ctx, root, p, index, apextest.Options{}, watch.Config{Root: root}, once, &events)
+	result, err := runWatchTests(ctx, root, p, index, opts, watch.Config{Root: root}, once, &events)
 	if err != nil {
 		return result, err
 	}
@@ -563,7 +585,7 @@ func runReportShowLatest(runsDir string, jsonOut bool, w io.Writer) error {
 	}
 	summary := result.Summary()
 	status := "passed"
-	if summary.Failed > 0 || summary.Errors > 0 || summary.Unsupported > 0 {
+	if !summary.OK() || summary.Unsupported > 0 {
 		status = "failed"
 	}
 	fmt.Fprintln(w, "Glade report")
@@ -1632,7 +1654,7 @@ func watchSummary(result testreport.Run) watch.RunSummary {
 		Failed:        s.Failed,
 		CompileErrors: s.Errors,
 		Unsupported:   s.Unsupported,
-		PassedAll:     s.Failed == 0 && s.Errors == 0 && s.Unsupported == 0,
+		PassedAll:     s.OK() && s.Unsupported == 0,
 	}
 }
 

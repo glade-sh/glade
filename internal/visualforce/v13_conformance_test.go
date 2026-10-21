@@ -80,6 +80,8 @@ const v13WorkerLimit = 16
 // and observers; only the parent compares answers and counts matches.
 // GLADE_V13_CAPTURE=1 records differences without failing; GLADE_V13_REPORT
 // selects the per-row TSV. CI needs no Salesforce credentials.
+var v13APIVersions = []string{"59.0", "67.0"}
+
 func TestV13SalesforceConformance(t *testing.T) {
 	capture := os.Getenv("GLADE_V13_CAPTURE") != ""
 	data, err := os.ReadFile("testdata/v13_salesforce.json")
@@ -102,7 +104,6 @@ func TestV13SalesforceConformance(t *testing.T) {
 	if table.VersionDifferences == nil || table.BrowserVersionDifferences == nil || len(table.VersionDifferences)+len(table.BrowserVersionDifferences) != 0 {
 		t.Fatal("Ajax actions final capture requires explicit zero floor/ceiling differences")
 	}
-	versions := []string{"59.0", "67.0"}
 	seen, counts, groups := map[string]bool{}, map[string]int{}, map[string]bool{}
 	for _, c := range table.Cases {
 		if c.ID == "" || seen[c.ID] || (c.Kind != "compile" && c.Kind != "runtime") {
@@ -119,7 +120,7 @@ func TestV13SalesforceConformance(t *testing.T) {
 		if c.Action["id"] != c.ID || c.Action["kind"] != c.Kind {
 			t.Fatalf("%s: missing action controls", c.ID)
 		}
-		for _, api := range versions {
+		for _, api := range v13APIVersions {
 			input := c.Inputs[api]
 			if input.Name == "" || len(input.Files) != 5 || input.Files["sfdx-project.json"] == "" || input.Files["force-app/main/default/pages/"+input.Name+".page"] == "" || input.Files["force-app/main/default/pages/"+input.Name+".page-meta.xml"] == "" {
 				t.Fatalf("%s: incomplete API %s input", c.ID, api)
@@ -161,13 +162,13 @@ func TestV13SalesforceConformance(t *testing.T) {
 	var report strings.Builder
 	writer := csv.NewWriter(&report)
 	writer.Comma = '\t'
-	write := func(fields ...string) {
+	write := func(t *testing.T, fields ...string) {
 		if err := writer.Write(fields); err != nil {
 			t.Fatal(err)
 		}
 	}
-	write("api", "id", "status", "actual", "expected", "group", "kind", "diagnostic", "expected_diagnostic", "acceptance_status", "diagnostic_status", "owner", "reason")
-	saveReport := func() {
+	write(t, "api", "id", "status", "actual", "expected", "group", "kind", "diagnostic", "expected_diagnostic", "acceptance_status", "diagnostic_status", "owner", "reason")
+	saveReport := func(t *testing.T) {
 		writer.Flush()
 		if err := writer.Error(); err != nil {
 			t.Fatal(err)
@@ -178,81 +179,85 @@ func TestV13SalesforceConformance(t *testing.T) {
 			}
 		}
 	}
-	saveReport()
+	saveReport(t)
 	total, compileTotal, domTotal := 0, 0, 0
-	for _, api := range versions {
-		if !strings.Contains(table.Runs[api], "api="+api+"\n") || !strings.Contains(table.Runs[api], "observed=278\n") || !strings.Contains(table.Runs[api], "total_differences=0\n") {
-			t.Fatalf("missing API %s final native run evidence", api)
-		}
-		observed := v13ObserveAPI(t, table.Cases, api)
-		matches, compileMatches, domMatches, acceptanceMatches, diagnosticMatches := 0, 0, 0, 0, 0
-		for _, c := range table.Cases {
-			actual, actualDiagnostic := observed[c.ID].Actual, observed[c.ID].Diagnostic
-			expectedDiagnostic := v13JSON(t, c.Diagnostics[api])
-			acceptanceMatch := actual == c.Expected[api]
-			diagnosticMatch := actualDiagnostic == expectedDiagnostic
-			status, acceptanceStatus, diagnosticStatus := "MISMATCH", "MISMATCH", "NOT_APPLICABLE"
-			if acceptanceMatch {
-				acceptanceStatus = "MATCH"
+	apiPasses := 0
+	for _, api := range v13APIVersions {
+		t.Run(api, func(t *testing.T) {
+			apiPasses++
+			if !strings.Contains(table.Runs[api], "api="+api+"\n") || !strings.Contains(table.Runs[api], "observed=278\n") || !strings.Contains(table.Runs[api], "total_differences=0\n") {
+				t.Fatalf("missing API %s final native run evidence", api)
+			}
+			observed := v13ObserveAPI(t, table.Cases, api)
+			matches, compileMatches, domMatches, acceptanceMatches, diagnosticMatches := 0, 0, 0, 0, 0
+			for _, c := range table.Cases {
+				actual, actualDiagnostic := observed[c.ID].Actual, observed[c.ID].Diagnostic
+				expectedDiagnostic := v13JSON(t, c.Diagnostics[api])
+				acceptanceMatch := actual == c.Expected[api]
+				diagnosticMatch := actualDiagnostic == expectedDiagnostic
+				status, acceptanceStatus, diagnosticStatus := "MISMATCH", "MISMATCH", "NOT_APPLICABLE"
+				if acceptanceMatch {
+					acceptanceStatus = "MATCH"
+					if c.Kind == "compile" {
+						acceptanceMatches++
+					}
+				}
 				if c.Kind == "compile" {
-					acceptanceMatches++
+					diagnosticStatus = "MISMATCH"
+					if diagnosticMatch {
+						diagnosticStatus = "MATCH"
+						diagnosticMatches++
+					}
+				}
+				if acceptanceMatch && diagnosticMatch {
+					status = "MATCH"
+					matches++
+					if c.Kind == "compile" {
+						compileMatches++
+					} else {
+						domMatches++
+					}
+				}
+				owner, reason := "", ""
+				if !acceptanceMatch {
+					owner, reason = c.Owner, c.Reason
+				} else if !diagnosticMatch {
+					owner, reason = c.DiagnosticOwner, c.DiagnosticReason
+				}
+				write(t, api, c.ID, status, actual, c.Expected[api], c.Group, c.Kind, actualDiagnostic, expectedDiagnostic, acceptanceStatus, diagnosticStatus, owner, reason)
+				if !acceptanceMatch {
+					if c.Owner != "" {
+						t.Logf("API %s %s: remaining mismatch owned by %s: %s; actual <%s> expected <%s>", api, c.ID, c.Owner, c.Reason, actual, c.Expected[api])
+					} else if !capture {
+						t.Errorf("API %s %s: actual <%s> expected <%s>", api, c.ID, actual, c.Expected[api])
+					}
+				}
+				if !diagnosticMatch {
+					if c.DiagnosticOwner != "" {
+						t.Logf("API %s %s: remaining diagnostic owned by %s: %s; actual <%s> expected <%s>", api, c.ID, c.DiagnosticOwner, c.DiagnosticReason, actualDiagnostic, expectedDiagnostic)
+					} else if !capture {
+						t.Errorf("API %s %s: diagnostics <%s> expected <%s>", api, c.ID, actualDiagnostic, expectedDiagnostic)
+					}
 				}
 			}
-			if c.Kind == "compile" {
-				diagnosticStatus = "MISMATCH"
-				if diagnosticMatch {
-					diagnosticStatus = "MATCH"
-					diagnosticMatches++
-				}
-			}
-			if acceptanceMatch && diagnosticMatch {
-				status = "MATCH"
-				matches++
-				if c.Kind == "compile" {
-					compileMatches++
-				} else {
-					domMatches++
-				}
-			}
-			owner, reason := "", ""
-			if !acceptanceMatch {
-				owner, reason = c.Owner, c.Reason
-			} else if !diagnosticMatch {
-				owner, reason = c.DiagnosticOwner, c.DiagnosticReason
-			}
-			write(api, c.ID, status, actual, c.Expected[api], c.Group, c.Kind, actualDiagnostic, expectedDiagnostic, acceptanceStatus, diagnosticStatus, owner, reason)
-			if !acceptanceMatch {
-				if c.Owner != "" {
-					t.Logf("API %s %s: remaining mismatch owned by %s: %s; actual <%s> expected <%s>", api, c.ID, c.Owner, c.Reason, actual, c.Expected[api])
-				} else if !capture {
-					t.Errorf("API %s %s: actual <%s> expected <%s>", api, c.ID, actual, c.Expected[api])
-				}
-			}
-			if !diagnosticMatch {
-				if c.DiagnosticOwner != "" {
-					t.Logf("API %s %s: remaining diagnostic owned by %s: %s; actual <%s> expected <%s>", api, c.ID, c.DiagnosticOwner, c.DiagnosticReason, actualDiagnostic, expectedDiagnostic)
-				} else if !capture {
-					t.Errorf("API %s %s: diagnostics <%s> expected <%s>", api, c.ID, actualDiagnostic, expectedDiagnostic)
-				}
-			}
-		}
-		write("API_TOTAL", api, fmt.Sprintf("%d/278", matches))
-		write("COMPILE_API_TOTAL", api, fmt.Sprintf("%d/156", compileMatches))
-		write("COMPILE_ACCEPTANCE_API_TOTAL", api, fmt.Sprintf("%d/156", acceptanceMatches))
-		write("DIAGNOSTIC_API_TOTAL", api, fmt.Sprintf("%d/156", diagnosticMatches))
-		write("DOM_API_TOTAL", api, fmt.Sprintf("%d/122", domMatches))
-		// Preserve completed rows if a later API run is interrupted. A partial
-		// report has no TOTAL and does not establish a valid before count.
-		saveReport()
-		t.Logf("Ajax actions API %s exact %d/278; compile %d/156 (acceptance %d/156, diagnostics %d/156); DOM %d/122", api, matches, compileMatches, acceptanceMatches, diagnosticMatches, domMatches)
-		total += matches
-		compileTotal += compileMatches
-		domTotal += domMatches
+			write(t, "API_TOTAL", api, fmt.Sprintf("%d/278", matches))
+			write(t, "COMPILE_API_TOTAL", api, fmt.Sprintf("%d/156", compileMatches))
+			write(t, "COMPILE_ACCEPTANCE_API_TOTAL", api, fmt.Sprintf("%d/156", acceptanceMatches))
+			write(t, "DIAGNOSTIC_API_TOTAL", api, fmt.Sprintf("%d/156", diagnosticMatches))
+			write(t, "DOM_API_TOTAL", api, fmt.Sprintf("%d/122", domMatches))
+			// Preserve completed rows if a later API run is interrupted. A partial
+			// report has no TOTAL and does not establish a valid before count.
+			saveReport(t)
+			t.Logf("Ajax actions API %s exact %d/278; compile %d/156 (acceptance %d/156, diagnostics %d/156); DOM %d/122", api, matches, compileMatches, acceptanceMatches, diagnosticMatches, domMatches)
+			total += matches
+			compileTotal += compileMatches
+			domTotal += domMatches
+		})
 	}
-	write("COMPILE_TOTAL", fmt.Sprintf("%d/312", compileTotal))
-	write("DOM_TOTAL", fmt.Sprintf("%d/244", domTotal))
-	write("TOTAL", fmt.Sprintf("%d/556", total))
-	saveReport()
+	write(t, "COMPILE_TOTAL", fmt.Sprintf("%d/%d", compileTotal, apiPasses*156))
+	write(t, "DOM_TOTAL", fmt.Sprintf("%d/%d", domTotal, apiPasses*122))
+	write(t, "TOTAL", fmt.Sprintf("%d/%d", total, apiPasses*278))
+	saveReport(t)
 	t.Logf("Ajax actions exact matches %d/556; compile %d/312; DOM %d/244", total, compileTotal, domTotal)
 }
 

@@ -1,0 +1,1345 @@
+{
+  "provenance": "Owned Developer scratch observations. Original helper/test source versions38(Network) and41(login/redirect) use named transport62 first; anonymous callers use transport62 and invoke the pinned helpers. Same callable and start-URL controls replay at source/transport62,67,68. Both native Site and Network identities are null in every observed cell; hosted context is unobserved. Intentional assertion failures carry the named observations. Anonymous debug delimiters were HTML-decoded from retained logs. CI never calls Salesforce.",
+  "orgIdHash": "61f5353a609b338b68699075d8398618e779ffba8c1e72258fbd3314e2bbd0d4",
+  "expectedCellCount": 64,
+  "classes": {
+    "AuthObserveAN01V38": "public class AuthObserveAN01V38 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Network.forwardToAuthPage(null,null); page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN01V38Test": "@IsTest(SeeAllData=true) private class AuthObserveAN01V38Test { @IsTest static void observe(){String observed=AuthObserveAN01V38.observe();System.assert(false,'AUTH_OBS|AN01|38.0|'+observed);}}",
+    "AuthObserveAN01V62": "public class AuthObserveAN01V62 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Network.forwardToAuthPage(null,null); page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN01V62Test": "@IsTest(SeeAllData=true) private class AuthObserveAN01V62Test { @IsTest static void observe(){String observed=AuthObserveAN01V62.observe();System.assert(false,'AUTH_OBS|AN01|62.0|'+observed);}}",
+    "AuthObserveAN01V67": "public class AuthObserveAN01V67 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Network.forwardToAuthPage(null,null); page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN01V67Test": "@IsTest(SeeAllData=true) private class AuthObserveAN01V67Test { @IsTest static void observe(){String observed=AuthObserveAN01V67.observe();System.assert(false,'AUTH_OBS|AN01|67.0|'+observed);}}",
+    "AuthObserveAN01V68": "public class AuthObserveAN01V68 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Network.forwardToAuthPage(null,null); page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN01V68Test": "@IsTest(SeeAllData=true) private class AuthObserveAN01V68Test { @IsTest static void observe(){String observed=AuthObserveAN01V68.observe();System.assert(false,'AUTH_OBS|AN01|68.0|'+observed);}}",
+    "AuthObserveAN02V38": "public class AuthObserveAN02V38 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Network.forwardToAuthPage('/probe',null); page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN02V38Test": "@IsTest(SeeAllData=true) private class AuthObserveAN02V38Test { @IsTest static void observe(){String observed=AuthObserveAN02V38.observe();System.assert(false,'AUTH_OBS|AN02|38.0|'+observed);}}",
+    "AuthObserveAN02V62": "public class AuthObserveAN02V62 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Network.forwardToAuthPage('/probe',null); page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN02V62Test": "@IsTest(SeeAllData=true) private class AuthObserveAN02V62Test { @IsTest static void observe(){String observed=AuthObserveAN02V62.observe();System.assert(false,'AUTH_OBS|AN02|62.0|'+observed);}}",
+    "AuthObserveAN02V67": "public class AuthObserveAN02V67 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Network.forwardToAuthPage('/probe',null); page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN02V67Test": "@IsTest(SeeAllData=true) private class AuthObserveAN02V67Test { @IsTest static void observe(){String observed=AuthObserveAN02V67.observe();System.assert(false,'AUTH_OBS|AN02|67.0|'+observed);}}",
+    "AuthObserveAN02V68": "public class AuthObserveAN02V68 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Network.forwardToAuthPage('/probe',null); page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN02V68Test": "@IsTest(SeeAllData=true) private class AuthObserveAN02V68Test { @IsTest static void observe(){String observed=AuthObserveAN02V68.observe();System.assert(false,'AUTH_OBS|AN02|68.0|'+observed);}}",
+    "AuthObserveAN03V41": "public class AuthObserveAN03V41 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid',null); page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN03V41Test": "@IsTest(SeeAllData=true) private class AuthObserveAN03V41Test { @IsTest static void observe(){String observed=AuthObserveAN03V41.observe();System.assert(false,'AUTH_OBS|AN03|41.0|'+observed);}}",
+    "AuthObserveAN03V62": "public class AuthObserveAN03V62 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid',null); page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN03V62Test": "@IsTest(SeeAllData=true) private class AuthObserveAN03V62Test { @IsTest static void observe(){String observed=AuthObserveAN03V62.observe();System.assert(false,'AUTH_OBS|AN03|62.0|'+observed);}}",
+    "AuthObserveAN03V67": "public class AuthObserveAN03V67 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid',null); page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN03V67Test": "@IsTest(SeeAllData=true) private class AuthObserveAN03V67Test { @IsTest static void observe(){String observed=AuthObserveAN03V67.observe();System.assert(false,'AUTH_OBS|AN03|67.0|'+observed);}}",
+    "AuthObserveAN03V68": "public class AuthObserveAN03V68 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid',null); page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN03V68Test": "@IsTest(SeeAllData=true) private class AuthObserveAN03V68Test { @IsTest static void observe(){String observed=AuthObserveAN03V68.observe();System.assert(false,'AUTH_OBS|AN03|68.0|'+observed);}}",
+    "AuthObserveAN04V41": "public class AuthObserveAN04V41 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{Aura.redirect((PageReference)null); payload.put('outcome','RETURN');}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN04V41Test": "@IsTest(SeeAllData=true) private class AuthObserveAN04V41Test { @IsTest static void observe(){String observed=AuthObserveAN04V41.observe();System.assert(false,'AUTH_OBS|AN04|41.0|'+observed);}}",
+    "AuthObserveAN04V62": "public class AuthObserveAN04V62 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{Aura.redirect((PageReference)null); payload.put('outcome','RETURN');}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN04V62Test": "@IsTest(SeeAllData=true) private class AuthObserveAN04V62Test { @IsTest static void observe(){String observed=AuthObserveAN04V62.observe();System.assert(false,'AUTH_OBS|AN04|62.0|'+observed);}}",
+    "AuthObserveAN04V67": "public class AuthObserveAN04V67 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{Aura.redirect((PageReference)null); payload.put('outcome','RETURN');}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN04V67Test": "@IsTest(SeeAllData=true) private class AuthObserveAN04V67Test { @IsTest static void observe(){String observed=AuthObserveAN04V67.observe();System.assert(false,'AUTH_OBS|AN04|67.0|'+observed);}}",
+    "AuthObserveAN04V68": "public class AuthObserveAN04V68 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{Aura.redirect((PageReference)null); payload.put('outcome','RETURN');}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN04V68Test": "@IsTest(SeeAllData=true) private class AuthObserveAN04V68Test { @IsTest static void observe(){String observed=AuthObserveAN04V68.observe();System.assert(false,'AUTH_OBS|AN04|68.0|'+observed);}}",
+    "AuthObserveAN05V41": "public class AuthObserveAN05V41 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{Aura.redirect(new PageReference('/probe')); payload.put('outcome','RETURN');}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN05V41Test": "@IsTest(SeeAllData=true) private class AuthObserveAN05V41Test { @IsTest static void observe(){String observed=AuthObserveAN05V41.observe();System.assert(false,'AUTH_OBS|AN05|41.0|'+observed);}}",
+    "AuthObserveAN05V62": "public class AuthObserveAN05V62 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{Aura.redirect(new PageReference('/probe')); payload.put('outcome','RETURN');}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN05V62Test": "@IsTest(SeeAllData=true) private class AuthObserveAN05V62Test { @IsTest static void observe(){String observed=AuthObserveAN05V62.observe();System.assert(false,'AUTH_OBS|AN05|62.0|'+observed);}}",
+    "AuthObserveAN05V67": "public class AuthObserveAN05V67 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{Aura.redirect(new PageReference('/probe')); payload.put('outcome','RETURN');}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN05V67Test": "@IsTest(SeeAllData=true) private class AuthObserveAN05V67Test { @IsTest static void observe(){String observed=AuthObserveAN05V67.observe();System.assert(false,'AUTH_OBS|AN05|67.0|'+observed);}}",
+    "AuthObserveAN05V68": "public class AuthObserveAN05V68 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{Aura.redirect(new PageReference('/probe')); payload.put('outcome','RETURN');}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN05V68Test": "@IsTest(SeeAllData=true) private class AuthObserveAN05V68Test { @IsTest static void observe(){String observed=AuthObserveAN05V68.observe();System.assert(false,'AUTH_OBS|AN05|68.0|'+observed);}}",
+    "AuthObserveAN06V41": "public class AuthObserveAN06V41 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid',null); payload.put('loginIsNull',result==null); if(result!=null){payload.put('loginUrl',result.getUrl());payload.put('loginRedirect',result.getRedirect());}payload.put('stage','redirect');Aura.redirect(result);payload.put('outcome','RETURN');}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN06V41Test": "@IsTest(SeeAllData=true) private class AuthObserveAN06V41Test { @IsTest static void observe(){String observed=AuthObserveAN06V41.observe();System.assert(false,'AUTH_OBS|AN06|41.0|'+observed);}}",
+    "AuthObserveAN06V62": "public class AuthObserveAN06V62 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid',null); payload.put('loginIsNull',result==null); if(result!=null){payload.put('loginUrl',result.getUrl());payload.put('loginRedirect',result.getRedirect());}payload.put('stage','redirect');Aura.redirect(result);payload.put('outcome','RETURN');}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN06V62Test": "@IsTest(SeeAllData=true) private class AuthObserveAN06V62Test { @IsTest static void observe(){String observed=AuthObserveAN06V62.observe();System.assert(false,'AUTH_OBS|AN06|62.0|'+observed);}}",
+    "AuthObserveAN06V67": "public class AuthObserveAN06V67 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid',null); payload.put('loginIsNull',result==null); if(result!=null){payload.put('loginUrl',result.getUrl());payload.put('loginRedirect',result.getRedirect());}payload.put('stage','redirect');Aura.redirect(result);payload.put('outcome','RETURN');}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN06V67Test": "@IsTest(SeeAllData=true) private class AuthObserveAN06V67Test { @IsTest static void observe(){String observed=AuthObserveAN06V67.observe();System.assert(false,'AUTH_OBS|AN06|67.0|'+observed);}}",
+    "AuthObserveAN06V68": "public class AuthObserveAN06V68 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid',null); payload.put('loginIsNull',result==null); if(result!=null){payload.put('loginUrl',result.getUrl());payload.put('loginRedirect',result.getRedirect());}payload.put('stage','redirect');Aura.redirect(result);payload.put('outcome','RETURN');}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN06V68Test": "@IsTest(SeeAllData=true) private class AuthObserveAN06V68Test { @IsTest static void observe(){String observed=AuthObserveAN06V68.observe();System.assert(false,'AUTH_OBS|AN06|68.0|'+observed);}}",
+    "AuthObserveAN07V41": "public class AuthObserveAN07V41 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid','/probe');page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN07V41Test": "@IsTest(SeeAllData=true) private class AuthObserveAN07V41Test { @IsTest static void observe(){String observed=AuthObserveAN07V41.observe();System.assert(false,'AUTH_OBS|AN07|41.0|'+observed);}}",
+    "AuthObserveAN07V62": "public class AuthObserveAN07V62 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid','/probe');page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN07V62Test": "@IsTest(SeeAllData=true) private class AuthObserveAN07V62Test { @IsTest static void observe(){String observed=AuthObserveAN07V62.observe();System.assert(false,'AUTH_OBS|AN07|62.0|'+observed);}}",
+    "AuthObserveAN07V67": "public class AuthObserveAN07V67 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid','/probe');page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN07V67Test": "@IsTest(SeeAllData=true) private class AuthObserveAN07V67Test { @IsTest static void observe(){String observed=AuthObserveAN07V67.observe();System.assert(false,'AUTH_OBS|AN07|67.0|'+observed);}}",
+    "AuthObserveAN07V68": "public class AuthObserveAN07V68 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid','/probe');page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN07V68Test": "@IsTest(SeeAllData=true) private class AuthObserveAN07V68Test { @IsTest static void observe(){String observed=AuthObserveAN07V68.observe();System.assert(false,'AUTH_OBS|AN07|68.0|'+observed);}}",
+    "AuthObserveAN08V41": "public class AuthObserveAN08V41 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid','');page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN08V41Test": "@IsTest(SeeAllData=true) private class AuthObserveAN08V41Test { @IsTest static void observe(){String observed=AuthObserveAN08V41.observe();System.assert(false,'AUTH_OBS|AN08|41.0|'+observed);}}",
+    "AuthObserveAN08V62": "public class AuthObserveAN08V62 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid','');page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN08V62Test": "@IsTest(SeeAllData=true) private class AuthObserveAN08V62Test { @IsTest static void observe(){String observed=AuthObserveAN08V62.observe();System.assert(false,'AUTH_OBS|AN08|62.0|'+observed);}}",
+    "AuthObserveAN08V67": "public class AuthObserveAN08V67 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid','');page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN08V67Test": "@IsTest(SeeAllData=true) private class AuthObserveAN08V67Test { @IsTest static void observe(){String observed=AuthObserveAN08V67.observe();System.assert(false,'AUTH_OBS|AN08|67.0|'+observed);}}",
+    "AuthObserveAN08V68": "public class AuthObserveAN08V68 {\n public static String observe(){\n  Map<String,Object> payload=new Map<String,Object>();\n  payload.put('isTest',Test.isRunningTest());\n  try{payload.put('networkId',Network.getNetworkId());}catch(Exception e){payload.put('networkContextException',e.getTypeName()+'|'+e.getMessage());}\n  try{payload.put('siteId',Site.getSiteId());}catch(Exception e){payload.put('siteContextException',e.getTypeName()+'|'+e.getMessage());}\n  payload.put('stage','call');\n  try{PageReference result=Site.login('probe-no-account@example.invalid','probe-invalid','');page(payload,result);}catch(Exception e){payload.put('outcome','EXC');payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\n  return JSON.serialize(payload);\n }\n private static void page(Map<String,Object> payload,PageReference result){\n  payload.put('outcome',result==null?'NULL':'PAGE');\n  if(result!=null){payload.put('url',result.getUrl());payload.put('redirect',result.getRedirect());}\n }\n}",
+    "AuthObserveAN08V68Test": "@IsTest(SeeAllData=true) private class AuthObserveAN08V68Test { @IsTest static void observe(){String observed=AuthObserveAN08V68.observe();System.assert(false,'AUTH_OBS|AN08|68.0|'+observed);}}"
+  },
+  "classApis": {
+    "AuthObserveAN01V38": "38.0",
+    "AuthObserveAN01V38Test": "38.0",
+    "AuthObserveAN01V62": "62.0",
+    "AuthObserveAN01V62Test": "62.0",
+    "AuthObserveAN01V67": "67.0",
+    "AuthObserveAN01V67Test": "67.0",
+    "AuthObserveAN01V68": "68.0",
+    "AuthObserveAN01V68Test": "68.0",
+    "AuthObserveAN02V38": "38.0",
+    "AuthObserveAN02V38Test": "38.0",
+    "AuthObserveAN02V62": "62.0",
+    "AuthObserveAN02V62Test": "62.0",
+    "AuthObserveAN02V67": "67.0",
+    "AuthObserveAN02V67Test": "67.0",
+    "AuthObserveAN02V68": "68.0",
+    "AuthObserveAN02V68Test": "68.0",
+    "AuthObserveAN03V41": "41.0",
+    "AuthObserveAN03V41Test": "41.0",
+    "AuthObserveAN03V62": "62.0",
+    "AuthObserveAN03V62Test": "62.0",
+    "AuthObserveAN03V67": "67.0",
+    "AuthObserveAN03V67Test": "67.0",
+    "AuthObserveAN03V68": "68.0",
+    "AuthObserveAN03V68Test": "68.0",
+    "AuthObserveAN04V41": "41.0",
+    "AuthObserveAN04V41Test": "41.0",
+    "AuthObserveAN04V62": "62.0",
+    "AuthObserveAN04V62Test": "62.0",
+    "AuthObserveAN04V67": "67.0",
+    "AuthObserveAN04V67Test": "67.0",
+    "AuthObserveAN04V68": "68.0",
+    "AuthObserveAN04V68Test": "68.0",
+    "AuthObserveAN05V41": "41.0",
+    "AuthObserveAN05V41Test": "41.0",
+    "AuthObserveAN05V62": "62.0",
+    "AuthObserveAN05V62Test": "62.0",
+    "AuthObserveAN05V67": "67.0",
+    "AuthObserveAN05V67Test": "67.0",
+    "AuthObserveAN05V68": "68.0",
+    "AuthObserveAN05V68Test": "68.0",
+    "AuthObserveAN06V41": "41.0",
+    "AuthObserveAN06V41Test": "41.0",
+    "AuthObserveAN06V62": "62.0",
+    "AuthObserveAN06V62Test": "62.0",
+    "AuthObserveAN06V67": "67.0",
+    "AuthObserveAN06V67Test": "67.0",
+    "AuthObserveAN06V68": "68.0",
+    "AuthObserveAN06V68Test": "68.0",
+    "AuthObserveAN07V41": "41.0",
+    "AuthObserveAN07V41Test": "41.0",
+    "AuthObserveAN07V62": "62.0",
+    "AuthObserveAN07V62Test": "62.0",
+    "AuthObserveAN07V67": "67.0",
+    "AuthObserveAN07V67Test": "67.0",
+    "AuthObserveAN07V68": "68.0",
+    "AuthObserveAN07V68Test": "68.0",
+    "AuthObserveAN08V41": "41.0",
+    "AuthObserveAN08V41Test": "41.0",
+    "AuthObserveAN08V62": "62.0",
+    "AuthObserveAN08V62Test": "62.0",
+    "AuthObserveAN08V67": "67.0",
+    "AuthObserveAN08V67Test": "67.0",
+    "AuthObserveAN08V68": "68.0",
+    "AuthObserveAN08V68Test": "68.0"
+  },
+  "cells": [
+    {
+      "id": "AN01",
+      "sourceApi": "38.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN01V38",
+      "testClass": "AuthObserveAN01V38Test",
+      "status": "runtime",
+      "sourceSha256": "f8cdcefdfabdff60750b38a8819373d5b91386d6e02b284d578b07b24336bcf1",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN01",
+      "sourceApi": "38.0",
+      "callerApi": "38.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN01V38",
+      "testClass": "AuthObserveAN01V38Test",
+      "status": "runtime",
+      "sourceSha256": "f8cdcefdfabdff60750b38a8819373d5b91386d6e02b284d578b07b24336bcf1",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN01",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN01V62",
+      "testClass": "AuthObserveAN01V62Test",
+      "status": "runtime",
+      "sourceSha256": "b9f2ee3713b828b65c1ffff720b101dc90e540da245a412dc8c4a2397141cf2a",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN01",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN01V62",
+      "testClass": "AuthObserveAN01V62Test",
+      "status": "runtime",
+      "sourceSha256": "b9f2ee3713b828b65c1ffff720b101dc90e540da245a412dc8c4a2397141cf2a",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN01",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN01V67",
+      "testClass": "AuthObserveAN01V67Test",
+      "status": "runtime",
+      "sourceSha256": "9873bd149b5be69488fdad8a569520d491a4ed2c27ef9529fb48955cc722e98f",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN01",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN01V67",
+      "testClass": "AuthObserveAN01V67Test",
+      "status": "runtime",
+      "sourceSha256": "9873bd149b5be69488fdad8a569520d491a4ed2c27ef9529fb48955cc722e98f",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN01",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN01V68",
+      "testClass": "AuthObserveAN01V68Test",
+      "status": "runtime",
+      "sourceSha256": "f94aa462b2b9f2a5c35e3ee91bb1db3cc91358aa81881a67336f7e4e67783602",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN01",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN01V68",
+      "testClass": "AuthObserveAN01V68Test",
+      "status": "runtime",
+      "sourceSha256": "f94aa462b2b9f2a5c35e3ee91bb1db3cc91358aa81881a67336f7e4e67783602",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN02",
+      "sourceApi": "38.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN02V38",
+      "testClass": "AuthObserveAN02V38Test",
+      "status": "runtime",
+      "sourceSha256": "2b68afaf11f131c6d973837ae244d607f0c748554ba7840884892218b8a72503",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN02",
+      "sourceApi": "38.0",
+      "callerApi": "38.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN02V38",
+      "testClass": "AuthObserveAN02V38Test",
+      "status": "runtime",
+      "sourceSha256": "2b68afaf11f131c6d973837ae244d607f0c748554ba7840884892218b8a72503",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN02",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN02V62",
+      "testClass": "AuthObserveAN02V62Test",
+      "status": "runtime",
+      "sourceSha256": "a02092d354c132fa5302d54ebde5962d16af9fbb570329ab5cdbe36d300316d4",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN02",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN02V62",
+      "testClass": "AuthObserveAN02V62Test",
+      "status": "runtime",
+      "sourceSha256": "a02092d354c132fa5302d54ebde5962d16af9fbb570329ab5cdbe36d300316d4",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN02",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN02V67",
+      "testClass": "AuthObserveAN02V67Test",
+      "status": "runtime",
+      "sourceSha256": "d8372d3cfcd8ffdbbf97a5d2ed513bdaa757afdbff06ece3ed29eefbba701049",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN02",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN02V67",
+      "testClass": "AuthObserveAN02V67Test",
+      "status": "runtime",
+      "sourceSha256": "d8372d3cfcd8ffdbbf97a5d2ed513bdaa757afdbff06ece3ed29eefbba701049",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN02",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN02V68",
+      "testClass": "AuthObserveAN02V68Test",
+      "status": "runtime",
+      "sourceSha256": "5564e67b20b92a2ef2bb6f79a842f6266c70f4d8e6d6ac0c41acaf5fafa6b9f5",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN02",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN02V68",
+      "testClass": "AuthObserveAN02V68Test",
+      "status": "runtime",
+      "sourceSha256": "5564e67b20b92a2ef2bb6f79a842f6266c70f4d8e6d6ac0c41acaf5fafa6b9f5",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN03",
+      "sourceApi": "41.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN03V41",
+      "testClass": "AuthObserveAN03V41Test",
+      "status": "runtime",
+      "sourceSha256": "2d575ec8cd2de1ac555571c4cab28ffd2c804cf8bb7a997fcc6367d24bfc5d2b",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN03",
+      "sourceApi": "41.0",
+      "callerApi": "41.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN03V41",
+      "testClass": "AuthObserveAN03V41Test",
+      "status": "runtime",
+      "sourceSha256": "2d575ec8cd2de1ac555571c4cab28ffd2c804cf8bb7a997fcc6367d24bfc5d2b",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN03",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN03V62",
+      "testClass": "AuthObserveAN03V62Test",
+      "status": "runtime",
+      "sourceSha256": "709f9a8f586e19f3ed096bc4b461ad45e3f618f0085a8d5090053d6155a33b64",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN03",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN03V62",
+      "testClass": "AuthObserveAN03V62Test",
+      "status": "runtime",
+      "sourceSha256": "709f9a8f586e19f3ed096bc4b461ad45e3f618f0085a8d5090053d6155a33b64",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN03",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN03V67",
+      "testClass": "AuthObserveAN03V67Test",
+      "status": "runtime",
+      "sourceSha256": "6d30c16938abc6a879706d58f0e4bad92380b598abd352aa3434bca108405c03",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN03",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN03V67",
+      "testClass": "AuthObserveAN03V67Test",
+      "status": "runtime",
+      "sourceSha256": "6d30c16938abc6a879706d58f0e4bad92380b598abd352aa3434bca108405c03",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN03",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN03V68",
+      "testClass": "AuthObserveAN03V68Test",
+      "status": "runtime",
+      "sourceSha256": "4cdc266feb19f07e98d68fb65cb987a09cc0d868dd1ab0466c70b66e9289c9ff",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN03",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN03V68",
+      "testClass": "AuthObserveAN03V68Test",
+      "status": "runtime",
+      "sourceSha256": "4cdc266feb19f07e98d68fb65cb987a09cc0d868dd1ab0466c70b66e9289c9ff",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN04",
+      "sourceApi": "41.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN04V41",
+      "testClass": "AuthObserveAN04V41Test",
+      "status": "runtime",
+      "sourceSha256": "b31cc4c60be6b4faf43ffd4a6a91991395abccc045e900a2979b89e8d8778ec3",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN04",
+      "sourceApi": "41.0",
+      "callerApi": "41.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN04V41",
+      "testClass": "AuthObserveAN04V41Test",
+      "status": "runtime",
+      "sourceSha256": "b31cc4c60be6b4faf43ffd4a6a91991395abccc045e900a2979b89e8d8778ec3",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN04",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN04V62",
+      "testClass": "AuthObserveAN04V62Test",
+      "status": "runtime",
+      "sourceSha256": "99b008e42bc67dc4fba079a9a30d616dd73b5f47972a1c22e829ed2202de035a",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN04",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN04V62",
+      "testClass": "AuthObserveAN04V62Test",
+      "status": "runtime",
+      "sourceSha256": "99b008e42bc67dc4fba079a9a30d616dd73b5f47972a1c22e829ed2202de035a",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN04",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN04V67",
+      "testClass": "AuthObserveAN04V67Test",
+      "status": "runtime",
+      "sourceSha256": "2663ef7f539569f504a10fb5079eeafcc44eda893994b371034033e347023fc4",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN04",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN04V67",
+      "testClass": "AuthObserveAN04V67Test",
+      "status": "runtime",
+      "sourceSha256": "2663ef7f539569f504a10fb5079eeafcc44eda893994b371034033e347023fc4",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN04",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN04V68",
+      "testClass": "AuthObserveAN04V68Test",
+      "status": "runtime",
+      "sourceSha256": "e5a8f8b3e1e842ecdea01b3292a35c65a1f706bc6994f52e59cf1e9f3910b194",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN04",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN04V68",
+      "testClass": "AuthObserveAN04V68Test",
+      "status": "runtime",
+      "sourceSha256": "e5a8f8b3e1e842ecdea01b3292a35c65a1f706bc6994f52e59cf1e9f3910b194",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN05",
+      "sourceApi": "41.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN05V41",
+      "testClass": "AuthObserveAN05V41Test",
+      "status": "runtime",
+      "sourceSha256": "219e9634663423d81c097dda3aad6f687f5182906b0f218298b5cc5ce14afea6",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN05",
+      "sourceApi": "41.0",
+      "callerApi": "41.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN05V41",
+      "testClass": "AuthObserveAN05V41Test",
+      "status": "runtime",
+      "sourceSha256": "219e9634663423d81c097dda3aad6f687f5182906b0f218298b5cc5ce14afea6",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN05",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN05V62",
+      "testClass": "AuthObserveAN05V62Test",
+      "status": "runtime",
+      "sourceSha256": "c81796b79415b3e4730eb183f324fa6541bc1c032812f51346a7cb2d42339f66",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN05",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN05V62",
+      "testClass": "AuthObserveAN05V62Test",
+      "status": "runtime",
+      "sourceSha256": "c81796b79415b3e4730eb183f324fa6541bc1c032812f51346a7cb2d42339f66",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN05",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN05V67",
+      "testClass": "AuthObserveAN05V67Test",
+      "status": "runtime",
+      "sourceSha256": "7e1a006d771039d7cf83bb8e1f1a9ca3f9352cc4a0c883ca35c2cee0241fffbe",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN05",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN05V67",
+      "testClass": "AuthObserveAN05V67Test",
+      "status": "runtime",
+      "sourceSha256": "7e1a006d771039d7cf83bb8e1f1a9ca3f9352cc4a0c883ca35c2cee0241fffbe",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN05",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN05V68",
+      "testClass": "AuthObserveAN05V68Test",
+      "status": "runtime",
+      "sourceSha256": "4d0db8b9f18518fca2df27e3741c5208e25c53c4687a665caaba3f018c77f5b3",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN05",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN05V68",
+      "testClass": "AuthObserveAN05V68Test",
+      "status": "runtime",
+      "sourceSha256": "4d0db8b9f18518fca2df27e3741c5208e25c53c4687a665caaba3f018c77f5b3",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN06",
+      "sourceApi": "41.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN06V41",
+      "testClass": "AuthObserveAN06V41Test",
+      "status": "runtime",
+      "sourceSha256": "bb3588f452046be1fdb850693ba6e72ff3efb3de704d374788975e68591b44d3",
+      "native": {
+        "isTest": false,
+        "loginIsNull": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "redirect"
+      }
+    },
+    {
+      "id": "AN06",
+      "sourceApi": "41.0",
+      "callerApi": "41.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN06V41",
+      "testClass": "AuthObserveAN06V41Test",
+      "status": "runtime",
+      "sourceSha256": "bb3588f452046be1fdb850693ba6e72ff3efb3de704d374788975e68591b44d3",
+      "native": {
+        "isTest": true,
+        "loginIsNull": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "redirect"
+      }
+    },
+    {
+      "id": "AN06",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN06V62",
+      "testClass": "AuthObserveAN06V62Test",
+      "status": "runtime",
+      "sourceSha256": "0460a9db94b47add08a9d3b38a863f42d8b07c4e68cb39be57866d3c84ce7574",
+      "native": {
+        "isTest": false,
+        "loginIsNull": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "redirect"
+      }
+    },
+    {
+      "id": "AN06",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN06V62",
+      "testClass": "AuthObserveAN06V62Test",
+      "status": "runtime",
+      "sourceSha256": "0460a9db94b47add08a9d3b38a863f42d8b07c4e68cb39be57866d3c84ce7574",
+      "native": {
+        "isTest": true,
+        "loginIsNull": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "redirect"
+      }
+    },
+    {
+      "id": "AN06",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN06V67",
+      "testClass": "AuthObserveAN06V67Test",
+      "status": "runtime",
+      "sourceSha256": "1f53277e48ac55743ea6659ae1f81f197bb9aff37af3ec0629fe92de3e0b008b",
+      "native": {
+        "isTest": false,
+        "loginIsNull": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "redirect"
+      }
+    },
+    {
+      "id": "AN06",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN06V67",
+      "testClass": "AuthObserveAN06V67Test",
+      "status": "runtime",
+      "sourceSha256": "1f53277e48ac55743ea6659ae1f81f197bb9aff37af3ec0629fe92de3e0b008b",
+      "native": {
+        "isTest": true,
+        "loginIsNull": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "redirect"
+      }
+    },
+    {
+      "id": "AN06",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN06V68",
+      "testClass": "AuthObserveAN06V68Test",
+      "status": "runtime",
+      "sourceSha256": "7b769b6c76dad6a57a9f31fe1a5486bc4836191f9a0be7ed41fb6aa180d1eeaf",
+      "native": {
+        "isTest": false,
+        "loginIsNull": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "redirect"
+      }
+    },
+    {
+      "id": "AN06",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN06V68",
+      "testClass": "AuthObserveAN06V68Test",
+      "status": "runtime",
+      "sourceSha256": "7b769b6c76dad6a57a9f31fe1a5486bc4836191f9a0be7ed41fb6aa180d1eeaf",
+      "native": {
+        "isTest": true,
+        "loginIsNull": true,
+        "networkId": null,
+        "outcome": "RETURN",
+        "siteId": null,
+        "stage": "redirect"
+      }
+    },
+    {
+      "id": "AN07",
+      "sourceApi": "41.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN07V41",
+      "testClass": "AuthObserveAN07V41Test",
+      "status": "runtime",
+      "sourceSha256": "900c31f3cc4c17644f868cc55bc8decf647f7ce724916866ac8dd375c01e5b6a",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN07",
+      "sourceApi": "41.0",
+      "callerApi": "41.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN07V41",
+      "testClass": "AuthObserveAN07V41Test",
+      "status": "runtime",
+      "sourceSha256": "900c31f3cc4c17644f868cc55bc8decf647f7ce724916866ac8dd375c01e5b6a",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN07",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN07V62",
+      "testClass": "AuthObserveAN07V62Test",
+      "status": "runtime",
+      "sourceSha256": "e6af83fc790714bee1f032b3d88f5076ffc163662e002322b1d46b5317fed04a",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN07",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN07V62",
+      "testClass": "AuthObserveAN07V62Test",
+      "status": "runtime",
+      "sourceSha256": "e6af83fc790714bee1f032b3d88f5076ffc163662e002322b1d46b5317fed04a",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN07",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN07V67",
+      "testClass": "AuthObserveAN07V67Test",
+      "status": "runtime",
+      "sourceSha256": "2e47d7caeb60553b26bb1f7ef3c29f58cfc42919c95e37b7f060b189ae64ce06",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN07",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN07V67",
+      "testClass": "AuthObserveAN07V67Test",
+      "status": "runtime",
+      "sourceSha256": "2e47d7caeb60553b26bb1f7ef3c29f58cfc42919c95e37b7f060b189ae64ce06",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN07",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN07V68",
+      "testClass": "AuthObserveAN07V68Test",
+      "status": "runtime",
+      "sourceSha256": "449b9c53d6e7f9c2e7df3a9b7ce45f5280adbd29c6c4feddbcb590a2dbaa13db",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN07",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN07V68",
+      "testClass": "AuthObserveAN07V68Test",
+      "status": "runtime",
+      "sourceSha256": "449b9c53d6e7f9c2e7df3a9b7ce45f5280adbd29c6c4feddbcb590a2dbaa13db",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN08",
+      "sourceApi": "41.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN08V41",
+      "testClass": "AuthObserveAN08V41Test",
+      "status": "runtime",
+      "sourceSha256": "384de225737f2ef967f8004e857aac27962de4d3b5685ce480d71d245b29c362",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN08",
+      "sourceApi": "41.0",
+      "callerApi": "41.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN08V41",
+      "testClass": "AuthObserveAN08V41Test",
+      "status": "runtime",
+      "sourceSha256": "384de225737f2ef967f8004e857aac27962de4d3b5685ce480d71d245b29c362",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN08",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN08V62",
+      "testClass": "AuthObserveAN08V62Test",
+      "status": "runtime",
+      "sourceSha256": "55ad15c86f21ca104948c296615afa775f2913fdfcc1be5e6dc0a37af2fb0b99",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN08",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN08V62",
+      "testClass": "AuthObserveAN08V62Test",
+      "status": "runtime",
+      "sourceSha256": "55ad15c86f21ca104948c296615afa775f2913fdfcc1be5e6dc0a37af2fb0b99",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN08",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN08V67",
+      "testClass": "AuthObserveAN08V67Test",
+      "status": "runtime",
+      "sourceSha256": "519f8950cf21d38bfb8d3c87d98b713d3e3650cfd03cf9241fc3a8bf16903375",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN08",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN08V67",
+      "testClass": "AuthObserveAN08V67Test",
+      "status": "runtime",
+      "sourceSha256": "519f8950cf21d38bfb8d3c87d98b713d3e3650cfd03cf9241fc3a8bf16903375",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN08",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "anonymous",
+      "helperClass": "AuthObserveAN08V68",
+      "testClass": "AuthObserveAN08V68Test",
+      "status": "runtime",
+      "sourceSha256": "68406410744d6e2eca7ed67173fcf2d8445de326216dca4a911aeac83529ba7d",
+      "native": {
+        "isTest": false,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "AN08",
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "istest",
+      "helperClass": "AuthObserveAN08V68",
+      "testClass": "AuthObserveAN08V68Test",
+      "status": "runtime",
+      "sourceSha256": "68406410744d6e2eca7ed67173fcf2d8445de326216dca4a911aeac83529ba7d",
+      "native": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    }
+  ],
+  "carried": [
+    {
+      "id": "hosted_site_authentication",
+      "reason": "No active Site context was observed. Ordinary scratch results do not establish live authentication or hosted redirect behavior.",
+      "nativeControl": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "hosted_network_authentication",
+      "reason": "No active Network context was observed. A schema record alone is not evidence of a hosted request.",
+      "nativeControl": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "other_login_argument_shapes",
+      "reason": "Null/empty credentials and non-String start arguments were not captured; preserve existing behavior for those shapes.",
+      "nativeControl": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    },
+    {
+      "id": "other_network_overload_shapes",
+      "reason": "The one-argument overload, empty String start URL and nonnull network-type argument were not captured; preserve their existing behavior.",
+      "nativeControl": {
+        "isTest": true,
+        "networkId": null,
+        "outcome": "NULL",
+        "siteId": null,
+        "stage": "call"
+      }
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 8,
+  "logicalCellCount": 48,
+  "slots": 32,
+  "partSize": 300,
+  "helper": "TaskFlagCapture.cls",
+  "trigger": "TaskFlagWitness.trigger",
+  "customPrioritySetup": "TaskPriority.standardValueSet",
+  "rows": [
+    {
+      "id": "T01",
+      "shape": "High",
+      "nativeExpectation": null,
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "T02",
+      "shape": "Normal",
+      "nativeExpectation": null,
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "T03",
+      "shape": "Low",
+      "nativeExpectation": null,
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "T04",
+      "shape": "High-to-Low",
+      "nativeExpectation": null,
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "T05",
+      "shape": "omitted priority",
+      "nativeExpectation": null,
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "T06",
+      "shape": "configured Pulse with metadata high flag",
+      "nativeExpectation": null,
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "T07",
+      "shape": "Low-to-High",
+      "nativeExpectation": null,
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "T08",
+      "shape": "sparse Subject-only update with Priority omitted",
+      "nativeExpectation": null,
+      "captureStatus": "PENDING-ROWS"
+    }
+  ],
+  "observations": [
+    "TaskPriority ApiName/MasterLabel/IsDefault/IsHighPriority",
+    "caller before/after insert; before/after update where applicable",
+    "selected query after insert/update",
+    "direct/string/token reads independently",
+    "before/after insert/update trigger new and old records",
+    "query omitting IsHighPriority: all read forms and exact exceptions"
+  ],
+  "transport": {
+    "marker": "TASK_FLAG",
+    "digestScope": "base64 payload",
+    "allSlotsMustHaveSameDigest": true,
+    "oversizeOrDigestMismatch": "retain raw evidence as partial; do not infer an answer",
+    "customSetupUnavailable": "retain TaskPriority table and setup result as unanswered; do not substitute High"
+  },
+  "scope": "Candidate stored Task flag derivation only. Native caller and trigger timing is not established."
+}

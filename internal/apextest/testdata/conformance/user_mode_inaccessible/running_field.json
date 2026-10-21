@@ -1,0 +1,1265 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "running_field",
+  "shapeCount": 6,
+  "assertedObservationCount": 48,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C185ID_029",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A5958648890Secret__c FROM Account WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_029|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "7cec2d4f02b79fdaae197033b4cf4194330ec2373236fa5d3213967b78ec2383"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A62d964bb76Secret__c FROM Account WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_029|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "503e03ef564fbf740e6ff754cd0dcb18ccce929548bef87bba1ab9881e646783"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A672990f7cfSecret__c FROM Account WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_029|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "e0bcac309a9a12d2f096161cc1bca8605ce5ed51676623b9a0aa58c469ed2cbc"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A68114a5e7fSecret__c FROM Account WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_029|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "b5a56aab68334113d2512b3f96c53e42d16c82e0c1875bff82e67949a0a5dc0f"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID029Test": "@IsTest private without sharing class QueryObserveC185ID029Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A5958648890Secret__c FROM Account WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_029|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID029Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID029Test": "d5aafda2d47590b37f3778c8237b351559aba620208ca4d66d86d1a1097ac705"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID029Test": "@IsTest private without sharing class QueryObserveC185ID029Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A62d964bb76Secret__c FROM Account WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_029|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID029Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID029Test": "fae54433750c3e93dc976d9909945f8ee2da3b25760629dfb59c308f9682d42c"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID029Test": "@IsTest private without sharing class QueryObserveC185ID029Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A672990f7cfSecret__c FROM Account WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_029|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID029Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID029Test": "1289227e086d171ec019ded13dbe16a12a653c1714465fb57a32568fb9d226ab"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID029Test": "@IsTest private without sharing class QueryObserveC185ID029Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A68114a5e7fSecret__c FROM Account WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_029|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID029Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID029Test": "1f4c51c6687a09b544b7a6bdce1a46421eacc2a3863c544bfc904e658075b6ae"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C185ID_030",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A5958648890Secret__c FROM Account WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_030|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "af628d18f490687820729584f2d8a6963d7d1f1010725b3d2acf456e38b0f494"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A62d964bb76Secret__c FROM Account WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_030|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "5dd29eb271f3b1880ea5182bd830545462f649588fb53fedad0725f7469d5f1c"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A672990f7cfSecret__c FROM Account WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_030|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "2a7ad8da388fa4a401697a6616c5e5633ab6a6573e2c7022f47496085941ce97"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A68114a5e7fSecret__c FROM Account WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_030|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "bce15a83e7dfc8596feb9a20a4f7423eec41eb336073ac508475f8de6a25cb85"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID030Test": "@IsTest private without sharing class QueryObserveC185ID030Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A5958648890Secret__c FROM Account WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_030|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID030Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID030Test": "fe72d80256c9d6a52497317019d77979c749e0093cde934cf2a52de00feb8ffc"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID030Test": "@IsTest private without sharing class QueryObserveC185ID030Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A62d964bb76Secret__c FROM Account WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_030|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID030Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID030Test": "110f52353acade5b730314a6aea2edca7135dddb1c6f262ff04b62f0554d49e6"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID030Test": "@IsTest private without sharing class QueryObserveC185ID030Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A672990f7cfSecret__c FROM Account WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_030|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID030Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID030Test": "ffb2a10740d04742a7061104c2a4b98b08be36703c9283dd56395f924fcd13a6"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID030Test": "@IsTest private without sharing class QueryObserveC185ID030Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A68114a5e7fSecret__c FROM Account WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_030|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID030Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID030Test": "ed5ef55fc05ad4dfd76fe889c4e18c4d8b39e904c3702a123aa6f843efcd2ae0"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C185ID_031",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A5958648890Secret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_031|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "368af02d51c82907a2dd9ee3f2acd19d816aef50009c92a345481f6363fd2e0e"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A62d964bb76Secret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_031|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "a34b89c6f63a6b31261e64035b94008395eb05168a88f37b8243c10782222ef4"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A672990f7cfSecret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_031|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "bcd728b60bc9f7b991144d7b274202dcf07c4686b7d74b05cd922ad568770da4"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "column": 507,
+                "compileProblem": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected"
+            },
+            "outcome": "reject",
+            "primary": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead."
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A68114a5e7fSecret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_031|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "99a97f33c39f862aaf51435832f02b85aae4eb3cffa883d00f3d0e1380788ac1"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "column": 507,
+                "compileProblem": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected"
+            },
+            "outcome": "reject",
+            "primary": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead."
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID031Test": "@IsTest private without sharing class QueryObserveC185ID031Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A5958648890Secret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_031|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID031Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID031Test": "cde6739a2c29c9ae0aeb57f5a84e9f31a603f9056a2576bf9b3e90d5451bdea5"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID031Test": "@IsTest private without sharing class QueryObserveC185ID031Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A62d964bb76Secret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_031|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID031Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID031Test": "db55f40cb783a8ec1a4c221020ee6d6bbdedb489a0b72696f76306571c2c0da4"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID031Test": "@IsTest private without sharing class QueryObserveC185ID031Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A672990f7cfSecret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_031|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID031Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID031Test": "8dcecb1111c6bd65cf452ab5607366b5444642faa8949a61f6a6d3340380c3f0"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "line": 1,
+                    "name": "QueryObserveC185ID031Test",
+                    "problem": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                    "type": "ApexClass"
+                  }
+                ],
+                "coverage": [],
+                "coverageWarnings": [],
+                "done": true,
+                "errorMessage": null,
+                "errorStatusCode": null,
+                "infrastructure_fault": false,
+                "platform_fault": false,
+                "platform_signature": null,
+                "status": "Failed",
+                "success": false,
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "compile-rejected"
+            },
+            "outcome": "reject",
+            "primary": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead."
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID031Test": "@IsTest private without sharing class QueryObserveC185ID031Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A68114a5e7fSecret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_031|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID031Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID031Test": "58d3e66da78294d35550f36ab2d07326ee621d4fdd15bc157cf8fe97c839c68b"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "line": 1,
+                    "name": "QueryObserveC185ID031Test",
+                    "problem": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                    "type": "ApexClass"
+                  }
+                ],
+                "coverage": [],
+                "coverageWarnings": [],
+                "done": true,
+                "errorMessage": null,
+                "errorStatusCode": null,
+                "infrastructure_fault": false,
+                "platform_fault": false,
+                "platform_signature": null,
+                "status": "Failed",
+                "success": false,
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "compile-rejected"
+            },
+            "outcome": "reject",
+            "primary": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead."
+          }
+        }
+      }
+    },
+    {
+      "id": "C185ID_032",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A5958648890Secret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_032|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "9488af6b3142c36d19bdb23c33cd1647207bb618c247a7490a5026ffa24e7795"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A62d964bb76Secret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_032|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "cc348cc31b5d98a9fbb844ce2c3ea7c18751edcf5d181753b702cbf3d8812760"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A672990f7cfSecret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_032|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "d5db33b34088ab82b0ae621a315655f94c4aabcbe8ce15daf629216478072339"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A68114a5e7fSecret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_032|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "60b113d9f11fefbffbf4a030ca1535211c73cdf17d9f2cbb15e9ed3c0fff7841"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID032Test": "@IsTest private without sharing class QueryObserveC185ID032Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A5958648890Secret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_032|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID032Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID032Test": "2892c09181fb13337f4cedc7af58c2cb261f888238db275f173bdab3a3ccf15c"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID032Test": "@IsTest private without sharing class QueryObserveC185ID032Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A62d964bb76Secret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_032|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID032Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID032Test": "a1b4c7c871a44326dcdfb24023f8285e118a77538ec496f680ae6ab00609d13e"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID032Test": "@IsTest private without sharing class QueryObserveC185ID032Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A672990f7cfSecret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_032|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID032Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID032Test": "debe1bddf86dec7f3df50d4c0fdcd15aa07c858d6c1025b39321e28c1cb38ca5"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID032Test": "@IsTest private without sharing class QueryObserveC185ID032Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A68114a5e7fSecret__c FROM Account WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_032|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID032Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID032Test": "f6d9e5f8ac249f34da2696b91204f983b68834ba563edb035a4e61890a364350"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C185ID_033",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>{'owner'=>'admin'};try{Account accountRow=new Account(OwnerId=UserInfo.getUserId(),Name='Synthetic query scope',C185A594f708b41Secret__c='private-one',C185A594f708b41SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId AND OwnerId=:UserInfo.getUserId()];payload.put('sc',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}}if(!payload.containsKey('fixtureError')){payload.put('es',true);try{List<Account> result=[SELECT Id, C185A594f708b41Secret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('os',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('rc',result.size());payload.put('qs',true);}catch(QueryException queryError){payload.put('qs',false);\npayload.put('et',queryError.getTypeName());\nString queryMessage=queryError.getMessage();payload.put('em',queryMessage.length()>96?queryMessage.substring(0,96):queryMessage);payload.put('ml',queryMessage.length());payload.put('mt',queryMessage.length()>96);\n\nif(queryMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(queryMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(queryMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(queryMessage.contains('An unexpected error occurred') && queryMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}Map<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('if',inaccessible);payload.put('mn',inaccessible==null);\nif(inaccessible!=null){\npayload.put('ms',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mk',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'sn'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('n',values.size());}nested.put(key,entry);}\npayload.put('ns',nested);\n}\n}}}catch(Exception unexpected){payload.put('et',unexpected.getTypeName());String unexpectedMessage=unexpected.getMessage();payload.put('em',unexpectedMessage.length()>96?unexpectedMessage.substring(0,96):unexpectedMessage);payload.put('ml',unexpectedMessage.length());payload.put('mt',unexpectedMessage.length()>96);if(unexpectedMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(unexpectedMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(unexpectedMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(unexpectedMessage.contains('An unexpected error occurred') && unexpectedMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}if(!payload.containsKey('es')){payload.put('fixtureError','seed-or-harness-exception');}}String serialized=JSON.serialize(payload);System.assert(false,'C126_RESULT|C185ID_033|'+serialized);",
+              "sourceSha256": {
+                "anonymous": "b366897817f31e1366ea47135ab7000f25a215883b1251c8b1e24ef51dd9f14d"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "column": 605,
+                "compileProblem": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected",
+              "owner": "admin"
+            },
+            "fixture": "retry",
+            "wireFormat": "compact-v2",
+            "outcome": "reject",
+            "primary": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>{'owner'=>'admin'};try{Account accountRow=new Account(OwnerId=UserInfo.getUserId(),Name='Synthetic query scope',C185A6204f6031dSecret__c='private-one',C185A6204f6031dSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId AND OwnerId=:UserInfo.getUserId()];payload.put('sc',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}}if(!payload.containsKey('fixtureError')){payload.put('es',true);try{List<Account> result=[SELECT Id, C185A6204f6031dSecret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('os',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('rc',result.size());payload.put('qs',true);}catch(QueryException queryError){payload.put('qs',false);\npayload.put('et',queryError.getTypeName());\nString queryMessage=queryError.getMessage();payload.put('em',queryMessage.length()>96?queryMessage.substring(0,96):queryMessage);payload.put('ml',queryMessage.length());payload.put('mt',queryMessage.length()>96);\n\nif(queryMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(queryMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(queryMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(queryMessage.contains('An unexpected error occurred') && queryMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}Map<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('if',inaccessible);payload.put('mn',inaccessible==null);\nif(inaccessible!=null){\npayload.put('ms',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mk',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'sn'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('n',values.size());}nested.put(key,entry);}\npayload.put('ns',nested);\n}\n}}}catch(Exception unexpected){payload.put('et',unexpected.getTypeName());String unexpectedMessage=unexpected.getMessage();payload.put('em',unexpectedMessage.length()>96?unexpectedMessage.substring(0,96):unexpectedMessage);payload.put('ml',unexpectedMessage.length());payload.put('mt',unexpectedMessage.length()>96);if(unexpectedMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(unexpectedMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(unexpectedMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(unexpectedMessage.contains('An unexpected error occurred') && unexpectedMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}if(!payload.containsKey('es')){payload.put('fixtureError','seed-or-harness-exception');}}String serialized=JSON.serialize(payload);System.assert(false,'C126_RESULT|C185ID_033|'+serialized);",
+              "sourceSha256": {
+                "anonymous": "415b14db3fe96f2463ad7ed9b932c85fa95b64ec4364027ec1e5e841942c6901"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "column": 605,
+                "compileProblem": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected",
+              "owner": "admin"
+            },
+            "fixture": "retry",
+            "wireFormat": "compact-v2",
+            "outcome": "reject",
+            "primary": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>{'owner'=>'admin'};try{Account accountRow=new Account(OwnerId=UserInfo.getUserId(),Name='Synthetic query scope',C185A67c27bae69Secret__c='private-one',C185A67c27bae69SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId AND OwnerId=:UserInfo.getUserId()];payload.put('sc',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}}if(!payload.containsKey('fixtureError')){payload.put('es',true);try{List<Account> result=[SELECT Id, C185A67c27bae69Secret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('os',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('rc',result.size());payload.put('qs',true);}catch(QueryException queryError){payload.put('qs',false);\npayload.put('et',queryError.getTypeName());\nString queryMessage=queryError.getMessage();payload.put('em',queryMessage.length()>96?queryMessage.substring(0,96):queryMessage);payload.put('ml',queryMessage.length());payload.put('mt',queryMessage.length()>96);\n\nif(queryMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(queryMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(queryMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(queryMessage.contains('An unexpected error occurred') && queryMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}Map<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('if',inaccessible);payload.put('mn',inaccessible==null);\nif(inaccessible!=null){\npayload.put('ms',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mk',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'sn'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('n',values.size());}nested.put(key,entry);}\npayload.put('ns',nested);\n}\n}}}catch(Exception unexpected){payload.put('et',unexpected.getTypeName());String unexpectedMessage=unexpected.getMessage();payload.put('em',unexpectedMessage.length()>96?unexpectedMessage.substring(0,96):unexpectedMessage);payload.put('ml',unexpectedMessage.length());payload.put('mt',unexpectedMessage.length()>96);if(unexpectedMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(unexpectedMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(unexpectedMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(unexpectedMessage.contains('An unexpected error occurred') && unexpectedMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}if(!payload.containsKey('es')){payload.put('fixtureError','seed-or-harness-exception');}}String serialized=JSON.serialize(payload);System.assert(false,'C126_RESULT|C185ID_033|'+serialized);",
+              "sourceSha256": {
+                "anonymous": "cb8e531aec40775de2ab862f832fa159851f8d4da0d064ffdf69b1768ac4c688"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "column": 605,
+                "compileProblem": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected",
+              "owner": "admin"
+            },
+            "fixture": "retry",
+            "wireFormat": "compact-v2",
+            "outcome": "reject",
+            "primary": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>{'owner'=>'admin'};try{Account accountRow=new Account(OwnerId=UserInfo.getUserId(),Name='Synthetic query scope',C185A68f0cbe7b5Secret__c='private-one',C185A68f0cbe7b5SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId AND OwnerId=:UserInfo.getUserId()];payload.put('sc',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}}if(!payload.containsKey('fixtureError')){payload.put('es',true);try{List<Account> result=[SELECT Id, C185A68f0cbe7b5Secret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('os',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('rc',result.size());payload.put('qs',true);}catch(QueryException queryError){payload.put('qs',false);\npayload.put('et',queryError.getTypeName());\nString queryMessage=queryError.getMessage();payload.put('em',queryMessage.length()>96?queryMessage.substring(0,96):queryMessage);payload.put('ml',queryMessage.length());payload.put('mt',queryMessage.length()>96);\n\nif(queryMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(queryMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(queryMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(queryMessage.contains('An unexpected error occurred') && queryMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}Map<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('if',inaccessible);payload.put('mn',inaccessible==null);\nif(inaccessible!=null){\npayload.put('ms',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mk',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'sn'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('n',values.size());}nested.put(key,entry);}\npayload.put('ns',nested);\n}\n}}}catch(Exception unexpected){payload.put('et',unexpected.getTypeName());String unexpectedMessage=unexpected.getMessage();payload.put('em',unexpectedMessage.length()>96?unexpectedMessage.substring(0,96):unexpectedMessage);payload.put('ml',unexpectedMessage.length());payload.put('mt',unexpectedMessage.length()>96);if(unexpectedMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(unexpectedMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(unexpectedMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(unexpectedMessage.contains('An unexpected error occurred') && unexpectedMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}if(!payload.containsKey('es')){payload.put('fixtureError','seed-or-harness-exception');}}String serialized=JSON.serialize(payload);System.assert(false,'C126_RESULT|C185ID_033|'+serialized);",
+              "sourceSha256": {
+                "anonymous": "70aa44f335d78234b3fcfb9c20a06d2d595c5711fe066b61e8a735eb136cf263"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "column": 605,
+                "compileProblem": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected",
+              "owner": "admin"
+            },
+            "fixture": "retry",
+            "wireFormat": "compact-v2",
+            "outcome": "reject",
+            "primary": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID033Test": "@IsTest private without sharing class QueryObserveC185ID033Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A5958648890Secret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_033|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID033Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID033Test": "66683fc6a7f78dcac573866d188b189d0b71c2a2bcbc74680fd3b89d9285acfd"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID033Test": "@IsTest private without sharing class QueryObserveC185ID033Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A62d964bb76Secret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_033|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID033Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID033Test": "8de128f81c94ed2259720f51d12304cffa8b4b88e59aaf3830bbde6d5bfe7b48"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID033Test": "@IsTest private without sharing class QueryObserveC185ID033Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A672990f7cfSecret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_033|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID033Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID033Test": "ed17240d390620e79d99a29a8638e46fec6f8ea3296152f00630f8255e1a4695"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID033Test": "@IsTest private without sharing class QueryObserveC185ID033Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Account> result=[SELECT Id, C185A68114a5e7fSecret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_033|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID033Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID033Test": "f3efdeb0798642bf72d7ebc7f536e0a635410f9540c1450aa63a9e0617dd577f"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C185ID_034",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A5958648890Secret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_034|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "82f286afcb15702dc01928d6fd0a82beff1605226dc56ca240fb00cc5d762efc"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "exceptionType": "System.SecurityException",
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.\", \"exceptionType\": \"System.SecurityException\", \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A62d964bb76Secret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_034|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "107a02b43e5331b7e457ee1fcacae97fb615d8f1287ac35cdf8eef3f75a75c55"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "exceptionType": "System.SecurityException",
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.\", \"exceptionType\": \"System.SecurityException\", \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A672990f7cfSecret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_034|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "fbf8abb1d461de306993fdc3b5bf103e20486b85804a935047668caec4d472bb"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "exceptionType": "System.SecurityException",
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.\", \"exceptionType\": \"System.SecurityException\", \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A68114a5e7fSecret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_034|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "1f259d18a2005cb48f426240bb1f128608aa5b517dc56414a8659a21b30f1490"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "exceptionType": "System.SecurityException",
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.\", \"exceptionType\": \"System.SecurityException\", \"seedCount\": 1}"
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID034Test": "@IsTest private without sharing class QueryObserveC185ID034Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A5958648890Secret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_034|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID034Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID034Test": "e87a21e18edd551a4b6b286bf54a6fb6df612abe4505a36f2c4f2772e873df83"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID034Test": "@IsTest private without sharing class QueryObserveC185ID034Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A62d964bb76Secret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_034|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID034Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID034Test": "c6c829a49ec6cbff03867b259fce6b5ba06759f865224b83f68eb9cfb5314976"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID034Test": "@IsTest private without sharing class QueryObserveC185ID034Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A672990f7cfSecret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_034|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID034Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID034Test": "d9ef859a98bab4578f895ffee6c3add8c6e07160e9473b18d845fbe3e11e8c96"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID034Test": "@IsTest private without sharing class QueryObserveC185ID034Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, C185A68114a5e7fSecret__c FROM Account WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_034|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID034Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID034Test": "57779dcac30eefee1be68040c78f02acec0a1475b3f0705c77e4a3098535439f"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          }
+        }
+      }
+    }
+  ],
+  "nativeObservationCount": 48
+}

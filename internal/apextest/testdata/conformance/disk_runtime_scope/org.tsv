@@ -1,0 +1,4 @@
+api_version	route	class_name	method_name	status	observed_parent_lookup
+67.0	anonymous	-	-	pass	NULL
+62.0	apex_test	DiskScopeProbe62Test	lookupIsNullAfterParentDelete	pass	NULL
+67.0	apex_test	DiskScopeProbe67Test	lookupIsNullAfterParentDelete	pass	NULL

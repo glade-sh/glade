@@ -1,0 +1,221 @@
+{
+  "apiVersion": "64.0",
+  "route": "isTest",
+  "nativeObservationCount": 8,
+  "capturedMarker": "OWNED_VM64|",
+  "source": {
+    "id": "NativeAccessorConstructor64",
+    "classes": {
+      "GetterReentryProbe": "public class GetterReentryProbe { public Set<String> storage = new Set<String>{'seed'}; public Boolean pending = false; public Integer reads = 0; public Integer depth = 0; public Set<String> values { get { reads++; resolve(); return storage; } set { storage = value; } } public Set<String> direct { get { return direct; } set { direct = value; } } private void resolve() { if (pending) { pending = false; addThroughProperty(); } } private void addThroughProperty() { values.add('expanded'); } public Set<String> repeated { get { reads++; return repeatRead(); } set { storage = value; } } private Set<String> repeatRead() { if (depth > 0) { depth--; return repeated; } return storage; } public Set<String> unguarded { get { reads++; return readAgain(); } set { storage = value; } } private Set<String> readAgain() { return unguarded; } }",
+      "InheritedGetterReentryProbe": "public class InheritedGetterReentryProbe extends InheritedGetterReentryProbe.Base { public virtual class Base { public Set<String> storage = new Set<String>{'seed'}; public Boolean pending = false; public Integer reads = 0; public Set<String> values { get { reads++; resolve(); return storage; } set { storage = value; } } private void resolve() { if (pending) { pending = false; expand(); } } private void expand() { values.add('expanded'); } } }",
+      "InheritedReflectProduct": "global virtual class InheritedReflectProduct extends InheritedReflectProduct.Base { public String marker; protected InheritedReflectProduct(){super();marker='zero';} public InheritedReflectProduct(String value){super();marker=value;} public InheritedReflectProduct(ReflectionLayoutFactory factory){this();} global abstract class Base {protected Base(){}} }",
+      "OwnedNativeVm64Probe": "@IsTest private class OwnedNativeVm64Probe {@IsTest static void observe1(){Object r;Map<String,Object> observed=new Map<String,Object>{'constructed'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{Object value=new ReflectionLayoutFactory.Reader().build('InheritedReflectProduct');observed.put('constructed',value!=null);observed.put('serialized',JSON.serialize(value));}catch(Exception issue){observed.put('exceptionType',issue.getTypeName());observed.put('exceptionMessage',issue.getMessage());}r=observed;System.assert(false,'OWNED_VM64|EXTERNAL_NESTED_FACTORY_INHERITED_PROTECTED|'+JSON.serialize(r));}@IsTest static void observe2(){Object r;Map<String,Object> observed=new Map<String,Object>{'constructed'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{Object value=new InheritedReflectProduct('ordinary');observed.put('constructed',value!=null);observed.put('serialized',JSON.serialize(value));}catch(Exception issue){observed.put('exceptionType',issue.getTypeName());observed.put('exceptionMessage',issue.getMessage());}r=observed;System.assert(false,'OWNED_VM64|INHERITED_PRODUCT_PUBLIC_ARGUMENT|'+JSON.serialize(r));}@IsTest static void observe3(){Object r;Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{InheritedGetterReentryProbe p = new InheritedGetterReentryProbe(); p.pending = true; Set<String> result = p.values; r = new Map<String,Object>{'size'=>result.size(),'reads'=>p.reads,'sameBacking'=>result===p.storage};observed.put('value',r);}catch(Exception issue){observed.put('exceptionType',issue.getTypeName());observed.put('exceptionMessage',issue.getMessage());}r=observed;System.assert(false,'OWNED_VM64|FINITE_HELPER_CLEAR_INHERITED|'+JSON.serialize(r));}@IsTest static void observe4(){Object r;Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{GetterReentryProbe p = new GetterReentryProbe(); Set<String> seed = new Set<String>{'direct'}; p.direct = seed; Set<String> result = p.direct; r = new Map<String,Object>{'size'=>result==null?null:result.size(),'sameBacking'=>result===seed};observed.put('value',r);}catch(Exception issue){observed.put('exceptionType',issue.getTypeName());observed.put('exceptionMessage',issue.getMessage());}r=observed;System.assert(false,'OWNED_VM64|DIRECT_SELF_STORAGE|'+JSON.serialize(r));}}",
+      "ReflectionLayoutFactory": "public class ReflectionLayoutFactory { public class Reader { public Object build(String name){return Type.forName(name)?.newInstance();} } }"
+    },
+    "tests": [
+      "OwnedNativeVm64Probe"
+    ],
+    "stage": "observed",
+    "sourceSha256": {
+      "class:GetterReentryProbe": "440f95bd7e42b50bb4a015accfd8411c00cf8419e0fe32cf18b76d6c699ab40d",
+      "class:InheritedGetterReentryProbe": "dc1ae8ac6fb71d71ebcc2e9de63d5217fd127b218690bd0d2b57b5d7a34a572e",
+      "class:InheritedReflectProduct": "409a8778be7a619fe8f1c12f027ff0f15fee31f50335bce7bf88a76c91be9d27",
+      "class:OwnedNativeVm64Probe": "62d8212ab1d501da26061f21bea1f280c1ef1a5b161173f1c860dbd3588cc663",
+      "class:ReflectionLayoutFactory": "d126308ad54a27f0aee54a92c5cf769546ded5418cf607d6d16b5df21364c999"
+    }
+  },
+  "rows": [
+    {
+      "id": "EXTERNAL_NESTED_FACTORY_INHERITED_PROTECTED",
+      "family": "reflection",
+      "testMethod": "observe1",
+      "expected": {
+        "outcome": "runtime",
+        "value": {
+          "constructed": false,
+          "exceptionMessage": "InheritedReflectProduct does not have a no-arg constructor",
+          "exceptionType": "System.TypeException"
+        }
+      }
+    },
+    {
+      "id": "INHERITED_PRODUCT_PUBLIC_ARGUMENT",
+      "family": "reflection",
+      "testMethod": "observe2",
+      "expected": {
+        "outcome": "runtime",
+        "value": {
+          "constructed": true,
+          "exceptionMessage": null,
+          "exceptionType": null,
+          "serialized": "{\"marker\":\"ordinary\"}"
+        }
+      }
+    },
+    {
+      "id": "FINITE_HELPER_CLEAR_INHERITED",
+      "family": "getter",
+      "testMethod": "observe3",
+      "expected": {
+        "outcome": "runtime",
+        "value": {
+          "exceptionMessage": null,
+          "exceptionType": null,
+          "value": {
+            "reads": 2,
+            "sameBacking": true,
+            "size": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "DIRECT_SELF_STORAGE",
+      "family": "getter",
+      "testMethod": "observe4",
+      "expected": {
+        "outcome": "runtime",
+        "value": {
+          "exceptionMessage": null,
+          "exceptionType": null,
+          "value": {
+            "sameBacking": true,
+            "size": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "PLAIN_FINITE_HELPER_CLEAR",
+      "family": "getter",
+      "sourceRef": "additional",
+      "testMethod": "observe1",
+      "expected": {
+        "outcome": "runtime",
+        "value": {
+          "exceptionMessage": null,
+          "exceptionType": null,
+          "value": {
+            "reads": 2,
+            "sameBacking": true,
+            "size": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "PLAIN_PROTECTED_EXTERNAL",
+      "family": "reflection",
+      "sourceRef": "additional",
+      "testMethod": "observe2",
+      "expected": {
+        "outcome": "runtime",
+        "value": {
+          "exceptionMessage": "OwnedProtectedCtor64 does not have a no-arg constructor",
+          "exceptionType": "System.TypeException"
+        }
+      }
+    },
+    {
+      "id": "PLAIN_PROTECTED_OWNER",
+      "family": "reflection",
+      "sourceRef": "additional",
+      "testMethod": "observe3",
+      "expected": {
+        "outcome": "runtime",
+        "value": {
+          "exceptionMessage": "OwnedProtectedCtor64 does not have a no-arg constructor",
+          "exceptionType": "System.TypeException"
+        }
+      }
+    },
+    {
+      "id": "PLAIN_PROTECTED_SUBCLASS",
+      "family": "reflection",
+      "sourceRef": "additional",
+      "testMethod": "observe4",
+      "expected": {
+        "outcome": "runtime",
+        "value": {
+          "exceptionMessage": "OwnedProtectedCtor64 does not have a no-arg constructor",
+          "exceptionType": "System.TypeException"
+        }
+      }
+    }
+  ],
+  "provenance": {
+    "files": {
+      "native-capture": "035034e3972a4485cd3a57fa1ad599f490ef835084bcb6add32042f702cceca5",
+      "native-capture #2": "1d08d3149d20ae1c17a4e1d84e4f31baf5100c12839ae8982b8a7435adbffe86",
+      "native-capture #3": "94512f392a0538ae7e4519d8a9160239b01c175ecd12bd773e773188f44f4843",
+      "native-capture #4": "25609a3f21c001da9417c83178e6d2653f3b1a5fb4c41c6844d226d944f46fda",
+      "native-capture #5": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+      "native-capture #6": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+      "native-capture #7": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+      "native-capture #8": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+      "native-capture #9": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4"
+    },
+    "orgIdSHA256": "def5a2497441b2cfa58a7a8f655731d60fbede1edad6f3295b624479ea93457c",
+    "transport": "Intentional terminal AssertException carries observed JSON, no assertion on unknown behavior.",
+    "additionalFiles": {
+      "native-capture": "ea44dfbe7cedb797f53327afe56bc722d0fa95d5154b2bad1c58dfb8080c1a31",
+      "native-capture #2": "f7551440906237d9280117e578ecb32d6a91d7f48e716cd05e0766df2897bce1",
+      "native-capture #3": "dc495bbf61ae0425159a3852ce42c9cd561dab161444edfa5ac7e5f96ba57627",
+      "native-capture #4": "1f1246ae7836775427165f5b3d524407f30cb3487b9b64254fc627ba40e57c9c",
+      "native-capture #5": "70899df01371b985d4e38d4904a326a14c7c0770df3ff994db66a2259f2823f9",
+      "native-capture #6": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+      "native-capture #7": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+      "native-capture #8": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+      "native-capture #9": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+      "native-capture #10": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4"
+    },
+    "additionalOrgIdSHA256": "e337ac51c8ee4bc77d3eb2abd2317af396cb6cf0876f48ab51e48a38b1bfaa3c"
+  },
+  "carries": [
+    {
+      "family": "getter",
+      "boundary": "other APIs/routes and helper depths",
+      "reason": "Only API64 named inherited/plain finite one-helper Set reentry and direct lexical backing storage were observed. Deeper/unguarded recursion and other property value types remain unanswered.",
+      "nativeReference": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "value": {
+          "reads": 2,
+          "sameBacking": true,
+          "size": 2
+        }
+      }
+    },
+    {
+      "family": "reflection",
+      "boundary": "other APIs/routes, private/default/implicit constructors and alternate caller layouts",
+      "reason": "Only API64 named protected zero-argument inherited-external and plain external/owner/subclass reflection, plus public argument construction, were observed. Private/default/implicit constructor rules and other APIs/routes remain unanswered by this packet.",
+      "nativeReference": {
+        "constructed": false,
+        "exceptionMessage": "InheritedReflectProduct does not have a no-arg constructor",
+        "exceptionType": "System.TypeException"
+      }
+    }
+  ],
+  "additionalSource": {
+    "id": "AdditionalAccessorConstructor64",
+    "classes": {
+      "GetterReentryProbe": "public class GetterReentryProbe { public Set<String> storage = new Set<String>{'seed'}; public Boolean pending = false; public Integer reads = 0; public Integer depth = 0; public Set<String> values { get { reads++; resolve(); return storage; } set { storage = value; } } public Set<String> direct { get { return direct; } set { direct = value; } } private void resolve() { if (pending) { pending = false; addThroughProperty(); } } private void addThroughProperty() { values.add('expanded'); } public Set<String> repeated { get { reads++; return repeatRead(); } set { storage = value; } } private Set<String> repeatRead() { if (depth > 0) { depth--; return repeated; } return storage; } public Set<String> unguarded { get { reads++; return readAgain(); } set { storage = value; } } private Set<String> readAgain() { return unguarded; } }",
+      "OwnedAccessorCtor64Test": "@IsTest private class OwnedAccessorCtor64Test {@IsTest static void observe1(){Object r;Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{GetterReentryProbe p=new GetterReentryProbe();p.pending=true;Set<String> values=p.values;r=new Map<String,Object>{'reads'=>p.reads,'size'=>values.size(),'sameBacking'=>values===p.storage};observed.put('value',r);}catch(Exception issue){observed.put('exceptionType',issue.getTypeName());observed.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|PLAIN_FINITE_HELPER_CLEAR|'+JSON.serialize(observed));}\n@IsTest static void observe2(){Object r;Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Object value=new OwnedReflectionReader64.Reader().build();r=new Map<String,Object>{'constructed'=>value!=null,'serialized'=>JSON.serialize(value)};observed.put('value',r);}catch(Exception issue){observed.put('exceptionType',issue.getTypeName());observed.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|PLAIN_PROTECTED_EXTERNAL|'+JSON.serialize(observed));}\n@IsTest static void observe3(){Object r;Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Object value=OwnedProtectedCtor64.ownerBuild();r=new Map<String,Object>{'constructed'=>value!=null,'serialized'=>JSON.serialize(value)};observed.put('value',r);}catch(Exception issue){observed.put('exceptionType',issue.getTypeName());observed.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|PLAIN_PROTECTED_OWNER|'+JSON.serialize(observed));}\n@IsTest static void observe4(){Object r;Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Object value=OwnedProtectedSubclass64.subclassBuild();r=new Map<String,Object>{'constructed'=>value!=null,'serialized'=>JSON.serialize(value)};observed.put('value',r);}catch(Exception issue){observed.put('exceptionType',issue.getTypeName());observed.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|PLAIN_PROTECTED_SUBCLASS|'+JSON.serialize(observed));}}",
+      "OwnedProtectedCtor64": "global virtual class OwnedProtectedCtor64 { public String marker; protected OwnedProtectedCtor64(){marker='zero';} public OwnedProtectedCtor64(String text){marker=text;} public static Object ownerBuild(){return Type.forName('OwnedProtectedCtor64').newInstance();} }",
+      "OwnedProtectedSubclass64": "public class OwnedProtectedSubclass64 extends OwnedProtectedCtor64 { public static Object subclassBuild(){return Type.forName('OwnedProtectedCtor64').newInstance();} }",
+      "OwnedReflectionReader64": "public class OwnedReflectionReader64 { public class Reader {public Object build(){return Type.forName('OwnedProtectedCtor64').newInstance();}} }"
+    },
+    "tests": [
+      "OwnedAccessorCtor64Test"
+    ],
+    "stage": "observed",
+    "sourceSha256": {
+      "class:GetterReentryProbe": "440f95bd7e42b50bb4a015accfd8411c00cf8419e0fe32cf18b76d6c699ab40d",
+      "class:OwnedAccessorCtor64Test": "d3038c30622e06c9778bbbd8fcbca664dc6bb1a4ef06aa08d36b956e24347bef",
+      "class:OwnedProtectedCtor64": "fb13baeb4007537a00bc21cc746108c321bd237bb0df27f823f0ed765ce4e241",
+      "class:OwnedProtectedSubclass64": "808357d2ca9ffee3a8c3121b19cb471d7e5f40985557194474fe0c1588fc21cc",
+      "class:OwnedReflectionReader64": "c29781f20ec298f4e393aae350ba3fba14eb6196722da22fee96a058bc99a80a"
+    }
+  }
+}

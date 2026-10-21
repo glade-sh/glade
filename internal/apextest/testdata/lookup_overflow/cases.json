@@ -1,0 +1,46 @@
+{
+  "status": "PENDING-ROWS",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "contexts": [
+    "plain",
+    "owningNamespace"
+  ],
+  "helperPins": [
+    "matched",
+    "46.0"
+  ],
+  "logicalCellCount": 24,
+  "rows": [
+    {
+      "id": "R03M",
+      "helperPin": "matched",
+      "nativeExpectation": null
+    },
+    {
+      "id": "R03L",
+      "helperPin": "46.0",
+      "nativeExpectation": null
+    }
+  ],
+  "slots": 256,
+  "partSize": 300,
+  "facets": [
+    "key",
+    "name",
+    "localName",
+    "type",
+    "updateable",
+    "relationship",
+    "referenceTo"
+  ],
+  "carry": "No unsorted native describe order is established. Preserve setup errors, missing parts, conflicting digests and native namespace/case; never replace them with inferred order.",
+  "projectionControls": "LookupOverflowRegression explicitOverflowProjection separately controls selected/omitted numeric-write behavior; candidate traversal assertion is not native evidence."
+}

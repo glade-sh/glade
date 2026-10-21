@@ -1,0 +1,547 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "element-assignment",
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C166PF_061",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};a[0]+=2;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_061|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "27dd458edd695b272e3fe67fd16327b26f334c29d68667f9070d1f4a8151eebe"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe061": "@IsTest private class C166Observe061{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};a[0]+=2;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_061|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe061"
+          ],
+          "sourceSha256": {
+            "class:C166Observe061": "65759f6d5afce3e33358f1e8daffaba04d609af61f112f27361abafdd01cd885"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_062",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};a[0]=2;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_062|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "c5d602a2b1ab72c5ac1d1dcefa7f64a4a33ed772623d07872bc590f7473d98c3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe062": "@IsTest private class C166Observe062{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};a[0]=2;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_062|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe062"
+          ],
+          "sourceSha256": {
+            "class:C166Observe062": "5ad7ed8d51aedd5365dad9dd00c312ce803b41d8f0c03b3e0f8611236f7f69e9"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_063",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Long[] a=new Long[]{1};a[0]+=2;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_063|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "857adfca30404dfe4f87a96737bc430f70f02861513052334fb91db4a7b75a71"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe063": "@IsTest private class C166Observe063{@IsTest static void observe(){String r;final Long[] a=new Long[]{1};a[0]+=2;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_063|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe063"
+          ],
+          "sourceSha256": {
+            "class:C166Observe063": "d5e21f3be83a0c238a9aeea65ac029e31c6e7d44c64edfad2078e918a593ce68"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_064",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Long[] a=new Long[]{1};a[0]=2;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_064|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "5f473c50dc525b6d3bd1aed8af8a4c533573868f24cf775c81481aebbf203f51"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe064": "@IsTest private class C166Observe064{@IsTest static void observe(){String r;final Long[] a=new Long[]{1};a[0]=2;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_064|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe064"
+          ],
+          "sourceSha256": {
+            "class:C166Observe064": "a0a3e50bc06c8121216862bd5c683a632e2781e996848bf4ba19379f9a10bfad"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_065",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Map<String,Account> a=new Map<String,Account>{'k'=>new Account(AnnualRevenue=1)};a.get('k').AnnualRevenue+=2;r=String.valueOf(a.get('k').AnnualRevenue);System.assert(false,'C126_RESULT|C166PF_065|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "6bec2c0543460328024bca13e1e787440ec3c9d40dbf66091e56a461ddd3e4f2"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe065": "@IsTest private class C166Observe065{@IsTest static void observe(){String r;final Map<String,Account> a=new Map<String,Account>{'k'=>new Account(AnnualRevenue=1)};a.get('k').AnnualRevenue+=2;r=String.valueOf(a.get('k').AnnualRevenue);System.assert(false,'C126_RESULT|C166PF_065|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe065"
+          ],
+          "sourceSha256": {
+            "class:C166Observe065": "9a54719ad0c9eb6469b6277752afbf1072ee18197741b375ab9a9f1e23990541"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "3"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"3\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_066",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Map<String,Account> a=new Map<String,Account>{'k'=>new Account(AnnualRevenue=1)};a.get('k').AnnualRevenue=2;r=String.valueOf(a.get('k').AnnualRevenue);System.assert(false,'C126_RESULT|C166PF_066|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "23be7764dbfbb9198b0c9eb8a20f2b0a0b2d6985b3a2c94199edf8fed4e01b55"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe066": "@IsTest private class C166Observe066{@IsTest static void observe(){String r;final Map<String,Account> a=new Map<String,Account>{'k'=>new Account(AnnualRevenue=1)};a.get('k').AnnualRevenue=2;r=String.valueOf(a.get('k').AnnualRevenue);System.assert(false,'C126_RESULT|C166PF_066|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe066"
+          ],
+          "sourceSha256": {
+            "class:C166Observe066": "235d9c517cc7ededda850e4d86682f52ced7116b16a916d56ebdd7c2e8a999e3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    }
+  ]
+}

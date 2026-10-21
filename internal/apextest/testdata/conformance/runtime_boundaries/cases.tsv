@@ -1,0 +1,5 @@
+case	shape
+trigger	Exception built in a DML-fired trigger and its called helper
+null	Chained assignment through null instance field and auto-property, plus initialized control
+flow	Autolaunched flow constructs invocable wrapper, runs literal/expression defaults and constructor, applies inputs
+profile	Deployed Salesforce, Salesforce Platform and Chatter Free profile licenses and user types

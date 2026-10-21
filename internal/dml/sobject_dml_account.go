@@ -16,6 +16,9 @@ func normalizePersonAccountFields(objectName string, definition storage.ObjectDe
 	if !hasPersonAccountSignal(*record) {
 		return
 	}
+	if _, enabled := storage.ResolveFieldName(definition, "", "IsPersonAccount"); !enabled {
+		return
+	}
 	record.Fields["IsPersonAccount"] = storage.BooleanValue(true)
 	normalizeFirstLastName(definition, record)
 }
@@ -26,11 +29,44 @@ func hasPersonAccountSignal(record storage.Record) bool {
 
 func hasPersonAccountFieldSignal(record storage.Record) bool {
 	for field, value := range record.Fields {
-		if (strings.HasPrefix(field, "Person") || field == "FirstName" || field == "LastName") && nonDefaultPersonValue(value) {
+		lower := strings.ToLower(field)
+		if (strings.HasPrefix(lower, "person") || lower == "firstname" || lower == "lastname") && nonDefaultPersonValue(value) {
 			return true
 		}
 	}
 	return false
+}
+
+func isPersonAccountFeatureField(field string) bool {
+	lower := strings.ToLower(field)
+	if strings.HasSuffix(lower, "__c") {
+		return false
+	}
+	if strings.HasPrefix(lower, "person") {
+		return true
+	}
+	switch lower {
+	case "firstname", "lastname", "middlename", "suffix", "salutation", "ispersonaccount":
+		return true
+	default:
+		return false
+	}
+}
+
+func personAccountFeatureFieldError(definition storage.ObjectDefinition, objectName, field string) error {
+	if !strings.EqualFold(objectName, "Account") || !isPersonAccountFeatureField(field) {
+		return nil
+	}
+	if _, enabled := storage.ResolveFieldName(definition, "", "IsPersonAccount"); enabled {
+		return nil
+	}
+	return dmlErrorf(
+		"INVALID_FIELD_FOR_INSERT_UPDATE",
+		[]string{field},
+		"dml: unknown field %s.%s. Person Account fields require the PersonAccounts org feature; set org.features: [PersonAccounts] in glade.yml (nested under org), or add \"PersonAccounts\" to the features array in config/project-scratch-def.json.",
+		objectName,
+		field,
+	)
 }
 
 func nonDefaultPersonValue(value storage.Value) bool {

@@ -2,6 +2,7 @@
 // row IDs and browser connection settings; no oracle answers enter this runner.
 import fs from "node:fs";
 import { createRequire } from "node:module";
+import { pageCount } from "./browser_pages.mjs";
 
 const config = JSON.parse(fs.readFileSync(0, "utf8"));
 const { chromium } = createRequire(import.meta.url)(config.playwrightModule);
@@ -95,9 +96,17 @@ try {
     }
     await page.close();
   }
+  // Each ?c__case navigation replaces the component, wireLast and module caches.
+  // The shared context has no cookie/storage/service-worker state used by rows.
+  // Current prepare/list reads are read-only; next-page reads stay within a row.
+  // Legacy null/empty prepare seeds under the server lock; its two pages stay two.
+  // Org records, views/preferences and disk caches belong to this temp project.
+  // Keep mutations serial after reads; no read depends on a prior row's cache.
+  // Initialization failure still poisons its page's group; widening changes which
+  // later rows are poisoned only in that failure case.
   // Match the captured native schedule: finish every read before serial
   // mutations can delete fixture views or change preference snapshots.
-  for (const [specs, concurrency] of [[reads, 4], [writes, 1]]) {
+  for (const [specs, concurrency] of [[reads, pageCount(4, 6, reads.length)], [writes, 1]]) {
     const groups = Array.from({ length: Math.min(concurrency, specs.length) }, () => []);
     specs.forEach((spec, index) => groups[index % groups.length].push(spec));
     await Promise.all(groups.map(observe));

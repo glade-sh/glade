@@ -1,0 +1,37 @@
+api	route	case	outcome	expected	source_sha256
+62.0	anonymous	snapshot	observation	{"freshAdded":true,"hasAdded":false,"recordName":"second","mapName":"first"}	8ff15a8d692bc0b27b1884deb9620c8efd341415513d6929ebed2b2de78b36d4
+62.0	anonymous	put	fatal	"System.FinalException: Collection is read-only"	c196d674c35bf2b285f55df836187c3e8781f75f04c3803c04d94aa7def77e07
+62.0	anonymous	remove	fatal	"System.FinalException: Collection is read-only"	ca2ddbb4818f0f0a373b431e7a49be251a2690fd02af62e310a39126b28272e9
+62.0	anonymous	clear	observation	{"recordName":"first","size":0}	69ad995e5ddbec592acd0232e52594ee42c05bad18293c4c98809ac79d186bf2
+62.0	anonymous	putAll	fatal	"System.FinalException: Collection is read-only"	23208f6a6441b850af72bfcf3cedcc4e066e59fef8e0935ffec3788ec37d4e38
+62.0	anonymous	copy	observation	{"recordName":"first","size":0}	0f53c238d1212f2470b439f1d7e7941afd0c54f63984eb43d901d05f62440750
+62.0	anonymous	relationship	observation	{"recordName":"second","mapName":"second"}	7e4e0bd54f7a6f0d93dae8a52a644825c283d8d6b2e45a2dc95e73a64a3e3899
+62.0	anonymous	clone	observation	{"recordName":"first","mapName":"second"}	61cd71337e1f673dda3f38ea5f0f39d81614c822c1193d9a6d6d180e1c4e03cb
+62.0	isTest	clear	observation	{"recordName":"first","size":0}	899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519
+62.0	isTest	clone	observation	{"recordName":"first","mapName":"second"}	899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519
+62.0	isTest	copy	observation	{"recordName":"first","size":0}	899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519
+62.0	isTest	put	fatal	"System.FinalException: Collection is read-only"	899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519
+62.0	isTest	putAll	fatal	"System.FinalException: Collection is read-only"	899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519
+62.0	isTest	relationship	observation	{"recordName":"second","mapName":"second"}	899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519
+62.0	isTest	remove	fatal	"System.FinalException: Collection is read-only"	899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519
+62.0	isTest	snapshot	observation	{"freshAdded":true,"hasAdded":false,"recordName":"second","mapName":"first"}	899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519
+67.0	anonymous	snapshot	observation	{"freshAdded":true,"hasAdded":false,"recordName":"second","mapName":"first"}	8ff15a8d692bc0b27b1884deb9620c8efd341415513d6929ebed2b2de78b36d4
+67.0	anonymous	put	fatal	"System.FinalException: Collection is read-only"	c196d674c35bf2b285f55df836187c3e8781f75f04c3803c04d94aa7def77e07
+67.0	anonymous	remove	fatal	"System.FinalException: Collection is read-only"	ca2ddbb4818f0f0a373b431e7a49be251a2690fd02af62e310a39126b28272e9
+67.0	anonymous	clear	observation	{"recordName":"first","size":0}	69ad995e5ddbec592acd0232e52594ee42c05bad18293c4c98809ac79d186bf2
+67.0	anonymous	putAll	fatal	"System.FinalException: Collection is read-only"	23208f6a6441b850af72bfcf3cedcc4e066e59fef8e0935ffec3788ec37d4e38
+67.0	anonymous	copy	observation	{"recordName":"first","size":0}	0f53c238d1212f2470b439f1d7e7941afd0c54f63984eb43d901d05f62440750
+67.0	anonymous	relationship	observation	{"recordName":"second","mapName":"second"}	7e4e0bd54f7a6f0d93dae8a52a644825c283d8d6b2e45a2dc95e73a64a3e3899
+67.0	anonymous	clone	observation	{"recordName":"first","mapName":"second"}	61cd71337e1f673dda3f38ea5f0f39d81614c822c1193d9a6d6d180e1c4e03cb
+67.0	isTest	clear	observation	{"recordName":"first","size":0}	cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d
+67.0	isTest	clone	observation	{"recordName":"first","mapName":"second"}	cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d
+67.0	isTest	copy	observation	{"recordName":"first","size":0}	cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d
+67.0	isTest	put	fatal	"System.FinalException: Collection is read-only"	cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d
+67.0	isTest	putAll	fatal	"System.FinalException: Collection is read-only"	cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d
+67.0	isTest	relationship	observation	{"recordName":"second","mapName":"second"}	cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d
+67.0	isTest	remove	fatal	"System.FinalException: Collection is read-only"	cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d
+67.0	isTest	snapshot	observation	{"freshAdded":true,"hasAdded":false,"recordName":"second","mapName":"first"}	cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d
+62.0	anonymous	emptyPut	fatal	"System.FinalException: Collection is read-only"	625a16af679de763455e3307e8416f9e59131c690182684f187ef1f2a3ad3765
+62.0	anonymous	clearThenPut	fatal	"System.FinalException: Collection is read-only"	b137a7669d465b65c2d7c1fd876da2bd8bc9997f5de82d07fdd793ab3876fa22
+67.0	anonymous	emptyPut	fatal	"System.FinalException: Collection is read-only"	625a16af679de763455e3307e8416f9e59131c690182684f187ef1f2a3ad3765
+67.0	anonymous	clearThenPut	fatal	"System.FinalException: Collection is read-only"	b137a7669d465b65c2d7c1fd876da2bd8bc9997f5de82d07fdd793ab3876fa22

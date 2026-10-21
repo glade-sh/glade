@@ -1,0 +1,4 @@
+case	shape	expected
+direct	inherited callback field calls inherited method	pass
+reentrant	inner subclass callback re-enters owner through inherited field	pass
+asynchronous	Queueable finalizer re-enters owner through inherited field	pass

@@ -1,0 +1,900 @@
+{
+  "cluster": "controls",
+  "cellCount": 32,
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cells": [
+    {
+      "id": "C154C01",
+      "route": "anonymous",
+      "api": "59.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',(Integer)'a');}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C01|'+JSON.serialize(r));",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "801f15b5a37001f15c525a08796aa30a8f9fc2c02269aecaffcc439925a4f985"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "column": 65,
+          "compileProblem": "Incompatible types since an instance of String is never an instance of Integer",
+          "compiled": false,
+          "exceptionMessage": null,
+          "line": 1,
+          "success": false
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Incompatible types since an instance of String is never an instance of Integer",
+      "rejectUnit": "route"
+    },
+    {
+      "id": "C154C01",
+      "route": "istest",
+      "api": "59.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',(Integer)'a');}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C01|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "fdaa90b8af2f26300441e20e2f26215d762cc1ef7efedc245e570f9de491d4ed"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Incompatible types since an instance of String is never an instance of Integer",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Incompatible types since an instance of String is never an instance of Integer",
+      "rejectUnit": "route",
+      "rejectClass": "E10Observe"
+    },
+    {
+      "id": "C154C02",
+      "route": "anonymous",
+      "api": "59.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new List<Integer>()[1]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C02|'+JSON.serialize(r));",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "ea21c936dbc802a01c9d901b61a71a5f6c5b5b0232e282dfa3e961cc4e04aede"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": {
+            "exceptionMessage": "List index out of bounds: 1",
+            "exceptionMessageLength": 27,
+            "exceptionType": "System.ListException"
+          }
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154C02",
+      "route": "istest",
+      "api": "59.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new List<Integer>()[1]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C02|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "84e16e5e47d664d789457a2af50e6f0b4ae7afa354ee2dbda5afc99a818d5014"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": {
+            "exceptionMessage": "List index out of bounds: 1",
+            "exceptionMessageLength": 27,
+            "exceptionType": "System.ListException"
+          }
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154C03",
+      "route": "anonymous",
+      "api": "59.0",
+      "source": {
+        "anonymous": "List<Integer> e10u=new List<Integer>();Integer e10x=e10u[1];",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "597b797da9925d37a0ad570513dd649365415788f1c9979cec6b9336842c931e"
+        }
+      },
+      "native": {
+        "exceptionMessage": "System.ListException: List index out of bounds: 1",
+        "exceptionType": "System.ListException",
+        "exceptionTypeSource": "returned_message_prefix",
+        "outcome": "uncaught_anonymous"
+      },
+      "outcome": "uncaught_anonymous"
+    },
+    {
+      "id": "C154C03",
+      "route": "istest",
+      "api": "59.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { List<Integer> e10u=new List<Integer>();Integer e10x=e10u[1]; } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "58cf9a7eb13b51bcb4c8771b2f19da8afac1b6c21eaf74474a46a0750c2e4250"
+        }
+      },
+      "native": {
+        "outcome": "uncaught_test_failure",
+        "testFailures": [
+          {
+            "cls": "E10Observe",
+            "exceptionType": "System.ListException",
+            "exceptionTypeSource": "returned_message_prefix",
+            "message": "System.ListException: List index out of bounds: 1",
+            "method": "observe"
+          }
+        ]
+      },
+      "outcome": "uncaught_test_failure"
+    },
+    {
+      "id": "C154R00",
+      "route": "anonymous",
+      "api": "59.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',7);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R00|'+JSON.serialize(r));/*xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "ec597671a16a8b189f43f5b8e3f721ebeff67e48779674369e6e709dafb42aa1"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": 7
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R00",
+      "route": "istest",
+      "api": "59.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',7);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R00|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "7801281e903c2701182375adc2a26fb9dd56c93835354277813fa84aff2f17e4"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": 7
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154C01",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',(Integer)'a');}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C01|'+JSON.serialize(r));",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "801f15b5a37001f15c525a08796aa30a8f9fc2c02269aecaffcc439925a4f985"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "column": 65,
+          "compileProblem": "Incompatible types since an instance of String is never an instance of Integer",
+          "compiled": false,
+          "exceptionMessage": null,
+          "line": 1,
+          "success": false
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Incompatible types since an instance of String is never an instance of Integer",
+      "rejectUnit": "route"
+    },
+    {
+      "id": "C154C01",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',(Integer)'a');}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C01|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "fdaa90b8af2f26300441e20e2f26215d762cc1ef7efedc245e570f9de491d4ed"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Incompatible types since an instance of String is never an instance of Integer",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Incompatible types since an instance of String is never an instance of Integer",
+      "rejectUnit": "route",
+      "rejectClass": "E10Observe"
+    },
+    {
+      "id": "C154C02",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new List<Integer>()[1]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C02|'+JSON.serialize(r));",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "ea21c936dbc802a01c9d901b61a71a5f6c5b5b0232e282dfa3e961cc4e04aede"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": {
+            "exceptionMessage": "List index out of bounds: 1",
+            "exceptionMessageLength": 27,
+            "exceptionType": "System.ListException"
+          }
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154C02",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new List<Integer>()[1]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C02|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "84e16e5e47d664d789457a2af50e6f0b4ae7afa354ee2dbda5afc99a818d5014"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": {
+            "exceptionMessage": "List index out of bounds: 1",
+            "exceptionMessageLength": 27,
+            "exceptionType": "System.ListException"
+          }
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154C03",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "List<Integer> e10u=new List<Integer>();Integer e10x=e10u[1];",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "597b797da9925d37a0ad570513dd649365415788f1c9979cec6b9336842c931e"
+        }
+      },
+      "native": {
+        "exceptionMessage": "System.ListException: List index out of bounds: 1",
+        "exceptionType": "System.ListException",
+        "exceptionTypeSource": "returned_message_prefix",
+        "outcome": "uncaught_anonymous"
+      },
+      "outcome": "uncaught_anonymous"
+    },
+    {
+      "id": "C154C03",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { List<Integer> e10u=new List<Integer>();Integer e10x=e10u[1]; } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "58cf9a7eb13b51bcb4c8771b2f19da8afac1b6c21eaf74474a46a0750c2e4250"
+        }
+      },
+      "native": {
+        "outcome": "uncaught_test_failure",
+        "testFailures": [
+          {
+            "cls": "E10Observe",
+            "exceptionType": "System.ListException",
+            "exceptionTypeSource": "returned_message_prefix",
+            "message": "System.ListException: List index out of bounds: 1",
+            "method": "observe"
+          }
+        ]
+      },
+      "outcome": "uncaught_test_failure"
+    },
+    {
+      "id": "C154R00",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',7);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R00|'+JSON.serialize(r));/*xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "ec597671a16a8b189f43f5b8e3f721ebeff67e48779674369e6e709dafb42aa1"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": 7
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R00",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',7);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R00|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "7801281e903c2701182375adc2a26fb9dd56c93835354277813fa84aff2f17e4"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": 7
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154C01",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',(Integer)'a');}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C01|'+JSON.serialize(r));",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "801f15b5a37001f15c525a08796aa30a8f9fc2c02269aecaffcc439925a4f985"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "column": 65,
+          "compileProblem": "Incompatible types since an instance of String is never an instance of Integer",
+          "compiled": false,
+          "exceptionMessage": null,
+          "line": 1,
+          "success": false
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Incompatible types since an instance of String is never an instance of Integer",
+      "rejectUnit": "route"
+    },
+    {
+      "id": "C154C01",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',(Integer)'a');}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C01|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "fdaa90b8af2f26300441e20e2f26215d762cc1ef7efedc245e570f9de491d4ed"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Incompatible types since an instance of String is never an instance of Integer",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Incompatible types since an instance of String is never an instance of Integer",
+      "rejectUnit": "route",
+      "rejectClass": "E10Observe"
+    },
+    {
+      "id": "C154C02",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new List<Integer>()[1]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C02|'+JSON.serialize(r));",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "ea21c936dbc802a01c9d901b61a71a5f6c5b5b0232e282dfa3e961cc4e04aede"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": {
+            "exceptionMessage": "List index out of bounds: 1",
+            "exceptionMessageLength": 27,
+            "exceptionType": "System.ListException"
+          }
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154C02",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new List<Integer>()[1]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C02|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "84e16e5e47d664d789457a2af50e6f0b4ae7afa354ee2dbda5afc99a818d5014"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": {
+            "exceptionMessage": "List index out of bounds: 1",
+            "exceptionMessageLength": 27,
+            "exceptionType": "System.ListException"
+          }
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154C03",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "List<Integer> e10u=new List<Integer>();Integer e10x=e10u[1];",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "597b797da9925d37a0ad570513dd649365415788f1c9979cec6b9336842c931e"
+        }
+      },
+      "native": {
+        "exceptionMessage": "System.ListException: List index out of bounds: 1",
+        "exceptionType": "System.ListException",
+        "exceptionTypeSource": "returned_message_prefix",
+        "outcome": "uncaught_anonymous"
+      },
+      "outcome": "uncaught_anonymous"
+    },
+    {
+      "id": "C154C03",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { List<Integer> e10u=new List<Integer>();Integer e10x=e10u[1]; } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "58cf9a7eb13b51bcb4c8771b2f19da8afac1b6c21eaf74474a46a0750c2e4250"
+        }
+      },
+      "native": {
+        "outcome": "uncaught_test_failure",
+        "testFailures": [
+          {
+            "cls": "E10Observe",
+            "exceptionType": "System.ListException",
+            "exceptionTypeSource": "returned_message_prefix",
+            "message": "System.ListException: List index out of bounds: 1",
+            "method": "observe"
+          }
+        ]
+      },
+      "outcome": "uncaught_test_failure"
+    },
+    {
+      "id": "C154R00",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',7);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R00|'+JSON.serialize(r));/*xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "ec597671a16a8b189f43f5b8e3f721ebeff67e48779674369e6e709dafb42aa1"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": 7
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R00",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',7);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R00|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "7801281e903c2701182375adc2a26fb9dd56c93835354277813fa84aff2f17e4"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": 7
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154C01",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',(Integer)'a');}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C01|'+JSON.serialize(r));",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "801f15b5a37001f15c525a08796aa30a8f9fc2c02269aecaffcc439925a4f985"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "column": 65,
+          "compileProblem": "Incompatible types since an instance of String is never an instance of Integer",
+          "compiled": false,
+          "exceptionMessage": null,
+          "line": 1,
+          "success": false
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Incompatible types since an instance of String is never an instance of Integer",
+      "rejectUnit": "route"
+    },
+    {
+      "id": "C154C01",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',(Integer)'a');}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C01|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "fdaa90b8af2f26300441e20e2f26215d762cc1ef7efedc245e570f9de491d4ed"
+        }
+      },
+      "native": {
+        "diagnostics": {
+          "checkOnly": true,
+          "compile": [
+            {
+              "line": 1,
+              "name": "E10Observe",
+              "problem": "Incompatible types since an instance of String is never an instance of Integer",
+              "type": "ApexClass"
+            }
+          ],
+          "errorMessage": null,
+          "status": "Failed",
+          "testFailures": [],
+          "testPasses": []
+        },
+        "fixtureRejectionPlanned": true,
+        "outcome": "compile-rejected"
+      },
+      "outcome": "compile-rejected",
+      "primary": "Incompatible types since an instance of String is never an instance of Integer",
+      "rejectUnit": "route",
+      "rejectClass": "E10Observe"
+    },
+    {
+      "id": "C154C02",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new List<Integer>()[1]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C02|'+JSON.serialize(r));",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "ea21c936dbc802a01c9d901b61a71a5f6c5b5b0232e282dfa3e961cc4e04aede"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": {
+            "exceptionMessage": "List index out of bounds: 1",
+            "exceptionMessageLength": 27,
+            "exceptionType": "System.ListException"
+          }
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154C02",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new List<Integer>()[1]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154C02|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "84e16e5e47d664d789457a2af50e6f0b4ae7afa354ee2dbda5afc99a818d5014"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": {
+            "exceptionMessage": "List index out of bounds: 1",
+            "exceptionMessageLength": 27,
+            "exceptionType": "System.ListException"
+          }
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154C03",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "List<Integer> e10u=new List<Integer>();Integer e10x=e10u[1];",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "597b797da9925d37a0ad570513dd649365415788f1c9979cec6b9336842c931e"
+        }
+      },
+      "native": {
+        "exceptionMessage": "System.ListException: List index out of bounds: 1",
+        "exceptionType": "System.ListException",
+        "exceptionTypeSource": "returned_message_prefix",
+        "outcome": "uncaught_anonymous"
+      },
+      "outcome": "uncaught_anonymous"
+    },
+    {
+      "id": "C154C03",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { List<Integer> e10u=new List<Integer>();Integer e10x=e10u[1]; } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "58cf9a7eb13b51bcb4c8771b2f19da8afac1b6c21eaf74474a46a0750c2e4250"
+        }
+      },
+      "native": {
+        "outcome": "uncaught_test_failure",
+        "testFailures": [
+          {
+            "cls": "E10Observe",
+            "exceptionType": "System.ListException",
+            "exceptionTypeSource": "returned_message_prefix",
+            "message": "System.ListException: List index out of bounds: 1",
+            "method": "observe"
+          }
+        ]
+      },
+      "outcome": "uncaught_test_failure"
+    },
+    {
+      "id": "C154R00",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',7);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R00|'+JSON.serialize(r));/*xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "ec597671a16a8b189f43f5b8e3f721ebeff67e48779674369e6e709dafb42aa1"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": 7
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R00",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',7);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R00|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "7801281e903c2701182375adc2a26fb9dd56c93835354277813fa84aff2f17e4"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": 7
+        }
+      },
+      "outcome": "runtime"
+    }
+  ]
+}

@@ -87,14 +87,80 @@ func referenceResolveNestedTypeName(model *semaTypeMemberView, owner, typeName s
 	}
 	for i := len(ownerParts) - 1; i > 0; i-- {
 		enclosing := strings.Join(ownerParts[:i], ".")
-		if resolved := resolveNestedTypeNameFromSuperclasses(model, enclosing, typeName); resolved != "" {
+		if resolved := referenceResolveNestedTypeNameFromSuperclasses(model, enclosing, typeName, false); resolved != "" {
 			return resolved
 		}
 	}
-	if resolved := resolveNestedTypeNameFromSuperclasses(model, owner, typeName); resolved != "" {
+	if resolved := referenceResolveNestedTypeNameFromSuperclasses(model, owner, typeName, false); resolved != "" {
+		return resolved
+	}
+	for i := len(ownerParts) - 1; i > 0; i-- {
+		enclosing := strings.Join(ownerParts[:i], ".")
+		if resolved := referenceResolveNestedTypeNameFromSuperclasses(model, enclosing, typeName, true); resolved != "" {
+			return resolved
+		}
+	}
+	if resolved := referenceResolveNestedTypeNameFromSuperclasses(model, owner, typeName, true); resolved != "" {
 		return resolved
 	}
 	return semaCanonicalPlatformAlias(typeName)
+}
+
+func referenceProjectTopLevelApexTypeName(model *semaTypeMemberView, typeName string) string {
+	members, ok := model.lookupName(typeName)
+	if !ok || members.platform || members.dependency || members.syntheticStandardSObject || members.nestingDepth != 0 {
+		return ""
+	}
+	switch members.kind {
+	case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
+		return members.name
+	default:
+		return ""
+	}
+}
+
+func referenceResolveNestedTypeNameFromSuperclasses(model *semaTypeMemberView, owner, typeName string, includePlatform bool) string {
+	seen := make(map[string]bool)
+	var enclosingOwners []string
+	resolveNested := func(candidate string) string {
+		members, ok := model.lookupName(candidate)
+		if !ok || (!includePlatform && members.platform) {
+			return ""
+		}
+		if includePlatform && members.platform {
+			if projectName := referenceProjectTopLevelApexTypeName(model, typeName); projectName != "" {
+				return projectName
+			}
+		}
+		return candidate
+	}
+	for current := owner; current != ""; {
+		key := model.canonicalName(current)
+		if key == "" || seen[key] {
+			break
+		}
+		seen[key] = true
+		members, ok := model.lookup(key)
+		if !ok || strings.TrimSpace(members.superClass) == "" {
+			break
+		}
+		candidate := members.superClass + "." + typeName
+		if resolved := resolveNested(candidate); resolved != "" {
+			return resolved
+		}
+		for enclosing := members.superClass; strings.Contains(enclosing, "."); {
+			enclosing = enclosing[:strings.LastIndexByte(enclosing, '.')]
+			enclosingOwners = append(enclosingOwners, enclosing)
+		}
+		current = members.superClass
+	}
+	for _, enclosing := range enclosingOwners {
+		candidate := enclosing + "." + typeName
+		if resolved := resolveNested(candidate); resolved != "" {
+			return resolved
+		}
+	}
+	return ""
 }
 
 func referenceResolveNestedTypeReference(model *semaTypeMemberView, owner, typeName string) string {
@@ -302,6 +368,81 @@ func TestNestedTypeAllocationChangesMatchReference(t *testing.T) {
 	view.storeHydrated("root.hydrated", typeMembers{name: "Root.Hydrated"})
 	if got := resolveNestedTypeName(view, "Root", "Hydrated"); got != "Root.Hydrated" {
 		t.Fatalf("after hydration: %q", got)
+	}
+}
+
+func TestNestedProjectTypePrecedesInheritedPlatformNestedType(t *testing.T) {
+	view := allocationTestView(
+		typeMembers{name: "Auth.AuthProvider", platform: true},
+		typeMembers{name: "Auth.AuthProviderPluginClass", platform: true, superClass: "Auth.AuthProvider"},
+		typeMembers{name: "Auth.JWT", platform: true},
+		typeMembers{name: "TokenProviderProbe", superClass: "Auth.AuthProviderPluginClass"},
+		typeMembers{name: "JWT", kind: apexast.DeclarationClass},
+	)
+	if got := resolveNestedTypeName(view, "TokenProviderProbe", "JWT"); got != "JWT" {
+		t.Fatalf("project class should shadow inherited Auth.JWT: got %q", got)
+	}
+}
+
+func TestReferenceNestedTypeResolutionPreservesPrecedence(t *testing.T) {
+	view := allocationTestView(
+		typeMembers{name: "Outer", kind: apexast.DeclarationClass},
+		typeMembers{name: "Outer.Inner", kind: apexast.DeclarationClass, nestingDepth: 1},
+		typeMembers{name: "Outer.Shared", kind: apexast.DeclarationClass, nestingDepth: 1},
+		typeMembers{name: "Shared", kind: apexast.DeclarationClass},
+		typeMembers{name: "BaseController", kind: apexast.DeclarationClass},
+		typeMembers{name: "BaseController.Shared", kind: apexast.DeclarationClass, nestingDepth: 1},
+		typeMembers{name: "DerivedController", kind: apexast.DeclarationClass, superClass: "BaseController"},
+		typeMembers{name: "Auth.AuthProvider", platform: true},
+		typeMembers{name: "Auth.AuthProviderPluginClass", platform: true, superClass: "Auth.AuthProvider"},
+		typeMembers{name: "Auth.JWT", platform: true},
+		typeMembers{name: "TokenProviderProbe", kind: apexast.DeclarationClass, superClass: "Auth.AuthProviderPluginClass"},
+		typeMembers{name: "JWT", kind: apexast.DeclarationClass},
+	)
+	cases := []struct {
+		owner string
+		name  string
+		want  string
+	}{
+		{owner: "Outer.Inner", name: "Shared", want: "Outer.Shared"},
+		{owner: "DerivedController", name: "Shared", want: "BaseController.Shared"},
+		{owner: "TokenProviderProbe", name: "JWT", want: "JWT"},
+	}
+	for _, tc := range cases {
+		if got := referenceResolveNestedTypeName(view, tc.owner, tc.name); got != tc.want {
+			t.Errorf("reference owner=%q name=%q: got %q, want %q", tc.owner, tc.name, got, tc.want)
+		}
+		if got := resolveNestedTypeName(view, tc.owner, tc.name); got != tc.want {
+			t.Errorf("production owner=%q name=%q: got %q, want %q", tc.owner, tc.name, got, tc.want)
+		}
+	}
+}
+
+func TestInheritedNestedClassPrecedesStandardSObject(t *testing.T) {
+	view := allocationTestView(
+		typeMembers{name: "BaseController", kind: apexast.DeclarationClass},
+		typeMembers{name: "BaseController.Note", kind: apexast.DeclarationClass, nestingDepth: 1},
+		typeMembers{name: "DerivedController", kind: apexast.DeclarationClass, superClass: "BaseController"},
+		typeMembers{name: "Note", kind: apexast.DeclarationClass, sobject: true, syntheticStandardSObject: true},
+	)
+	if got := resolveNestedTypeName(view, "DerivedController", "Note"); got != "BaseController.Note" {
+		t.Fatalf("inherited nested class should win over standard Note sObject: got %q", got)
+	}
+}
+
+func TestInheritedNestedProjectTypePrecedesTopLevelSObjectNameClass(t *testing.T) {
+	view := allocationTestView(
+		typeMembers{name: "BaseController", kind: apexast.DeclarationClass},
+		typeMembers{name: "BaseController.Note", kind: apexast.DeclarationClass, nestingDepth: 1, fields: map[string]typesys.MemberSymbol{
+			"sfobject": {Kind: apexast.DeclarationField, Name: "sfObject", Type: "String"},
+		}},
+		typeMembers{name: "DerivedNoteController", kind: apexast.DeclarationClass, superClass: "BaseController"},
+		typeMembers{name: "Note", kind: apexast.DeclarationClass, fields: map[string]typesys.MemberSymbol{
+			"marker": {Kind: apexast.DeclarationField, Name: "marker", Type: "String"},
+		}},
+	)
+	if got := resolveNestedTypeName(view, "DerivedNoteController", "Note"); got != "BaseController.Note" {
+		t.Fatalf("inherited project nested class should win over the top-level Note class: got %q", got)
 	}
 }
 

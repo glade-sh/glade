@@ -11,6 +11,20 @@ import (
 )
 
 func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
+	return vm.eventBusPublishWithNamedSource(args, result, true)
+}
+
+// The named-source capture covers a scalar event and a one-element
+// List<SObject>. Concrete and multi-element lists have no named capture.
+func namedStandardPublishShape(arg Value) bool {
+	if arg.Kind != ValueList {
+		return true
+	}
+	elementType, _ := collectionElementType(runtimeObjectType(arg))
+	return strings.EqualFold(elementType, "SObject") && len(arg.List) == 1
+}
+
+func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, namedSource bool) (Value, error) {
 	if vm.rejectAsyncActions {
 		return Null, vm.rejectSynchronousAsyncAction("EventBus.publish cannot cross the synchronous LWC action boundary")
 	}
@@ -24,8 +38,10 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 	if len(records) == 0 {
 		return List(), nil
 	}
+	legacyStandardPublish := vm.capturedLegacyStandardEventPublish(args)
 	// R176: duplicate event aliases are rejected before either is published.
 	seen := make(map[uint64]bool)
+	var duplicateError error
 	for _, record := range records {
 		if record.Kind == ValueNull {
 			if args[0].Kind == ValueList {
@@ -36,7 +52,10 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 			return Null, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
 		}
 		if record.Ref != 0 && seen[record.Ref] {
-			return Null, newExceptionError("ListException", "Before Insert or Upsert list must not have two identically equal elements")
+			duplicateError = newExceptionError("ListException", "Before Insert or Upsert list must not have two identically equal elements")
+			if len(args) != 1 || !vm.capturedDuplicateImmediateEventPair(args[0]) {
+				return Null, duplicateError
+			}
 		}
 		seen[record.Ref] = record.Ref != 0
 	}
@@ -50,10 +69,11 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		}
 	}
 	ordinaryDMLRows := 0
-	// Salesforce accounts an erased List<SObject> as ordinary DML, even
-	// when its records are immediate-publish platform events.
+	// A genuinely generic list uses ordinary DML. Supported forwarded lists
+	// retain their concrete immediate-event provenance.
 	elementType, _ := collectionElementType(args[0].Type)
-	if args[0].Kind == ValueList && strings.EqualFold(elementType, "SObject") {
+	if args[0].Kind == ValueList && strings.EqualFold(elementType, "SObject") &&
+		!(len(args) == 1 && vm.capturedImmediateEventList(args[0])) {
 		ordinaryDMLRows = len(records)
 	} else {
 		for _, record := range records {
@@ -77,6 +97,9 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		if err := vm.incrementLimit("publishImmediateDml", 1); err != nil {
 			return Null, err
 		}
+	}
+	if duplicateError != nil {
+		return Null, duplicateError
 	}
 	results := make([]Value, 0, len(records))
 	triggerRecords := make([]storage.Record, 0, len(records))
@@ -102,8 +125,25 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		}
 		// P004-P009: an erased scalar or concrete standard-object list retains
 		// the DML rejection; a genuine List<SObject> returns a row failure.
-		if strings.EqualFold(stored.Object, "BatchApexErrorEvent") {
+		standardMode := 0
+		if len(args) == 1 {
+			if namedSource && namedStandardPublishShape(args[0]) {
+				standardMode = vm.namedStandardEventPublishMode(record)
+			}
+			if standardMode == 0 && args[0].Kind == ValueObject {
+				standardMode = vm.replayDescribeStandardPublishMode(record)
+			}
+		}
+		if legacyStandardPublish {
+			standardMode = 1
+		}
+		if strings.EqualFold(stored.Object, "BatchApexErrorEvent") && standardMode != 1 {
 			message := "DML operation INSERT not allowed on BatchApexErrorEvent"
+			if standardMode == -1 {
+				putVMFieldPath(record, "EventUuid", String(vm.nextDeterministicUUID()))
+				results = append(results, platformEventSaveResult("", false, "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", message, nil))
+				continue
+			}
 			runtimeElementType, _ := collectionElementType(runtimeObjectType(args[0]))
 			if args[0].Kind == ValueList && strings.EqualFold(runtimeElementType, "SObject") {
 				results = append(results, platformEventSaveResult("", false, "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", message, nil))
@@ -111,8 +151,21 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 			}
 			return Null, newExceptionError("TypeException", message)
 		}
-		if !vm.hasPlatformEventMetadata(stored.Object) {
-			return Null, newExceptionError("UnexpectedException", "The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event.")
+		if !vm.hasPlatformEventMetadata(stored.Object) && standardMode != 1 {
+			// Salesforce documents manual Apex publication of this standard event.
+			// Validate invalid records without enabling local orchestration delivery.
+			if len(args) == 1 && !record.projectClass && strings.EqualFold(stored.Object, "FlowOrchestrationEvent") && storage.IsKnownStandardObject(stored.Object) {
+				if code, message, fields := vm.platformEventValidationError(stored); code != "" {
+					results = append(results, platformEventSaveResult("", false, code, message, fields))
+					continue
+				}
+				return Null, newExceptionError("System.UnsupportedOperationException", "EventBus.publish for FlowOrchestrationEvent requires the hosted orchestration service")
+			}
+			message := "The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event."
+			if len(args) == 1 && vm.capturedNonEventAccountList(args[0]) {
+				return Null, &RuntimeError{Type: "System.UnexpectedException", Message: message}
+			}
+			return Null, newExceptionError("UnexpectedException", message)
 		}
 		eventUUID, hasEventUUID := vm.platformEventUUID(record)
 		if publishedID, ok := record.Fields[sobjectPublishedEventIDField]; ok {
@@ -146,10 +199,23 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 			// Publishing assigns event identity without exposing a ReplayId.
 			record.Fields[sobjectPublishedEventIDField] = platformScalar("Id", string(stored.ID))
 		}
+		// The subscriber receives publication metadata; the publisher's SObject
+		// keeps its unset CreatedDate and ReplayId fields.
+		if stored.System.CreatedDate == "" && vm.hasPlatformEventMetadata(stored.Object) {
+			stored.System.CreatedDate = formatPlatformDatetime(vm.fakeNow)
+		}
 		stored.Fields["ReplayId"] = storage.StringValue(vm.nextEventBusReplayID())
 		stored.Fields["EventUuid"] = storage.StringValue(eventUUID)
 		triggerRecords = append(triggerRecords, stored)
-		row := platformEventSaveResult(stored.ID, true, "OPERATION_ENQUEUED", eventUUID, nil)
+		resultID := stored.ID
+		if legacyStandardPublish {
+			resultID = legacyStandardEventAcknowledgmentID(stored.ID)
+		}
+		row := platformEventSaveResult(resultID, true, "OPERATION_ENQUEUED", eventUUID, nil)
+		if legacyStandardPublish {
+			// These captured success rows expose id/success/errors only.
+			delete(row.Fields, "error")
+		}
 		row.Fields[sobjectEventOperationIDField] = String(eventUUID)
 		results = append(results, row)
 		if len(args) == 2 {
@@ -167,10 +233,31 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 			})
 		}
 	}
-	if vm.testContext != nil && !vm.testContext.Stopped {
+	if vm.testContext != nil && (!vm.testContext.Stopped || vm.testContext.StopDraining) {
+		// Work that Test.stopTest runs publishes into the same queue; stopTest
+		// delivers it after the publisher returns, never inside the publish.
 		vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, triggerRecords...)
 	} else {
-		if _, err := vm.runTriggers(triggerTimingAfter, "insert", triggerRecords, nil, result); err != nil {
+		// Subscriber work is a separate transaction from the publisher. Local
+		// delivery must not charge its DML against the captured publish counters
+		// or roll back its inserts with a failed publisher (anonymous source syntax and version rules).
+		immediateOnly := vm.Org != nil && len(triggerRecords) > 0
+		for _, record := range triggerRecords {
+			if !immediateOnly {
+				break
+			}
+			name, ok := storage.ResolveObjectName(*vm.Org, record.Object)
+			immediateOnly = ok && strings.EqualFold(vm.Org.Objects[name].Definition.Metadata["publishBehavior"], "PublishImmediately")
+		}
+		if vm.testContext == nil && immediateOnly {
+			publisherJournal := vm.isolationJournal
+			vm.isolationJournal = nil
+			defer func() { vm.isolationJournal = publisherJournal }()
+		}
+		if _, err := vm.withAsyncLimitWindow(func() (Value, error) {
+			_, err := vm.runTriggers(triggerTimingAfter, "insert", triggerRecords, nil, result)
+			return Null, err
+		}); err != nil {
 			return Null, err
 		}
 	}
@@ -360,7 +447,7 @@ func (vm *VM) connectAPIOrganizationSettings(args []Value) (Value, error) {
 	if len(args) != 0 {
 		return Null, fmt.Errorf("ConnectApi.Organization.getSettings expects 0 arguments")
 	}
-	orgID := "00D000000000001"
+	orgID := storage.DefaultOrgID
 	if vm.Org != nil && vm.Org.OrgID != "" {
 		orgID = vm.Org.OrgID
 	}
@@ -656,7 +743,7 @@ func (vm *VM) clearMetadataCaches() {
 	vm.clearCustomDataCache()
 }
 
-func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) (Value, bool, error) {
+func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) (returned Value, handled bool, callErr error) {
 	methodKey := strings.ToLower(method)
 	objectName, definition, kind, ok := vm.customDataObject(typeName)
 	if !ok {
@@ -672,6 +759,28 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 		return Null, false, nil
 	}
 dispatchCustomData:
+	if strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
+		// C02-01 returns fresh org defaults on both routes. C02-02 retains
+		// the cached user record anonymously, but detaches it in @IsTest.
+		snapshot := methodKey == "getorgdefaults"
+		if methodKey == "getvalues" && vm.testContext != nil && len(args) == 1 {
+			owner, valid, _ := customSettingOwnerIDArg(args[0])
+			snapshot = valid && storage.IDsEqual(storage.ID(owner), storage.ID(vm.currentUserInfoField("Id", storage.DefaultUserID)))
+		}
+		// C02-08/10 observe fresh merged instances for the no-argument and
+		// explicit current-user forms. Other owner forms remain unprobed.
+		if methodKey == "getinstance" {
+			if len(args) == 0 {
+				snapshot = true
+			} else if len(args) == 1 {
+				owner, valid, _ := customSettingOwnerIDArg(args[0])
+				snapshot = valid && storage.IDsEqual(storage.ID(owner), storage.ID(vm.currentUserInfoField("Id", storage.DefaultUserID)))
+			}
+		}
+		if snapshot {
+			defer func() { returned = cloneValue(returned) }()
+		}
+	}
 	switch methodKey {
 	case "getall":
 		if len(args) != 0 {
@@ -883,12 +992,20 @@ func (vm *VM) ensureAsyncObjects() {
 		Label:     "Cron Trigger",
 		KeyPrefix: "08e",
 		Fields: map[string]storage.Field{
-			"Id":              {APIName: "Id", Type: storage.FieldID},
-			"State":           {APIName: "State", Type: storage.FieldString},
-			"CronExpression":  {APIName: "CronExpression", Type: storage.FieldString},
-			"CronJobDetailId": {APIName: "CronJobDetailId", Type: storage.FieldReference, ReferenceTo: []string{"CronJobDetail"}, RelationshipName: "CronJobDetail"},
-			"NextFireTime":    {APIName: "NextFireTime", Type: storage.FieldDateTime},
-			"TimesTriggered":  {APIName: "TimesTriggered", Type: storage.FieldInteger},
+			"Id":               {APIName: "Id", Type: storage.FieldID},
+			"State":            {APIName: "State", Type: storage.FieldString},
+			"CronExpression":   {APIName: "CronExpression", Type: storage.FieldString},
+			"CronJobDetailId":  {APIName: "CronJobDetailId", Type: storage.FieldReference, ReferenceTo: []string{"CronJobDetail"}, RelationshipName: "CronJobDetail"},
+			"NextFireTime":     {APIName: "NextFireTime", Type: storage.FieldDateTime},
+			"StartTime":        {APIName: "StartTime", Type: storage.FieldDateTime},
+			"PreviousFireTime": {APIName: "PreviousFireTime", Type: storage.FieldDateTime},
+			"EndTime":          {APIName: "EndTime", Type: storage.FieldDateTime},
+			"TimeZoneSidKey":   {APIName: "TimeZoneSidKey", Type: storage.FieldString},
+			"TimesTriggered":   {APIName: "TimesTriggered", Type: storage.FieldInteger},
+			"OwnerId":          {APIName: "OwnerId", Type: storage.FieldReference, ReferenceTo: []string{"User"}},
+			"CreatedById":      {APIName: "CreatedById", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "CreatedBy"},
+			"CreatedDate":      {APIName: "CreatedDate", Type: storage.FieldDateTime},
+			"LastModifiedById": {APIName: "LastModifiedById", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"},
 		},
 		Relations: []storage.Relationship{{
 			Field:              "CronJobDetailId",

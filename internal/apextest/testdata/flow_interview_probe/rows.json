@@ -1,0 +1,277 @@
+{
+  "status": "PENDING-ROWS",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "@IsTest"
+  ],
+  "observationsRequired": 192,
+  "instructions": [
+    "Deploy this owned project to an authorized scratch org. Set project, every Apex class metadata, and every Flow apiVersion to each capture API deliberately.",
+    "Execute each listed row separately on both routes; use matching request/caller API and selected named test method. Record deployment acceptance, raw response, PROBE JSON, and exact exception type/message.",
+    "Observation wrappers contain no expected-result assertions. Their completion is not proof of successful Flow behavior. Read the JSON and retain transport/deployment failures as missing evidence.",
+    "FI01-FI13 need native observations. FI14-FI16 are scalar and absent-variable controls. Compare both constructors and all API/route twins before asserting pending record behavior."
+  ],
+  "rows": [
+    {
+      "id": "FI01",
+      "construction": "dynamic",
+      "purpose": "Record output and input/output alias mutation",
+      "anonymous": "System.debug('PROBE|FI01|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI01', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI01_dynamic"
+    },
+    {
+      "id": "FI01",
+      "construction": "subclass",
+      "purpose": "Record output and input/output alias mutation",
+      "anonymous": "System.debug('PROBE|FI01|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI01', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI01_subclass"
+    },
+    {
+      "id": "FI02",
+      "construction": "dynamic",
+      "purpose": "Caller replaces record variable with returned output",
+      "anonymous": "System.debug('PROBE|FI02|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI02', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI02_dynamic"
+    },
+    {
+      "id": "FI02",
+      "construction": "subclass",
+      "purpose": "Caller replaces record variable with returned output",
+      "anonymous": "System.debug('PROBE|FI02|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI02', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI02_subclass"
+    },
+    {
+      "id": "FI03",
+      "construction": "dynamic",
+      "purpose": "Caller copies populated output fields into original",
+      "anonymous": "System.debug('PROBE|FI03|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI03', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI03_dynamic"
+    },
+    {
+      "id": "FI03",
+      "construction": "subclass",
+      "purpose": "Caller copies populated output fields into original",
+      "anonymous": "System.debug('PROBE|FI03|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI03', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI03_subclass"
+    },
+    {
+      "id": "FI04",
+      "construction": "dynamic",
+      "purpose": "Null assignment to Description in output",
+      "anonymous": "System.debug('PROBE|FI04|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI04', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI04_dynamic"
+    },
+    {
+      "id": "FI04",
+      "construction": "subclass",
+      "purpose": "Null assignment to Description in output",
+      "anonymous": "System.debug('PROBE|FI04|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI04', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI04_subclass"
+    },
+    {
+      "id": "FI05",
+      "construction": "dynamic",
+      "purpose": "Caller replaces record after null assignment",
+      "anonymous": "System.debug('PROBE|FI05|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI05', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI05_dynamic"
+    },
+    {
+      "id": "FI05",
+      "construction": "subclass",
+      "purpose": "Caller replaces record after null assignment",
+      "anonymous": "System.debug('PROBE|FI05|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI05', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI05_subclass"
+    },
+    {
+      "id": "FI06",
+      "construction": "dynamic",
+      "purpose": "Caller copies populated fields after null assignment",
+      "anonymous": "System.debug('PROBE|FI06|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI06', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI06_dynamic"
+    },
+    {
+      "id": "FI06",
+      "construction": "subclass",
+      "purpose": "Caller copies populated fields after null assignment",
+      "anonymous": "System.debug('PROBE|FI06|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI06', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI06_subclass"
+    },
+    {
+      "id": "FI07",
+      "construction": "dynamic",
+      "purpose": "Apex action addError exposed on returned record and original",
+      "anonymous": "System.debug('PROBE|FI07|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI07', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI07_dynamic"
+    },
+    {
+      "id": "FI07",
+      "construction": "subclass",
+      "purpose": "Apex action addError exposed on returned record and original",
+      "anonymous": "System.debug('PROBE|FI07|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI07', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI07_subclass"
+    },
+    {
+      "id": "FI08",
+      "construction": "dynamic",
+      "purpose": "Caller explicitly transfers returned record errors",
+      "anonymous": "System.debug('PROBE|FI08|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI08', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI08_dynamic"
+    },
+    {
+      "id": "FI08",
+      "construction": "subclass",
+      "purpose": "Caller explicitly transfers returned record errors",
+      "anonymous": "System.debug('PROBE|FI08|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI08', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI08_subclass"
+    },
+    {
+      "id": "FI09",
+      "construction": "dynamic",
+      "purpose": "Apex action throws; exact Flow exception and input preservation",
+      "anonymous": "System.debug('PROBE|FI09|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI09', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI09_dynamic"
+    },
+    {
+      "id": "FI09",
+      "construction": "subclass",
+      "purpose": "Apex action throws; exact Flow exception and input preservation",
+      "anonymous": "System.debug('PROBE|FI09|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI09', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI09_subclass"
+    },
+    {
+      "id": "FI10",
+      "construction": "dynamic",
+      "purpose": "Omitted record input",
+      "anonymous": "System.debug('PROBE|FI10|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI10', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI10_dynamic"
+    },
+    {
+      "id": "FI10",
+      "construction": "subclass",
+      "purpose": "Omitted record input",
+      "anonymous": "System.debug('PROBE|FI10|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI10', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI10_subclass"
+    },
+    {
+      "id": "FI11",
+      "construction": "dynamic",
+      "purpose": "Explicit null record input",
+      "anonymous": "System.debug('PROBE|FI11|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI11', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI11_dynamic"
+    },
+    {
+      "id": "FI11",
+      "construction": "subclass",
+      "purpose": "Explicit null record input",
+      "anonymous": "System.debug('PROBE|FI11|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI11', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI11_subclass"
+    },
+    {
+      "id": "FI12",
+      "construction": "dynamic",
+      "purpose": "Record variable unavailable for output",
+      "anonymous": "System.debug('PROBE|FI12|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI12', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI12_dynamic"
+    },
+    {
+      "id": "FI12",
+      "construction": "subclass",
+      "purpose": "Record variable unavailable for output",
+      "anonymous": "System.debug('PROBE|FI12|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI12', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI12_subclass"
+    },
+    {
+      "id": "FI13",
+      "construction": "dynamic",
+      "purpose": "Undeclared input and absent variable lookup",
+      "anonymous": "System.debug('PROBE|FI13|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI13', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI13_dynamic"
+    },
+    {
+      "id": "FI13",
+      "construction": "subclass",
+      "purpose": "Undeclared input and absent variable lookup",
+      "anonymous": "System.debug('PROBE|FI13|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI13', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI13_subclass"
+    },
+    {
+      "id": "FI14",
+      "construction": "dynamic",
+      "purpose": "Documented scalar output control",
+      "anonymous": "System.debug('PROBE|FI14|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI14', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI14_dynamic"
+    },
+    {
+      "id": "FI14",
+      "construction": "subclass",
+      "purpose": "Documented scalar output control",
+      "anonymous": "System.debug('PROBE|FI14|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI14', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI14_subclass"
+    },
+    {
+      "id": "FI15",
+      "construction": "dynamic",
+      "purpose": "Owned native Integer-to-String input control",
+      "anonymous": "System.debug('PROBE|FI15|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI15', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI15_dynamic"
+    },
+    {
+      "id": "FI15",
+      "construction": "subclass",
+      "purpose": "Owned native Integer-to-String input control",
+      "anonymous": "System.debug('PROBE|FI15|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI15', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI15_subclass"
+    },
+    {
+      "id": "FI16",
+      "construction": "dynamic",
+      "purpose": "Documented absent-variable control",
+      "anonymous": "System.debug('PROBE|FI16|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI16', false)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI16_dynamic"
+    },
+    {
+      "id": "FI16",
+      "construction": "subclass",
+      "purpose": "Documented absent-variable control",
+      "anonymous": "System.debug('PROBE|FI16|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI16', true)));",
+      "testClass": "SproutFlowProbeTest",
+      "testMethod": "FI16_subclass"
+    }
+  ]
+}

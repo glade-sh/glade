@@ -85,9 +85,11 @@ func ApplyCustomMetadataRecords(org *OrgState, records []schema.CustomMetadataRe
 			state.Records = make(map[ID]Record)
 		}
 		state.Records[pendingRecord.id] = Record{
-			ID:     pendingRecord.id,
-			Object: pendingRecord.objectName,
-			Fields: cloneValues(pendingRecord.fields),
+			MetadataSourceUnit: pendingRecord.source.SourceUnit,
+			ID:                 pendingRecord.id,
+			Object:             pendingRecord.objectName,
+			Fields:             cloneValues(pendingRecord.fields),
+			System:             SystemFields{SystemModstamp: deterministicSeedSystemTimestamp},
 		}
 		org.Objects[pendingRecord.objectName] = state
 	}
@@ -199,8 +201,20 @@ func customMetadataState(org *OrgState, source schema.CustomMetadataRecord) (str
 }
 
 func customMetadataFields(org OrgState, definition ObjectDefinition, source schema.CustomMetadataRecord) (map[string]Value, map[string]customMetadataReference, error) {
+	prefix := customMetadataNamespace(org.Namespace, definition.APIName)
+	qualifiedName := customMetadataQualifiedName(org.Namespace, definition.APIName, source.DeveloperName)
+	// A packaged type's namespace does not determine its records' ownership.
+	// Explicit provenance includes unmanaged owners; absent provenance keeps
+	// the type-derived fallback used by older metadata artifacts.
+	if customMetadataObjectNamespace(definition.APIName) != "" && source.OwnerNamespace != nil {
+		prefix = *source.OwnerNamespace
+		qualifiedName = source.DeveloperName
+		if prefix != "" {
+			qualifiedName = prefix + "__" + source.DeveloperName
+		}
+	}
 	namespace := NullValue()
-	if prefix := customMetadataNamespace(org.Namespace, definition.APIName); prefix != "" {
+	if prefix != "" {
 		namespace = StringValue(prefix)
 	}
 	fields := map[string]Value{
@@ -208,7 +222,9 @@ func customMetadataFields(org OrgState, definition ObjectDefinition, source sche
 		"MasterLabel":      StringValue(labelOrDeveloperName(source.Label, source.DeveloperName)),
 		"Label":            StringValue(labelOrDeveloperName(source.Label, source.DeveloperName)),
 		"NamespacePrefix":  namespace, // R254: unmanaged metadata has raw null.
-		"QualifiedApiName": StringValue(customMetadataQualifiedName(org.Namespace, definition.APIName, source.DeveloperName)),
+		"QualifiedApiName": StringValue(qualifiedName),
+		// Native captures read en_US for every record in an en_US org.
+		"Language": StringValue("en_US"),
 	}
 	for fieldName, field := range definition.Fields {
 		if field.Type != FieldBoolean {
@@ -310,9 +326,6 @@ func resolveCustomMetadataRecordID(org OrgState, raw string, targets []string) (
 	if raw == "" {
 		return "", false
 	}
-	if err := ValidateID(ID(raw)); err == nil {
-		return ID(raw), true
-	}
 	for objectName, state := range org.Objects {
 		if !IsCustomMetadataDefinition(state.Definition) {
 			continue
@@ -327,6 +340,9 @@ func resolveCustomMetadataRecordID(org OrgState, raw string, targets []string) (
 				}
 			}
 		}
+	}
+	if err := ValidateID(ID(raw)); err == nil {
+		return ID(raw), true
 	}
 	return "", false
 }

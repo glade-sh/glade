@@ -1,0 +1,3 @@
+source_api	method	observation
+62.0	requestShape	{"deployment":"rejected","invalidTypes":["aiplatform.ModelsAPI","aiplatform.ModelsAPI.createGenerations_Request","aiplatform.ModelsAPI.createGenerations_Response","aiplatform.ModelsAPI_GenerationRequest"],"context":"plain scratch org; Einstein AI platform not enabled"}
+67.0	requestShape	{"deployment":"rejected","invalidTypes":["aiplatform.ModelsAPI","aiplatform.ModelsAPI.createGenerations_Request","aiplatform.ModelsAPI.createGenerations_Response","aiplatform.ModelsAPI_GenerationRequest"],"context":"plain scratch org; Einstein AI platform not enabled"}

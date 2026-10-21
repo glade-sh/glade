@@ -2,7 +2,8 @@
   "schema_version": 1,
   "api_versions": [
     "59.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "transport": "exception",
   "capture_each_case_individually": true,
@@ -23,7 +24,8 @@
       "meta_fragment": "<isExposed>false</isExposed>",
       "expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       },
       "native_bundle": "familyL17ResourceControl000",
       "diagnostic_expected": {},
@@ -44,7 +46,8 @@
       "meta_fragment": "<isExposed>false</isExposed>",
       "expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       },
       "native_bundle": "familyL17ResourceControl001",
       "diagnostic_expected": {},
@@ -65,12 +68,14 @@
       "meta_fragment": "<isExposed>false</isExposed>",
       "expected": {
         "59.0": "COMPILE_ERROR",
-        "67.0": "COMPILE_ERROR"
+        "67.0": "COMPILE_ERROR",
+        "68.0": "COMPILE_ERROR"
       },
       "native_bundle": "familyL17ResourceControl002",
       "diagnostic_expected": {
         "59.0": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl002.js",
-        "67.0": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl002.js"
+        "67.0": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl002.js",
+        "68.0": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl002.js"
       },
       "native_diagnostics": {
         "59.0": [
@@ -105,12 +110,14 @@
       "meta_fragment": "<isExposed>false</isExposed>",
       "expected": {
         "59.0": "COMPILE_ERROR",
-        "67.0": "COMPILE_ERROR"
+        "67.0": "COMPILE_ERROR",
+        "68.0": "COMPILE_ERROR"
       },
       "native_bundle": "familyL17ResourceControl003",
       "diagnostic_expected": {
         "59.0": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl003.js",
-        "67.0": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl003.js"
+        "67.0": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl003.js",
+        "68.0": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl003.js"
       },
       "native_diagnostics": {
         "59.0": [
@@ -145,12 +152,14 @@
       "meta_fragment": "<isExposed>false</isExposed>",
       "expected": {
         "59.0": "COMPILE_ERROR",
-        "67.0": "COMPILE_ERROR"
+        "67.0": "COMPILE_ERROR",
+        "68.0": "COMPILE_ERROR"
       },
       "native_bundle": "familyL17ResourceControl004",
       "diagnostic_expected": {
         "59.0": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl004.js",
-        "67.0": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl004.js"
+        "67.0": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl004.js",
+        "68.0": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl004.js"
       },
       "native_diagnostics": {
         "59.0": [
@@ -185,12 +194,14 @@
       "meta_fragment": "<isExposed>false</isExposed>",
       "expected": {
         "59.0": "COMPILE_ERROR",
-        "67.0": "COMPILE_ERROR"
+        "67.0": "COMPILE_ERROR",
+        "68.0": "COMPILE_ERROR"
       },
       "native_bundle": "familyL17ResourceControl005",
       "diagnostic_expected": {
         "59.0": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl005.js",
-        "67.0": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl005.js"
+        "67.0": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl005.js",
+        "68.0": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl005.js"
       },
       "native_diagnostics": {
         "59.0": [
@@ -225,12 +236,14 @@
       "meta_fragment": "<isExposed>false</isExposed>",
       "expected": {
         "59.0": "COMPILE_ERROR",
-        "67.0": "COMPILE_ERROR"
+        "67.0": "COMPILE_ERROR",
+        "68.0": "COMPILE_ERROR"
       },
       "native_bundle": "familyL17ResourceControl006",
       "diagnostic_expected": {
         "59.0": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl006.js",
-        "67.0": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl006.js"
+        "67.0": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl006.js",
+        "68.0": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl006.js"
       },
       "native_diagnostics": {
         "59.0": [
@@ -265,12 +278,14 @@
       "meta_fragment": "<isExposed>false</isExposed>",
       "expected": {
         "59.0": "COMPILE_ERROR",
-        "67.0": "COMPILE_ERROR"
+        "67.0": "COMPILE_ERROR",
+        "68.0": "COMPILE_ERROR"
       },
       "native_bundle": "familyL17ResourceControl007",
       "diagnostic_expected": {
         "59.0": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl007.js",
-        "67.0": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl007.js"
+        "67.0": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl007.js",
+        "68.0": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl007.js"
       },
       "native_diagnostics": {
         "59.0": [

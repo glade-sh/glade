@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "declarations": {
     "BHF": "public class BHF {\n public Datetime dt(String value) { return Datetime.valueOfGmt(value); }\n public String stamp(Datetime value) { return value == null ? 'null' : value.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'); }\n}"

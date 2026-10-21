@@ -1,0 +1,608 @@
+{
+  "apiVersions": [
+    "62.0",
+    "64.0",
+    "67.0"
+  ],
+  "nativeObservationCount": 9,
+  "sourcesByAPI": {
+    "62.0": {
+      "id": "builtin-license-source-62",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|PROFILE|'+JSON.serialize(OwnedProfile62.profileObservation()));",
+      "classes": {
+        "OwnedProfile62": "public class OwnedProfile62 {\n public static Map<String,Object> profileObservation(){\n  List<Profile> profiles=[SELECT Id,Name,UserType,UserLicense.Name,UserLicense.LicenseDefinitionKey FROM Profile WHERE Name='Chatter Free User' LIMIT 1];\n  Map<String,Object> o=new Map<String,Object>{'row'=>'PROFILE','profileCount'=>profiles.size()};\n  if(!profiles.isEmpty()){Profile p=profiles[0];o.put('profileName',p.Name);o.put('userType',p.UserType);o.put('licenseName',p.UserLicense.Name);o.put('licenseKey',p.UserLicense.LicenseDefinitionKey);}\n  return o;\n }\n public static Map<String,Object> accountFacets(){\n  Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe();\n  Map<String,Object> o=new Map<String,Object>{'crud'=>new Map<String,Object>{'read'=>d.isAccessible(),'create'=>d.isCreateable(),'update'=>d.isUpdateable(),'delete'=>d.isDeletable()}};\n  Map<String,Object> fields=new Map<String,Object>();Map<String,Schema.SObjectField> tokens=d.fields.getMap();\n  for(String name:new List<String>{'Id','Name','Phone','Description','AccountNumber','BillingCity','Industry','OwnerId','CreatedById'}){Schema.DescribeFieldResult f=tokens.get(name).getDescribe();fields.put(name,new Map<String,Object>{'read'=>f.isAccessible(),'create'=>f.isCreateable(),'update'=>f.isUpdateable()});}\n  o.put('fields',fields);return o;\n }\n}\n",
+        "OwnedLicenseActor62Test": "@IsTest private class OwnedLicenseActor62Test {\n @IsTest static void profile(){System.assert(false,'NATIVE_RESULT|PROFILE|'+JSON.serialize(OwnedProfile62.profileObservation()));}\n @IsTest static void actor(){\n  Map<String,Object> o=OwnedProfile62.profileObservation();o.put('row','ACTOR');o.put('phase','profile-missing');\n  List<Profile> profiles=[SELECT Id FROM Profile WHERE Name='Chatter Free User' LIMIT 1];\n  if(!profiles.isEmpty()){\n   try{\n    User actor=new User(ProfileId=profiles[0].Id,Username='owned-'+DateTime.now().getTime()+'@example.invalid',Alias='owned',LastName='Owned Actor',Email='owned@example.invalid',EmailEncodingKey='UTF-8',LanguageLocaleKey='en_US',LocaleSidKey='en_US',TimeZoneSidKey='America/New_York');insert actor;\n    o.put('admin',OwnedProfile62.accountFacets());\n    System.runAs(actor){o.put('actorMatches',UserInfo.getUserId()==actor.Id);o.put('profileMatches',UserInfo.getProfileId()==profiles[0].Id);o.put('actor',OwnedProfile62.accountFacets());}\n    o.put('phase','complete');\n   }catch(Exception e){o.put('phase','actor-error');o.put('errorType',e.getTypeName());o.put('errorMessage',e.getMessage());}\n  }\n  System.assert(false,'NATIVE_RESULT|ACTOR|'+JSON.serialize(o));\n }\n}\n"
+      },
+      "tests": [
+        "OwnedLicenseActor62Test"
+      ],
+      "stage": "observed",
+      "sourceSha256": {
+        "anonymous": "d8b32720c1d08543fd509f7a7380c058ac442430d3614be2a3a7749b949da148",
+        "class:OwnedProfile62": "2310bb54a2e618063fd9ec2d8cd66df3ad844ad7fad359ef696907609fb0d98b",
+        "class:OwnedLicenseActor62Test": "17cf675ba64f7f8bb0226bca062409d2297b4432fe10ff013b672e25ee800081"
+      }
+    },
+    "64.0": {
+      "id": "builtin-license-source-64",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|PROFILE|'+JSON.serialize(OwnedProfile64.profileObservation()));",
+      "classes": {
+        "OwnedProfile64": "public class OwnedProfile64 {\n public static Map<String,Object> profileObservation(){\n  List<Profile> profiles=[SELECT Id,Name,UserType,UserLicense.Name,UserLicense.LicenseDefinitionKey FROM Profile WHERE Name='Chatter Free User' LIMIT 1];\n  Map<String,Object> o=new Map<String,Object>{'row'=>'PROFILE','profileCount'=>profiles.size()};\n  if(!profiles.isEmpty()){Profile p=profiles[0];o.put('profileName',p.Name);o.put('userType',p.UserType);o.put('licenseName',p.UserLicense.Name);o.put('licenseKey',p.UserLicense.LicenseDefinitionKey);}\n  return o;\n }\n public static Map<String,Object> accountFacets(){\n  Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe();\n  Map<String,Object> o=new Map<String,Object>{'crud'=>new Map<String,Object>{'read'=>d.isAccessible(),'create'=>d.isCreateable(),'update'=>d.isUpdateable(),'delete'=>d.isDeletable()}};\n  Map<String,Object> fields=new Map<String,Object>();Map<String,Schema.SObjectField> tokens=d.fields.getMap();\n  for(String name:new List<String>{'Id','Name','Phone','Description','AccountNumber','BillingCity','Industry','OwnerId','CreatedById'}){Schema.DescribeFieldResult f=tokens.get(name).getDescribe();fields.put(name,new Map<String,Object>{'read'=>f.isAccessible(),'create'=>f.isCreateable(),'update'=>f.isUpdateable()});}\n  o.put('fields',fields);return o;\n }\n}\n",
+        "OwnedLicenseActor64Test": "@IsTest private class OwnedLicenseActor64Test {\n @IsTest static void profile(){System.assert(false,'NATIVE_RESULT|PROFILE|'+JSON.serialize(OwnedProfile64.profileObservation()));}\n @IsTest static void actor(){\n  Map<String,Object> o=OwnedProfile64.profileObservation();o.put('row','ACTOR');o.put('phase','profile-missing');\n  List<Profile> profiles=[SELECT Id FROM Profile WHERE Name='Chatter Free User' LIMIT 1];\n  if(!profiles.isEmpty()){\n   try{\n    User actor=new User(ProfileId=profiles[0].Id,Username='owned-'+DateTime.now().getTime()+'@example.invalid',Alias='owned',LastName='Owned Actor',Email='owned@example.invalid',EmailEncodingKey='UTF-8',LanguageLocaleKey='en_US',LocaleSidKey='en_US',TimeZoneSidKey='America/New_York');insert actor;\n    o.put('admin',OwnedProfile64.accountFacets());\n    System.runAs(actor){o.put('actorMatches',UserInfo.getUserId()==actor.Id);o.put('profileMatches',UserInfo.getProfileId()==profiles[0].Id);o.put('actor',OwnedProfile64.accountFacets());}\n    o.put('phase','complete');\n   }catch(Exception e){o.put('phase','actor-error');o.put('errorType',e.getTypeName());o.put('errorMessage',e.getMessage());}\n  }\n  System.assert(false,'NATIVE_RESULT|ACTOR|'+JSON.serialize(o));\n }\n}\n"
+      },
+      "tests": [
+        "OwnedLicenseActor64Test"
+      ],
+      "stage": "observed",
+      "sourceSha256": {
+        "anonymous": "d29edede45ffb7c43b5e6132a085c07ffbcdc7f5a2df5531be2fc3f8a27bb788",
+        "class:OwnedProfile64": "48e121becd82cb8833bdd78e475005fe30e3ea6a617c49487c605326736d1962",
+        "class:OwnedLicenseActor64Test": "800549699a8ba18cba0e3c26aaf394416cfc0c598cc6a2a4d7339ecc59243ec1"
+      }
+    },
+    "67.0": {
+      "id": "builtin-license-source-67",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|PROFILE|'+JSON.serialize(OwnedProfile67.profileObservation()));",
+      "classes": {
+        "OwnedProfile67": "public class OwnedProfile67 {\n public static Map<String,Object> profileObservation(){\n  List<Profile> profiles=[SELECT Id,Name,UserType,UserLicense.Name,UserLicense.LicenseDefinitionKey FROM Profile WHERE Name='Chatter Free User' LIMIT 1];\n  Map<String,Object> o=new Map<String,Object>{'row'=>'PROFILE','profileCount'=>profiles.size()};\n  if(!profiles.isEmpty()){Profile p=profiles[0];o.put('profileName',p.Name);o.put('userType',p.UserType);o.put('licenseName',p.UserLicense.Name);o.put('licenseKey',p.UserLicense.LicenseDefinitionKey);}\n  return o;\n }\n public static Map<String,Object> accountFacets(){\n  Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe();\n  Map<String,Object> o=new Map<String,Object>{'crud'=>new Map<String,Object>{'read'=>d.isAccessible(),'create'=>d.isCreateable(),'update'=>d.isUpdateable(),'delete'=>d.isDeletable()}};\n  Map<String,Object> fields=new Map<String,Object>();Map<String,Schema.SObjectField> tokens=d.fields.getMap();\n  for(String name:new List<String>{'Id','Name','Phone','Description','AccountNumber','BillingCity','Industry','OwnerId','CreatedById'}){Schema.DescribeFieldResult f=tokens.get(name).getDescribe();fields.put(name,new Map<String,Object>{'read'=>f.isAccessible(),'create'=>f.isCreateable(),'update'=>f.isUpdateable()});}\n  o.put('fields',fields);return o;\n }\n}\n",
+        "OwnedLicenseActor67Test": "@IsTest private class OwnedLicenseActor67Test {\n @IsTest static void profile(){System.assert(false,'NATIVE_RESULT|PROFILE|'+JSON.serialize(OwnedProfile67.profileObservation()));}\n @IsTest static void actor(){\n  Map<String,Object> o=OwnedProfile67.profileObservation();o.put('row','ACTOR');o.put('phase','profile-missing');\n  List<Profile> profiles=[SELECT Id FROM Profile WHERE Name='Chatter Free User' LIMIT 1];\n  if(!profiles.isEmpty()){\n   try{\n    User actor=new User(ProfileId=profiles[0].Id,Username='owned-'+DateTime.now().getTime()+'@example.invalid',Alias='owned',LastName='Owned Actor',Email='owned@example.invalid',EmailEncodingKey='UTF-8',LanguageLocaleKey='en_US',LocaleSidKey='en_US',TimeZoneSidKey='America/New_York');insert actor;\n    o.put('admin',OwnedProfile67.accountFacets());\n    System.runAs(actor){o.put('actorMatches',UserInfo.getUserId()==actor.Id);o.put('profileMatches',UserInfo.getProfileId()==profiles[0].Id);o.put('actor',OwnedProfile67.accountFacets());}\n    o.put('phase','complete');\n   }catch(Exception e){o.put('phase','actor-error');o.put('errorType',e.getTypeName());o.put('errorMessage',e.getMessage());}\n  }\n  System.assert(false,'NATIVE_RESULT|ACTOR|'+JSON.serialize(o));\n }\n}\n"
+      },
+      "tests": [
+        "OwnedLicenseActor67Test"
+      ],
+      "stage": "observed",
+      "sourceSha256": {
+        "anonymous": "1e6eba8384c32f7d57937582a482290675b767a3ffda95a6af26682753cafe13",
+        "class:OwnedProfile67": "74af95fcdedc03cea489f000f44f77fc578435fea2d3ee934e886bbd0b02550f",
+        "class:OwnedLicenseActor67Test": "d9fe7fb7403e1be7135c357a05d465d378593238d0f54d8f1d50ccdef91de4fc"
+      }
+    }
+  },
+  "nativeFilesSha256": {
+    "org.tsv": "603efbd290d3a585062bdcf2c36e6d9cb6e7f0395a8968a5f5b308b7d93604b8",
+    "ORG-RUN.txt": "346faf15d9cf763b18d8213ec39c2d24241f01d9a1d12ae6a3c35cd2bb628c10",
+    "cases62.json": "68960280799b1064062e26fb9434d901346ff4175cdad6eb6089db496b46da84",
+    "deploy62.json": "97d9fce57331a0d6b9e9864a6338849ed3531966463e0130a900f29f58496f05",
+    "anonymous-profile62.json": "0b42e4410d673fd49cf8078806af8b245e81033cb41e5667896cd3cd721d6b7d",
+    "isTest62.json": "4cbaa642ecba9459c7ce34b6b2de56b8bbded3a02feb4a47be353d7128cc96a1",
+    "api62/force-app/main/default/classes/OwnedLicenseActor62Test.cls": "17cf675ba64f7f8bb0226bca062409d2297b4432fe10ff013b672e25ee800081",
+    "api62/force-app/main/default/classes/OwnedLicenseActor62Test.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "api62/force-app/main/default/classes/OwnedProfile62.cls": "2310bb54a2e618063fd9ec2d8cd66df3ad844ad7fad359ef696907609fb0d98b",
+    "api62/force-app/main/default/classes/OwnedProfile62.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "cases64.json": "cb61135693bb9c217c59389608b0564ae7aa59cce534d6930ff05dfd01352282",
+    "deploy64.json": "9db3ffe27dd719789cfa28093ff1b231a88e18aa7c2dfa34411ecd346b572956",
+    "anonymous-profile64.json": "884328596203c7c03b02b0515823e2a01560ffa19c8876cc148cc325459003e7",
+    "isTest64.json": "25cf04191fafdd53806bff4505b4746e87d8d3c073a42a9822f67ea9f19b88fa",
+    "api64/force-app/main/default/classes/OwnedLicenseActor64Test.cls": "800549699a8ba18cba0e3c26aaf394416cfc0c598cc6a2a4d7339ecc59243ec1",
+    "api64/force-app/main/default/classes/OwnedLicenseActor64Test.cls-meta.xml": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+    "api64/force-app/main/default/classes/OwnedProfile64.cls": "48e121becd82cb8833bdd78e475005fe30e3ea6a617c49487c605326736d1962",
+    "api64/force-app/main/default/classes/OwnedProfile64.cls-meta.xml": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+    "cases67.json": "6fe2e6e2d7b9f9463ae2a265861416ae6da6e4a05d136e74a490f16e1ee1a4e6",
+    "deploy67.json": "0fbe615093d77fb3204b7e7a6b63f0b47647ba4f1ec91f9666aef47d7c83acac",
+    "anonymous-profile67.json": "8ad1d827bf052685e7d0913c431a9fa5d0c341c0e415db76f4b0864bc347a4af",
+    "isTest67.json": "5a78eba81f70e43d2990b9919f6cb37b70de3060c4c928c3a18ea25c872fb58c",
+    "api67/force-app/main/default/classes/OwnedLicenseActor67Test.cls": "d9fe7fb7403e1be7135c357a05d465d378593238d0f54d8f1d50ccdef91de4fc",
+    "api67/force-app/main/default/classes/OwnedLicenseActor67Test.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "api67/force-app/main/default/classes/OwnedProfile67.cls": "74af95fcdedc03cea489f000f44f77fc578435fea2d3ee934e886bbd0b02550f",
+    "api67/force-app/main/default/classes/OwnedProfile67.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+  },
+  "rows": [
+    {
+      "id": "PROFILE",
+      "testMethod": "profile",
+      "routes": [
+        "anonymous",
+        "isTest"
+      ],
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "licenseKey": "CSN_User",
+              "licenseName": "Chatter Free",
+              "profileCount": 1,
+              "profileName": "Chatter Free User",
+              "row": "PROFILE",
+              "userType": "CsnOnly"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "licenseKey": "CSN_User",
+              "licenseName": "Chatter Free",
+              "profileCount": 1,
+              "profileName": "Chatter Free User",
+              "row": "PROFILE",
+              "userType": "CsnOnly"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "licenseKey": "CSN_User",
+              "licenseName": "Chatter Free",
+              "profileCount": 1,
+              "profileName": "Chatter Free User",
+              "row": "PROFILE",
+              "userType": "CsnOnly"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "licenseKey": "CSN_User",
+              "licenseName": "Chatter Free",
+              "profileCount": 1,
+              "profileName": "Chatter Free User",
+              "row": "PROFILE",
+              "userType": "CsnOnly"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "licenseKey": "CSN_User",
+              "licenseName": "Chatter Free",
+              "profileCount": 1,
+              "profileName": "Chatter Free User",
+              "row": "PROFILE",
+              "userType": "CsnOnly"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "licenseKey": "CSN_User",
+              "licenseName": "Chatter Free",
+              "profileCount": 1,
+              "profileName": "Chatter Free User",
+              "row": "PROFILE",
+              "userType": "CsnOnly"
+            }
+          }
+        }
+      },
+      "evidenceSha256ByAPI": {
+        "62.0": {
+          "anonymous": "0b42e4410d673fd49cf8078806af8b245e81033cb41e5667896cd3cd721d6b7d",
+          "isTest": "4cbaa642ecba9459c7ce34b6b2de56b8bbded3a02feb4a47be353d7128cc96a1"
+        },
+        "64.0": {
+          "anonymous": "884328596203c7c03b02b0515823e2a01560ffa19c8876cc148cc325459003e7",
+          "isTest": "25cf04191fafdd53806bff4505b4746e87d8d3c073a42a9822f67ea9f19b88fa"
+        },
+        "67.0": {
+          "anonymous": "8ad1d827bf052685e7d0913c431a9fa5d0c341c0e415db76f4b0864bc347a4af",
+          "isTest": "5a78eba81f70e43d2990b9919f6cb37b70de3060c4c928c3a18ea25c872fb58c"
+        }
+      }
+    },
+    {
+      "id": "ACTOR",
+      "testMethod": "actor",
+      "routes": [
+        "isTest"
+      ],
+      "expectedByAPI": {
+        "62.0": {
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "actor": {
+                "crud": {
+                  "create": false,
+                  "delete": false,
+                  "read": false,
+                  "update": false
+                },
+                "fields": {
+                  "AccountNumber": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "BillingCity": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "CreatedById": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Description": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Id": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Industry": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Name": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "OwnerId": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Phone": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  }
+                }
+              },
+              "actorMatches": true,
+              "admin": {
+                "crud": {
+                  "create": true,
+                  "delete": true,
+                  "read": true,
+                  "update": true
+                },
+                "fields": {
+                  "AccountNumber": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "BillingCity": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "CreatedById": {
+                    "create": false,
+                    "read": true,
+                    "update": false
+                  },
+                  "Description": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "Id": {
+                    "create": false,
+                    "read": true,
+                    "update": false
+                  },
+                  "Industry": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "Name": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "OwnerId": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "Phone": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  }
+                }
+              },
+              "licenseKey": "CSN_User",
+              "licenseName": "Chatter Free",
+              "phase": "complete",
+              "profileCount": 1,
+              "profileMatches": true,
+              "profileName": "Chatter Free User",
+              "row": "ACTOR",
+              "userType": "CsnOnly"
+            }
+          }
+        },
+        "64.0": {
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "actor": {
+                "crud": {
+                  "create": false,
+                  "delete": false,
+                  "read": false,
+                  "update": false
+                },
+                "fields": {
+                  "AccountNumber": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "BillingCity": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "CreatedById": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Description": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Id": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Industry": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Name": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "OwnerId": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Phone": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  }
+                }
+              },
+              "actorMatches": true,
+              "admin": {
+                "crud": {
+                  "create": true,
+                  "delete": true,
+                  "read": true,
+                  "update": true
+                },
+                "fields": {
+                  "AccountNumber": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "BillingCity": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "CreatedById": {
+                    "create": false,
+                    "read": true,
+                    "update": false
+                  },
+                  "Description": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "Id": {
+                    "create": false,
+                    "read": true,
+                    "update": false
+                  },
+                  "Industry": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "Name": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "OwnerId": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "Phone": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  }
+                }
+              },
+              "licenseKey": "CSN_User",
+              "licenseName": "Chatter Free",
+              "phase": "complete",
+              "profileCount": 1,
+              "profileMatches": true,
+              "profileName": "Chatter Free User",
+              "row": "ACTOR",
+              "userType": "CsnOnly"
+            }
+          }
+        },
+        "67.0": {
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "actor": {
+                "crud": {
+                  "create": false,
+                  "delete": false,
+                  "read": false,
+                  "update": false
+                },
+                "fields": {
+                  "AccountNumber": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "BillingCity": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "CreatedById": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Description": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Id": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Industry": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Name": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "OwnerId": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  },
+                  "Phone": {
+                    "create": false,
+                    "read": false,
+                    "update": false
+                  }
+                }
+              },
+              "actorMatches": true,
+              "admin": {
+                "crud": {
+                  "create": true,
+                  "delete": true,
+                  "read": true,
+                  "update": true
+                },
+                "fields": {
+                  "AccountNumber": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "BillingCity": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "CreatedById": {
+                    "create": false,
+                    "read": true,
+                    "update": false
+                  },
+                  "Description": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "Id": {
+                    "create": false,
+                    "read": true,
+                    "update": false
+                  },
+                  "Industry": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "Name": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "OwnerId": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  },
+                  "Phone": {
+                    "create": true,
+                    "read": true,
+                    "update": true
+                  }
+                }
+              },
+              "licenseKey": "CSN_User",
+              "licenseName": "Chatter Free",
+              "phase": "complete",
+              "profileCount": 1,
+              "profileMatches": true,
+              "profileName": "Chatter Free User",
+              "row": "ACTOR",
+              "userType": "CsnOnly"
+            }
+          }
+        }
+      },
+      "evidenceSha256ByAPI": {
+        "62.0": {
+          "isTest": "4cbaa642ecba9459c7ce34b6b2de56b8bbded3a02feb4a47be353d7128cc96a1"
+        },
+        "64.0": {
+          "isTest": "25cf04191fafdd53806bff4505b4746e87d8d3c073a42a9822f67ea9f19b88fa"
+        },
+        "67.0": {
+          "isTest": "5a78eba81f70e43d2990b9919f6cb37b70de3060c4c928c3a18ea25c872fb58c"
+        }
+      }
+    }
+  ],
+  "carries": [
+    {
+      "scope": "anonymous actor route",
+      "reason": "The captured actor shape uses System.runAs inside @IsTest. No anonymous actor invocation was requested or observed.",
+      "nativeValue": null
+    },
+    {
+      "scope": "other licenses, profiles, objects and profile facets",
+      "reason": "This packet observes Chatter Free User identity and nine Account field permission facets with administrator controls only.",
+      "nativeValue": null
+    },
+    {
+      "scope": "assigned permission grants and explicit denial precedence",
+      "reason": "The captured actor has only the built-in profile/license; no PermissionSet or other grant records are created by the observer.",
+      "nativeValue": null
+    }
+  ],
+  "supportingReferences": [
+    {
+      "url": "https://help.salesforce.com/s/articleView?id=sf.users_license_types_chatter.htm&language=en_US&type=5",
+      "scope": "Chatter Free license documentation supplies context; the nine captured native cells are the asserted oracle."
+    }
+  ]
+}

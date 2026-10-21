@@ -134,6 +134,39 @@ func TestSharingDefaultFollowsAPIVersionInheritanceChain(t *testing.T) {
 	}
 }
 
+// Native @IsTest rows R034-R037 (62.0-67.0): a class named WithSharing has no
+// sharing of its own. An omitted keyword follows a without-sharing caller below
+// 67.0 and the with-sharing default at 67.0; an explicit keyword wins (R036).
+func TestClassNamedWithSharingUsesDeclaredSharingOnly(t *testing.T) {
+	for _, test := range []struct {
+		name, api, modifier, want string
+	}{
+		{name: "omitted legacy follows caller", api: "66.0", want: "without sharing"},
+		{name: "omitted API 67 default", api: "67.0", want: "with sharing"},
+		{name: "explicit without sharing", api: "62.0", modifier: "without sharing", want: "without sharing"},
+		{name: "explicit without sharing API 67", api: "67.0", modifier: "without sharing", want: "without sharing"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			machine := New(io.Discard)
+			class := Class{Name: "Outer.WithSharing", APIVersion: test.api}
+			if test.modifier != "" {
+				class.Modifiers = []string{test.modifier}
+			}
+			for _, registered := range []Class{{Name: "Caller", APIVersion: "62.0", Modifiers: []string{"without sharing"}}, class} {
+				if err := machine.RegisterClass(registered); err != nil {
+					t.Fatal(err)
+				}
+			}
+			machine.currentClass = "Outer.WithSharing"
+			machine.currentMethod = Method{APIVersion: test.api}
+			machine.callStack = []callFrame{{Symbol: "Caller.countRows"}, {Symbol: "Outer.WithSharing.countRows"}}
+			if got := machine.currentSharingMode(); got != test.want {
+				t.Fatalf("sharing = %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
 func TestDuplicateClassMergeKeepsPreferredAPIVersion(t *testing.T) {
 	merged := mergeDuplicateClass(
 		Class{Name: "Shared", APIVersion: "66.0", Dependency: true},

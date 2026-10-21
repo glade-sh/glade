@@ -1,0 +1,153 @@
+{
+  "status": "Failed",
+  "id": "0Afiz000000jKSQCA2",
+  "failures": [
+    {
+      "fullName": "DiagnosticDuplicate",
+      "lineNumber": 3,
+      "columnNumber": 24,
+      "problem": "Method already defined: one Integer DiagnosticDuplicate.one() from the type DiagnosticDuplicate",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe0",
+      "lineNumber": 3,
+      "columnNumber": 10,
+      "problem": "Illegal assignment from Boolean to Integer",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe1",
+      "lineNumber": 3,
+      "columnNumber": 10,
+      "problem": "Illegal assignment from String to Integer",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe10",
+      "lineNumber": 3,
+      "columnNumber": 2,
+      "problem": "Variable does not exist: MissingDiagnosticType",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe11",
+      "lineNumber": 3,
+      "columnNumber": 17,
+      "problem": "Variable does not exist: MissingDiagnosticType",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe12",
+      "lineNumber": 3,
+      "columnNumber": 20,
+      "problem": "Method does not exist or incorrect signature: void missingDiagnosticMethod() from the type String",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe13",
+      "lineNumber": 3,
+      "columnNumber": 17,
+      "problem": "External string does not exist: MissingDiagnosticLabel",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe14",
+      "lineNumber": 3,
+      "columnNumber": 84,
+      "problem": "Method does not exist or incorrect signature: void getDescribe() from the type String",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe15",
+      "lineNumber": 3,
+      "columnNumber": 58,
+      "problem": "Variable does not exist: MissingDiagnosticField__c",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe16",
+      "lineNumber": 3,
+      "columnNumber": 43,
+      "problem": "Variable does not exist: MissingDiagnosticField__c",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe17",
+      "lineNumber": 3,
+      "columnNumber": 18,
+      "problem": "Illegal assignment from Schema.SObjectField to Boolean",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe18",
+      "lineNumber": 3,
+      "columnNumber": 18,
+      "problem": "Illegal assignment from String to Boolean",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe2",
+      "lineNumber": 3,
+      "columnNumber": 55,
+      "problem": "Illegal assignment from String to Schema.SObjectField",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe26",
+      "lineNumber": 3,
+      "columnNumber": 10,
+      "problem": "Illegal assignment from String to Boolean",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe3",
+      "lineNumber": 3,
+      "columnNumber": 10,
+      "problem": "Illegal assignment from System.Type to Integer",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe4",
+      "lineNumber": 3,
+      "columnNumber": 10,
+      "problem": "Illegal assignment from Schema.SObjectField to Integer",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe5",
+      "lineNumber": 3,
+      "columnNumber": 16,
+      "problem": "Illegal assignment from List<Account> to List<Contact>",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe6",
+      "lineNumber": 3,
+      "columnNumber": 10,
+      "problem": "Illegal assignment from Account to Contact",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe7",
+      "lineNumber": 3,
+      "columnNumber": 61,
+      "problem": "Date expressions must use Integer or Long",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe8",
+      "lineNumber": 3,
+      "columnNumber": 73,
+      "problem": "Date/time expressions must use Integer or Double or Decimal",
+      "problemType": "Error"
+    },
+    {
+      "fullName": "DiagnosticProbe9",
+      "lineNumber": 3,
+      "columnNumber": 73,
+      "problem": "Date/time expressions must use Integer or Double or Decimal",
+      "problemType": "Error"
+    }
+  ]
+}

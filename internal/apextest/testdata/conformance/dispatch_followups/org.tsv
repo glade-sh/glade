@@ -1,0 +1,15 @@
+api	case	source	expression	expected	seedAccount
+62.0	dollar-middle	DollarBindProbe	DollarBindProbe.observe('var$0')	ok|1	true
+62.0	dollar-repeated	DollarBindProbe	DollarBindProbe.observe('var$$1')	ok|1	true
+62.0	underscore-control	DollarBindProbe	DollarBindProbe.observe('var_0')	ok|1	true
+62.0	dollar-leading	DollarBindProbe	DollarBindProbe.observe('$var')	System.QueryException|unexpected token: '$'	false
+67.0	dollar-middle	DollarBindProbe	DollarBindProbe.observe('var$0')	ok|1	true
+67.0	dollar-repeated	DollarBindProbe	DollarBindProbe.observe('var$$1')	ok|1	true
+67.0	underscore-control	DollarBindProbe	DollarBindProbe.observe('var_0')	ok|1	true
+67.0	dollar-leading	DollarBindProbe	DollarBindProbe.observe('$var')	System.QueryException|unexpected token: '$'	false
+62.0	iterator-return	IteratorReturnProbe	IteratorReturnProbe.observe()	Aster|false	false
+67.0	iterator-return	IteratorReturnProbe	IteratorReturnProbe.observe()	Aster|false	false
+62.0	permission-id-equivalence	PermissionIdProbe	String.valueOf(PermissionIdProbe.observe('id') == PermissionIdProbe.observe('string'))	true	false
+67.0	permission-id-equivalence	PermissionIdProbe	String.valueOf(PermissionIdProbe.observe('id') == PermissionIdProbe.observe('string'))	true	false
+62.0	iterator-projection	IteratorProjectionProbe	IteratorProjectionProbe.observe()	Aster|false	false
+67.0	iterator-projection	IteratorProjectionProbe	IteratorProjectionProbe.observe()	Aster|false	false

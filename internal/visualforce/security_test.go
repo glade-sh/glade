@@ -119,7 +119,7 @@ func TestRenderOutputTextEscapeFalseKeepsExpressionRawButEscapesLiteralMarkup(t 
 
 func TestVisualforceCSPHeaderValueForCSPHeaderTrue(t *testing.T) {
 	got := VisualforceCSPHeaderValue()
-	want := "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'"
+	want := "upgrade-insecure-requests, default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; font-src 'self'; frame-src 'self'; media-src 'none'; object-src 'none'"
 	if got != want {
 		t.Fatalf("CSP header = %q, want %q", got, want)
 	}
@@ -161,15 +161,15 @@ func TestVisualforcePageHeaderOptionsApplyCSPNoCacheAndDownloadName(t *testing.T
 	}
 }
 
-func TestVisualforcePageHeaderOptionsDoNotApplyCSPWhenAttributeIsAbsent(t *testing.T) {
+func TestVisualforcePageHeaderOptionsApplyBaselineCSPWhenAttributeIsAbsent(t *testing.T) {
 	options, err := VisualforcePageHeaderOptionsFromMarkup(`<apex:page></apex:page>`)
 	if err != nil {
 		t.Fatalf("VisualforcePageHeaderOptionsFromMarkup err = %v", err)
 	}
 	header := http.Header{}
 	options.Apply(header, time.Date(2026, time.June, 14, 12, 0, 0, 0, time.UTC))
-	if got := header.Get("Content-Security-Policy"); got != "" {
-		t.Fatalf("CSP = %q, want empty", got)
+	if got := header.Get("Content-Security-Policy"); got != "upgrade-insecure-requests" {
+		t.Fatalf("CSP = %q, want upgrade-insecure-requests", got)
 	}
 }
 

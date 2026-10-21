@@ -1,0 +1,139 @@
+[
+  {
+    "id": "page_object_Account_new",
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?",
+    "page": {
+      "type": "standard__objectPage",
+      "attributes": {
+        "objectApiName": "Account",
+        "actionName": "new"
+      }
+    }
+  },
+  {
+    "id": "page_object_Account_home",
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?",
+    "page": {
+      "type": "standard__objectPage",
+      "attributes": {
+        "objectApiName": "Account",
+        "actionName": "home"
+      }
+    }
+  },
+  {
+    "id": "page_object_Account_list",
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?",
+    "page": {
+      "type": "standard__objectPage",
+      "attributes": {
+        "objectApiName": "Account",
+        "actionName": "list"
+      }
+    }
+  },
+  {
+    "id": "page_object_Account_view",
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?",
+    "page": {
+      "type": "standard__objectPage",
+      "attributes": {
+        "objectApiName": "Account",
+        "actionName": "view"
+      }
+    }
+  },
+  {
+    "id": "page_object_Account_",
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?",
+    "page": {
+      "type": "standard__objectPage",
+      "attributes": {
+        "objectApiName": "Account",
+        "actionName": ""
+      }
+    }
+  },
+  {
+    "id": "page_object_Account_None",
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?",
+    "page": {
+      "type": "standard__objectPage",
+      "attributes": {
+        "objectApiName": "Account",
+        "actionName": null
+      }
+    }
+  },
+  {
+    "id": "generate_null",
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?",
+    "page": null
+  },
+  {
+    "id": "generate_undefined",
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?",
+    "page_expr": "undefined"
+  },
+  {
+    "id": "generate_throwing_type",
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?",
+    "page_expr": "({get type(){throw new TypeError('L14 owned type getter');},attributes:{}})"
+  },
+  {
+    "id": "page_object_Account_missing_action",
+    "page": {
+      "type": "standard__objectPage",
+      "attributes": {
+        "objectApiName": "Account"
+      }
+    },
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?"
+  },
+  {
+    "id": "page_object_missing_object",
+    "page": {
+      "type": "standard__objectPage",
+      "attributes": {
+        "actionName": "list"
+      }
+    },
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?"
+  },
+  {
+    "id": "page_object_throwing_action",
+    "page_expr": "({type:'standard__objectPage',attributes:{objectApiName:'Account',get actionName(){throw new TypeError('L14 owned action getter');}}})",
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?"
+  },
+  {
+    "id": "page_object_throwing_state",
+    "page_expr": "({type:'standard__objectPage',attributes:{objectApiName:'Account',actionName:'list'},get state(){throw new TypeError('L14 owned state getter');}})",
+    "host": "Visualforce Lightning Out",
+    "operation": "generate",
+    "expect": "?"
+  }
+]

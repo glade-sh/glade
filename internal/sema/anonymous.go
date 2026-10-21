@@ -99,6 +99,9 @@ func anonymousCompileFailure(index typesys.Index, source string, rng diagnostic.
 			}
 		}
 	}
+	if message := soqlBindMalformedAnonymousMessage(source, err); message != "" {
+		item.NativeMessage = message
+	}
 	return Result{Project: index.Project, Summary: Summary{Diagnostics: 1}, Diagnostics: []diagnostic.Diagnostic{item}}
 }
 

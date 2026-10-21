@@ -8,11 +8,13 @@
     "bundle_name": "familyL06000",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -24,11 +26,13 @@
     "bundle_name": "familyL06001",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -40,11 +44,13 @@
     "bundle_name": "familyL06002",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -56,11 +62,13 @@
     "bundle_name": "familyL06003",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -72,11 +80,13 @@
     "bundle_name": "familyL06004",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -88,11 +98,13 @@
     "bundle_name": "familyL06005",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -104,11 +116,13 @@
     "bundle_name": "familyL06006",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -120,11 +134,13 @@
     "bundle_name": "familyL06007",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -136,11 +152,13 @@
     "bundle_name": "familyL06008",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -152,11 +170,13 @@
     "bundle_name": "familyL06009",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -168,11 +188,13 @@
     "bundle_name": "familyL06010",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -184,11 +206,13 @@
     "bundle_name": "familyL06011",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -200,11 +224,13 @@
     "bundle_name": "familyL06012",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -216,11 +242,13 @@
     "bundle_name": "familyL06013",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -232,13 +260,17 @@
     "bundle_name": "familyL06014",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 35] LWC1135: Invalid directive 'lwc:dom' on element <div>. 'lwc:dom' is not necessary in Light DOM components."
       ],
       "67.0": [
+        "[Line: 1, Col: 35] LWC1135: Invalid directive 'lwc:dom' on element <div>. 'lwc:dom' is not necessary in Light DOM components."
+      ],
+      "68.0": [
         "[Line: 1, Col: 35] LWC1135: Invalid directive 'lwc:dom' on element <div>. 'lwc:dom' is not necessary in Light DOM components."
       ]
     }
@@ -252,11 +284,13 @@
     "bundle_name": "familyL06015",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -268,11 +302,13 @@
     "bundle_name": "familyL06016",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -284,11 +320,13 @@
     "bundle_name": "familyL06017",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -300,11 +338,13 @@
     "bundle_name": "familyL06018",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -316,13 +356,17 @@
     "bundle_name": "familyL06019",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 1] LWC1133: Invalid value for \"lwc:render-mode\". 'lwc:render-mode' can only be set to \"shadow\", or \"light\""
       ],
       "67.0": [
+        "[Line: 1, Col: 1] LWC1133: Invalid value for \"lwc:render-mode\". 'lwc:render-mode' can only be set to \"shadow\", or \"light\""
+      ],
+      "68.0": [
         "[Line: 1, Col: 1] LWC1133: Invalid value for \"lwc:render-mode\". 'lwc:render-mode' can only be set to \"shadow\", or \"light\""
       ]
     }
@@ -336,13 +380,17 @@
     "bundle_name": "familyL06020",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 1] LWC1133: Invalid value for \"lwc:render-mode\". 'lwc:render-mode' can only be set to \"shadow\", or \"light\""
       ],
       "67.0": [
+        "[Line: 1, Col: 1] LWC1133: Invalid value for \"lwc:render-mode\". 'lwc:render-mode' can only be set to \"shadow\", or \"light\""
+      ],
+      "68.0": [
         "[Line: 1, Col: 1] LWC1133: Invalid value for \"lwc:render-mode\". 'lwc:render-mode' can only be set to \"shadow\", or \"light\""
       ]
     }
@@ -356,13 +404,17 @@
     "bundle_name": "familyL06021",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 1] LWC1133: Invalid value for \"lwc:render-mode\". 'lwc:render-mode' can only be set to \"shadow\", or \"light\""
       ],
       "67.0": [
+        "[Line: 1, Col: 1] LWC1133: Invalid value for \"lwc:render-mode\". 'lwc:render-mode' can only be set to \"shadow\", or \"light\""
+      ],
+      "68.0": [
         "[Line: 1, Col: 1] LWC1133: Invalid value for \"lwc:render-mode\". 'lwc:render-mode' can only be set to \"shadow\", or \"light\""
       ]
     }
@@ -376,11 +428,13 @@
     "bundle_name": "familyL06022",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -392,11 +446,13 @@
     "bundle_name": "familyL06023",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -408,11 +464,13 @@
     "bundle_name": "familyL06024",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -424,11 +482,13 @@
     "bundle_name": "familyL06025",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -440,11 +500,13 @@
     "bundle_name": "familyL06026",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -456,11 +518,13 @@
     "bundle_name": "familyL06027",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -472,11 +536,13 @@
     "bundle_name": "familyL06028",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -488,11 +554,13 @@
     "bundle_name": "familyL06029",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -504,13 +572,17 @@
     "bundle_name": "familyL06030",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 17] LWC1076: Name attribute on slot tag can't be an expression."
       ],
       "67.0": [
+        "[Line: 1, Col: 17] LWC1076: Name attribute on slot tag can't be an expression."
+      ],
+      "68.0": [
         "[Line: 1, Col: 17] LWC1076: Name attribute on slot tag can't be an expression."
       ]
     }
@@ -524,11 +596,13 @@
     "bundle_name": "familyL06031",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -540,11 +614,13 @@
     "bundle_name": "familyL06032",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -556,13 +632,17 @@
     "bundle_name": "familyL06033",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1082: <slot> tag can't be associated with if:true, lwc:if, lwc:elseif, lwc:else, for:each, for:of, lwc:slot-data template directives."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1082: <slot> tag can't be associated with if:true, lwc:if, lwc:elseif, lwc:else, for:each, for:of, lwc:slot-data template directives."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1082: <slot> tag can't be associated with if:true, lwc:if, lwc:elseif, lwc:else, for:each, for:of, lwc:slot-data template directives."
       ]
     }
@@ -576,11 +656,13 @@
     "bundle_name": "familyL06034",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -592,13 +674,17 @@
     "bundle_name": "familyL06035",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1156: Invalid lwc:ref usage on element \"<slot>\". The directive can't be used on a slot or a template element."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1156: Invalid lwc:ref usage on element \"<slot>\". The directive can't be used on a slot or a template element."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1156: Invalid lwc:ref usage on element \"<slot>\". The directive can't be used on a slot or a template element."
       ]
     }
@@ -612,11 +698,13 @@
     "bundle_name": "familyL06036",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -628,11 +716,13 @@
     "bundle_name": "familyL06037",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -644,11 +734,13 @@
     "bundle_name": "familyL06038",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -660,11 +752,13 @@
     "bundle_name": "familyL06039",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -676,11 +770,13 @@
     "bundle_name": "familyL06040",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -692,11 +788,13 @@
     "bundle_name": "familyL06041",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -708,11 +806,13 @@
     "bundle_name": "familyL06042",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -724,11 +824,13 @@
     "bundle_name": "familyL06043",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -740,13 +842,17 @@
     "bundle_name": "familyL06044",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 41] LWC1076: Name attribute on slot tag can't be an expression."
       ],
       "67.0": [
+        "[Line: 1, Col: 41] LWC1076: Name attribute on slot tag can't be an expression."
+      ],
+      "68.0": [
         "[Line: 1, Col: 41] LWC1076: Name attribute on slot tag can't be an expression."
       ]
     }
@@ -760,11 +866,13 @@
     "bundle_name": "familyL06045",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -776,11 +884,13 @@
     "bundle_name": "familyL06046",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -792,13 +902,17 @@
     "bundle_name": "familyL06047",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 35] LWC1082: <slot> tag can't be associated with if:true, lwc:if, lwc:elseif, lwc:else, for:each, for:of, lwc:slot-data template directives."
       ],
       "67.0": [
+        "[Line: 1, Col: 35] LWC1082: <slot> tag can't be associated with if:true, lwc:if, lwc:elseif, lwc:else, for:each, for:of, lwc:slot-data template directives."
+      ],
+      "68.0": [
         "[Line: 1, Col: 35] LWC1082: <slot> tag can't be associated with if:true, lwc:if, lwc:elseif, lwc:else, for:each, for:of, lwc:slot-data template directives."
       ]
     }
@@ -812,11 +926,13 @@
     "bundle_name": "familyL06048",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -828,13 +944,17 @@
     "bundle_name": "familyL06049",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 35] LWC1134: Invalid attribute(s) 'lwc:ref' on slot. Slots in Light DOM templates (which have 'lwc:render-mode' directive) can only have [key, lwc:slot-bind, name, slot] attributes"
       ],
       "67.0": [
+        "[Line: 1, Col: 35] LWC1134: Invalid attribute(s) 'lwc:ref' on slot. Slots in Light DOM templates (which have 'lwc:render-mode' directive) can only have [key, lwc:slot-bind, name, slot] attributes"
+      ],
+      "68.0": [
         "[Line: 1, Col: 35] LWC1134: Invalid attribute(s) 'lwc:ref' on slot. Slots in Light DOM templates (which have 'lwc:render-mode' directive) can only have [key, lwc:slot-bind, name, slot] attributes"
       ]
     }
@@ -848,13 +968,17 @@
     "bundle_name": "familyL06050",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 35] LWC1139: Invalid event listener 'onslotchange' on slot. Slots in Light DOM templates cannot have event listeners."
       ],
       "67.0": [
+        "[Line: 1, Col: 35] LWC1139: Invalid event listener 'onslotchange' on slot. Slots in Light DOM templates cannot have event listeners."
+      ],
+      "68.0": [
         "[Line: 1, Col: 35] LWC1139: Invalid event listener 'onslotchange' on slot. Slots in Light DOM templates cannot have event listeners."
       ]
     }
@@ -868,11 +992,13 @@
     "bundle_name": "familyL06051",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -884,11 +1010,13 @@
     "bundle_name": "familyL06052",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -900,11 +1028,13 @@
     "bundle_name": "familyL06053",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -916,13 +1046,17 @@
     "bundle_name": "familyL06054",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
       ]
     }
@@ -936,13 +1070,17 @@
     "bundle_name": "familyL06055",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
       ]
     }
@@ -956,13 +1094,17 @@
     "bundle_name": "familyL06056",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
       ]
     }
@@ -976,13 +1118,17 @@
     "bundle_name": "familyL06057",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
       ]
     }
@@ -996,13 +1142,17 @@
     "bundle_name": "familyL06058",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1169: Invalid lwc:slot-bind usage on <slot> element. Scoped slots usage is allowed in Light DOM templates only."
       ]
     }
@@ -1016,13 +1166,17 @@
     "bundle_name": "familyL06059",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1171: Invalid lwc:slot-bind usage on element <div>. The directive can be used on a <slot> element only."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1171: Invalid lwc:slot-bind usage on element <div>. The directive can be used on a <slot> element only."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1171: Invalid lwc:slot-bind usage on element <div>. The directive can be used on a <slot> element only."
       ]
     }
@@ -1036,11 +1190,13 @@
     "bundle_name": "familyL06060",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1056,11 +1212,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1076,11 +1234,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1096,13 +1256,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 44] LWC1059:  is not a valid identifier"
       ],
       "67.0": [
+        "[Line: 1, Col: 44] LWC1059:  is not a valid identifier"
+      ],
+      "68.0": [
         "[Line: 1, Col: 44] LWC1059:  is not a valid identifier"
       ]
     }
@@ -1120,13 +1284,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 44] LWC1174: lwc:slot-data attribute value is expected to be a string."
       ],
       "67.0": [
+        "[Line: 1, Col: 44] LWC1174: lwc:slot-data attribute value is expected to be a string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 44] LWC1174: lwc:slot-data attribute value is expected to be a string."
       ]
     }
@@ -1144,13 +1312,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 39] LWC1176: lwc:slot-data directive can be used on <template> elements only."
       ],
       "67.0": [
+        "[Line: 1, Col: 39] LWC1176: lwc:slot-data directive can be used on <template> elements only."
+      ],
+      "68.0": [
         "[Line: 1, Col: 39] LWC1176: lwc:slot-data directive can be used on <template> elements only."
       ]
     }
@@ -1164,13 +1336,17 @@
     "bundle_name": "familyL06066",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1178: <template> tag with lwc:slot-data directive must be the direct child of a custom element."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1178: <template> tag with lwc:slot-data directive must be the direct child of a custom element."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1178: <template> tag with lwc:slot-data directive must be the direct child of a custom element."
       ]
     }
@@ -1188,13 +1364,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 34] LWC1179: lwc:slot-data directive cannot be combined with other directives on the same <template> tag."
       ],
       "67.0": [
+        "[Line: 1, Col: 34] LWC1179: lwc:slot-data directive cannot be combined with other directives on the same <template> tag."
+      ],
+      "68.0": [
         "[Line: 1, Col: 34] LWC1179: lwc:slot-data directive cannot be combined with other directives on the same <template> tag."
       ]
     }
@@ -1212,11 +1392,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1228,11 +1410,13 @@
     "bundle_name": "familyL06069",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1244,11 +1428,13 @@
     "bundle_name": "familyL06070",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1260,11 +1446,13 @@
     "bundle_name": "familyL06071",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1276,11 +1464,13 @@
     "bundle_name": "familyL06072",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1292,13 +1482,17 @@
     "bundle_name": "familyL06073",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 35] LWC1170: Invalid lwc:slot-bind usage on element <slot>. The directive binding must be an expression."
       ],
       "67.0": [
+        "[Line: 1, Col: 35] LWC1170: Invalid lwc:slot-bind usage on element <slot>. The directive binding must be an expression."
+      ],
+      "68.0": [
         "[Line: 1, Col: 35] LWC1170: Invalid lwc:slot-bind usage on element <slot>. The directive binding must be an expression."
       ]
     }
@@ -1312,13 +1506,17 @@
     "bundle_name": "familyL06074",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 35] LWC1171: Invalid lwc:slot-bind usage on element <div>. The directive can be used on a <slot> element only."
       ],
       "67.0": [
+        "[Line: 1, Col: 35] LWC1171: Invalid lwc:slot-bind usage on element <div>. The directive can be used on a <slot> element only."
+      ],
+      "68.0": [
         "[Line: 1, Col: 35] LWC1171: Invalid lwc:slot-bind usage on element <div>. The directive can be used on a <slot> element only."
       ]
     }
@@ -1332,11 +1530,13 @@
     "bundle_name": "familyL06075",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1352,11 +1552,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1372,11 +1574,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1392,13 +1596,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 68] LWC1059:  is not a valid identifier"
       ],
       "67.0": [
+        "[Line: 1, Col: 68] LWC1059:  is not a valid identifier"
+      ],
+      "68.0": [
         "[Line: 1, Col: 68] LWC1059:  is not a valid identifier"
       ]
     }
@@ -1416,13 +1624,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 68] LWC1174: lwc:slot-data attribute value is expected to be a string."
       ],
       "67.0": [
+        "[Line: 1, Col: 68] LWC1174: lwc:slot-data attribute value is expected to be a string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 68] LWC1174: lwc:slot-data attribute value is expected to be a string."
       ]
     }
@@ -1440,13 +1652,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 63] LWC1176: lwc:slot-data directive can be used on <template> elements only."
       ],
       "67.0": [
+        "[Line: 1, Col: 63] LWC1176: lwc:slot-data directive can be used on <template> elements only."
+      ],
+      "68.0": [
         "[Line: 1, Col: 63] LWC1176: lwc:slot-data directive can be used on <template> elements only."
       ]
     }
@@ -1460,13 +1676,17 @@
     "bundle_name": "familyL06081",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 35] LWC1178: <template> tag with lwc:slot-data directive must be the direct child of a custom element."
       ],
       "67.0": [
+        "[Line: 1, Col: 35] LWC1178: <template> tag with lwc:slot-data directive must be the direct child of a custom element."
+      ],
+      "68.0": [
         "[Line: 1, Col: 35] LWC1178: <template> tag with lwc:slot-data directive must be the direct child of a custom element."
       ]
     }
@@ -1484,13 +1704,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 58] LWC1179: lwc:slot-data directive cannot be combined with other directives on the same <template> tag."
       ],
       "67.0": [
+        "[Line: 1, Col: 58] LWC1179: lwc:slot-data directive cannot be combined with other directives on the same <template> tag."
+      ],
+      "68.0": [
         "[Line: 1, Col: 58] LWC1179: lwc:slot-data directive cannot be combined with other directives on the same <template> tag."
       ]
     }
@@ -1508,11 +1732,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1524,11 +1750,13 @@
     "bundle_name": "familyL06084",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1540,13 +1768,17 @@
     "bundle_name": "familyL06085",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<div>\". The directive binding must be a non-empty string."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<div>\". The directive binding must be a non-empty string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<div>\". The directive binding must be a non-empty string."
       ]
     }
@@ -1560,13 +1792,17 @@
     "bundle_name": "familyL06086",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<div>\". The directive binding must be a non-empty string."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<div>\". The directive binding must be a non-empty string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<div>\". The directive binding must be a non-empty string."
       ]
     }
@@ -1580,13 +1816,17 @@
     "bundle_name": "familyL06087",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<div>\". The directive binding must be a non-empty string."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<div>\". The directive binding must be a non-empty string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<div>\". The directive binding must be a non-empty string."
       ]
     }
@@ -1600,13 +1840,17 @@
     "bundle_name": "familyL06088",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<div>\". The directive binding must be a non-empty string."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<div>\". The directive binding must be a non-empty string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<div>\". The directive binding must be a non-empty string."
       ]
     }
@@ -1620,11 +1864,13 @@
     "bundle_name": "familyL06089",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1636,11 +1882,13 @@
     "bundle_name": "familyL06090",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1652,13 +1900,17 @@
     "bundle_name": "familyL06091",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<span>\". The directive binding must be a non-empty string."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<span>\". The directive binding must be a non-empty string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<span>\". The directive binding must be a non-empty string."
       ]
     }
@@ -1672,13 +1924,17 @@
     "bundle_name": "familyL06092",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<span>\". The directive binding must be a non-empty string."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<span>\". The directive binding must be a non-empty string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<span>\". The directive binding must be a non-empty string."
       ]
     }
@@ -1692,13 +1948,17 @@
     "bundle_name": "familyL06093",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<span>\". The directive binding must be a non-empty string."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<span>\". The directive binding must be a non-empty string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<span>\". The directive binding must be a non-empty string."
       ]
     }
@@ -1712,13 +1972,17 @@
     "bundle_name": "familyL06094",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<span>\". The directive binding must be a non-empty string."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<span>\". The directive binding must be a non-empty string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<span>\". The directive binding must be a non-empty string."
       ]
     }
@@ -1732,11 +1996,13 @@
     "bundle_name": "familyL06095",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1752,11 +2018,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1772,13 +2040,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<c-family-l06097-child>\". The directive binding must be a non-empty string."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<c-family-l06097-child>\". The directive binding must be a non-empty string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<c-family-l06097-child>\". The directive binding must be a non-empty string."
       ]
     }
@@ -1796,13 +2068,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<c-family-l06098-child>\". The directive binding must be a non-empty string."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<c-family-l06098-child>\". The directive binding must be a non-empty string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<c-family-l06098-child>\". The directive binding must be a non-empty string."
       ]
     }
@@ -1820,13 +2096,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<c-family-l06099-child>\". The directive binding must be a non-empty string."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<c-family-l06099-child>\". The directive binding must be a non-empty string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<c-family-l06099-child>\". The directive binding must be a non-empty string."
       ]
     }
@@ -1844,13 +2124,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<c-family-l06100-child>\". The directive binding must be a non-empty string."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<c-family-l06100-child>\". The directive binding must be a non-empty string."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1157: Invalid lwc:ref usage on element \"<c-family-l06100-child>\". The directive binding must be a non-empty string."
       ]
     }
@@ -1868,11 +2152,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1884,11 +2170,13 @@
     "bundle_name": "familyL06102",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1900,13 +2188,17 @@
     "bundle_name": "familyL06103",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 52] LWC1158: Invalid lwc:ref usage on element \"<div>\". lwc:ref cannot be used inside for:each or an iterator."
       ],
       "67.0": [
+        "[Line: 1, Col: 52] LWC1158: Invalid lwc:ref usage on element \"<div>\". lwc:ref cannot be used inside for:each or an iterator."
+      ],
+      "68.0": [
         "[Line: 1, Col: 52] LWC1158: Invalid lwc:ref usage on element \"<div>\". lwc:ref cannot be used inside for:each or an iterator."
       ]
     }
@@ -1920,13 +2212,17 @@
     "bundle_name": "familyL06104",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1156: Invalid lwc:ref usage on element \"<template>\". The directive can't be used on a slot or a template element."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1156: Invalid lwc:ref usage on element \"<template>\". The directive can't be used on a slot or a template element."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1156: Invalid lwc:ref usage on element \"<template>\". The directive can't be used on a slot or a template element."
       ]
     }
@@ -1940,11 +2236,13 @@
     "bundle_name": "familyL06105",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1956,13 +2254,17 @@
     "bundle_name": "familyL06106",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1156: Invalid lwc:ref usage on element \"<slot>\". The directive can't be used on a slot or a template element."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1156: Invalid lwc:ref usage on element \"<slot>\". The directive can't be used on a slot or a template element."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1156: Invalid lwc:ref usage on element \"<slot>\". The directive can't be used on a slot or a template element."
       ]
     }
@@ -1976,11 +2278,13 @@
     "bundle_name": "familyL06107",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -1992,11 +2296,13 @@
     "bundle_name": "familyL06108",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2008,11 +2314,13 @@
     "bundle_name": "familyL06109",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2024,11 +2332,13 @@
     "bundle_name": "familyL06110",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2040,11 +2350,13 @@
     "bundle_name": "familyL06111",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2056,13 +2368,17 @@
     "bundle_name": "familyL06112",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1155: Invalid lwc:spread usage on element \"<div>\". The directive binding must be an expression."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1155: Invalid lwc:spread usage on element \"<div>\". The directive binding must be an expression."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1155: Invalid lwc:spread usage on element \"<div>\". The directive binding must be an expression."
       ]
     }
@@ -2076,13 +2392,17 @@
     "bundle_name": "familyL06113",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1155: Invalid lwc:spread usage on element \"<div>\". The directive binding must be an expression."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1155: Invalid lwc:spread usage on element \"<div>\". The directive binding must be an expression."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1155: Invalid lwc:spread usage on element \"<div>\". The directive binding must be an expression."
       ]
     }
@@ -2100,11 +2420,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2120,11 +2442,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2140,11 +2464,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2160,11 +2486,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2180,11 +2508,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2200,13 +2530,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1155: Invalid lwc:spread usage on element \"<c-family-l06119-child>\". The directive binding must be an expression."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1155: Invalid lwc:spread usage on element \"<c-family-l06119-child>\". The directive binding must be an expression."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1155: Invalid lwc:spread usage on element \"<c-family-l06119-child>\". The directive binding must be an expression."
       ]
     }
@@ -2224,13 +2558,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1155: Invalid lwc:spread usage on element \"<c-family-l06120-child>\". The directive binding must be an expression."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1155: Invalid lwc:spread usage on element \"<c-family-l06120-child>\". The directive binding must be an expression."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1155: Invalid lwc:spread usage on element \"<c-family-l06120-child>\". The directive binding must be an expression."
       ]
     }
@@ -2248,11 +2586,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2268,11 +2608,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2288,13 +2630,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 63] LWC1058: Invalid HTML syntax: duplicate-attribute. For more information, please visit https://html.spec.whatwg.org/multipage/parsing.html#parse-error-duplicate-attribute"
       ],
       "67.0": [
+        "[Line: 1, Col: 63] LWC1058: Invalid HTML syntax: duplicate-attribute. For more information, please visit https://html.spec.whatwg.org/multipage/parsing.html#parse-error-duplicate-attribute"
+      ],
+      "68.0": [
         "[Line: 1, Col: 63] LWC1058: Invalid HTML syntax: duplicate-attribute. For more information, please visit https://html.spec.whatwg.org/multipage/parsing.html#parse-error-duplicate-attribute"
       ]
     }
@@ -2308,11 +2654,13 @@
     "bundle_name": "familyL06124",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2324,11 +2672,13 @@
     "bundle_name": "familyL06125",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2344,13 +2694,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 34] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - Invalid expression {pick()} - LWC1210: Template expression doesn't allow CallExpression. The current component API version (59) is insufficient and must be increased to at least 66 for this type of expression."
       ],
       "67.0": [
+        "[Line: 1, Col: 34] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - Invalid expression {pick()} - LWC1208: Template expression doesn't allow CallExpression unless the expression is surrounded by quotes: \"{pick()}\""
+      ],
+      "68.0": [
         "[Line: 1, Col: 34] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - Invalid expression {pick()} - LWC1208: Template expression doesn't allow CallExpression unless the expression is surrounded by quotes: \"{pick()}\""
       ]
     }
@@ -2364,11 +2718,13 @@
     "bundle_name": "familyL06127",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2380,13 +2736,17 @@
     "bundle_name": "familyL06128",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
       ]
     }
@@ -2400,13 +2760,17 @@
     "bundle_name": "familyL06129",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
       ]
     }
@@ -2420,13 +2784,17 @@
     "bundle_name": "familyL06130",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ]
     }
@@ -2440,11 +2808,13 @@
     "bundle_name": "familyL06131",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2456,13 +2826,17 @@
     "bundle_name": "familyL06132",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
       ]
     }
@@ -2476,13 +2850,17 @@
     "bundle_name": "familyL06133",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
       ]
     }
@@ -2496,13 +2874,17 @@
     "bundle_name": "familyL06134",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ]
     }
@@ -2516,11 +2898,13 @@
     "bundle_name": "familyL06135",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2532,13 +2916,17 @@
     "bundle_name": "familyL06136",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1086: Invalid contents for element with \"lwc:dom\". Element must be empty"
       ]
     }
@@ -2552,11 +2940,13 @@
     "bundle_name": "familyL06137",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2568,13 +2958,17 @@
     "bundle_name": "familyL06138",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ]
     }
@@ -2592,13 +2986,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1087: Invalid directive \"lwc:dom\" on element <c-family-l06139-child>. \"lwc:dom\" cannot be added to a custom element"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1087: Invalid directive \"lwc:dom\" on element <c-family-l06139-child>. \"lwc:dom\" cannot be added to a custom element"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1087: Invalid directive \"lwc:dom\" on element <c-family-l06139-child>. \"lwc:dom\" cannot be added to a custom element"
       ]
     }
@@ -2616,13 +3014,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1087: Invalid directive \"lwc:dom\" on element <c-family-l06140-child>. \"lwc:dom\" cannot be added to a custom element"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1087: Invalid directive \"lwc:dom\" on element <c-family-l06140-child>. \"lwc:dom\" cannot be added to a custom element"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1087: Invalid directive \"lwc:dom\" on element <c-family-l06140-child>. \"lwc:dom\" cannot be added to a custom element"
       ]
     }
@@ -2640,13 +3042,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1087: Invalid directive \"lwc:dom\" on element <c-family-l06141-child>. \"lwc:dom\" cannot be added to a custom element"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1087: Invalid directive \"lwc:dom\" on element <c-family-l06141-child>. \"lwc:dom\" cannot be added to a custom element"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1087: Invalid directive \"lwc:dom\" on element <c-family-l06141-child>. \"lwc:dom\" cannot be added to a custom element"
       ]
     }
@@ -2664,13 +3070,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1087: Invalid directive \"lwc:dom\" on element <c-family-l06142-child>. \"lwc:dom\" cannot be added to a custom element"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1087: Invalid directive \"lwc:dom\" on element <c-family-l06142-child>. \"lwc:dom\" cannot be added to a custom element"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1087: Invalid directive \"lwc:dom\" on element <c-family-l06142-child>. \"lwc:dom\" cannot be added to a custom element"
       ]
     }
@@ -2684,13 +3094,17 @@
     "bundle_name": "familyL06143",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1088: Invalid directive \"lwc:dom\" on <slot>.. \"lwc:dom\" cannot be added to a <slot>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1088: Invalid directive \"lwc:dom\" on <slot>.. \"lwc:dom\" cannot be added to a <slot>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1088: Invalid directive \"lwc:dom\" on <slot>.. \"lwc:dom\" cannot be added to a <slot>"
       ]
     }
@@ -2704,13 +3118,17 @@
     "bundle_name": "familyL06144",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1088: Invalid directive \"lwc:dom\" on <slot>.. \"lwc:dom\" cannot be added to a <slot>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1088: Invalid directive \"lwc:dom\" on <slot>.. \"lwc:dom\" cannot be added to a <slot>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1088: Invalid directive \"lwc:dom\" on <slot>.. \"lwc:dom\" cannot be added to a <slot>"
       ]
     }
@@ -2724,13 +3142,17 @@
     "bundle_name": "familyL06145",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1088: Invalid directive \"lwc:dom\" on <slot>.. \"lwc:dom\" cannot be added to a <slot>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1088: Invalid directive \"lwc:dom\" on <slot>.. \"lwc:dom\" cannot be added to a <slot>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1088: Invalid directive \"lwc:dom\" on <slot>.. \"lwc:dom\" cannot be added to a <slot>"
       ]
     }
@@ -2744,13 +3166,17 @@
     "bundle_name": "familyL06146",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1088: Invalid directive \"lwc:dom\" on <slot>.. \"lwc:dom\" cannot be added to a <slot>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1088: Invalid directive \"lwc:dom\" on <slot>.. \"lwc:dom\" cannot be added to a <slot>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1088: Invalid directive \"lwc:dom\" on <slot>.. \"lwc:dom\" cannot be added to a <slot>"
       ]
     }
@@ -2764,13 +3190,17 @@
     "bundle_name": "familyL06147",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ]
     }
@@ -2784,13 +3214,17 @@
     "bundle_name": "familyL06148",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ]
     }
@@ -2804,13 +3238,17 @@
     "bundle_name": "familyL06149",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ]
     }
@@ -2824,13 +3262,17 @@
     "bundle_name": "familyL06150",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1085: Invalid value for \"lwc:dom\". 'lwc:dom' can only be set to \"manual\""
       ]
     }
@@ -2844,11 +3286,13 @@
     "bundle_name": "familyL06151",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2861,11 +3305,13 @@
     "bundle_name": "familyL06152",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2878,11 +3324,13 @@
     "bundle_name": "familyL06153",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2895,11 +3343,13 @@
     "bundle_name": "familyL06154",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2912,11 +3362,13 @@
     "bundle_name": "familyL06155",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -2929,13 +3381,17 @@
     "bundle_name": "familyL06156",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1185: Invalid lwc:is usage for value ctor. The value assigned to lwc:is must be an expression."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1185: Invalid lwc:is usage for value ctor. The value assigned to lwc:is must be an expression."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1185: Invalid lwc:is usage for value ctor. The value assigned to lwc:is must be an expression."
       ]
     }
@@ -2950,13 +3406,17 @@
     "bundle_name": "familyL06157",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1183: <lwc:component> must have an 'lwc:is' attribute."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1183: <lwc:component> must have an 'lwc:is' attribute."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1183: <lwc:component> must have an 'lwc:is' attribute."
       ]
     }
@@ -2971,13 +3431,17 @@
     "bundle_name": "familyL06158",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
       ]
     }
@@ -2992,13 +3456,17 @@
     "bundle_name": "familyL06159",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
       ]
     }
@@ -3013,13 +3481,17 @@
     "bundle_name": "familyL06160",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
       ]
     }
@@ -3034,13 +3506,17 @@
     "bundle_name": "familyL06161",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
       ]
     }
@@ -3055,13 +3531,17 @@
     "bundle_name": "familyL06162",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <div>. The directive can only be used with <lwc:component>"
       ]
     }
@@ -3076,11 +3556,13 @@
     "bundle_name": "familyL06163",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -3097,13 +3579,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06164-child>. The directive can only be used with <lwc:component>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06164-child>. The directive can only be used with <lwc:component>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06164-child>. The directive can only be used with <lwc:component>"
       ]
     }
@@ -3122,13 +3608,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06165-child>. The directive can only be used with <lwc:component>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06165-child>. The directive can only be used with <lwc:component>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06165-child>. The directive can only be used with <lwc:component>"
       ]
     }
@@ -3147,13 +3637,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06166-child>. The directive can only be used with <lwc:component>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06166-child>. The directive can only be used with <lwc:component>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06166-child>. The directive can only be used with <lwc:component>"
       ]
     }
@@ -3172,13 +3666,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06167-child>. The directive can only be used with <lwc:component>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06167-child>. The directive can only be used with <lwc:component>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06167-child>. The directive can only be used with <lwc:component>"
       ]
     }
@@ -3197,13 +3695,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06168-child>. The directive can only be used with <lwc:component>"
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06168-child>. The directive can only be used with <lwc:component>"
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1186: Invalid lwc:is usage for element <c-family-l06168-child>. The directive can only be used with <lwc:component>"
       ]
     }
@@ -3222,11 +3724,13 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -3239,11 +3743,13 @@
     "bundle_name": "familyL06170",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -3256,11 +3762,13 @@
     "bundle_name": "familyL06171",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -3273,11 +3781,13 @@
     "bundle_name": "familyL06172",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -3290,11 +3800,13 @@
     "bundle_name": "familyL06173",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -3307,13 +3819,17 @@
     "bundle_name": "familyL06174",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 26] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - Invalid expression {pick()} - LWC1210: Template expression doesn't allow CallExpression. The current component API version (59) is insufficient and must be increased to at least 66 for this type of expression."
       ],
       "67.0": [
+        "[Line: 1, Col: 26] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - Invalid expression {pick()} - LWC1208: Template expression doesn't allow CallExpression unless the expression is surrounded by quotes: \"{pick()}\""
+      ],
+      "68.0": [
         "[Line: 1, Col: 26] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - Invalid expression {pick()} - LWC1208: Template expression doesn't allow CallExpression unless the expression is surrounded by quotes: \"{pick()}\""
       ]
     }
@@ -3332,13 +3848,17 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 34] LWC1527: The lwc:dynamic attribute is no longer supported. Please use the new dynamic component syntax instead. See https://lwc.dev/guide/html_templates#import-and-instantiate-a-component-dynamically for more details."
       ],
       "67.0": [
+        "[Line: 1, Col: 34] LWC1527: The lwc:dynamic attribute is no longer supported. Please use the new dynamic component syntax instead. See https://lwc.dev/guide/html_templates#import-and-instantiate-a-component-dynamically for more details."
+      ],
+      "68.0": [
         "[Line: 1, Col: 34] LWC1527: The lwc:dynamic attribute is no longer supported. Please use the new dynamic component syntax instead. See https://lwc.dev/guide/html_templates#import-and-instantiate-a-component-dynamically for more details."
       ]
     }
@@ -3353,13 +3873,17 @@
     "bundle_name": "familyL06176",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1188: Invalid dynamic components usage, lwc:component and lwc:is can only be used when dynamic components have been enabled."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1188: Invalid dynamic components usage, lwc:component and lwc:is can only be used when dynamic components have been enabled."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1188: Invalid dynamic components usage, lwc:component and lwc:is can only be used when dynamic components have been enabled."
       ]
     }
@@ -3374,13 +3898,17 @@
     "bundle_name": "familyL06177",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 35] LWC1188: Invalid dynamic components usage, lwc:component and lwc:is can only be used when dynamic components have been enabled."
       ],
       "67.0": [
+        "[Line: 1, Col: 35] LWC1188: Invalid dynamic components usage, lwc:component and lwc:is can only be used when dynamic components have been enabled."
+      ],
+      "68.0": [
         "[Line: 1, Col: 35] LWC1188: Invalid dynamic components usage, lwc:component and lwc:is can only be used when dynamic components have been enabled."
       ]
     }
@@ -3395,11 +3923,13 @@
     "bundle_name": "familyL06178",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -3412,11 +3942,13 @@
     "bundle_name": "familyL06179",
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     },
     "native_diagnostics": {
       "59.0": [],
-      "67.0": []
+      "67.0": [],
+      "68.0": []
     }
   },
   {
@@ -3429,13 +3961,17 @@
     "bundle_name": "familyL06180",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "Lightning Component Bundle familyL06180 contains duplicate capability lightning__dynamicComponent"
       ],
       "67.0": [
+        "Lightning Component Bundle familyL06180 contains duplicate capability lightning__dynamicComponent"
+      ],
+      "68.0": [
         "Lightning Component Bundle familyL06180 contains duplicate capability lightning__dynamicComponent"
       ]
     }
@@ -3450,13 +3986,17 @@
     "bundle_name": "familyL06181",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "Lightning Component Bundle familyL06181 contains duplicate capability lightning__dynamicComponent"
       ],
       "67.0": [
+        "Lightning Component Bundle familyL06181 contains duplicate capability lightning__dynamicComponent"
+      ],
+      "68.0": [
         "Lightning Component Bundle familyL06181 contains duplicate capability lightning__dynamicComponent"
       ]
     }
@@ -3471,13 +4011,17 @@
     "bundle_name": "familyL06182",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 11] LWC1188: Invalid dynamic components usage, lwc:component and lwc:is can only be used when dynamic components have been enabled."
       ],
       "67.0": [
+        "[Line: 1, Col: 11] LWC1188: Invalid dynamic components usage, lwc:component and lwc:is can only be used when dynamic components have been enabled."
+      ],
+      "68.0": [
         "[Line: 1, Col: 11] LWC1188: Invalid dynamic components usage, lwc:component and lwc:is can only be used when dynamic components have been enabled."
       ]
     }
@@ -3492,13 +4036,17 @@
     "bundle_name": "familyL06183",
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     },
     "native_diagnostics": {
       "59.0": [
         "[Line: 1, Col: 35] LWC1188: Invalid dynamic components usage, lwc:component and lwc:is can only be used when dynamic components have been enabled."
       ],
       "67.0": [
+        "[Line: 1, Col: 35] LWC1188: Invalid dynamic components usage, lwc:component and lwc:is can only be used when dynamic components have been enabled."
+      ],
+      "68.0": [
         "[Line: 1, Col: 35] LWC1188: Invalid dynamic components usage, lwc:component and lwc:is can only be used when dynamic components have been enabled."
       ]
     }
@@ -3515,7 +4063,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[{\"case\":\"d_mode_shadow_string\",\"message\":\"ComponentProfiler: Component-level profiling has not been enabled.\",\"step\":0,\"type\":\"warning\"}],\"errors\":[],\"id\":\"d_mode_shadow_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
-      "67.0": "DOM|{\"console\":[{\"case\":\"d_mode_shadow_string\",\"message\":\"ComponentProfiler: Component-level profiling has not been enabled.\",\"step\":0,\"type\":\"warning\"}],\"errors\":[],\"id\":\"d_mode_shadow_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}"
+      "67.0": "DOM|{\"console\":[{\"case\":\"d_mode_shadow_string\",\"message\":\"ComponentProfiler: Component-level profiling has not been enabled.\",\"step\":0,\"type\":\"warning\"}],\"errors\":[],\"id\":\"d_mode_shadow_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
+      "68.0": "DOM|{\"console\":[{\"case\":\"d_mode_shadow_string\",\"message\":\"ComponentProfiler: Component-level profiling has not been enabled.\",\"step\":0,\"type\":\"warning\"}],\"errors\":[],\"id\":\"d_mode_shadow_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}"
     },
     "carried": {
       "59.0": {
@@ -3525,6 +4074,12 @@
         "observed_reason": "native DOM differs at $.console.length"
       },
       "67.0": {
+        "owner": "component compiler",
+        "reason": "hosted ComponentProfiler startup warning is absent in the offline host; DOM snapshots match exactly",
+        "observed": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
+        "observed_reason": "native DOM differs at $.console.length"
+      },
+      "68.0": {
         "owner": "component compiler",
         "reason": "hosted ComponentProfiler startup warning is absent in the offline host; DOM snapshots match exactly",
         "observed": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
@@ -3544,7 +4099,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_empty\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_empty\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_empty\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_empty\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}"
     }
   },
   {
@@ -3559,7 +4115,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_number\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"0\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"7\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_number\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"0\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"7\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_number\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"0\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"7\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_number\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"0\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"7\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}"
     }
   },
   {
@@ -3574,7 +4131,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_boolean\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"false\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"true\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_boolean\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"false\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"true\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_boolean\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"false\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"true\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_boolean\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"false\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"true\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}"
     }
   },
   {
@@ -3589,7 +4147,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}"
     }
   },
   {
@@ -3604,7 +4163,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_shadow_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":true}}]}"
     }
   },
   {
@@ -3619,7 +4179,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}"
     }
   },
   {
@@ -3634,7 +4195,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_empty\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_empty\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_empty\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_empty\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}"
     }
   },
   {
@@ -3649,7 +4211,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_number\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"0\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"7\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_number\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"0\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"7\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_number\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"0\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"7\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_number\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"0\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"7\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}"
     }
   },
   {
@@ -3664,7 +4227,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_boolean\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"false\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"true\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_boolean\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"false\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"true\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_boolean\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"false\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"true\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_boolean\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"false\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"true\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}"
     }
   },
   {
@@ -3679,7 +4243,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}"
     }
   },
   {
@@ -3694,7 +4259,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_mode_light_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"templatePresent\":false}}]}"
     }
   },
   {
@@ -3713,7 +4279,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_default\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"A\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"B\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_default\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"A\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"B\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_default\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"A\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"B\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_default\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"A\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"A\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"B\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"B\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}"
     }
   },
   {
@@ -3731,7 +4298,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_named\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":\"named\",\"tag\":\"span\",\"text\":\"NAMED\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"\"}],\"templatePresent\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_named\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":\"named\",\"tag\":\"span\",\"text\":\"NAMED\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"\"}],\"templatePresent\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_named\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":\"named\",\"tag\":\"span\",\"text\":\"NAMED\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"\"}],\"templatePresent\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_named\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":\"named\",\"tag\":\"span\",\"text\":\"NAMED\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"\"}],\"templatePresent\":true}}]}"
     }
   },
   {
@@ -3749,7 +4317,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_unmatched\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_unmatched\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_unmatched\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_unmatched\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}"
     }
   },
   {
@@ -3769,7 +4338,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_dynamic\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":\"named\",\"tag\":\"span\",\"text\":\"MOVE\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"MOVE\"],\"name\":\"named\",\"text\":\"\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":\"\",\"tag\":\"span\",\"text\":\"MOVE\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"MOVE\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":2,\"value\":{\"nodes\":[],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_dynamic\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":\"named\",\"tag\":\"span\",\"text\":\"MOVE\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"MOVE\"],\"name\":\"named\",\"text\":\"\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":\"\",\"tag\":\"span\",\"text\":\"MOVE\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"MOVE\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":2,\"value\":{\"nodes\":[],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_dynamic\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":\"named\",\"tag\":\"span\",\"text\":\"MOVE\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"MOVE\"],\"name\":\"named\",\"text\":\"\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":\"\",\"tag\":\"span\",\"text\":\"MOVE\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"MOVE\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":2,\"value\":{\"nodes\":[],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_dynamic\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":\"named\",\"tag\":\"span\",\"text\":\"MOVE\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"MOVE\"],\"name\":\"named\",\"text\":\"\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":\"\",\"tag\":\"span\",\"text\":\"MOVE\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"MOVE\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":2,\"value\":{\"nodes\":[],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}"
     }
   },
   {
@@ -3788,7 +4358,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"NULL\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"NULL\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":\"named\",\"tag\":\"span\",\"text\":\"NULL\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NULL\"],\"name\":\"named\",\"text\":\"\"}],\"templatePresent\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"NULL\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"NULL\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":\"named\",\"tag\":\"span\",\"text\":\"NULL\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NULL\"],\"name\":\"named\",\"text\":\"\"}],\"templatePresent\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"NULL\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"NULL\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":\"named\",\"tag\":\"span\",\"text\":\"NULL\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NULL\"],\"name\":\"named\",\"text\":\"\"}],\"templatePresent\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"NULL\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"NULL\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[{\"slot\":\"named\",\"tag\":\"span\",\"text\":\"NULL\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NULL\"],\"name\":\"named\",\"text\":\"\"}],\"templatePresent\":true}}]}"
     }
   },
   {
@@ -3808,7 +4379,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_conditional\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"PRESENT\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"PRESENT\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":2,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"PRESENT\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"PRESENT\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_conditional\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"PRESENT\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"PRESENT\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":2,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"PRESENT\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"PRESENT\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_conditional\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"PRESENT\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"PRESENT\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":2,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"PRESENT\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"PRESENT\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_slot_conditional\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"PRESENT\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"PRESENT\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":1,\"value\":{\"nodes\":[],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"DEFAULT\"],\"name\":\"\",\"text\":\"DEFAULT\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}},{\"errors\":[],\"step\":2,\"value\":{\"nodes\":[{\"slot\":null,\"tag\":\"span\",\"text\":\"PRESENT\",\"title\":null}],\"shadowRootPresent\":false,\"slots\":[{\"assigned\":[\"PRESENT\"],\"name\":\"\",\"text\":\"\"},{\"assigned\":[\"NAMED\"],\"name\":\"named\",\"text\":\"NAMED\"}],\"templatePresent\":true}}]}"
     }
   },
   {
@@ -3827,7 +4399,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"A\"],\"text\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"A\"],\"text\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"A\"],\"text\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_string\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"A\"],\"text\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}"
     }
   },
   {
@@ -3846,7 +4419,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_empty\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"\"],\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_empty\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"\"],\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_empty\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"\"],\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_empty\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"\"],\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}"
     }
   },
   {
@@ -3865,7 +4439,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_number\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"0\"],\"text\":\"0\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"7\"],\"text\":\"7\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_number\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"0\"],\"text\":\"0\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"7\"],\"text\":\"7\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_number\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"0\"],\"text\":\"0\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"7\"],\"text\":\"7\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_number\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"0\"],\"text\":\"0\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"7\"],\"text\":\"7\"}}]}"
     }
   },
   {
@@ -3884,7 +4459,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_boolean\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"false\"],\"text\":\"false\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"true\"],\"text\":\"true\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_boolean\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"false\"],\"text\":\"false\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"true\"],\"text\":\"true\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_boolean\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"false\"],\"text\":\"false\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"true\"],\"text\":\"true\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_boolean\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"false\"],\"text\":\"false\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"true\"],\"text\":\"true\"}}]}"
     }
   },
   {
@@ -3903,7 +4479,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"\"],\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"\"],\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"\"],\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"\"],\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}"
     }
   },
   {
@@ -3922,7 +4499,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"\"],\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"\"],\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"\"],\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"spans\":[\"\"],\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"spans\":[\"B\"],\"text\":\"B\"}}]}"
     }
   },
   {
@@ -3941,7 +4519,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_named\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"text\":\"B\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_named\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"text\":\"B\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_named\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"text\":\"B\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_named\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"text\":\"B\"}}]}"
     }
   },
   {
@@ -3959,7 +4538,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_two_providers\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"AA\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_two_providers\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"AA\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_two_providers\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"AA\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_two_providers\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"AA\"}}]}"
     }
   },
   {
@@ -3977,7 +4557,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Cannot read properties of null (reading 'label')\",\"name\":\"TypeError\",\"step\":0}],\"id\":\"d_scoped_null_scope\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Cannot read properties of null (reading 'label')\",\"name\":\"TypeError\",\"step\":0}],\"id\":\"d_scoped_null_scope\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Cannot read properties of null (reading 'label')\",\"name\":\"TypeError\",\"step\":0}],\"id\":\"d_scoped_null_scope\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Cannot read properties of null (reading 'label')\",\"name\":\"TypeError\",\"step\":0}],\"id\":\"d_scoped_null_scope\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"\"}}]}"
     }
   },
   {
@@ -3995,7 +4576,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_undefined_scope\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_undefined_scope\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_undefined_scope\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_scoped_undefined_scope\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"text\":\"\"}}]}"
     }
   },
   {
@@ -4009,7 +4591,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_shadow_static\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"REF\"},\"prototypeNull\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_shadow_static\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"REF\"},\"prototypeNull\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_shadow_static\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"REF\"},\"prototypeNull\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_shadow_static\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"REF\"},\"prototypeNull\":true}}]}"
     }
   },
   {
@@ -4023,7 +4606,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_shadow_duplicate\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"span\",\"text\":\"LAST\"},\"prototypeNull\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_shadow_duplicate\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"span\",\"text\":\"LAST\"},\"prototypeNull\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_shadow_duplicate\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"span\",\"text\":\"LAST\"},\"prototypeNull\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_shadow_duplicate\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"span\",\"text\":\"LAST\"},\"prototypeNull\":true}}]}"
     }
   },
   {
@@ -4039,7 +4623,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_shadow_conditional\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}},{\"errors\":[],\"step\":1,\"value\":{\"keys\":[],\"node\":null,\"prototypeNull\":true}},{\"errors\":[],\"step\":2,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_shadow_conditional\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}},{\"errors\":[],\"step\":1,\"value\":{\"keys\":[],\"node\":null,\"prototypeNull\":true}},{\"errors\":[],\"step\":2,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_shadow_conditional\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}},{\"errors\":[],\"step\":1,\"value\":{\"keys\":[],\"node\":null,\"prototypeNull\":true}},{\"errors\":[],\"step\":2,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_shadow_conditional\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}},{\"errors\":[],\"step\":1,\"value\":{\"keys\":[],\"node\":null,\"prototypeNull\":true}},{\"errors\":[],\"step\":2,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}}]}"
     }
   },
   {
@@ -4053,7 +4638,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_light_static\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"REF\"},\"prototypeNull\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_light_static\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"REF\"},\"prototypeNull\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_light_static\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"REF\"},\"prototypeNull\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_light_static\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"REF\"},\"prototypeNull\":true}}]}"
     }
   },
   {
@@ -4067,7 +4653,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_light_duplicate\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"span\",\"text\":\"LAST\"},\"prototypeNull\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_light_duplicate\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"span\",\"text\":\"LAST\"},\"prototypeNull\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_light_duplicate\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"span\",\"text\":\"LAST\"},\"prototypeNull\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_light_duplicate\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"span\",\"text\":\"LAST\"},\"prototypeNull\":true}}]}"
     }
   },
   {
@@ -4083,7 +4670,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_light_conditional\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}},{\"errors\":[],\"step\":1,\"value\":{\"keys\":[],\"node\":null,\"prototypeNull\":true}},{\"errors\":[],\"step\":2,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_light_conditional\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}},{\"errors\":[],\"step\":1,\"value\":{\"keys\":[],\"node\":null,\"prototypeNull\":true}},{\"errors\":[],\"step\":2,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_light_conditional\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}},{\"errors\":[],\"step\":1,\"value\":{\"keys\":[],\"node\":null,\"prototypeNull\":true}},{\"errors\":[],\"step\":2,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_ref_light_conditional\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}},{\"errors\":[],\"step\":1,\"value\":{\"keys\":[],\"node\":null,\"prototypeNull\":true}},{\"errors\":[],\"step\":2,\"value\":{\"keys\":[\"node\"],\"node\":{\"tag\":\"div\",\"text\":\"YES\"},\"prototypeNull\":true}}]}"
     }
   },
   {
@@ -4102,7 +4690,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_replace\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"value\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":7,\"value\":\"B\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_replace\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"value\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":7,\"value\":\"B\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_replace\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"value\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":7,\"value\":\"B\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_replace\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"value\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":7,\"value\":\"B\"}}]}"
     }
   },
   {
@@ -4121,7 +4710,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{}},{\"errors\":[],\"step\":1,\"value\":{\"value\":\"A\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{}},{\"errors\":[],\"step\":1,\"value\":{\"value\":\"A\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{}},{\"errors\":[],\"step\":1,\"value\":{\"value\":\"A\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{}},{\"errors\":[],\"step\":1,\"value\":{\"value\":\"A\"}}]}"
     }
   },
   {
@@ -4140,7 +4730,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{}},{\"errors\":[],\"step\":1,\"value\":{\"value\":\"A\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{}},{\"errors\":[],\"step\":1,\"value\":{\"value\":\"A\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{}},{\"errors\":[],\"step\":1,\"value\":{\"value\":\"A\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{}},{\"errors\":[],\"step\":1,\"value\":{\"value\":\"A\"}}]}"
     }
   },
   {
@@ -4159,7 +4750,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_conversion\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"enabled\":false,\"value\":0}},{\"errors\":[],\"step\":1,\"value\":{\"enabled\":\"false\",\"value\":\"0\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_conversion\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"enabled\":false,\"value\":0}},{\"errors\":[],\"step\":1,\"value\":{\"enabled\":\"false\",\"value\":\"0\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_conversion\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"enabled\":false,\"value\":0}},{\"errors\":[],\"step\":1,\"value\":{\"enabled\":\"false\",\"value\":\"0\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_conversion\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"enabled\":false,\"value\":0}},{\"errors\":[],\"step\":1,\"value\":{\"enabled\":\"false\",\"value\":\"0\"}}]}"
     }
   },
   {
@@ -4178,7 +4770,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_remove\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"label\":\"B\",\"value\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"label\":\"B\",\"value\":\"A\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_remove\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"label\":\"B\",\"value\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"label\":\"B\",\"value\":\"A\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_remove\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"label\":\"B\",\"value\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"label\":\"B\",\"value\":\"A\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_remove\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"label\":\"B\",\"value\":\"A\"}},{\"errors\":[],\"step\":1,\"value\":{\"label\":\"B\",\"value\":\"A\"}}]}"
     }
   },
   {
@@ -4197,7 +4790,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_explicit\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"value\":\"SPREAD\"}},{\"errors\":[],\"step\":1,\"value\":{\"value\":\"NEXT\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_explicit\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"value\":\"SPREAD\"}},{\"errors\":[],\"step\":1,\"value\":{\"value\":\"NEXT\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_explicit\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"value\":\"SPREAD\"}},{\"errors\":[],\"step\":1,\"value\":{\"value\":\"NEXT\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_explicit\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"value\":\"SPREAD\"}},{\"errors\":[],\"step\":1,\"value\":{\"value\":\"NEXT\"}}]}"
     }
   },
   {
@@ -4215,7 +4809,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_string\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_string\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_string\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_spread_string\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{}}]}"
     }
   },
   {
@@ -4233,7 +4828,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"owned spread getter\",\"name\":\"TypeError\",\"step\":0}],\"id\":\"d_spread_getter\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"exception\":{\"message\":\"Cannot read properties of undefined (reading 'read')\",\"name\":\"TypeError\"}}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"owned spread getter\",\"name\":\"TypeError\",\"step\":0}],\"id\":\"d_spread_getter\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"exception\":{\"message\":\"Cannot read properties of undefined (reading 'read')\",\"name\":\"TypeError\"}}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"owned spread getter\",\"name\":\"TypeError\",\"step\":0}],\"id\":\"d_spread_getter\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"exception\":{\"message\":\"Cannot read properties of undefined (reading 'read')\",\"name\":\"TypeError\"}}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"owned spread getter\",\"name\":\"TypeError\",\"step\":0}],\"id\":\"d_spread_getter\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"exception\":{\"message\":\"Cannot read properties of undefined (reading 'read')\",\"name\":\"TypeError\"}}}]}"
     }
   },
   {
@@ -4249,7 +4845,8 @@
     "native_compile_basis": "c_mode_shadow_manual",
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_shadow_append\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<span>APPENDED</span>\",\"text\":\"APPENDED\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_shadow_append\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<span>APPENDED</span>\",\"text\":\"APPENDED\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_shadow_append\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<span>APPENDED</span>\",\"text\":\"APPENDED\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_shadow_append\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<span>APPENDED</span>\",\"text\":\"APPENDED\"}}]}"
     }
   },
   {
@@ -4265,7 +4862,8 @@
     "native_compile_basis": "c_mode_shadow_manual",
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_shadow_html\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<b>OWNED</b>\",\"text\":\"OWNED\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_shadow_html\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<b>OWNED</b>\",\"text\":\"OWNED\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_shadow_html\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<b>OWNED</b>\",\"text\":\"OWNED\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_shadow_html\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<b>OWNED</b>\",\"text\":\"OWNED\"}}]}"
     }
   },
   {
@@ -4281,7 +4879,8 @@
     "native_compile_basis": "c_mode_shadow_manual",
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_shadow_clear\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_shadow_clear\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_shadow_clear\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_shadow_clear\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}}]}"
     }
   },
   {
@@ -4297,7 +4896,8 @@
     "native_compile_basis": "c_mode_light_manual",
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_light_append\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<span>APPENDED</span>\",\"text\":\"APPENDED\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_light_append\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<span>APPENDED</span>\",\"text\":\"APPENDED\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_light_append\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<span>APPENDED</span>\",\"text\":\"APPENDED\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_light_append\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<span>APPENDED</span>\",\"text\":\"APPENDED\"}}]}"
     }
   },
   {
@@ -4313,7 +4913,8 @@
     "native_compile_basis": "c_mode_light_manual",
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_light_html\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<b>OWNED</b>\",\"text\":\"OWNED\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_light_html\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<b>OWNED</b>\",\"text\":\"OWNED\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_light_html\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<b>OWNED</b>\",\"text\":\"OWNED\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_light_html\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"html\":\"<b>OWNED</b>\",\"text\":\"OWNED\"}}]}"
     }
   },
   {
@@ -4329,7 +4930,8 @@
     "native_compile_basis": "c_mode_light_manual",
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_light_clear\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_light_clear\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_light_clear\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_light_clear\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":0,\"html\":\"\",\"text\":\"\"}}]}"
     }
   },
   {
@@ -4344,7 +4946,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"text\":\"null\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"text\":\"null\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"text\":\"null\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"text\":\"null\"}}]}"
     }
   },
   {
@@ -4359,7 +4962,8 @@
     ],
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"text\":\"undefined\"}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"text\":\"undefined\"}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"text\":\"undefined\"}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_manual_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"count\":0,\"text\":\"\"}},{\"errors\":[],\"step\":1,\"value\":{\"count\":1,\"text\":\"undefined\"}}]}"
     }
   },
   {
@@ -4380,7 +4984,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_dynamic_constructor\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}},{\"errors\":[],\"step\":1,\"value\":{\"present\":false,\"value\":null}},{\"errors\":[],\"step\":2,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_dynamic_constructor\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}},{\"errors\":[],\"step\":1,\"value\":{\"present\":false,\"value\":null}},{\"errors\":[],\"step\":2,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_dynamic_constructor\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}},{\"errors\":[],\"step\":1,\"value\":{\"present\":false,\"value\":null}},{\"errors\":[],\"step\":2,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_dynamic_constructor\",\"requested\":2,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}},{\"errors\":[],\"step\":1,\"value\":{\"present\":false,\"value\":null}},{\"errors\":[],\"step\":2,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}}]}"
     }
   },
   {
@@ -4400,7 +5005,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_dynamic_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}},{\"errors\":[],\"step\":1,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_dynamic_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}},{\"errors\":[],\"step\":1,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_dynamic_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}},{\"errors\":[],\"step\":1,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_dynamic_null\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}},{\"errors\":[],\"step\":1,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}}]}"
     }
   },
   {
@@ -4420,7 +5026,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_dynamic_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}},{\"errors\":[],\"step\":1,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_dynamic_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}},{\"errors\":[],\"step\":1,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_dynamic_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}},{\"errors\":[],\"step\":1,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[],\"id\":\"d_dynamic_undefined\",\"requested\":1,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}},{\"errors\":[],\"step\":1,\"value\":{\"present\":true,\"value\":{\"value\":\"DYNAMIC\"}}}]}"
     }
   },
   {
@@ -4439,7 +5046,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Invalid constructor: \\\"invalid\\\" is not a LightningElement constructor.\",\"name\":\"Error\",\"step\":0}],\"id\":\"d_dynamic_string\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Invalid constructor: \\\"invalid\\\" is not a LightningElement constructor.\",\"name\":\"Error\",\"step\":0}],\"id\":\"d_dynamic_string\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Invalid constructor: \\\"invalid\\\" is not a LightningElement constructor.\",\"name\":\"Error\",\"step\":0}],\"id\":\"d_dynamic_string\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Invalid constructor: \\\"invalid\\\" is not a LightningElement constructor.\",\"name\":\"Error\",\"step\":0}],\"id\":\"d_dynamic_string\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}}]}"
     }
   },
   {
@@ -4458,7 +5066,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Invalid constructor: \\\"[object Object]\\\" is not a LightningElement constructor.\",\"name\":\"Error\",\"step\":0}],\"id\":\"d_dynamic_object\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Invalid constructor: \\\"[object Object]\\\" is not a LightningElement constructor.\",\"name\":\"Error\",\"step\":0}],\"id\":\"d_dynamic_object\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Invalid constructor: \\\"[object Object]\\\" is not a LightningElement constructor.\",\"name\":\"Error\",\"step\":0}],\"id\":\"d_dynamic_object\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Invalid constructor: \\\"[object Object]\\\" is not a LightningElement constructor.\",\"name\":\"Error\",\"step\":0}],\"id\":\"d_dynamic_object\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}}]}"
     }
   },
   {
@@ -4477,7 +5086,8 @@
     },
     "expected": {
       "59.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Invalid constructor: \\\"7\\\" is not a LightningElement constructor.\",\"name\":\"Error\",\"step\":0}],\"id\":\"d_dynamic_number\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}}]}",
-      "67.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Invalid constructor: \\\"7\\\" is not a LightningElement constructor.\",\"name\":\"Error\",\"step\":0}],\"id\":\"d_dynamic_number\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}}]}"
+      "67.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Invalid constructor: \\\"7\\\" is not a LightningElement constructor.\",\"name\":\"Error\",\"step\":0}],\"id\":\"d_dynamic_number\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}}]}",
+      "68.0": "DOM|{\"console\":[],\"errors\":[{\"message\":\"Invalid constructor: \\\"7\\\" is not a LightningElement constructor.\",\"name\":\"Error\",\"step\":0}],\"id\":\"d_dynamic_number\",\"requested\":0,\"steps\":[{\"errors\":[],\"step\":0,\"value\":{\"present\":false,\"value\":null}}]}"
     }
   }
 ]

@@ -67,6 +67,8 @@ type v04Case struct {
 // CI reads only owned testdata without credentials or a browser.
 // GLADE_V04_CAPTURE=1 records all differences without failing on row mismatches;
 // GLADE_V04_REPORT selects the optional per-row TSV output path.
+var v04APIVersions = []string{"59.0", "67.0"}
+
 func TestV04SalesforceConformance(t *testing.T) {
 	capture := os.Getenv("GLADE_V04_CAPTURE") != ""
 	data, err := os.ReadFile("testdata/v04_salesforce.json")
@@ -83,7 +85,6 @@ func TestV04SalesforceConformance(t *testing.T) {
 	if table.Source != "Owned standard-controller observations at API 59.0 and 67.0." || len(table.Cases) != 230 {
 		t.Fatalf("Standard controller requires all 230 cases from the final native oracle, got %d at %s", len(table.Cases), table.Source)
 	}
-	versions := []string{"59.0", "67.0"}
 	counts, seen, groups := map[string]int{}, map[string]bool{}, map[string]bool{}
 	for _, c := range table.Cases {
 		if c.ID == "" || seen[c.ID] || (c.Kind != "compile" && c.Kind != "runtime") {
@@ -92,7 +93,7 @@ func TestV04SalesforceConformance(t *testing.T) {
 		seen[c.ID] = true
 		groups[c.Group] = true
 		counts[c.Kind]++
-		for _, api := range versions {
+		for _, api := range v04APIVersions {
 			input := c.Inputs[api]
 			if input.Name == "" || len(input.Files) < 5 || input.Files["sfdx-project.json"] == "" ||
 				input.Files["force-app/main/default/pages/"+input.Name+".page"] == "" ||
@@ -148,93 +149,97 @@ func TestV04SalesforceConformance(t *testing.T) {
 	var report strings.Builder
 	tsv := csv.NewWriter(&report)
 	tsv.Comma = '\t'
-	writeRow := func(fields ...string) {
+	writeRow := func(t *testing.T, fields ...string) {
 		if err := tsv.Write(fields); err != nil {
 			t.Fatal(err)
 		}
 	}
-	writeRow("api", "id", "status", "actual", "expected", "group", "resource", "diagnostic", "owner", "reason", "acceptance_status", "diagnostic_status", "expected_diagnostic")
+	writeRow(t, "api", "id", "status", "actual", "expected", "group", "resource", "diagnostic", "owner", "reason", "acceptance_status", "diagnostic_status", "expected_diagnostic")
 	matches, compileMatches, acceptanceMatches, diagnosticMatches, domMatches := 0, 0, 0, 0, 0
-	for _, api := range versions {
-		apiMatches, apiCompileMatches, apiAcceptanceMatches, apiDiagnosticMatches, apiDOMMatches := 0, 0, 0, 0, 0
-		for _, c := range table.Cases {
-			root := t.TempDir()
-			input := c.Inputs[api]
-			for path, source := range input.Files {
-				if filepath.IsAbs(path) || filepath.Clean(path) != path || strings.HasPrefix(path, "..") {
-					t.Fatalf("%s: invalid fixture path %q", c.ID, path)
-				}
-				fullPath := filepath.Join(root, path)
-				if err := os.MkdirAll(filepath.Dir(fullPath), 0o700); err != nil {
-					t.Fatal(err)
-				}
-				if err := os.WriteFile(fullPath, []byte(source), 0o600); err != nil {
-					t.Fatal(err)
-				}
-			}
-			got, diagnostics := v04Execute(t, root, input.Name, c)
-			want := c.Expected[api]
-			actualDiagnostic := v04Encode(t, diagnostics)
-			expectedDiagnostic := v04Encode(t, c.Diagnostics[api])
-			acceptanceMatch := got == want
-			diagnosticMatch := c.Kind != "compile" || actualDiagnostic == expectedDiagnostic
-			status, acceptanceStatus, diagnosticStatus := "MISMATCH", "MISMATCH", "NOT_APPLICABLE"
-			if acceptanceMatch {
-				acceptanceStatus = "MATCH"
-				if c.Kind == "compile" {
-					apiAcceptanceMatches++
-				}
-			}
-			if c.Kind == "compile" {
-				diagnosticStatus = "MISMATCH"
-				if diagnosticMatch {
-					diagnosticStatus = "MATCH"
-					apiDiagnosticMatches++
-				}
-			}
-			if acceptanceMatch && diagnosticMatch {
-				status = "MATCH"
-				apiMatches++
-				if c.Kind == "compile" {
-					apiCompileMatches++
-				} else {
-					apiDOMMatches++
-				}
-			}
-			owner, reason := "", ""
-			if status != "MATCH" {
-				if carry, exists := c.Carries[api]; exists {
-					owner, reason = carry.Owner, carry.Reason
-					if carry.Scope == "confirmation-token" && v04ConfirmationContract(got) != v04ConfirmationContract(want) && !capture {
-						t.Errorf("API %s %s: delete contract differs beyond the carried token; actual <%s> expected <%s>", api, c.ID, got, want)
+	apiPasses := 0
+	for _, api := range v04APIVersions {
+		t.Run(api, func(t *testing.T) {
+			apiPasses++
+			apiMatches, apiCompileMatches, apiAcceptanceMatches, apiDiagnosticMatches, apiDOMMatches := 0, 0, 0, 0, 0
+			for _, c := range table.Cases {
+				root := t.TempDir()
+				input := c.Inputs[api]
+				for path, source := range input.Files {
+					if filepath.IsAbs(path) || filepath.Clean(path) != path || strings.HasPrefix(path, "..") {
+						t.Fatalf("%s: invalid fixture path %q", c.ID, path)
 					}
-					t.Logf("Standard controller API %s carry %s owner=%s: %s; actual <%s> expected <%s>", api, c.ID, owner, reason, got, want)
+					fullPath := filepath.Join(root, path)
+					if err := os.MkdirAll(filepath.Dir(fullPath), 0o700); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.WriteFile(fullPath, []byte(source), 0o600); err != nil {
+						t.Fatal(err)
+					}
+				}
+				got, diagnostics := v04Execute(t, root, input.Name, c)
+				want := c.Expected[api]
+				actualDiagnostic := v04Encode(t, diagnostics)
+				expectedDiagnostic := v04Encode(t, c.Diagnostics[api])
+				acceptanceMatch := got == want
+				diagnosticMatch := c.Kind != "compile" || actualDiagnostic == expectedDiagnostic
+				status, acceptanceStatus, diagnosticStatus := "MISMATCH", "MISMATCH", "NOT_APPLICABLE"
+				if acceptanceMatch {
+					acceptanceStatus = "MATCH"
+					if c.Kind == "compile" {
+						apiAcceptanceMatches++
+					}
+				}
+				if c.Kind == "compile" {
+					diagnosticStatus = "MISMATCH"
+					if diagnosticMatch {
+						diagnosticStatus = "MATCH"
+						apiDiagnosticMatches++
+					}
+				}
+				if acceptanceMatch && diagnosticMatch {
+					status = "MATCH"
+					apiMatches++
+					if c.Kind == "compile" {
+						apiCompileMatches++
+					} else {
+						apiDOMMatches++
+					}
+				}
+				owner, reason := "", ""
+				if status != "MATCH" {
+					if carry, exists := c.Carries[api]; exists {
+						owner, reason = carry.Owner, carry.Reason
+						if carry.Scope == "confirmation-token" && v04ConfirmationContract(got) != v04ConfirmationContract(want) && !capture {
+							t.Errorf("API %s %s: delete contract differs beyond the carried token; actual <%s> expected <%s>", api, c.ID, got, want)
+						}
+						t.Logf("Standard controller API %s carry %s owner=%s: %s; actual <%s> expected <%s>", api, c.ID, owner, reason, got, want)
+					}
+				}
+				// Every row is compared exactly. Matching rows retain the normal
+				// assertion even when an earlier export assigned them a carry.
+				writeRow(t, api, c.ID, status, got, want, c.Group, "ApexPage", strings.ReplaceAll(actualDiagnostic, root, "<fixture>"), owner, reason, acceptanceStatus, diagnosticStatus, expectedDiagnostic)
+				if !capture && owner == "" && (!acceptanceMatch || !diagnosticMatch) {
+					t.Errorf("API %s %s: actual <%s> expected <%s>; diagnostics <%s> expected <%s>", api, c.ID, got, want, actualDiagnostic, expectedDiagnostic)
 				}
 			}
-			// Every row is compared exactly. Matching rows retain the normal
-			// assertion even when an earlier export assigned them a carry.
-			writeRow(api, c.ID, status, got, want, c.Group, "ApexPage", strings.ReplaceAll(actualDiagnostic, root, "<fixture>"), owner, reason, acceptanceStatus, diagnosticStatus, expectedDiagnostic)
-			if !capture && owner == "" && (!acceptanceMatch || !diagnosticMatch) {
-				t.Errorf("API %s %s: actual <%s> expected <%s>; diagnostics <%s> expected <%s>", api, c.ID, got, want, actualDiagnostic, expectedDiagnostic)
-			}
-		}
-		writeRow("API_TOTAL", api, fmt.Sprintf("%d/230", apiMatches))
-		writeRow("COMPILE_API_TOTAL", api, fmt.Sprintf("%d/130", apiCompileMatches))
-		writeRow("COMPILE_ACCEPTANCE_API_TOTAL", api, fmt.Sprintf("%d/130", apiAcceptanceMatches))
-		writeRow("DIAGNOSTIC_API_TOTAL", api, fmt.Sprintf("%d/130", apiDiagnosticMatches))
-		writeRow("DOM_API_TOTAL", api, fmt.Sprintf("%d/100", apiDOMMatches))
-		t.Logf("Standard controller API %s exact %d/230; compile %d/130, acceptance %d/130, diagnostics %d/130; DOM %d/100", api, apiMatches, apiCompileMatches, apiAcceptanceMatches, apiDiagnosticMatches, apiDOMMatches)
-		matches += apiMatches
-		compileMatches += apiCompileMatches
-		acceptanceMatches += apiAcceptanceMatches
-		diagnosticMatches += apiDiagnosticMatches
-		domMatches += apiDOMMatches
+			writeRow(t, "API_TOTAL", api, fmt.Sprintf("%d/230", apiMatches))
+			writeRow(t, "COMPILE_API_TOTAL", api, fmt.Sprintf("%d/130", apiCompileMatches))
+			writeRow(t, "COMPILE_ACCEPTANCE_API_TOTAL", api, fmt.Sprintf("%d/130", apiAcceptanceMatches))
+			writeRow(t, "DIAGNOSTIC_API_TOTAL", api, fmt.Sprintf("%d/130", apiDiagnosticMatches))
+			writeRow(t, "DOM_API_TOTAL", api, fmt.Sprintf("%d/100", apiDOMMatches))
+			t.Logf("Standard controller API %s exact %d/230; compile %d/130, acceptance %d/130, diagnostics %d/130; DOM %d/100", api, apiMatches, apiCompileMatches, apiAcceptanceMatches, apiDiagnosticMatches, apiDOMMatches)
+			matches += apiMatches
+			compileMatches += apiCompileMatches
+			acceptanceMatches += apiAcceptanceMatches
+			diagnosticMatches += apiDiagnosticMatches
+			domMatches += apiDOMMatches
+		})
 	}
-	writeRow("COMPILE_TOTAL", fmt.Sprintf("%d/260", compileMatches))
-	writeRow("COMPILE_ACCEPTANCE_TOTAL", fmt.Sprintf("%d/260", acceptanceMatches))
-	writeRow("DIAGNOSTIC_TOTAL", fmt.Sprintf("%d/260", diagnosticMatches))
-	writeRow("DOM_TOTAL", fmt.Sprintf("%d/200", domMatches))
-	writeRow("TOTAL", fmt.Sprintf("%d/460", matches))
+	writeRow(t, "COMPILE_TOTAL", fmt.Sprintf("%d/%d", compileMatches, apiPasses*130))
+	writeRow(t, "COMPILE_ACCEPTANCE_TOTAL", fmt.Sprintf("%d/%d", acceptanceMatches, apiPasses*130))
+	writeRow(t, "DIAGNOSTIC_TOTAL", fmt.Sprintf("%d/%d", diagnosticMatches, apiPasses*130))
+	writeRow(t, "DOM_TOTAL", fmt.Sprintf("%d/%d", domMatches, apiPasses*100))
+	writeRow(t, "TOTAL", fmt.Sprintf("%d/%d", matches, apiPasses*230))
 	t.Logf("Standard controller exact matches %d/460; compile %d/260; DOM %d/200", matches, compileMatches, domMatches)
 	tsv.Flush()
 	if err := tsv.Error(); err != nil {

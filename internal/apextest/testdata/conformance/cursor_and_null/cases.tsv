@@ -1,0 +1,6 @@
+method	observation
+tiedCursor	Fixed equal CreatedDate cursor excludes the current row and keeps lower Id rows
+distinctCursor	Fixed distinct CreatedDate cursor advances to older rows
+millisecondCursor	Stored subsecond timestamp and comparison to the same Datetime bind
+nullMapCopy	Typed null map copy constructor exception catchability and diagnostic
+populatedMapCopy	Non-null map copy keeps entries and permits independent key insertion

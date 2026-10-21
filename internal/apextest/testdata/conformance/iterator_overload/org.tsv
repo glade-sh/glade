@@ -1,0 +1,9 @@
+source_api	method	observation
+62.0	concreteCursor	{"count":1}
+62.0	contactCursor	{"count":2}
+62.0	exactCursor	{"count":2}
+62.0	instanceCursor	{"count":1}
+67.0	concreteCursor	{"count":1}
+67.0	contactCursor	{"count":2}
+67.0	exactCursor	{"count":2}
+67.0	instanceCursor	{"count":1}

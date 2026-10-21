@@ -1,0 +1,5 @@
+case_id	api_version	route	shape
+N1_001	62.0	anonymous	missing Get Records Id assigned to Text and checked with IsNull
+N1_001	62.0	istest	missing Get Records Id assigned to Text and checked with IsNull
+N1_001	67.0	anonymous	missing Get Records Id assigned to Text and checked with IsNull
+N1_001	67.0	istest	missing Get Records Id assigned to Text and checked with IsNull

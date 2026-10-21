@@ -1,0 +1,786 @@
+{
+  "rowCount": 36,
+  "scalarCells": 312,
+  "orgIDSHA256": "a64b802be2a131d9f664904c984ede5a6b2ffe5f1ceb672683b033f7bdf56e2e",
+  "orgTSVSHA256": "293e920421c8c5895add57cb906f5c57de7e1c46a5e597b05d46a7ead3ebca83",
+  "orgRunSHA256": "34406a66fe334da433f219c31b171a62df2876bc87f01f1b4233aaf32aecb9b9",
+  "testClass": "OwnedDescribeVersionTest",
+  "projectAPI": "62.0",
+  "projectSource": "{\"sourceApiVersion\": \"62.0\", \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}]}\n",
+  "projectSourceSHA256": "f80e01fee8c27f9cd628f6825784156f98f6e6313473d649da4553ee48132aa3",
+  "sources": {
+    "OwnedDescribeVersionObserver": "public class OwnedDescribeVersionObserver {\n public static String observe(String row) {\n  Map<String,Object> seen=new Map<String,Object>();\n  if(row=='DJ06') {\n   try {Decimal invalid=Decimal.valueOf('');seen.put('outcome','returned');}\n   catch(Exception issue){seen.put('outcome','threw');seen.put('exception',issue.getTypeName());seen.put('message',issue.getMessage());}\n   return JSON.serialize(seen);\n  }\n  Boolean suppress=row!='DJ02'&&row!='DJ04';String text;\n  if(row=='DJ05') text=JSON.serialize(new Account(Name='Owned Serialized Record'),true);\n  else if(row=='DJ01'||row=='DJ02') text=JSON.serialize(User.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED),suppress);\n  else text=JSON.serialize(Account.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED),suppress);\n  Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(text);\n  Matcher match=Pattern.compile('/v(\\\\d+\\\\.0)').matcher(text);\n  Boolean found=match.find();seen.put('matched',found);seen.put('version',found?match.group(1):null);\n  seen.put('hasUrls',root.containsKey('urls'));\n  Map<String,String> relative=new Map<String,String>();Map<String,Object> absolute=new Map<String,Object>();\n  if(root.get('urls') instanceof Map<String,Object>) {\n   Map<String,Object> urls=(Map<String,Object>)root.get('urls');\n   for(String key:urls.keySet()) {\n    String value=(String)urls.get(key);\n    if(value!=null && (value.startsWith('https://')||value.startsWith('http://'))) {\n     Url target=new Url(value);absolute.put(key,new Map<String,Object>{'path'=>target.getPath(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA256',Blob.valueOf(value)))});\n    } else relative.put(key,value);\n   }\n  }\n  seen.put('relativeUrls',relative);seen.put('absoluteUrls',absolute);\n  if(row=='DJ05') {\n   Map<String,Object> attrs=(Map<String,Object>)root.get('attributes');seen.put('recordType',attrs.get('type'));seen.put('recordName',root.get('Name'));\n  }\n  return JSON.serialize(seen);\n }\n}\n",
+    "OwnedDescribeVersionTest": "@IsTest private class OwnedDescribeVersionTest {\n @IsTest static void dj01(){System.assert(false,'DESCRIBE_VERSION|DJ01|'+OwnedDescribeVersionObserver.observe('DJ01'));}\n @IsTest static void dj02(){System.assert(false,'DESCRIBE_VERSION|DJ02|'+OwnedDescribeVersionObserver.observe('DJ02'));}\n @IsTest static void dj03(){System.assert(false,'DESCRIBE_VERSION|DJ03|'+OwnedDescribeVersionObserver.observe('DJ03'));}\n @IsTest static void dj04(){System.assert(false,'DESCRIBE_VERSION|DJ04|'+OwnedDescribeVersionObserver.observe('DJ04'));}\n @IsTest static void dj05(){System.assert(false,'DESCRIBE_VERSION|DJ05|'+OwnedDescribeVersionObserver.observe('DJ05'));}\n @IsTest static void dj06(){System.assert(false,'DESCRIBE_VERSION|DJ06|'+OwnedDescribeVersionObserver.observe('DJ06'));}\n}\n"
+  },
+  "sourceSHA256": {
+    "OwnedDescribeVersionObserver": "1def4e149d9025adcd6659994376466576884b41a2ea51d697d202e9c6e20dc3",
+    "OwnedDescribeVersionTest": "bc5d3b6ccd60b46a2b980e0918a299c24da2f0dd07b53ebb2b95c92a9f9b04d0"
+  },
+  "anonymousSource": "System.debug('DESCRIBE_VERSION|DJ01|'+OwnedDescribeVersionObserver.observe('DJ01'));\nSystem.debug('DESCRIBE_VERSION|DJ02|'+OwnedDescribeVersionObserver.observe('DJ02'));\nSystem.debug('DESCRIBE_VERSION|DJ03|'+OwnedDescribeVersionObserver.observe('DJ03'));\nSystem.debug('DESCRIBE_VERSION|DJ04|'+OwnedDescribeVersionObserver.observe('DJ04'));\nSystem.debug('DESCRIBE_VERSION|DJ05|'+OwnedDescribeVersionObserver.observe('DJ05'));\nSystem.debug('DESCRIBE_VERSION|DJ06|'+OwnedDescribeVersionObserver.observe('DJ06'));\n",
+  "anonymousSourceSHA256": "6087c409424a428914cb787e1311e7fa470d286098728c15faad581f3b6940f8",
+  "orgContext": {
+    "requestedEdition": "Developer",
+    "featuresRequested": [],
+    "settingsChanged": false,
+    "otherFeatureContext": "UNCAPTURED"
+  },
+  "captures": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "deploymentID": "0AfRK00000uoegN0AQ",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "64250fd2881ba6e6bbc1bd19c9190239037060de909fc5939dcbc27b24bc97e0"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "deploymentID": "0AfRK00000uobH50AI",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "9982f1c0864162179842f14b6e06cc6dbdd7ce1e58f00324585c96b341248c0b"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "deploymentID": "0AfRK00000uolpt0AA",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "bda82005e589126d1b528c8853583c36e7db53a490092a604ad4e9d6163c4335"
+    }
+  ],
+  "rows": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "DJ01",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/User",
+          "layouts": "/services/data/v68.0/sobjects/User/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/User/quickActions",
+          "describe": "/services/data/v68.0/sobjects/User/describe",
+          "passwordUtilities": "/services/data/v68.0/sobjects/User/{ID}/password",
+          "namedLayouts": "/services/data/v68.0/sobjects/User/describe/namedLayouts/{LayoutName}",
+          "rowTemplate": "/services/data/v68.0/sobjects/User/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/User/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "14591723e92f66786969b366fb53895acf0f193885a4a7d5d3754a9de655f109"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "DJ02",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/User",
+          "layouts": "/services/data/v68.0/sobjects/User/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/User/quickActions",
+          "describe": "/services/data/v68.0/sobjects/User/describe",
+          "passwordUtilities": "/services/data/v68.0/sobjects/User/{ID}/password",
+          "namedLayouts": "/services/data/v68.0/sobjects/User/describe/namedLayouts/{LayoutName}",
+          "rowTemplate": "/services/data/v68.0/sobjects/User/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/User/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "14591723e92f66786969b366fb53895acf0f193885a4a7d5d3754a9de655f109"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "DJ03",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/Account",
+          "layouts": "/services/data/v68.0/sobjects/Account/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/Account/quickActions",
+          "describe": "/services/data/v68.0/sobjects/Account/describe",
+          "listviews": "/services/data/v68.0/sobjects/Account/listviews",
+          "approvalLayouts": "/services/data/v68.0/sobjects/Account/describe/approvalLayouts",
+          "rowTemplate": "/services/data/v68.0/sobjects/Account/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/Account/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "14591723e92f66786969b366fb53895acf0f193885a4a7d5d3754a9de655f109"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "DJ04",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/Account",
+          "layouts": "/services/data/v68.0/sobjects/Account/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/Account/quickActions",
+          "describe": "/services/data/v68.0/sobjects/Account/describe",
+          "listviews": "/services/data/v68.0/sobjects/Account/listviews",
+          "approvalLayouts": "/services/data/v68.0/sobjects/Account/describe/approvalLayouts",
+          "rowTemplate": "/services/data/v68.0/sobjects/Account/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/Account/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "14591723e92f66786969b366fb53895acf0f193885a4a7d5d3754a9de655f109"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "DJ05",
+      "native": {
+        "recordName": "Owned Serialized Record",
+        "recordType": "Account",
+        "absoluteUrls": {},
+        "relativeUrls": {},
+        "hasUrls": false,
+        "version": null,
+        "matched": false
+      },
+      "receiptSHA256": "14591723e92f66786969b366fb53895acf0f193885a4a7d5d3754a9de655f109"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "DJ06",
+      "native": {
+        "message": "Invalid decimal: ",
+        "exception": "System.TypeException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "14591723e92f66786969b366fb53895acf0f193885a4a7d5d3754a9de655f109"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "DJ01",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/User",
+          "layouts": "/services/data/v68.0/sobjects/User/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/User/quickActions",
+          "describe": "/services/data/v68.0/sobjects/User/describe",
+          "passwordUtilities": "/services/data/v68.0/sobjects/User/{ID}/password",
+          "namedLayouts": "/services/data/v68.0/sobjects/User/describe/namedLayouts/{LayoutName}",
+          "rowTemplate": "/services/data/v68.0/sobjects/User/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/User/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "0d3ba7f19df9310e569619f807c71df5ae0514e15d5b3fecceb26727cb97256c"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "DJ02",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/User",
+          "layouts": "/services/data/v68.0/sobjects/User/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/User/quickActions",
+          "describe": "/services/data/v68.0/sobjects/User/describe",
+          "passwordUtilities": "/services/data/v68.0/sobjects/User/{ID}/password",
+          "namedLayouts": "/services/data/v68.0/sobjects/User/describe/namedLayouts/{LayoutName}",
+          "rowTemplate": "/services/data/v68.0/sobjects/User/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/User/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "0d3ba7f19df9310e569619f807c71df5ae0514e15d5b3fecceb26727cb97256c"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "DJ03",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/Account",
+          "layouts": "/services/data/v68.0/sobjects/Account/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/Account/quickActions",
+          "describe": "/services/data/v68.0/sobjects/Account/describe",
+          "listviews": "/services/data/v68.0/sobjects/Account/listviews",
+          "approvalLayouts": "/services/data/v68.0/sobjects/Account/describe/approvalLayouts",
+          "rowTemplate": "/services/data/v68.0/sobjects/Account/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/Account/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "0d3ba7f19df9310e569619f807c71df5ae0514e15d5b3fecceb26727cb97256c"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "DJ04",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/Account",
+          "layouts": "/services/data/v68.0/sobjects/Account/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/Account/quickActions",
+          "describe": "/services/data/v68.0/sobjects/Account/describe",
+          "listviews": "/services/data/v68.0/sobjects/Account/listviews",
+          "approvalLayouts": "/services/data/v68.0/sobjects/Account/describe/approvalLayouts",
+          "rowTemplate": "/services/data/v68.0/sobjects/Account/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/Account/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "0d3ba7f19df9310e569619f807c71df5ae0514e15d5b3fecceb26727cb97256c"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "DJ05",
+      "native": {
+        "recordName": "Owned Serialized Record",
+        "recordType": "Account",
+        "absoluteUrls": {},
+        "relativeUrls": {},
+        "hasUrls": false,
+        "version": null,
+        "matched": false
+      },
+      "receiptSHA256": "0d3ba7f19df9310e569619f807c71df5ae0514e15d5b3fecceb26727cb97256c"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "DJ06",
+      "native": {
+        "message": "Invalid decimal: ",
+        "exception": "System.TypeException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "0d3ba7f19df9310e569619f807c71df5ae0514e15d5b3fecceb26727cb97256c"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "DJ01",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/User",
+          "layouts": "/services/data/v68.0/sobjects/User/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/User/quickActions",
+          "describe": "/services/data/v68.0/sobjects/User/describe",
+          "passwordUtilities": "/services/data/v68.0/sobjects/User/{ID}/password",
+          "namedLayouts": "/services/data/v68.0/sobjects/User/describe/namedLayouts/{LayoutName}",
+          "rowTemplate": "/services/data/v68.0/sobjects/User/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/User/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "e0d0f2a7cae00a8a52f57ba484aae6c5f1ba21db670b9c9481571ee453ab946f"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "DJ02",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/User",
+          "layouts": "/services/data/v68.0/sobjects/User/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/User/quickActions",
+          "describe": "/services/data/v68.0/sobjects/User/describe",
+          "passwordUtilities": "/services/data/v68.0/sobjects/User/{ID}/password",
+          "namedLayouts": "/services/data/v68.0/sobjects/User/describe/namedLayouts/{LayoutName}",
+          "rowTemplate": "/services/data/v68.0/sobjects/User/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/User/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "e0d0f2a7cae00a8a52f57ba484aae6c5f1ba21db670b9c9481571ee453ab946f"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "DJ03",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/Account",
+          "layouts": "/services/data/v68.0/sobjects/Account/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/Account/quickActions",
+          "describe": "/services/data/v68.0/sobjects/Account/describe",
+          "listviews": "/services/data/v68.0/sobjects/Account/listviews",
+          "approvalLayouts": "/services/data/v68.0/sobjects/Account/describe/approvalLayouts",
+          "rowTemplate": "/services/data/v68.0/sobjects/Account/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/Account/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "e0d0f2a7cae00a8a52f57ba484aae6c5f1ba21db670b9c9481571ee453ab946f"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "DJ04",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/Account",
+          "layouts": "/services/data/v68.0/sobjects/Account/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/Account/quickActions",
+          "describe": "/services/data/v68.0/sobjects/Account/describe",
+          "listviews": "/services/data/v68.0/sobjects/Account/listviews",
+          "approvalLayouts": "/services/data/v68.0/sobjects/Account/describe/approvalLayouts",
+          "rowTemplate": "/services/data/v68.0/sobjects/Account/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/Account/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "e0d0f2a7cae00a8a52f57ba484aae6c5f1ba21db670b9c9481571ee453ab946f"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "DJ05",
+      "native": {
+        "recordName": "Owned Serialized Record",
+        "recordType": "Account",
+        "absoluteUrls": {},
+        "relativeUrls": {},
+        "hasUrls": false,
+        "version": null,
+        "matched": false
+      },
+      "receiptSHA256": "e0d0f2a7cae00a8a52f57ba484aae6c5f1ba21db670b9c9481571ee453ab946f"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "DJ06",
+      "native": {
+        "message": "Invalid decimal: ",
+        "exception": "System.TypeException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "e0d0f2a7cae00a8a52f57ba484aae6c5f1ba21db670b9c9481571ee453ab946f"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "DJ01",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/User",
+          "layouts": "/services/data/v68.0/sobjects/User/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/User/quickActions",
+          "describe": "/services/data/v68.0/sobjects/User/describe",
+          "passwordUtilities": "/services/data/v68.0/sobjects/User/{ID}/password",
+          "namedLayouts": "/services/data/v68.0/sobjects/User/describe/namedLayouts/{LayoutName}",
+          "rowTemplate": "/services/data/v68.0/sobjects/User/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/User/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "c8d812e3df4deed1cad320a614fbe2b68764843d8e05082efcba03de84d44413"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "DJ02",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/User",
+          "layouts": "/services/data/v68.0/sobjects/User/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/User/quickActions",
+          "describe": "/services/data/v68.0/sobjects/User/describe",
+          "passwordUtilities": "/services/data/v68.0/sobjects/User/{ID}/password",
+          "namedLayouts": "/services/data/v68.0/sobjects/User/describe/namedLayouts/{LayoutName}",
+          "rowTemplate": "/services/data/v68.0/sobjects/User/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/User/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "c8d812e3df4deed1cad320a614fbe2b68764843d8e05082efcba03de84d44413"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "DJ03",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/Account",
+          "layouts": "/services/data/v68.0/sobjects/Account/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/Account/quickActions",
+          "describe": "/services/data/v68.0/sobjects/Account/describe",
+          "listviews": "/services/data/v68.0/sobjects/Account/listviews",
+          "approvalLayouts": "/services/data/v68.0/sobjects/Account/describe/approvalLayouts",
+          "rowTemplate": "/services/data/v68.0/sobjects/Account/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/Account/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "c8d812e3df4deed1cad320a614fbe2b68764843d8e05082efcba03de84d44413"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "DJ04",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/Account",
+          "layouts": "/services/data/v68.0/sobjects/Account/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/Account/quickActions",
+          "describe": "/services/data/v68.0/sobjects/Account/describe",
+          "listviews": "/services/data/v68.0/sobjects/Account/listviews",
+          "approvalLayouts": "/services/data/v68.0/sobjects/Account/describe/approvalLayouts",
+          "rowTemplate": "/services/data/v68.0/sobjects/Account/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/Account/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "c8d812e3df4deed1cad320a614fbe2b68764843d8e05082efcba03de84d44413"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "DJ05",
+      "native": {
+        "recordName": "Owned Serialized Record",
+        "recordType": "Account",
+        "absoluteUrls": {},
+        "relativeUrls": {},
+        "hasUrls": false,
+        "version": null,
+        "matched": false
+      },
+      "receiptSHA256": "c8d812e3df4deed1cad320a614fbe2b68764843d8e05082efcba03de84d44413"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "DJ06",
+      "native": {
+        "message": "Invalid decimal: ",
+        "exception": "System.TypeException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "c8d812e3df4deed1cad320a614fbe2b68764843d8e05082efcba03de84d44413"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "DJ01",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/User",
+          "layouts": "/services/data/v68.0/sobjects/User/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/User/quickActions",
+          "describe": "/services/data/v68.0/sobjects/User/describe",
+          "passwordUtilities": "/services/data/v68.0/sobjects/User/{ID}/password",
+          "namedLayouts": "/services/data/v68.0/sobjects/User/describe/namedLayouts/{LayoutName}",
+          "rowTemplate": "/services/data/v68.0/sobjects/User/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/User/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "884ee8dd93e684c17af2c7953a3556d4a7324881a81b08f9110cd3139fcea9e2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "DJ02",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/User",
+          "layouts": "/services/data/v68.0/sobjects/User/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/User/quickActions",
+          "describe": "/services/data/v68.0/sobjects/User/describe",
+          "passwordUtilities": "/services/data/v68.0/sobjects/User/{ID}/password",
+          "namedLayouts": "/services/data/v68.0/sobjects/User/describe/namedLayouts/{LayoutName}",
+          "rowTemplate": "/services/data/v68.0/sobjects/User/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/User/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "884ee8dd93e684c17af2c7953a3556d4a7324881a81b08f9110cd3139fcea9e2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "DJ03",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/Account",
+          "layouts": "/services/data/v68.0/sobjects/Account/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/Account/quickActions",
+          "describe": "/services/data/v68.0/sobjects/Account/describe",
+          "listviews": "/services/data/v68.0/sobjects/Account/listviews",
+          "approvalLayouts": "/services/data/v68.0/sobjects/Account/describe/approvalLayouts",
+          "rowTemplate": "/services/data/v68.0/sobjects/Account/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/Account/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "884ee8dd93e684c17af2c7953a3556d4a7324881a81b08f9110cd3139fcea9e2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "DJ04",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/Account",
+          "layouts": "/services/data/v68.0/sobjects/Account/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/Account/quickActions",
+          "describe": "/services/data/v68.0/sobjects/Account/describe",
+          "listviews": "/services/data/v68.0/sobjects/Account/listviews",
+          "approvalLayouts": "/services/data/v68.0/sobjects/Account/describe/approvalLayouts",
+          "rowTemplate": "/services/data/v68.0/sobjects/Account/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/Account/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "884ee8dd93e684c17af2c7953a3556d4a7324881a81b08f9110cd3139fcea9e2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "DJ05",
+      "native": {
+        "recordName": "Owned Serialized Record",
+        "recordType": "Account",
+        "absoluteUrls": {},
+        "relativeUrls": {},
+        "hasUrls": false,
+        "version": null,
+        "matched": false
+      },
+      "receiptSHA256": "884ee8dd93e684c17af2c7953a3556d4a7324881a81b08f9110cd3139fcea9e2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "DJ06",
+      "native": {
+        "message": "Invalid decimal: ",
+        "exception": "System.TypeException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "884ee8dd93e684c17af2c7953a3556d4a7324881a81b08f9110cd3139fcea9e2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "DJ01",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/User",
+          "layouts": "/services/data/v68.0/sobjects/User/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/User/quickActions",
+          "describe": "/services/data/v68.0/sobjects/User/describe",
+          "passwordUtilities": "/services/data/v68.0/sobjects/User/{ID}/password",
+          "namedLayouts": "/services/data/v68.0/sobjects/User/describe/namedLayouts/{LayoutName}",
+          "rowTemplate": "/services/data/v68.0/sobjects/User/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/User/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "e6fc382825848209642c14a487a0bf382f52595eac9d8f4965362e8c3b5439e2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "DJ02",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/User",
+          "layouts": "/services/data/v68.0/sobjects/User/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/User/quickActions",
+          "describe": "/services/data/v68.0/sobjects/User/describe",
+          "passwordUtilities": "/services/data/v68.0/sobjects/User/{ID}/password",
+          "namedLayouts": "/services/data/v68.0/sobjects/User/describe/namedLayouts/{LayoutName}",
+          "rowTemplate": "/services/data/v68.0/sobjects/User/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/User/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "e6fc382825848209642c14a487a0bf382f52595eac9d8f4965362e8c3b5439e2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "DJ03",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/Account",
+          "layouts": "/services/data/v68.0/sobjects/Account/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/Account/quickActions",
+          "describe": "/services/data/v68.0/sobjects/Account/describe",
+          "listviews": "/services/data/v68.0/sobjects/Account/listviews",
+          "approvalLayouts": "/services/data/v68.0/sobjects/Account/describe/approvalLayouts",
+          "rowTemplate": "/services/data/v68.0/sobjects/Account/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/Account/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "e6fc382825848209642c14a487a0bf382f52595eac9d8f4965362e8c3b5439e2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "DJ04",
+      "native": {
+        "absoluteUrls": {},
+        "relativeUrls": {
+          "sobject": "/services/data/v68.0/sobjects/Account",
+          "layouts": "/services/data/v68.0/sobjects/Account/describe/layouts",
+          "quickActions": "/services/data/v68.0/sobjects/Account/quickActions",
+          "describe": "/services/data/v68.0/sobjects/Account/describe",
+          "listviews": "/services/data/v68.0/sobjects/Account/listviews",
+          "approvalLayouts": "/services/data/v68.0/sobjects/Account/describe/approvalLayouts",
+          "rowTemplate": "/services/data/v68.0/sobjects/Account/{ID}",
+          "compactLayouts": "/services/data/v68.0/sobjects/Account/describe/compactLayouts"
+        },
+        "hasUrls": true,
+        "version": "68.0",
+        "matched": true
+      },
+      "receiptSHA256": "e6fc382825848209642c14a487a0bf382f52595eac9d8f4965362e8c3b5439e2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "DJ05",
+      "native": {
+        "recordName": "Owned Serialized Record",
+        "recordType": "Account",
+        "absoluteUrls": {},
+        "relativeUrls": {},
+        "hasUrls": false,
+        "version": null,
+        "matched": false
+      },
+      "receiptSHA256": "e6fc382825848209642c14a487a0bf382f52595eac9d8f4965362e8c3b5439e2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "DJ06",
+      "native": {
+        "message": "Invalid decimal: ",
+        "exception": "System.TypeException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "e6fc382825848209642c14a487a0bf382f52595eac9d8f4965362e8c3b5439e2"
+    }
+  ],
+  "projection": "Deferred User and Account describe JSON URLs, both suppress-null overloads, plus ordinary record and invalid decimal controls. URLs expose platform API68 independently of captured source/transport62/67/68; no absolute hosts observed.",
+  "uncaptured": [
+    "Other objects, namespaces, APIs, absolute URL origins and other describe attributes remain uncaptured.",
+    "No PushTopic field, DML, query or ApiVersion default behavior is inferred; the failure occurs before record creation."
+  ]
+}

@@ -467,7 +467,8 @@ func TestRenderOutputFieldUsesParentRelationshipDisplayName(t *testing.T) {
 	if link.Parent == nil || link.Parent.Data != "span" {
 		t.Fatal("owner link is not inside its outputField span")
 	}
-	wantHref := "/record/User/" + string(owner.ID)
+	// V09 lookup_standard_owner_runtime: preserve native /<Id> routing syntax.
+	wantHref := "/" + string(owner.ID)
 	linkText := fieldPresentationText(link)
 	spanText := fieldPresentationText(link.Parent)
 	if fieldPresentationAttr(link, "href") != wantHref || linkText != "Ada Owner" || spanText != "Ada Owner" ||
@@ -580,7 +581,9 @@ func TestRenderOwnerOutputFieldRequiresAuthorizedUserName(t *testing.T) {
 			}
 			const linkStart = `<a href=`
 			if test.deny == "" {
-				wantLink := `<a href="/record/User/` + string(ownerID) + `">` + html.EscapeString(ownerName) + `</a>`
+				// V09 lookup_standard_owner_runtime backs the href; retain the
+				// existing authorized-name and denial assertions below.
+				wantLink := `<a href="/` + string(ownerID) + `">` + html.EscapeString(ownerName) + `</a>`
 				if count := strings.Count(result.HTML, linkStart); count != 1 || !strings.Contains(result.HTML, wantLink) {
 					t.Fatalf("readable owner links=%d exactAuthorizedLink=%t; want one", count, strings.Contains(result.HTML, wantLink))
 				}

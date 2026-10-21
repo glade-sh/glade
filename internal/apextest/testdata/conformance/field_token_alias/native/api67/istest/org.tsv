@@ -1,0 +1,9 @@
+id	group	route	status	value
+FA01	FIELD_TOKEN	istest	runtime	{"outcome":"runtime","value":true}
+FA02	FIELD_TOKEN	istest	runtime	{"outcome":"runtime","value":true}
+FA03	FIELD_TOKEN	istest	runtime	{"outcome":"runtime","value":true}
+FA04	FIELD_TOKEN	istest	runtime	{"outcome":"runtime","value":true}
+FC01	CONTROL	istest	runtime	{"outcome":"runtime","value":true}
+FC02	CONTROL	istest	runtime	{"outcome":"runtime","value":true}
+FC03	CONTROL	istest	runtime	{"outcome":"runtime","value":true}
+FC04	CONTROL	istest	runtime	{"outcome":"runtime","value":true}

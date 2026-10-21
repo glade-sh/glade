@@ -1,0 +1,9 @@
+api	case	accepted	observation
+62.0	read	true	seed
+62.0	assign	true	sprout
+62.0	lowercase	true	control
+62.0	missing	false	Variable does not exist: Absent__c
+67.0	read	true	seed
+67.0	assign	true	sprout
+67.0	lowercase	true	control
+67.0	missing	false	Variable does not exist: Absent__c

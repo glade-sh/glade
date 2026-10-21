@@ -704,6 +704,9 @@ func (vm *VM) generatedOptionalWrapperStaticDefault(className, methodName string
 }
 
 func (vm *VM) callCartExtensionCartTestUtilStaticDefault(methodName string, args []Value) (Value, bool) {
+	if cart, handled := vm.cartTestFixture(methodName, args); handled {
+		return cart, true
+	}
 	switch strings.ToLower(methodName) {
 	case "createcart":
 		if len(args) != 0 && len(args) != 1 {
@@ -1252,7 +1255,9 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 			result.Fields["outputParameters"] = outputs
 			result.Fields["success"] = Bool(success)
 			if err != nil {
-				result.Fields["outputParameters"] = Null
+				if _, flowFault := err.(*invocableFlowActionFault); !flowFault {
+					result.Fields["outputParameters"] = Null
+				}
 				result.Fields["errors"] = invocableActionErrors(err)
 				if _, missing := err.(*invocableMissingActionError); missing {
 					result.Fields["errors"].List[0].Fields["code"] = String("MISSING_RECORD")
@@ -1266,17 +1271,13 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 	}
 }
 
-// invokeCustomApexAction adapts Invocable.Action's named parameter map to the
-// request DTO expected by a local @InvocableMethod, then exposes the returned
-// DTO fields as the action output parameter map. Salesforce invokes Apex
-// actions through this same request/response shape.
+// invokeCustomApexAction adapts named parameters to the record, scalar or
+// request wrapper expected by a local @InvocableMethod, then exposes returned
+// values as the action output parameter map.
 func (vm *VM) invokeCustomApexAction(action Value, invocation Value, result *Result) (Value, bool, error) {
 	name := invocableActionDisplayName(action)
 	if strings.EqualFold(invocableActionType(action), "flow") {
-		if _, found := vm.autolaunchedFlowRule(name); !found {
-			return Null, false, &invocableMissingActionError{name: name}
-		}
-		return Null, false, unsupportedCallError("Invocable.Action.invoke hosted Flow action " + name)
+		return vm.invokeInvocableFlowAction(action, invocation, result)
 	}
 	if strings.EqualFold(invocableActionType(action), "quickAction") {
 		if _, found := vm.quickActionByName(name); !found {
@@ -1323,6 +1324,12 @@ func (vm *VM) invokeCustomApexAction(action Value, invocation Value, result *Res
 			keyValue, found := invocation.MapKeys[encoded]
 			if !found || keyValue.Kind != ValueString {
 				continue
+			}
+			if len(invocation.Map) == 1 {
+				if recordInput, ok := vm.invocableRecordInput(elementType, method.Params[0].Name, keyValue.Text, invocation.Map[encoded]); ok {
+					request = recordInput
+					break
+				}
 			}
 			request.Fields[keyValue.Text] = invocation.Map[encoded]
 		}
@@ -1372,6 +1379,12 @@ func invocableActionErrors(err error) Value {
 	errors := typedList("List<Invocable.Action.Error>")
 	errorValue := Object("Invocable.Action.Error")
 	errorValue.Fields["message"] = String(err.Error())
+	switch fault := err.(type) {
+	case *invocableFlowActionFault:
+		errorValue.Fields["code"] = String(fault.code)
+	case *invocableFlowActionParameterError:
+		errorValue.Fields["code"] = String("UNKNOWN_EXCEPTION")
+	}
 	errors.List = append(errors.List, errorValue)
 	return errors
 }

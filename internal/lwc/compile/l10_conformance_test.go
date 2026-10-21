@@ -144,9 +144,34 @@ func l10SalesforceConformance(t *testing.T) {
 	fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason")
 	matches, total, compileMatches, domMatches, localDOMRows, carries := 0, 0, 0, 0, 0, 0
 	diagnosticMatches, diagnosticTotal := 0, 0
-	for _, api := range versions {
+	type browserPass struct {
+		dom               map[string]json.RawMessage
+		domErrors         map[string]string
+		runtimeCompileErr error
+		browserErr        error
+	}
+	// Each pass owns its temp project/dist, org, server/port and Node/browser.
+	// Toolchain files and case inputs are read-only; reports stay on this goroutine.
+	observe := func(pass int) browserPass {
+		dom, domErrors, runtimeCompileErr, browserErr := l10ObserveDOM(t, versions[pass], runtimeCases, dependencyRoot, toolchain)
+		return browserPass{dom, domErrors, runtimeCompileErr, browserErr}
+	}
+	parallel := browserAPIParallelism(len(versions))
+	var passes []browserPass
+	if parallel > 1 {
+		passes = runBrowserPasses(len(versions), parallel, observe)
+	}
+	for pass, api := range versions {
 		compiled := l10CompileCases(t, api, compileCases)
-		dom, domErrors, runtimeCompileErr, browserErr := l10ObserveDOM(t, api, runtimeCases, dependencyRoot, toolchain)
+		var result browserPass
+		if parallel == 1 {
+			// Keep compile/observe/report interleaved in the legacy capped mode.
+			result = observe(pass)
+		} else {
+			result = passes[pass]
+		}
+		dom, domErrors, runtimeCompileErr, browserErr := result.dom, result.domErrors, result.runtimeCompileErr, result.browserErr
+		l10CheckCompilerEnvironment(t, runtimeCompileErr)
 		if browserErr != nil {
 			t.Fatalf("L10 browser environment: %v", browserErr)
 		}
@@ -303,13 +328,14 @@ func l10CompileCases(t *testing.T, api string, cases []l10Case) map[string]compi
 func l10ObserveDOM(t *testing.T, api string, cases []l10Case, dependencyRoot, toolchain string) (map[string]json.RawMessage, map[string]string, error, error) {
 	t.Helper()
 	root := t.TempDir()
-	l10Copy(t, filepath.Join("testdata", "l10_runtime", "api"+api[:2]), root)
+	if err := l10Copy(filepath.Join("testdata", "l10_runtime", "api"+api[:2]), root); err != nil {
+		return nil, nil, nil, err
+	}
 	p, err := project.Load(root)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	manifest, err := compile.Compile(p, compile.Options{OutDir: filepath.Join(root, "dist")})
-	l10CheckCompilerEnvironment(t, err)
 	if err != nil {
 		return nil, nil, err, nil
 	}
@@ -345,7 +371,9 @@ func l10ObserveDOM(t *testing.T, api string, cases []l10Case, dependencyRoot, to
 	}
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
-	l10SetupOrgMetadata(t, &org)
+	if err := l10SetupOrgMetadata(&org); err != nil {
+		return nil, nil, nil, err
+	}
 	org.Metadata = registry
 	product := server.NewWithSource(&org, source)
 	product.SetProjectIndex(typesys.Build(p, schema))
@@ -442,9 +470,8 @@ func l10CheckCompilerEnvironment(t *testing.T, err error) {
 	}
 }
 
-func l10Copy(t *testing.T, source, target string) {
-	t.Helper()
-	if err := filepath.WalkDir(source, func(path string, entry fs.DirEntry, err error) error {
+func l10Copy(source, target string) error {
+	return filepath.WalkDir(source, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -459,11 +486,12 @@ func l10Copy(t *testing.T, source, target string) {
 		if err != nil {
 			return err
 		}
-		l10Write(t, filepath.Join(target, rel), data)
-		return nil
-	}); err != nil {
-		t.Fatal(err)
-	}
+		output := filepath.Join(target, rel)
+		if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
+			return err
+		}
+		return os.WriteFile(output, data, 0600)
+	})
 }
 
 func l10Write(t *testing.T, path string, data []byte) {

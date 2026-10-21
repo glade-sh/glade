@@ -1,0 +1,10 @@
+shape	boundary
+account_names	Business Account has one name field
+account_query	Name field token reads a queried business name
+event_name	Event has no Name field
+event_subject	Event retains Subject
+constructor	Generic record list passed into an unrelated typed constructor
+parameter	Generic record list passed into an unrelated typed method
+return	Generic record list returned as unrelated typed list
+assignment	Generic record list assigned to unrelated typed list
+cast	Generic record list explicitly cast to unrelated typed list

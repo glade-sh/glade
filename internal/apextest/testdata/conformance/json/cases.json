@@ -1,9 +1,17 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
-  "source": "Owned JSON observations at API 62.0 and 67.0; 299 version-stable rows, R303 has request-specific error IDs.",
+  "source": "Owned JSON observations at API 62.0 and 67.0; API 68 primary anonymous capture native-capture (SHA-256 d2beeb3a92c4918011f673aa077ef8ffb6bf2c189b682608cb305d85a0680b07) answers 299 version-stable rows and is missing R303; R303 has request-specific error IDs at API 62, 67 and 68.",
+  "api68Uncaptured": [],
+  "api68Recaptured": {
+    "source": "Native anonymous UNCAUGHT recapture native-capture (SHA-256 1bc8b8f835729d211a6bd0e94062fa6be2508466e59437f8025e8bbbe1deb599)",
+    "expected": {
+      "R303": "UNCAUGHT|System.UnexpectedException: Salesforce System Error: 307887990-103919 (-1479444175) (-1479444175)"
+    }
+  },
   "earlierRowGroups": {
     "class-deserialize-strict": [
       "R211",

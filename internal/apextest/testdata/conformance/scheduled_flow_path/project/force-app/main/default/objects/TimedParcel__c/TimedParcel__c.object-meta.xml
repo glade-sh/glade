@@ -1,0 +1,1 @@
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><deploymentStatus>Deployed</deploymentStatus><label>Timed Parcel</label><nameField><label>Timed Parcel Name</label><type>Text</type></nameField><pluralLabel>Timed Parcels</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>

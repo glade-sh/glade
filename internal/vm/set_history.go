@@ -1,6 +1,10 @@
 package vm
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/glade-sh/glade/internal/apexversion"
+)
 
 // A missing/untracked tag preserves the baseline of producers without VM
 // insertion context (plain Set and JSON collection producers).
@@ -33,7 +37,6 @@ func (vm *VM) captureSetInsertionHash(value Value) (setInsertionHash, error) {
 	if err != nil {
 		return setInsertionHash{}, err
 	}
-	// Identity-reference and framework fallbacks retain their equality baseline.
 	// Custom equality may span types, so history stores only the numeric hash,
 	// leaving same-hash comparisons to the existing Apex equality path.
 	prefix := string(ValueObject) + ":" + value.Type + ":hash:"
@@ -43,13 +46,87 @@ func (vm *VM) captureSetInsertionHash(value Value) (setInsertionHash, error) {
 	return setInsertionHash{key: strings.TrimPrefix(key, prefix), tracked: true}, nil
 }
 
+// Concrete typed Set literals and add capture identity history. Map.keySet
+// keeps captureSetInsertionHash's baseline.
+func (vm *VM) captureTypedSetInsertionHash(setType string, value Value) (setInsertionHash, error) {
+	element, typed := collectionElementType(vm.resolveAssignableTargetType(setType))
+	if value.Kind == ValueObject && collectionBase(setType) == "Set" && typed {
+		// Resolve short nested names and namespace-qualified runtime spellings
+		// to the same class for both literal and add identity-hash capture.
+		if !strings.EqualFold(element, value.Type) {
+			if class, ok := vm.lookupClass(vm.resolveRuntimeTypeName(element)); ok {
+				element = runtimeClassName(class)
+			}
+		}
+		if vm.sameSetClassIdentity(element, value.Type) && vm.setEqualsOnlyIdentity(value) {
+			key, handled, err := vm.apexObjectHashMapKeyChecked(value)
+			if err != nil {
+				return setInsertionHash{}, err
+			}
+			if handled && strings.HasPrefix(key, string(ValueObject)+":"+value.Type+":ref:") {
+				return setInsertionHash{key: key, tracked: true}, nil
+			}
+		}
+	}
+	return vm.captureSetInsertionHash(value)
+}
+
+// Resolve aliases only within the existing concrete typed Set identity guard.
+// Equal local, nested and namespace-qualified class names keep the same hash
+// history; subclasses and unrelated classes remain separate identities.
+func (vm *VM) sameSetClassIdentity(left, right string) bool {
+	if strings.EqualFold(left, right) {
+		return true
+	}
+	leftName, leftOK := vm.resolveClassName(left)
+	rightName, rightOK := vm.resolveClassName(right)
+	if !leftOK || !rightOK {
+		return false
+	}
+	leftClass, leftOK := vm.lookupClass(leftName)
+	rightClass, rightOK := vm.lookupClass(rightName)
+	return leftOK && rightOK && strings.EqualFold(runtimeClassName(leftClass), runtimeClassName(rightClass))
+}
+
+// The observed plain bulk/copy shapes retain distinct equals-only identities.
+// Other producers, APIs and namespace contexts keep their existing capture.
+func (vm *VM) captureBulkSetInsertionHash(setType string, value Value) (setInsertionHash, error) {
+	version := vm.currentMethod.APIVersion
+	if version == "" && vm.Org != nil {
+		version = vm.Org.APIVersion
+	}
+	major, known := apexversion.Major(version)
+	if known && (major == 62 || major == 67 || major == 68) && vm.currentMethod.Namespace == "" &&
+		(vm.Org == nil || vm.Org.Namespace == "") {
+		return vm.captureTypedSetInsertionHash(setType, value)
+	}
+	return vm.captureSetInsertionHash(value)
+}
+
+func (vm *VM) setEqualsOnlyIdentity(value Value) bool {
+	hash, hasHash, hashAmbiguous := vm.resolveInstanceMethodForArgs(value.Type, "hashCode", nil)
+	if hashAmbiguous || (hasHash && !strings.EqualFold(hash.ClassName, "Object")) {
+		return false
+	}
+	equals, hasEquals, equalsAmbiguous := vm.resolveInstanceMethodForArgs(value.Type, "equals", []Value{value})
+	return hasEquals && !equalsAmbiguous && vm.sameSetClassIdentity(equals.ClassName, value.Type) &&
+		!equals.IsStatic && strings.EqualFold(equals.ReturnType, "Boolean") &&
+		len(equals.Params) == 1 && strings.EqualFold(equals.Params[0].Type, "Object")
+}
+
 func (vm *VM) setIndexOfValueWithHash(set Value, needle Value, hash setInsertionHash, result *Result) (int, error) {
 	for index, value := range set.Set {
 		stored := set.setInsertionHashAt(index)
 		if stored.tracked && (!hash.tracked || stored.key != hash.key) {
-			continue
+			// Untracked inputs retain the baseline equality scan
+			// against the new literal/add identity history. Numeric/custom
+			// hash history keeps its existing bucket restriction.
+			identityPrefix := string(ValueObject) + ":" + value.Type + ":ref:"
+			if hash.tracked || !strings.HasPrefix(stored.key, identityPrefix) {
+				continue
+			}
 		}
-		equal, err := vm.apexCollectionElementEquals(value, needle, result)
+		equal, err := vm.equalsUserSetKey(value, needle, result)
 		if err != nil {
 			return -1, err
 		}
@@ -63,7 +140,7 @@ func (vm *VM) setIndexOfValueWithHash(set Value, needle Value, hash setInsertion
 func (vm *VM) setIndexOfValue(set Value, needle Value, result *Result) (int, error) {
 	for index := range set.Set {
 		if set.setInsertionHashAt(index).tracked {
-			hash, err := vm.captureSetInsertionHash(needle)
+			hash, err := vm.captureTypedSetInsertionHash(set.Type, needle)
 			if err != nil {
 				return -1, err
 			}
@@ -77,7 +154,7 @@ func (vm *VM) setIndexOfValue(set Value, needle Value, result *Result) (int, err
 			}
 			continue
 		}
-		equal, err := vm.apexCollectionElementEquals(value, needle, result)
+		equal, err := vm.equalsUserSetKey(value, needle, result)
 		if err != nil {
 			return -1, err
 		}
@@ -126,7 +203,7 @@ func removeSetEntry(set Value, index int) Value {
 	return set
 }
 
-func (vm *VM) constructTrackedSet(typeName string, values []Value, result *Result) (Value, error) {
+func (vm *VM) constructTrackedSet(typeName string, values []Value, literal bool, result *Result) (Value, error) {
 	set := Set()
 	set.Type = typeName
 	for _, value := range values {
@@ -134,7 +211,12 @@ func (vm *VM) constructTrackedSet(typeName string, values []Value, result *Resul
 		if err != nil {
 			return Null, err
 		}
-		hash, err := vm.captureSetInsertionHash(item)
+		var hash setInsertionHash
+		if literal {
+			hash, err = vm.captureTypedSetInsertionHash(typeName, item)
+		} else {
+			hash, err = vm.captureBulkSetInsertionHash(typeName, item)
+		}
 		if err != nil {
 			return Null, err
 		}

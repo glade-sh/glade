@@ -1,0 +1,330 @@
+{
+  "run": 1,
+  "nativeCells": 294,
+  "runtimeCells": 240,
+  "rejectionCategoryCells": 54,
+  "carriedNativeCells": 12,
+  "assertedCells": 282,
+  "packetSHA256": "eb705eb1e98374e340cb93590e5a42ca03089233076427b8f64964d689ebe9d9",
+  "receipts": [
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "orgTSVSHA256": "02bcc26aa201e1824d53d67c330e94b7e97fb7ad8c3ade7d8b0fe8f2c54c82ef",
+      "run": {
+        "orgIdSha256": "891513b0f31ef4104296583b305b542c3dcb88f82bd3853242d445826ae70b0a",
+        "api": "62.0",
+        "route": "anonymous",
+        "rows_expected": 49,
+        "rows_observed": 49,
+        "fixture_errors": 0,
+        "rows_recorded": 49,
+        "complete": true,
+        "manifest_sha256": "eb705eb1e98374e340cb93590e5a42ca03089233076427b8f64964d689ebe9d9",
+        "answer_source": "native Salesforce",
+        "groups": {
+          "CONTROL": 1,
+          "FLOW_CONTROL": 1,
+          "S1": 23,
+          "S2": 11,
+          "S3": 13
+        },
+        "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+      }
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "orgTSVSHA256": "d7276e3d265df0a77e3d8395f587ae74ebcf76f72572ed6cc19120ccea086d23",
+      "run": {
+        "orgIdSha256": "891513b0f31ef4104296583b305b542c3dcb88f82bd3853242d445826ae70b0a",
+        "api": "62.0",
+        "route": "istest",
+        "rows_expected": 49,
+        "rows_observed": 49,
+        "fixture_errors": 0,
+        "rows_recorded": 49,
+        "complete": true,
+        "manifest_sha256": "eb705eb1e98374e340cb93590e5a42ca03089233076427b8f64964d689ebe9d9",
+        "answer_source": "native Salesforce",
+        "groups": {
+          "CONTROL": 1,
+          "FLOW_CONTROL": 1,
+          "S1": 23,
+          "S2": 11,
+          "S3": 13
+        },
+        "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+      }
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "orgTSVSHA256": "6dccce11d7c0302d986849d1d49f1f084ab426d03478752e901387f792b32c6e",
+      "run": {
+        "orgIdSha256": "891513b0f31ef4104296583b305b542c3dcb88f82bd3853242d445826ae70b0a",
+        "api": "67.0",
+        "route": "anonymous",
+        "rows_expected": 49,
+        "rows_observed": 49,
+        "fixture_errors": 0,
+        "rows_recorded": 49,
+        "complete": true,
+        "manifest_sha256": "eb705eb1e98374e340cb93590e5a42ca03089233076427b8f64964d689ebe9d9",
+        "answer_source": "native Salesforce",
+        "groups": {
+          "CONTROL": 1,
+          "FLOW_CONTROL": 1,
+          "S1": 23,
+          "S2": 11,
+          "S3": 13
+        },
+        "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+      }
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "orgTSVSHA256": "73c82d393558a31cd479810e0f0983bc54647579787b834585be340327bd8525",
+      "run": {
+        "orgIdSha256": "891513b0f31ef4104296583b305b542c3dcb88f82bd3853242d445826ae70b0a",
+        "api": "67.0",
+        "route": "istest",
+        "rows_expected": 49,
+        "rows_observed": 49,
+        "fixture_errors": 0,
+        "rows_recorded": 49,
+        "complete": true,
+        "manifest_sha256": "eb705eb1e98374e340cb93590e5a42ca03089233076427b8f64964d689ebe9d9",
+        "answer_source": "native Salesforce",
+        "groups": {
+          "CONTROL": 1,
+          "FLOW_CONTROL": 1,
+          "S1": 23,
+          "S2": 11,
+          "S3": 13
+        },
+        "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+      }
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "orgTSVSHA256": "62108e2ae12769c34f5b2b7db53222c0238065bda0b028928e92ba76474fb7ca",
+      "run": {
+        "orgIdSha256": "891513b0f31ef4104296583b305b542c3dcb88f82bd3853242d445826ae70b0a",
+        "api": "68.0",
+        "route": "anonymous",
+        "rows_expected": 49,
+        "rows_observed": 49,
+        "fixture_errors": 0,
+        "rows_recorded": 49,
+        "complete": true,
+        "manifest_sha256": "eb705eb1e98374e340cb93590e5a42ca03089233076427b8f64964d689ebe9d9",
+        "answer_source": "native Salesforce",
+        "groups": {
+          "CONTROL": 1,
+          "FLOW_CONTROL": 1,
+          "S1": 23,
+          "S2": 11,
+          "S3": 13
+        },
+        "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+      }
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "orgTSVSHA256": "aba358786331fccda47e54991516094e472d26ae1103759b3da5d1dd923af11a",
+      "run": {
+        "orgIdSha256": "891513b0f31ef4104296583b305b542c3dcb88f82bd3853242d445826ae70b0a",
+        "api": "68.0",
+        "route": "istest",
+        "rows_expected": 49,
+        "rows_observed": 49,
+        "fixture_errors": 0,
+        "rows_recorded": 49,
+        "complete": true,
+        "manifest_sha256": "eb705eb1e98374e340cb93590e5a42ca03089233076427b8f64964d689ebe9d9",
+        "answer_source": "native Salesforce",
+        "groups": {
+          "CONTROL": 1,
+          "FLOW_CONTROL": 1,
+          "S1": 23,
+          "S2": 11,
+          "S3": 13
+        },
+        "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+      }
+    }
+  ],
+  "pendingRun2Cells": 0,
+  "pendingRun2": [],
+  "completedRuns": [
+    1,
+    2
+  ],
+  "run2": {
+    "nativeCells": 252,
+    "runtimeCells": 210,
+    "rejectionCategoryCells": 42,
+    "carriedNativeCells": 0,
+    "assertedCells": 252,
+    "packetSHA256": "621fc6d213f81a0fed19031f8d412d4caa7b9dc2f406c4c8da200291ed2f0f99",
+    "receipts": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "orgTSVSHA256": "5b4e6a961e88a1e769d4279aff8245212e10c64b80bb3f32d959b2e2ecf904bf",
+        "run": {
+          "orgIdSha256": "2c40c423efe54c65f31f6d263c123613acc0219799c718c774a700708cd7b0b1",
+          "api": "62.0",
+          "route": "anonymous",
+          "rows_expected": 42,
+          "rows_observed": 42,
+          "fixture_errors": 0,
+          "rows_recorded": 42,
+          "complete": true,
+          "manifest_sha256": "621fc6d213f81a0fed19031f8d412d4caa7b9dc2f406c4c8da200291ed2f0f99",
+          "answer_source": "native Salesforce",
+          "groups": {
+            "CONTROL": 1,
+            "FLOW_CONTROL": 1,
+            "S4": 16,
+            "S5": 11,
+            "S6": 13
+          },
+          "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+        }
+      },
+      {
+        "api": "62.0",
+        "route": "istest",
+        "orgTSVSHA256": "7b106d332aad130d1e775d7d6274e235c23bb7fdc9a523f4e724524bfb1260cb",
+        "run": {
+          "orgIdSha256": "2c40c423efe54c65f31f6d263c123613acc0219799c718c774a700708cd7b0b1",
+          "api": "62.0",
+          "route": "istest",
+          "rows_expected": 42,
+          "rows_observed": 42,
+          "fixture_errors": 0,
+          "rows_recorded": 42,
+          "complete": true,
+          "manifest_sha256": "621fc6d213f81a0fed19031f8d412d4caa7b9dc2f406c4c8da200291ed2f0f99",
+          "answer_source": "native Salesforce",
+          "groups": {
+            "CONTROL": 1,
+            "FLOW_CONTROL": 1,
+            "S4": 16,
+            "S5": 11,
+            "S6": 13
+          },
+          "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+        }
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "orgTSVSHA256": "18ddbe12e4e1bf178b61f76a29b1ac843a27933f345bf6ec5eced7d8e74a4ff5",
+        "run": {
+          "orgIdSha256": "2c40c423efe54c65f31f6d263c123613acc0219799c718c774a700708cd7b0b1",
+          "api": "67.0",
+          "route": "anonymous",
+          "rows_expected": 42,
+          "rows_observed": 42,
+          "fixture_errors": 0,
+          "rows_recorded": 42,
+          "complete": true,
+          "manifest_sha256": "621fc6d213f81a0fed19031f8d412d4caa7b9dc2f406c4c8da200291ed2f0f99",
+          "answer_source": "native Salesforce",
+          "groups": {
+            "CONTROL": 1,
+            "FLOW_CONTROL": 1,
+            "S4": 16,
+            "S5": 11,
+            "S6": 13
+          },
+          "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+        }
+      },
+      {
+        "api": "67.0",
+        "route": "istest",
+        "orgTSVSHA256": "0117503848c5e4f4e6f3b0f70a28410737e8c9e88ba6453a2584fdc591faa830",
+        "run": {
+          "orgIdSha256": "2c40c423efe54c65f31f6d263c123613acc0219799c718c774a700708cd7b0b1",
+          "api": "67.0",
+          "route": "istest",
+          "rows_expected": 42,
+          "rows_observed": 42,
+          "fixture_errors": 0,
+          "rows_recorded": 42,
+          "complete": true,
+          "manifest_sha256": "621fc6d213f81a0fed19031f8d412d4caa7b9dc2f406c4c8da200291ed2f0f99",
+          "answer_source": "native Salesforce",
+          "groups": {
+            "CONTROL": 1,
+            "FLOW_CONTROL": 1,
+            "S4": 16,
+            "S5": 11,
+            "S6": 13
+          },
+          "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+        }
+      },
+      {
+        "api": "68.0",
+        "route": "anonymous",
+        "orgTSVSHA256": "98d599d4ee55928ed00c686281ad385d5b1a560a491278e882cf78a88a592168",
+        "run": {
+          "orgIdSha256": "2c40c423efe54c65f31f6d263c123613acc0219799c718c774a700708cd7b0b1",
+          "api": "68.0",
+          "route": "anonymous",
+          "rows_expected": 42,
+          "rows_observed": 42,
+          "fixture_errors": 0,
+          "rows_recorded": 42,
+          "complete": true,
+          "manifest_sha256": "621fc6d213f81a0fed19031f8d412d4caa7b9dc2f406c4c8da200291ed2f0f99",
+          "answer_source": "native Salesforce",
+          "groups": {
+            "CONTROL": 1,
+            "FLOW_CONTROL": 1,
+            "S4": 16,
+            "S5": 11,
+            "S6": 13
+          },
+          "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+        }
+      },
+      {
+        "api": "68.0",
+        "route": "istest",
+        "orgTSVSHA256": "7ce135c7d23cc62ff4745b121c80ec1ac704f207bd2022a0cb4fec59ff901bcf",
+        "run": {
+          "orgIdSha256": "2c40c423efe54c65f31f6d263c123613acc0219799c718c774a700708cd7b0b1",
+          "api": "68.0",
+          "route": "istest",
+          "rows_expected": 42,
+          "rows_observed": 42,
+          "fixture_errors": 0,
+          "rows_recorded": 42,
+          "complete": true,
+          "manifest_sha256": "621fc6d213f81a0fed19031f8d412d4caa7b9dc2f406c4c8da200291ed2f0f99",
+          "answer_source": "native Salesforce",
+          "groups": {
+            "CONTROL": 1,
+            "FLOW_CONTROL": 1,
+            "S4": 16,
+            "S5": 11,
+            "S6": 13
+          },
+          "release_drift": "same fresh org; compare 62/67/68 before attributing differences to API"
+        }
+      }
+    ]
+  },
+  "totalNativeCells": 546,
+  "totalAssertedCells": 534,
+  "totalCarriedNativeCells": 12
+}

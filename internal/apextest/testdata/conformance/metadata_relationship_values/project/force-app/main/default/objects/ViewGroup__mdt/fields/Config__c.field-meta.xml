@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Config__c</fullName><fieldManageability>DeveloperControlled</fieldManageability><label>Config</label><referenceTo>ViewConfig__mdt</referenceTo><relationshipLabel>Groups</relationshipLabel><relationshipName>ViewGroups</relationshipName><type>MetadataRelationship</type></CustomField>

@@ -1,0 +1,247 @@
+{
+  "cluster": "describe",
+  "shapeCount": 2,
+  "nativeObservationCount": 12,
+  "rows": [
+    {
+      "id": "CD06C",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{List<String> names=new List<String>();for(Schema.ChildRelationship rel:Cdl6290c06315__c.SObjectType.getDescribe().getChildRelationships()){String name=rel.getRelationshipName();if(name!=null && name.toLowerCase().contains('content')){names.add(name);}}names.sort();payload.put('names',names);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CD06C|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "a6b1206c695e86d5796481a4ed9ef0df09236828dbaa8069c6fee5fdfc434757"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "names": [
+                  "AttachedContentDocuments",
+                  "ContentDocumentLinks"
+                ]
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{List<String> names=new List<String>();for(Schema.ChildRelationship rel:Cdl67b2270d69__c.SObjectType.getDescribe().getChildRelationships()){String name=rel.getRelationshipName();if(name!=null && name.toLowerCase().contains('content')){names.add(name);}}names.sort();payload.put('names',names);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CD06C|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "475769d725c7a2f5e66ee7675d0a077e746129709155805aba730802d0162398"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "names": [
+                  "AttachedContentDocuments",
+                  "ContentDocumentLinks"
+                ]
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{List<String> names=new List<String>();for(Schema.ChildRelationship rel:Cdl68e2e44e96__c.SObjectType.getDescribe().getChildRelationships()){String name=rel.getRelationshipName();if(name!=null && name.toLowerCase().contains('content')){names.add(name);}}names.sort();payload.put('names',names);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CD06C|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "d3eff200c312461798896eb7bb95c752eedb4f7fc81a5eb2117f957de3ff641a"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "names": [
+                  "AttachedContentDocuments",
+                  "ContentDocumentLinks"
+                ]
+              }
+            },
+            "outcome": "runtime"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveCD06CTest": "@IsTest private class CdlObserveCD06CTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{List<String> names=new List<String>();for(Schema.ChildRelationship rel:Cdl6290c06315__c.SObjectType.getDescribe().getChildRelationships()){String name=rel.getRelationshipName();if(name!=null && name.toLowerCase().contains('content')){names.add(name);}}names.sort();payload.put('names',names);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>560){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CD06C|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCD06CTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCD06CTest": "955136bc707dfc399027be61934b64c754751f3dfea883385d03d1ed55a4cdf1"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "names": [
+                  "AttachedContentDocuments",
+                  "ContentDocumentLinks"
+                ]
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveCD06CTest": "@IsTest private class CdlObserveCD06CTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{List<String> names=new List<String>();for(Schema.ChildRelationship rel:Cdl67b2270d69__c.SObjectType.getDescribe().getChildRelationships()){String name=rel.getRelationshipName();if(name!=null && name.toLowerCase().contains('content')){names.add(name);}}names.sort();payload.put('names',names);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>560){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CD06C|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCD06CTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCD06CTest": "9dfe3e88eb7a57c2ce40e4c2b1080f573c3dac6463d4277c942dc9a9f8f73e3a"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "names": [
+                  "AttachedContentDocuments",
+                  "ContentDocumentLinks"
+                ]
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveCD06CTest": "@IsTest private class CdlObserveCD06CTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{List<String> names=new List<String>();for(Schema.ChildRelationship rel:Cdl68e2e44e96__c.SObjectType.getDescribe().getChildRelationships()){String name=rel.getRelationshipName();if(name!=null && name.toLowerCase().contains('content')){names.add(name);}}names.sort();payload.put('names',names);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>560){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CD06C|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCD06CTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCD06CTest": "cc78a567ea2167973574c7f816060d02849defef401b13c473087de31abf3d25"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "names": [
+                  "AttachedContentDocuments",
+                  "ContentDocumentLinks"
+                ]
+              }
+            },
+            "outcome": "runtime"
+          }
+        }
+      }
+    },
+    {
+      "id": "CD06A",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{List<String> names=new List<String>();for(Schema.ChildRelationship rel:Account.SObjectType.getDescribe().getChildRelationships()){String name=rel.getRelationshipName();if(name!=null && name.toLowerCase().contains('content')){names.add(name);}}names.sort();payload.put('names',names);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CD06A|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "38fdcb438f42fad0563296251c42d3d43e230f9fde59b39255945c888442ea74"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "names": [
+                  "AttachedContentDocuments",
+                  "ContentDocumentLinks"
+                ]
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{List<String> names=new List<String>();for(Schema.ChildRelationship rel:Account.SObjectType.getDescribe().getChildRelationships()){String name=rel.getRelationshipName();if(name!=null && name.toLowerCase().contains('content')){names.add(name);}}names.sort();payload.put('names',names);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CD06A|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "38fdcb438f42fad0563296251c42d3d43e230f9fde59b39255945c888442ea74"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "names": [
+                  "AttachedContentDocuments",
+                  "ContentDocumentLinks"
+                ]
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{List<String> names=new List<String>();for(Schema.ChildRelationship rel:Account.SObjectType.getDescribe().getChildRelationships()){String name=rel.getRelationshipName();if(name!=null && name.toLowerCase().contains('content')){names.add(name);}}names.sort();payload.put('names',names);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CD06A|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "38fdcb438f42fad0563296251c42d3d43e230f9fde59b39255945c888442ea74"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "names": [
+                  "AttachedContentDocuments",
+                  "ContentDocumentLinks"
+                ]
+              }
+            },
+            "outcome": "runtime"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveCD06ATest": "@IsTest private class CdlObserveCD06ATest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{List<String> names=new List<String>();for(Schema.ChildRelationship rel:Account.SObjectType.getDescribe().getChildRelationships()){String name=rel.getRelationshipName();if(name!=null && name.toLowerCase().contains('content')){names.add(name);}}names.sort();payload.put('names',names);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>560){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CD06A|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCD06ATest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCD06ATest": "fd0f377627458035ee5cdf4e5b250e93d1af8c860fe33d9e12ba48a18bc1d207"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "names": [
+                  "AttachedContentDocuments",
+                  "ContentDocumentLinks"
+                ]
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveCD06ATest": "@IsTest private class CdlObserveCD06ATest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{List<String> names=new List<String>();for(Schema.ChildRelationship rel:Account.SObjectType.getDescribe().getChildRelationships()){String name=rel.getRelationshipName();if(name!=null && name.toLowerCase().contains('content')){names.add(name);}}names.sort();payload.put('names',names);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>560){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CD06A|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCD06ATest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCD06ATest": "fd0f377627458035ee5cdf4e5b250e93d1af8c860fe33d9e12ba48a18bc1d207"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "names": [
+                  "AttachedContentDocuments",
+                  "ContentDocumentLinks"
+                ]
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveCD06ATest": "@IsTest private class CdlObserveCD06ATest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{List<String> names=new List<String>();for(Schema.ChildRelationship rel:Account.SObjectType.getDescribe().getChildRelationships()){String name=rel.getRelationshipName();if(name!=null && name.toLowerCase().contains('content')){names.add(name);}}names.sort();payload.put('names',names);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>560){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CD06A|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCD06ATest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCD06ATest": "fd0f377627458035ee5cdf4e5b250e93d1af8c860fe33d9e12ba48a18bc1d207"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "names": [
+                  "AttachedContentDocuments",
+                  "ContentDocumentLinks"
+                ]
+              }
+            },
+            "outcome": "runtime"
+          }
+        }
+      }
+    }
+  ]
+}

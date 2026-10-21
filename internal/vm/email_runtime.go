@@ -206,10 +206,6 @@ func (vm *VM) sendEmail(args []Value, result *Result) (Value, error) {
 	return vm.sendEmailWithRecipientValidation(args, result, true)
 }
 
-func (vm *VM) sendEmailForFramework(args []Value, result *Result) (Value, error) {
-	return vm.sendEmailWithRecipientValidation(args, result, false)
-}
-
 func (vm *VM) sendEmailWithRecipientValidation(args []Value, result *Result, requireRecipient bool) (Value, error) {
 	if len(args) == 0 {
 		return Null, fmt.Errorf("Messaging.sendEmail expects messages")
@@ -291,6 +287,18 @@ func (vm *VM) reserveEmailCapacity(callee string, args []Value, result *Result) 
 	if args[0].Int < 0 {
 		return Null, fmt.Errorf("%s expects non-negative Integer", callee)
 	}
+	reserved := &vm.singleEmailReserved
+	if strings.HasSuffix(strings.ToLower(callee), "reservemassemailcapacity") {
+		reserved = &vm.massEmailReserved
+	}
+	// Reservations are separate from sent-email/invocation observations.
+	// The local OrgLimit facade supplies the current capacity boundary; native
+	// cumulative and transaction-boundary semantics still require captures.
+	remaining := int64(vm.limitCaps.EmailInvokes) - int64(vm.limits.EmailInvokes)
+	if args[0].Int > remaining-*reserved {
+		return Null, newExceptionError("System.HandledException", "The daily limit for the org would be exceeded by this request")
+	}
+	*reserved += args[0].Int
 	appendTrace(result, "apex.email.reserve", "apex.email", map[string]any{"method": callee, "capacity": args[0].Int})
 	return Null, nil
 }
@@ -647,6 +655,9 @@ func (vm *VM) localSendEmailValidationErrors(message Value, requireRecipient boo
 	var errors []Value
 	if message.Type == "Messaging.SingleEmailMessage" {
 		targetID := emailFieldString(message, "targetObjectId")
+		if validation := vm.currentUserTargetActivityValidation(message); validation.Kind != ValueNull {
+			errors = append(errors, validation)
+		}
 		if object, known := vm.sObjectNameForID(targetID); known && object != "User" && object != "Contact" && object != "Lead" && object != "Person" {
 			shortID := targetID
 			if len(shortID) == 18 {
@@ -661,6 +672,14 @@ func (vm *VM) localSendEmailValidationErrors(message Value, requireRecipient boo
 		for _, field := range []string{"toAddresses", "ccAddresses", "bccAddresses"} {
 			for _, address := range message.Fields[field].List {
 				text := stringValue(address)
+				if field == "toAddresses" {
+					if validation, handled := vm.singleEmailIDRecipientValidation(message, address); handled {
+						if validation.Kind != ValueNull {
+							errors = append(errors, validation)
+						}
+						continue
+					}
+				}
 				_, err := mail.ParseAddress(text)
 				if address.Kind == ValueNull || err != nil {
 					if address.Kind == ValueNull {
@@ -668,6 +687,9 @@ func (vm *VM) localSendEmailValidationErrors(message Value, requireRecipient boo
 					}
 					validation := newSendEmailValidationError("Email address is invalid: "+text, "INVALID_EMAIL_ADDRESS", targetID)
 					validation.Fields["fields"] = List(String(field), String(text))
+					if field == "toAddresses" && vm.singleNullEmailAddressObservation(message, address) {
+						validation.Fields["fields"] = List(String(field), Null)
+					}
 					errors = append(errors, validation)
 				}
 			}

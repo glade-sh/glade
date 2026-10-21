@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	describeAccess	"{""permissions"":[false,false,false,false,false,false,false]}"
+62.0	queryAndDml	"{""enforcedQuery"":""System.QueryException"",""plainInsert"":""ok"",""plainQuery"":""1"",""systemInsert"":""ok"",""systemQuery"":""1"",""userInsert"":""System.SecurityException"",""userQuery"":""System.QueryException""}"
+62.0	stripAccess	"{""CREATABLE"":""true:true"",""READABLE"":""true:true"",""UPDATABLE"":""true:true"",""enforced"":""System.NoAccessException""}"
+67.0	describeAccess	"{""permissions"":[false,false,false,false,false,false,false]}"
+67.0	queryAndDml	"{""enforcedQuery"":""System.QueryException"",""plainInsert"":""System.SecurityException"",""plainQuery"":""System.SecurityException"",""systemInsert"":""ok"",""systemQuery"":""1"",""userInsert"":""System.SecurityException"",""userQuery"":""System.QueryException""}"
+67.0	stripAccess	"{""CREATABLE"":""true:true"",""READABLE"":""true:true"",""UPDATABLE"":""true:true"",""enforced"":""System.NoAccessException""}"

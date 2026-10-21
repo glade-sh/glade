@@ -161,7 +161,7 @@ func TestV02SalesforceConformance(t *testing.T) {
 				machine := testRunner(t)
 				storage.EnsureDeterministicPlatformData(machine.Org)
 				storage.EnsureStandardObject(machine.Org, "Account")
-				machine.SetCurrentUser(machine.Org.Objects["User"].Records[storage.ID("005000000000001")])
+				machine.SetCurrentUser(machine.Org.Objects["User"].Records[storage.ID(storage.DefaultUserID)])
 				if err := resource.ApplyProject(machine.Org, p); err != nil {
 					t.Fatalf("%s: load owned label/resource fixtures: %v", c.ID, err)
 				}

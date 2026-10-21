@@ -1,0 +1,7 @@
+source_api	route	observation
+62.0	anonymous	{"caught":true,"message":"synthetic expression","parentCaught":"parent catch","type":"System.FormulaEvaluationException"}
+62.0	isTest	{"caught":true,"message":"synthetic expression","parentCaught":"parent catch","type":"System.FormulaEvaluationException"}
+67.0	anonymous	{"caught":true,"message":"synthetic expression","parentCaught":"parent catch","type":"System.FormulaEvaluationException"}
+67.0	isTest	{"caught":true,"message":"synthetic expression","parentCaught":"parent catch","type":"System.FormulaEvaluationException"}
+68.0	anonymous	{"caught":true,"message":"synthetic expression","parentCaught":"parent catch","type":"System.FormulaEvaluationException"}
+68.0	isTest	{"caught":true,"message":"synthetic expression","parentCaught":"parent catch","type":"System.FormulaEvaluationException"}

@@ -14,7 +14,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -32,7 +33,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -50,7 +52,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -68,7 +71,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -86,7 +90,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -104,7 +109,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -122,7 +128,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -140,7 +147,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -158,7 +166,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -176,7 +185,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -194,7 +204,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -212,7 +223,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -230,7 +242,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -248,7 +261,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -266,7 +280,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -284,7 +299,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -302,7 +318,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -320,7 +337,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -338,7 +356,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -356,7 +375,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -374,7 +394,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -392,7 +413,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -410,7 +432,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -428,7 +451,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -446,7 +470,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -464,7 +489,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -482,7 +508,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -500,7 +527,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -518,7 +546,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -536,7 +565,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -554,7 +584,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -572,7 +603,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -590,7 +622,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -608,7 +641,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -626,7 +660,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -644,7 +679,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -662,7 +698,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -680,7 +717,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -698,7 +736,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -716,7 +755,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -734,7 +774,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -752,7 +793,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -770,7 +812,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -788,7 +831,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -807,7 +851,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -826,7 +871,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -845,7 +891,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -864,7 +911,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -883,7 +931,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -902,7 +951,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -921,7 +971,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -940,7 +991,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -959,7 +1011,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -978,7 +1031,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -997,7 +1051,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -1016,7 +1071,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -1035,7 +1091,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -1054,7 +1111,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -1073,7 +1131,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -1092,7 +1151,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -1111,7 +1171,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -1130,7 +1191,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -1149,7 +1211,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -1168,7 +1231,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -1187,7 +1251,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -1206,7 +1271,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -1225,7 +1291,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -1244,7 +1311,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -1263,7 +1331,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -1282,7 +1351,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -1301,7 +1371,8 @@
     },
     "expected": {
       "59.0": "COMPILE_ERROR",
-      "67.0": "COMPILE_ERROR"
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
     }
   },
   {
@@ -1320,7 +1391,8 @@
     },
     "expected": {
       "59.0": "COMPILE_OK",
-      "67.0": "COMPILE_OK"
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
     }
   },
   {
@@ -1346,7 +1418,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_object_Account_home\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/home\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_object_Account_home\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/home\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_object_Account_home\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/home\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_object_Account_home\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/home\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1372,7 +1445,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_object_Account_list\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_object_Account_list\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_object_Account_list\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_object_Account_list\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1398,7 +1472,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_object_Account_new\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/new\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_object_Account_new\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/new\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_object_Account_new\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/new\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_object_Account_new\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/new\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1424,7 +1499,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_object_Account_view\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/view\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_object_Account_view\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/view\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_object_Account_view\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/view\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_object_Account_view\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/view\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1450,7 +1526,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_object_Account_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_object_Account_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_object_Account_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_object_Account_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1476,7 +1553,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_object_Account_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_object_Account_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_object_Account_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_object_Account_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1502,7 +1580,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_object_Contact_home\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/home\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_object_Contact_home\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/home\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_object_Contact_home\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/home\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_object_Contact_home\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/home\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1528,7 +1607,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_object_Contact_list\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/list\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_object_Contact_list\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/list\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_object_Contact_list\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/list\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_object_Contact_list\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/list\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1554,7 +1634,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_object_Contact_new\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/new\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_object_Contact_new\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/new\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_object_Contact_new\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/new\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_object_Contact_new\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/new\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1580,7 +1661,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_object_Contact_view\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/view\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_object_Contact_view\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/view\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_object_Contact_view\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/view\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_object_Contact_view\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Contact/view\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1606,7 +1688,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_object_Contact_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_object_Contact_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_object_Contact_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_object_Contact_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1632,7 +1715,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_object_Contact_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_object_Contact_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_object_Contact_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_object_Contact_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1660,7 +1744,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_record_view\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/view\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_record_view\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/view\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_record_view\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/view\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_record_view\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/view\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1688,7 +1773,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_record_edit\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/edit\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_record_edit\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/edit\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_record_edit\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/edit\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_record_edit\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/edit\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1716,7 +1802,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_record_clone\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/clone\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_record_clone\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/clone\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_record_clone\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/clone\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_record_clone\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/clone\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1744,7 +1831,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_record_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_record_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_record_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_record_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1772,7 +1860,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_record_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_record_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_record_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_record_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1797,7 +1886,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_named_home\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/home\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_named_home\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/home\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_named_home\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/home\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_named_home\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/home\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1822,7 +1912,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_named_chatter\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/chatter\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_named_chatter\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/chatter\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_named_chatter\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/chatter\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_named_chatter\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/chatter\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1847,7 +1938,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_named_today\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/today\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_named_today\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/today\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_named_today\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/today\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_named_today\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/today\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1872,7 +1964,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_named_dataAssessment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/dataAssessment\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_named_dataAssessment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/dataAssessment\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_named_dataAssessment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/dataAssessment\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_named_dataAssessment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/page/dataAssessment\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1897,7 +1990,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_named_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_named_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_named_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_named_\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1922,7 +2016,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_named_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_named_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_named_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_named_None\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1948,7 +2043,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_web_relative\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/%2Flightning%2Fpage%2Fhome\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_web_relative\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/%2Flightning%2Fpage%2Fhome\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_web_relative\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/%2Flightning%2Fpage%2Fhome\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_web_relative\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/%2Flightning%2Fpage%2Fhome\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -1974,7 +2070,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_web_absolute\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/https%3A%2F%2Fexample.invalid%2Fowned\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_web_absolute\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/https%3A%2F%2Fexample.invalid%2Fowned\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_web_absolute\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/https%3A%2F%2Fexample.invalid%2Fowned\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_web_absolute\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/https%3A%2F%2Fexample.invalid%2Fowned\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2000,7 +2097,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_web_query\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/%2Flightning%2Fpage%2Fhome%3Fc__x%3Da%2520b\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_web_query\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/%2Flightning%2Fpage%2Fhome%3Fc__x%3Da%2520b\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_web_query\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/%2Flightning%2Fpage%2Fhome%3Fc__x%3Da%2520b\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_web_query\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/%2Flightning%2Fpage%2Fhome%3Fc__x%3Da%2520b\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2026,7 +2124,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_web_fragment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/%2Flightning%2Fpage%2Fhome%23owned\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_web_fragment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/%2Flightning%2Fpage%2Fhome%23owned\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_web_fragment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/%2Flightning%2Fpage%2Fhome%23owned\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_web_fragment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/%2Flightning%2Fpage%2Fhome%23owned\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2052,7 +2151,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_web_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_web_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_web_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_web_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2078,7 +2178,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_web_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_web_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_web_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_web_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2104,7 +2205,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_web_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/42\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_web_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/42\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_web_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/42\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_web_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/webpage/42\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2129,7 +2231,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_nav_owned\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_nav_owned\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_nav_owned\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_nav_owned\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2154,7 +2257,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_nav_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_nav_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_nav_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_nav_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2179,7 +2283,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_nav_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_nav_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_nav_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_nav_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2202,7 +2307,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_nav_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_nav_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_nav_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_nav_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2227,7 +2333,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_component_owned\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/cmp/c__FamilyL14Destination<api>\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_component_owned\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/cmp/c__FamilyL14Destination<api>\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_component_owned\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/cmp/c__FamilyL14Destination<api>\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_component_owned\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/cmp/c__FamilyL14Destination<api>\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2252,7 +2359,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_component_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_component_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_component_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_component_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2277,7 +2385,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_component_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_component_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_component_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_component_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2300,7 +2409,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_component_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_component_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_component_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_component_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2329,7 +2439,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_relationship_contacts\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/related/Contacts/view\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_relationship_contacts\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/related/Contacts/view\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_relationship_contacts\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/related/Contacts/view\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_relationship_contacts\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/r/Account/001000000000001AAA/related/Contacts/view\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2358,7 +2469,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_relationship_empty_action\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_relationship_empty_action\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_relationship_empty_action\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_relationship_empty_action\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2387,7 +2499,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_relationship_null_relationship\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_relationship_null_relationship\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_relationship_null_relationship\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_relationship_null_relationship\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2411,7 +2524,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_relationship_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_relationship_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_relationship_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_relationship_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2436,7 +2550,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_app_owned\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"appTargetKind\":\"developer-name\",\"type\":\"string\",\"value\":\"/lightning/app/<application-target>\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_app_owned\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"appTargetKind\":\"developer-name\",\"type\":\"string\",\"value\":\"/lightning/app/<application-target>\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_app_owned\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"appTargetKind\":\"developer-name\",\"type\":\"string\",\"value\":\"/lightning/app/<application-target>\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_app_owned\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"appTargetKind\":\"developer-name\",\"type\":\"string\",\"value\":\"/lightning/app/<application-target>\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2467,7 +2582,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_app_nested\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"appTargetKind\":\"developer-name\",\"type\":\"string\",\"value\":\"/lightning/app/<application-target>/n/<owned-tab>\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_app_nested\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"appTargetKind\":\"developer-name\",\"type\":\"string\",\"value\":\"/lightning/app/<application-target>/n/<owned-tab>\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_app_nested\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"appTargetKind\":\"developer-name\",\"type\":\"string\",\"value\":\"/lightning/app/<application-target>/n/<owned-tab>\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_app_nested\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"appTargetKind\":\"developer-name\",\"type\":\"string\",\"value\":\"/lightning/app/<application-target>/n/<owned-tab>\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2492,7 +2608,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_app_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_app_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_app_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_app_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2515,7 +2632,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_app_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_app_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_app_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_app_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2539,7 +2657,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_quick_action_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_quick_action_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_quick_action_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_quick_action_missing\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2565,7 +2684,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"page_quick_action_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"page_quick_action_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"page_quick_action_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"page_quick_action_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2585,7 +2705,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2605,7 +2726,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2625,7 +2747,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_string\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_string\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_string\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_string\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2645,7 +2768,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2665,7 +2789,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_array\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_array\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_array\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_array\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2688,7 +2813,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_unknown\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_unknown\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_unknown\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_unknown\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2710,7 +2836,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_missing_type\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_missing_type\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_missing_type\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_missing_type\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2733,7 +2860,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_type_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_type_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_type_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_type_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2756,7 +2884,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_attributes_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_attributes_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_attributes_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_attributes_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2779,7 +2908,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_attributes_string\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_attributes_string\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_attributes_string\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_attributes_string\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"object\",\"value\":null}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2799,7 +2929,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_undefined\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_undefined\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_undefined\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_undefined\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2825,7 +2956,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_frozen\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_frozen\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_frozen\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_frozen\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2851,7 +2983,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_input_unchanged\",\"inputUnchanged\":true,\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_input_unchanged\",\"inputUnchanged\":true,\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_input_unchanged\",\"inputUnchanged\":true,\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_input_unchanged\",\"inputUnchanged\":true,\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2877,7 +3010,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_twice\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}},{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_twice\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}},{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_twice\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}},{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_twice\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}},{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2897,7 +3031,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"generate_throwing_type\",\"results\":[{\"error\":{\"message\":\"L14 owned type getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"generate_throwing_type\",\"results\":[{\"error\":{\"message\":\"L14 owned type getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"generate_throwing_type\",\"results\":[{\"error\":{\"message\":\"L14 owned type getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"generate_throwing_type\",\"results\":[{\"error\":{\"message\":\"L14 owned type getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2925,7 +3060,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2953,7 +3089,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_ascii\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=alpha\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_ascii\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=alpha\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_ascii\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=alpha\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_ascii\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=alpha\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -2981,7 +3118,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_space\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%20b\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_space\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%20b\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_space\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%20b\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_space\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%20b\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3009,7 +3147,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_plus\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%2Bb\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_plus\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%2Bb\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_plus\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%2Bb\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_plus\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%2Bb\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3037,7 +3176,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_ampersand\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%26b\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_ampersand\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%26b\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_ampersand\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%26b\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_ampersand\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%26b\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3065,7 +3205,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_equals\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%3Db\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_equals\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%3Db\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_equals\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%3Db\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_equals\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%3Db\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3093,7 +3234,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_percent\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=100%25\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_percent\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=100%25\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_percent\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=100%25\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_percent\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=100%25\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3121,7 +3263,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_unicode\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%C3%A9%E6%B0%B4%F0%9F%98%80\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_unicode\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%C3%A9%E6%B0%B4%F0%9F%98%80\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_unicode\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%C3%A9%E6%B0%B4%F0%9F%98%80\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_unicode\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%C3%A9%E6%B0%B4%F0%9F%98%80\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3149,7 +3292,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_fragment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%23owned\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_fragment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%23owned\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_fragment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%23owned\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_fragment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%23owned\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3177,7 +3321,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_question\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%3Fowned\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_question\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%3Fowned\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_question\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%3Fowned\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_question\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%3Fowned\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3205,7 +3350,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_slash\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%2Fb\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_slash\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%2Fb\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_slash\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%2Fb\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_slash\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%2Fb\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3233,7 +3379,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_newline\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%0Ab\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_newline\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%0Ab\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_newline\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%0Ab\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_newline\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%0Ab\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3261,7 +3408,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_zero\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=0\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_zero\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=0\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_zero\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=0\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_zero\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=0\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3289,7 +3437,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=42\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=42\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=42\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=42\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3317,7 +3466,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_true\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=true\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_true\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=true\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_true\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=true\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_true\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=true\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3345,7 +3495,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_false\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=false\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_false\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=false\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_false\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=false\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_false\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=false\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3373,7 +3524,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3404,7 +3556,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_array\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%2Cb\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_array\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%2Cb\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_array\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%2Cb\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_array\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=a%2Cb\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3434,7 +3587,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_object\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%5Bobject%20Object%5D\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_object\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%5Bobject%20Object%5D\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_object\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%5Bobject%20Object%5D\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_object\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__value=%5Bobject%20Object%5D\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3462,7 +3616,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_unprefixed\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?value=x\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_unprefixed\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?value=x\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_unprefixed\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?value=x\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_unprefixed\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?value=x\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3490,7 +3645,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_foreign_prefix\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?owned__value=x\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_foreign_prefix\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?owned__value=x\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_foreign_prefix\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?owned__value=x\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_foreign_prefix\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?owned__value=x\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3518,7 +3674,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_empty_key\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?=x\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_empty_key\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?=x\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_empty_key\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?=x\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_empty_key\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?=x\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3547,7 +3704,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_multiple\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__a=A&c__b=B\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_multiple\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__a=A&c__b=B\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_multiple\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__a=A&c__b=B\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_multiple\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__a=A&c__b=B\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3573,7 +3731,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_empty_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_empty_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_empty_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_empty_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3599,7 +3758,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_tab_null_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_tab_null_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_tab_null_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_tab_null_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3628,7 +3788,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_empty\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3657,7 +3818,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_ascii\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=alpha\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_ascii\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=alpha\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_ascii\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=alpha\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_ascii\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=alpha\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3686,7 +3848,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_space\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%20b\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_space\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%20b\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_space\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%20b\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_space\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%20b\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3715,7 +3878,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_plus\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%2Bb\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_plus\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%2Bb\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_plus\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%2Bb\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_plus\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%2Bb\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3744,7 +3908,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_ampersand\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%26b\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_ampersand\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%26b\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_ampersand\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%26b\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_ampersand\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%26b\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3773,7 +3938,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_equals\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%3Db\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_equals\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%3Db\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_equals\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%3Db\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_equals\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%3Db\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3802,7 +3968,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_percent\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=100%25\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_percent\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=100%25\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_percent\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=100%25\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_percent\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=100%25\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3831,7 +3998,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_unicode\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%C3%A9%E6%B0%B4%F0%9F%98%80\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_unicode\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%C3%A9%E6%B0%B4%F0%9F%98%80\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_unicode\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%C3%A9%E6%B0%B4%F0%9F%98%80\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_unicode\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%C3%A9%E6%B0%B4%F0%9F%98%80\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3860,7 +4028,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_fragment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%23owned\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_fragment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%23owned\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_fragment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%23owned\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_fragment\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%23owned\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3889,7 +4058,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_question\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%3Fowned\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_question\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%3Fowned\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_question\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%3Fowned\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_question\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%3Fowned\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3918,7 +4088,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_slash\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%2Fb\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_slash\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%2Fb\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_slash\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%2Fb\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_slash\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%2Fb\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3947,7 +4118,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_newline\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%0Ab\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_newline\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%0Ab\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_newline\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%0Ab\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_newline\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%0Ab\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -3976,7 +4148,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_zero\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=0\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_zero\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=0\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_zero\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=0\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_zero\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=0\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4005,7 +4178,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=42\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=42\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=42\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_number\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=42\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4034,7 +4208,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_true\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=true\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_true\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=true\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_true\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=true\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_true\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=true\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4063,7 +4238,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_false\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=false\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_false\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=false\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_false\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=false\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_false\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=false\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4092,7 +4268,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_null\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4124,7 +4301,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_array\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%2Cb\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_array\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%2Cb\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_array\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%2Cb\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_array\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=a%2Cb\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4155,7 +4333,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_object\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%5Bobject%20Object%5D\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_object\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%5Bobject%20Object%5D\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_object\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%5Bobject%20Object%5D\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_object\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__value=%5Bobject%20Object%5D\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4184,7 +4363,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_unprefixed\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?value=x\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_unprefixed\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?value=x\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_unprefixed\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?value=x\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_unprefixed\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?value=x\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4213,7 +4393,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_foreign_prefix\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?owned__value=x\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_foreign_prefix\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?owned__value=x\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_foreign_prefix\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?owned__value=x\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_foreign_prefix\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?owned__value=x\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4242,7 +4423,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_empty_key\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?=x\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_empty_key\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?=x\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_empty_key\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?=x\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_empty_key\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?=x\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4272,7 +4454,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_multiple\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__a=A&c__b=B\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_multiple\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__a=A&c__b=B\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_multiple\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__a=A&c__b=B\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_multiple\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list?c__a=A&c__b=B\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4299,7 +4482,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_empty_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_empty_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_empty_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_empty_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4326,7 +4510,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_object_null_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_object_null_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_object_null_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_object_null_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/o/Account/list\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4346,7 +4531,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_undefined_value\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_undefined_value\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_undefined_value\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_undefined_value\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4366,7 +4552,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_undefined_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_undefined_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_undefined_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_undefined_state\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4386,7 +4573,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"state_delete_copy\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__case=state_delete_copy\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"state_delete_copy\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__case=state_delete_copy\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"state_delete_copy\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__case=state_delete_copy\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"state_delete_copy\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"/lightning/n/<owned-tab>?c__case=state_delete_copy\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -4406,7 +4594,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"current_property\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"current_property\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"current_property\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"current_property\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4426,7 +4615,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"current_method\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"current_method\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"current_method\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"current_method\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4448,7 +4638,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"current_state_string\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"alpha\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"current_state_string\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"alpha\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"current_state_string\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"alpha\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"current_state_string\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"alpha\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4470,7 +4661,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"current_state_empty\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"current_state_empty\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"current_state_empty\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"current_state_empty\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4492,7 +4684,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"current_state_unicode\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"\\u00e9\\u6c34\\ud83d\\ude00\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"current_state_unicode\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"\\u00e9\\u6c34\\ud83d\\ude00\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"current_state_unicode\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"\\u00e9\\u6c34\\ud83d\\ude00\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"current_state_unicode\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"\\u00e9\\u6c34\\ud83d\\ude00\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4514,7 +4707,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"current_state_encoded\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"a+b & #\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"current_state_encoded\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"a+b & #\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"current_state_encoded\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"a+b & #\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"current_state_encoded\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"a+b & #\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4537,7 +4731,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"current_state_two\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__a\":\"A\",\"c__b\":\"B\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"current_state_two\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__a\":\"A\",\"c__b\":\"B\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"current_state_two\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__a\":\"A\",\"c__b\":\"B\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"current_state_two\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__a\":\"A\",\"c__b\":\"B\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4559,7 +4754,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"current_state_unprefixed\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"current_state_unprefixed\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"current_state_unprefixed\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"current_state_unprefixed\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4579,7 +4775,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"frozen\":{\"attributes\":true,\"reference\":true,\"state\":true},\"id\":\"current_frozen_reference\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"frozen\":{\"attributes\":true,\"reference\":true,\"state\":true},\"id\":\"current_frozen_reference\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"frozen\":{\"attributes\":true,\"reference\":true,\"state\":true},\"id\":\"current_frozen_reference\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"frozen\":{\"attributes\":true,\"reference\":true,\"state\":true},\"id\":\"current_frozen_reference\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4599,7 +4796,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"id\":\"current_mutate_reference\",\"mutation\":{\"message\":\"'set' on proxy: trap returned falsish for property 'type'\",\"name\":\"TypeError\"},\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"id\":\"current_mutate_reference\",\"mutation\":{\"message\":\"'set' on proxy: trap returned falsish for property 'type'\",\"name\":\"TypeError\"},\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"id\":\"current_mutate_reference\",\"mutation\":{\"message\":\"'set' on proxy: trap returned falsish for property 'type'\",\"name\":\"TypeError\"},\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"id\":\"current_mutate_reference\",\"mutation\":{\"message\":\"'set' on proxy: trap returned falsish for property 'type'\",\"name\":\"TypeError\"},\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4621,7 +4819,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"id\":\"current_mutate_state\",\"mutation\":{\"message\":\"'set' on proxy: trap returned falsish for property 'c__value'\",\"name\":\"TypeError\"},\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"id\":\"current_mutate_state\",\"mutation\":{\"message\":\"'set' on proxy: trap returned falsish for property 'c__value'\",\"name\":\"TypeError\"},\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"id\":\"current_mutate_state\",\"mutation\":{\"message\":\"'set' on proxy: trap returned falsish for property 'c__value'\",\"name\":\"TypeError\"},\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"id\":\"current_mutate_state\",\"mutation\":{\"message\":\"'set' on proxy: trap returned falsish for property 'c__value'\",\"name\":\"TypeError\"},\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4643,7 +4842,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"copy\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"id\":\"current_copy_reference\",\"original\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"copy\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"id\":\"current_copy_reference\",\"original\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"copy\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"id\":\"current_copy_reference\",\"original\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"copy\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"id\":\"current_copy_reference\",\"original\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4665,7 +4865,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"current_parse_number\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"42\"},\"type\":\"standard__navItemPage\"},\"parsed\":{\"type\":\"number\",\"value\":42},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"current_parse_number\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"42\"},\"type\":\"standard__navItemPage\"},\"parsed\":{\"type\":\"number\",\"value\":42},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"current_parse_number\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"42\"},\"type\":\"standard__navItemPage\"},\"parsed\":{\"type\":\"number\",\"value\":42},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"current_parse_number\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"42\"},\"type\":\"standard__navItemPage\"},\"parsed\":{\"type\":\"number\",\"value\":42},\"stage\":\"done\"}"
     }
   },
   {
@@ -4687,7 +4888,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"current_parse_boolean\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"true\"},\"type\":\"standard__navItemPage\"},\"parsed\":{\"type\":\"boolean\",\"value\":true},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"current_parse_boolean\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"true\"},\"type\":\"standard__navItemPage\"},\"parsed\":{\"type\":\"boolean\",\"value\":true},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"current_parse_boolean\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"true\"},\"type\":\"standard__navItemPage\"},\"parsed\":{\"type\":\"boolean\",\"value\":true},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"current_parse_boolean\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"true\"},\"type\":\"standard__navItemPage\"},\"parsed\":{\"type\":\"boolean\",\"value\":true},\"stage\":\"done\"}"
     }
   },
   {
@@ -4709,7 +4911,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"current_parse_null\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"null\"},\"type\":\"standard__navItemPage\"},\"parsed\":{\"type\":\"object\",\"value\":null},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"current_parse_null\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"null\"},\"type\":\"standard__navItemPage\"},\"parsed\":{\"type\":\"object\",\"value\":null},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"current_parse_null\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"null\"},\"type\":\"standard__navItemPage\"},\"parsed\":{\"type\":\"object\",\"value\":null},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"current_parse_null\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"null\"},\"type\":\"standard__navItemPage\"},\"parsed\":{\"type\":\"object\",\"value\":null},\"stage\":\"done\"}"
     }
   },
   {
@@ -4731,7 +4934,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"id\":\"current_parse_invalid\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"{invalid\"},\"type\":\"standard__navItemPage\"},\"parseError\":{\"message\":\"Expected property name or '}' in JSON at position 1 (line 1 column 2)\",\"name\":\"SyntaxError\"},\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"id\":\"current_parse_invalid\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"{invalid\"},\"type\":\"standard__navItemPage\"},\"parseError\":{\"message\":\"Expected property name or '}' in JSON at position 1 (line 1 column 2)\",\"name\":\"SyntaxError\"},\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"id\":\"current_parse_invalid\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"{invalid\"},\"type\":\"standard__navItemPage\"},\"parseError\":{\"message\":\"Expected property name or '}' in JSON at position 1 (line 1 column 2)\",\"name\":\"SyntaxError\"},\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"id\":\"current_parse_invalid\",\"page\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"{invalid\"},\"type\":\"standard__navItemPage\"},\"parseError\":{\"message\":\"Expected property name or '}' in JSON at position 1 (line 1 column 2)\",\"name\":\"SyntaxError\"},\"stage\":\"done\"}"
     }
   },
   {
@@ -4757,7 +4961,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_false\",\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_false\",\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_false\",\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_false\",\"stage\":\"done\"}"
     }
   },
   {
@@ -4783,7 +4988,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_true\",\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_true\",\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_true\",\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_true\",\"stage\":\"done\"}"
     }
   },
   {
@@ -4809,7 +5015,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_null\",\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_null\",\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_null\",\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_null\",\"stage\":\"done\"}"
     }
   },
   {
@@ -4835,7 +5042,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_string\",\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_string\",\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_string\",\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_string\",\"stage\":\"done\"}"
     }
   },
   {
@@ -4861,7 +5069,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_zero\",\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_zero\",\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_zero\",\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_zero\",\"stage\":\"done\"}"
     }
   },
   {
@@ -4887,7 +5096,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_one\",\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_one\",\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_one\",\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"after\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_replace_one\",\"stage\":\"done\"}"
     }
   },
   {
@@ -4912,7 +5122,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_empty\",\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_empty\",\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_empty\",\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_empty\",\"stage\":\"done\"}"
     }
   },
   {
@@ -4939,7 +5150,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"\\u00e9\\u6c34\\ud83d\\ude00\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_unicode\",\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"\\u00e9\\u6c34\\ud83d\\ude00\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_unicode\",\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"\\u00e9\\u6c34\\ud83d\\ude00\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_unicode\",\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"\\u00e9\\u6c34\\ud83d\\ude00\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_unicode\",\"stage\":\"done\"}"
     }
   },
   {
@@ -4967,7 +5179,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__a\":\"A\",\"c__b\":\"B\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_multiple\",\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__a\":\"A\",\"c__b\":\"B\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_multiple\",\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__a\":\"A\",\"c__b\":\"B\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_multiple\",\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__a\":\"A\",\"c__b\":\"B\"},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_multiple\",\"stage\":\"done\"}"
     }
   },
   {
@@ -4994,7 +5207,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_delete\",\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_delete\",\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_delete\",\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"after\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{},\"type\":\"standard__navItemPage\"},\"before\":{\"attributes\":{\"apiName\":\"<owned-tab>\"},\"present\":true,\"state\":{\"c__value\":\"before\"},\"type\":\"standard__navItemPage\"},\"historyDelta\":0,\"id\":\"navigate_state_delete\",\"stage\":\"done\"}"
     }
   },
   {
@@ -5020,7 +5234,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_new\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_new\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_new\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_new\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -5046,7 +5261,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_home\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_home\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_home\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_home\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -5072,7 +5288,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_list\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_list\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_list\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_list\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -5098,7 +5315,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_view\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_view\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_view\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_view\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -5124,7 +5342,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -5150,7 +5369,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_None\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_None\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_None\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_None\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -5170,7 +5390,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"generate_null\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"generate_null\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"generate_null\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"generate_null\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -5190,7 +5411,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"generate_undefined\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"generate_undefined\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"generate_undefined\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"generate_undefined\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -5210,7 +5432,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"generate_throwing_type\",\"operation\":\"GenerateUrl\",\"results\":[{\"error\":{\"code\":{\"type\":\"undefined\",\"value\":\"<undefined>\"},\"message\":\"L14 owned type getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"generate_throwing_type\",\"operation\":\"GenerateUrl\",\"results\":[{\"error\":{\"code\":{\"type\":\"undefined\",\"value\":\"<undefined>\"},\"message\":\"L14 owned type getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"generate_throwing_type\",\"operation\":\"GenerateUrl\",\"results\":[{\"error\":{\"code\":{\"type\":\"undefined\",\"value\":\"<undefined>\"},\"message\":\"L14 owned type getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"generate_throwing_type\",\"operation\":\"GenerateUrl\",\"results\":[{\"error\":{\"code\":{\"type\":\"undefined\",\"value\":\"<undefined>\"},\"message\":\"L14 owned type getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}"
     }
   },
   {
@@ -5235,7 +5458,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_missing_action\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_missing_action\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_missing_action\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_Account_missing_action\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -5260,7 +5484,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_missing_object\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_missing_object\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_missing_object\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_missing_object\",\"operation\":\"GenerateUrl\",\"results\":[{\"phase\":\"resolved\",\"returnShape\":{\"thenable\":true,\"type\":\"object\"},\"url\":{\"type\":\"string\",\"value\":\"javascript:void(0);\"}}],\"stage\":\"done\"}"
     }
   },
   {
@@ -5280,7 +5505,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_throwing_action\",\"operation\":\"GenerateUrl\",\"results\":[{\"error\":{\"code\":{\"type\":\"undefined\",\"value\":\"<undefined>\"},\"message\":\"L14 owned action getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_throwing_action\",\"operation\":\"GenerateUrl\",\"results\":[{\"error\":{\"code\":{\"type\":\"undefined\",\"value\":\"<undefined>\"},\"message\":\"L14 owned action getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_throwing_action\",\"operation\":\"GenerateUrl\",\"results\":[{\"error\":{\"code\":{\"type\":\"undefined\",\"value\":\"<undefined>\"},\"message\":\"L14 owned action getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_throwing_action\",\"operation\":\"GenerateUrl\",\"results\":[{\"error\":{\"code\":{\"type\":\"undefined\",\"value\":\"<undefined>\"},\"message\":\"L14 owned action getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}"
     }
   },
   {
@@ -5300,7 +5526,8 @@
     },
     "expected": {
       "59.0": "BROWSER|{\"api\":\"59.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_throwing_state\",\"operation\":\"GenerateUrl\",\"results\":[{\"error\":{\"code\":{\"type\":\"undefined\",\"value\":\"<undefined>\"},\"message\":\"L14 owned state getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}",
-      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_throwing_state\",\"operation\":\"GenerateUrl\",\"results\":[{\"error\":{\"code\":{\"type\":\"undefined\",\"value\":\"<undefined>\"},\"message\":\"L14 owned state getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}"
+      "67.0": "BROWSER|{\"api\":\"67.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_throwing_state\",\"operation\":\"GenerateUrl\",\"results\":[{\"error\":{\"code\":{\"type\":\"undefined\",\"value\":\"<undefined>\"},\"message\":\"L14 owned state getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}",
+      "68.0": "BROWSER|{\"api\":\"68.0\",\"host\":\"Visualforce Lightning Out\",\"id\":\"page_object_throwing_state\",\"operation\":\"GenerateUrl\",\"results\":[{\"error\":{\"code\":{\"type\":\"undefined\",\"value\":\"<undefined>\"},\"message\":\"L14 owned state getter\",\"name\":\"TypeError\"},\"phase\":\"call\"}],\"stage\":\"done\"}"
     }
   }
 ]

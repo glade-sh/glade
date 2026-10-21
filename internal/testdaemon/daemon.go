@@ -173,6 +173,7 @@ func optionsForGeneration(opts apextest.Options, generation daemonGeneration) ap
 	artifacts := generation.artifacts
 	opts.BuildArtifacts = &artifacts
 	opts.SourceDigests = artifacts.SourceDigests
+	opts.ProjectSnapshot = &generation.project
 	return opts
 }
 

@@ -6,9 +6,8 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// standardControllerDirectBindings finds root fields referenced by parsed
-// Visualforce expressions. Relationship paths are deliberately not admitted by
-// this scalar projection.
+// standardControllerDirectBindings finds root fields and catalog-backed,
+// single-hop Name bindings referenced by parsed Visualforce expressions.
 func standardControllerDirectBindings(root *MarkupNode, objectName string, org *storage.OrgState) []string {
 	if root == nil || org == nil {
 		return nil
@@ -19,12 +18,16 @@ func standardControllerDirectBindings(root *MarkupNode, objectName string, org *
 	}
 	var fields []string
 	addPath := func(parts []string) {
-		if len(parts) != 2 || strings.TrimSpace(parts[1]) == "" {
+		if (len(parts) != 2 && len(parts) != 3) || strings.TrimSpace(parts[1]) == "" {
 			return
 		}
 		boundObject, ok := storage.ResolveObjectName(*org, parts[0])
 		if ok && strings.EqualFold(boundObject, controllerObject) {
-			fields = append(fields, strings.TrimSpace(parts[1]))
+			if len(parts) == 2 {
+				fields = append(fields, strings.TrimSpace(parts[1]))
+			} else if reference, ok := standardControllerNameReference(org.Objects[controllerObject].Definition, strings.Join(parts[1:], ".")); ok {
+				fields = append(fields, reference.RelationshipName+".Name")
+			}
 		}
 	}
 	var visitExpr func(Expression)
@@ -95,6 +98,22 @@ func standardControllerDirectBindings(root *MarkupNode, objectName string, org *
 	}
 	walk(root)
 	return fields
+}
+
+// Name is the bounded relationship display projection backed by the captured
+// Owner.Name row. Targets and foreign keys come only from the field catalog.
+func standardControllerNameReference(object storage.ObjectDefinition, path string) (storage.Field, bool) {
+	parts := strings.Split(path, ".")
+	if len(parts) != 2 || !strings.EqualFold(strings.TrimSpace(parts[1]), "Name") {
+		return storage.Field{}, false
+	}
+	for name, field := range object.Fields {
+		if fieldIsReference(field) && field.RelationshipName != "" && strings.EqualFold(field.RelationshipName, strings.TrimSpace(parts[0])) {
+			field.APIName = name
+			return field, true
+		}
+	}
+	return storage.Field{}, false
 }
 
 func standardStaticFieldPath(expr Expression) ([]string, bool) {

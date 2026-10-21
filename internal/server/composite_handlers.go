@@ -9,10 +9,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -251,6 +253,14 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 	}}
 	if s.Index != nil {
 		index = *s.Index
+	} else if s.Org != nil {
+		// Without a project, the live org is the only schema. Its fields are
+		// not in the index, so open each org object instead of rejecting
+		// fields that the org defines.
+		for name := range s.Org.Objects {
+			index.Objects = append(index.Objects, schema.Object{Name: name, Partial: true})
+		}
+		sort.Slice(index.Objects, func(i, j int) bool { return index.Objects[i].Name < index.Objects[j].Name })
 	}
 	analysis := sema.AnalyzeAnonymous(index, source, apiVersion)
 	if len(analysis.Diagnostics) > 0 {
@@ -417,14 +427,7 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 	if len(parts) == 0 {
 		switch r.Method {
 		case http.MethodGet:
-			writeJSON(w, http.StatusOK, map[string]any{
-				"resources": map[string]string{
-					"composite": "/services/data/" + version + "/composite",
-					"batch":     "/services/data/" + version + "/composite/batch",
-					"sobjects":  "/services/data/" + version + "/composite/sobjects",
-				},
-				"unsupported": []string{"graph", "tree"},
-			})
+			writeJSON(w, http.StatusOK, compositeDiscoveryPayload(version))
 		case http.MethodPost:
 			body, ok := decodeCompositeRequestEnvelope(w, r)
 			if !ok {
@@ -479,6 +482,16 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 		return
 	}
 	writeSalesforceError(w, errUnknownComposite)
+}
+
+func compositeDiscoveryPayload(version string) map[string]string {
+	base := "/services/data/" + version + "/composite"
+	return map[string]string{
+		"batch":    base + "/batch",
+		"graph":    base + "/graph",
+		"sobjects": base + "/sobjects",
+		"tree":     base + "/tree",
+	}
 }
 
 type compositeSubresponse struct {

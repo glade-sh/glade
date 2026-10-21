@@ -1,0 +1,1025 @@
+{
+  "aliasContexts": [
+    {
+      "callerApi": "62.0",
+      "dependencyApi": "68.0",
+      "id": "alias-62-anonymous-62",
+      "route": "anonymous",
+      "rows": {
+        "PrivateChild": {
+          "found": false,
+          "nameArgument": "ReflectionSubjects.PrivateChild",
+          "namespaceArgument": "ReflectionSubjects."
+        },
+        "PublicChild": {
+          "found": false,
+          "nameArgument": "ReflectionSubjects.PublicChild",
+          "namespaceArgument": "ReflectionSubjects."
+        }
+      },
+      "sourceApi": "62.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "67.0",
+      "dependencyApi": "68.0",
+      "id": "alias-67-anonymous-67",
+      "route": "anonymous",
+      "rows": {
+        "PrivateChild": {
+          "found": false,
+          "nameArgument": "ReflectionSubjects.PrivateChild",
+          "namespaceArgument": "ReflectionSubjects."
+        },
+        "PublicChild": {
+          "found": false,
+          "nameArgument": "ReflectionSubjects.PublicChild",
+          "namespaceArgument": "ReflectionSubjects."
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "67.0"
+    },
+    {
+      "callerApi": "68.0",
+      "dependencyApi": "68.0",
+      "id": "alias-68-anonymous-68",
+      "route": "anonymous",
+      "rows": {
+        "PrivateChild": {
+          "found": false,
+          "nameArgument": "ReflectionSubjects.PrivateChild",
+          "namespaceArgument": "ReflectionSubjects."
+        },
+        "PublicChild": {
+          "found": false,
+          "nameArgument": "ReflectionSubjects.PublicChild",
+          "namespaceArgument": "ReflectionSubjects."
+        }
+      },
+      "sourceApi": "68.0",
+      "transportApi": "68.0"
+    }
+  ],
+  "contexts": [
+    {
+      "callerApi": "67.0",
+      "id": "external-67-istest-62",
+      "route": "istest",
+      "rows": {
+        "privateRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PrivateChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedName": "ReflectionSubjects.PrivateChild"
+        },
+        "privateTest": {
+          "castMessage": "Invalid conversion from runtime type ReflectionObservationTest.PrivateChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedName": "ReflectionObservationTest.PrivateChild"
+        },
+        "publicRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PublicChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionSubjects.PublicChild"
+        },
+        "publicTop": {
+          "castMessage": "Invalid conversion from runtime type ReflectionProbeBase to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionProbeBase"
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "external-67-anonymous-62",
+      "route": "anonymous",
+      "rows": {
+        "privateRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PrivateChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedName": "ReflectionSubjects.PrivateChild"
+        },
+        "publicRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PublicChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionSubjects.PublicChild"
+        },
+        "publicTop": {
+          "castMessage": "Invalid conversion from runtime type ReflectionProbeBase to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionProbeBase"
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "external-62-istest-62",
+      "route": "istest",
+      "rows": {
+        "privateRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PrivateChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedName": "ReflectionSubjects.PrivateChild"
+        },
+        "privateTest": {
+          "castMessage": "Invalid conversion from runtime type ReflectionObservationTest.PrivateChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedName": "ReflectionObservationTest.PrivateChild"
+        },
+        "publicRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PublicChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionSubjects.PublicChild"
+        },
+        "publicTop": {
+          "castMessage": "Invalid conversion from runtime type ReflectionProbeBase to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionProbeBase"
+        }
+      },
+      "sourceApi": "62.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "external-62-anonymous-62",
+      "route": "anonymous",
+      "rows": {
+        "privateRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PrivateChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedName": "ReflectionSubjects.PrivateChild"
+        },
+        "publicRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PublicChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionSubjects.PublicChild"
+        },
+        "publicTop": {
+          "castMessage": "Invalid conversion from runtime type ReflectionProbeBase to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionProbeBase"
+        }
+      },
+      "sourceApi": "62.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "67.0",
+      "id": "external-67-istest-67",
+      "route": "istest",
+      "rows": {
+        "privateRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PrivateChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedName": "ReflectionSubjects.PrivateChild"
+        },
+        "privateTest": {
+          "castMessage": "Invalid conversion from runtime type ReflectionObservationTest.PrivateChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedName": "ReflectionObservationTest.PrivateChild"
+        },
+        "publicRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PublicChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionSubjects.PublicChild"
+        },
+        "publicTop": {
+          "castMessage": "Invalid conversion from runtime type ReflectionProbeBase to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionProbeBase"
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "67.0"
+    },
+    {
+      "callerApi": "67.0",
+      "id": "external-67-anonymous-67",
+      "route": "anonymous",
+      "rows": {
+        "privateRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PrivateChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedName": "ReflectionSubjects.PrivateChild"
+        },
+        "publicRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PublicChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionSubjects.PublicChild"
+        },
+        "publicTop": {
+          "castMessage": "Invalid conversion from runtime type ReflectionProbeBase to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionProbeBase"
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "67.0"
+    },
+    {
+      "callerApi": "68.0",
+      "id": "external-68-istest-68",
+      "route": "istest",
+      "rows": {
+        "privateRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PrivateChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedName": "ReflectionSubjects.PrivateChild"
+        },
+        "privateTest": {
+          "castMessage": "Invalid conversion from runtime type ReflectionObservationTest.PrivateChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedName": "ReflectionObservationTest.PrivateChild"
+        },
+        "publicRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PublicChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionSubjects.PublicChild"
+        },
+        "publicTop": {
+          "castMessage": "Invalid conversion from runtime type ReflectionProbeBase to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionProbeBase"
+        }
+      },
+      "sourceApi": "68.0",
+      "transportApi": "68.0"
+    },
+    {
+      "callerApi": "68.0",
+      "id": "external-68-anonymous-68",
+      "route": "anonymous",
+      "rows": {
+        "privateRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PrivateChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "found": false
+            },
+            "single": {
+              "found": false
+            }
+          },
+          "parsedName": "ReflectionSubjects.PrivateChild"
+        },
+        "publicRegular": {
+          "castMessage": "Invalid conversion from runtime type ReflectionSubjects.PublicChild to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionSubjects.PublicChild",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionSubjects.PublicChild"
+        },
+        "publicTop": {
+          "castMessage": "Invalid conversion from runtime type ReflectionProbeBase to System.SelectOption",
+          "castSucceeded": false,
+          "castType": "System.TypeException",
+          "literalLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedLookup": {
+            "emptyNamespace": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            },
+            "single": {
+              "deserialize": true,
+              "found": true,
+              "name": "ReflectionProbeBase",
+              "newInstance": true
+            }
+          },
+          "parsedName": "ReflectionProbeBase"
+        }
+      },
+      "sourceApi": "68.0",
+      "transportApi": "68.0"
+    }
+  ],
+  "files": [
+    {
+      "path": "setup/ReflectionProbeBase.cls",
+      "sha256": "d2e7d2baa64a15e75ade457f6023cb46f9012e3f47ddabf1e0d8bf1128e51d72"
+    },
+    {
+      "path": "setup/ReflectionSubjects.cls",
+      "sha256": "068f3d1a07d74b23f991e6d432caba4bea60582cc9cfc944798790ce0726459a"
+    },
+    {
+      "path": "setup/ReflectionObservation.cls",
+      "sha256": "43fdd973dd04614dc29f0e356bf438d23e9ad0b1473679ecd37ae4c52e46ff24"
+    },
+    {
+      "path": "setup/ReflectionObservationTest.cls",
+      "sha256": "658bda5e61678bfd907bc79c14e5add6fe15d779199a50484dea634b1198d7a1"
+    },
+    {
+      "path": "setup/ReflectionLookupOwner.cls",
+      "sha256": "9a7b5616bb6958e7677f76231d4f83cf18ff38040aff9aaf79894247e2e611c0"
+    },
+    {
+      "path": "setup/ReflectionLookupAliases.cls",
+      "sha256": "cf925b816eb551b1c7ed17466ed86649536baff6d8350d8bbc6f60ded1f88ddd"
+    }
+  ],
+  "ownerContexts": [
+    {
+      "callerApi": "62.0",
+      "id": "owner-62-anonymous-62",
+      "route": "anonymous",
+      "rows": {
+        "insideOwner": {
+          "directConstruction": true,
+          "emptyNamespaceFound": false,
+          "literalConstruction": true,
+          "literalDeserialize": true,
+          "literalName": "ReflectionLookupOwner.Hidden",
+          "singleFound": false
+        }
+      },
+      "sourceApi": "62.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "67.0",
+      "id": "owner-67-anonymous-67",
+      "route": "anonymous",
+      "rows": {
+        "insideOwner": {
+          "directConstruction": true,
+          "emptyNamespaceFound": false,
+          "literalConstruction": true,
+          "literalDeserialize": true,
+          "literalName": "ReflectionLookupOwner.Hidden",
+          "singleFound": false
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "67.0"
+    },
+    {
+      "callerApi": "68.0",
+      "id": "owner-68-anonymous-68",
+      "route": "anonymous",
+      "rows": {
+        "insideOwner": {
+          "directConstruction": true,
+          "emptyNamespaceFound": false,
+          "literalConstruction": true,
+          "literalDeserialize": true,
+          "literalName": "ReflectionLookupOwner.Hidden",
+          "singleFound": false
+        }
+      },
+      "sourceApi": "68.0",
+      "transportApi": "68.0"
+    }
+  ]
+}

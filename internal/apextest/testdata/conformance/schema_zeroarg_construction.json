@@ -1,0 +1,176 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "nativeObservationCount": 4,
+  "metadataFiles": {},
+  "metadataFileSHA256": {},
+  "fixtures": {
+    "62.0": {
+      "classes": {
+        "ZeroArgSchemaProbe62": "public class ZeroArgSchemaProbe62 {\n    private static Map<String, Object> construct(Schema.SObjectType token) {\n        Account seed = new Account(Name = 'sentinel');\n        SObject caller = seed;\n        Map<String, Object> row = new Map<String, Object>();\n        String stage = 'before-call';\n        try {\n            stage = 'calling-newSObject';\n            caller = token.newSObject();\n            stage = 'assigned';\n            row.put('success', true);\n            row.put('resultType', caller.getSObjectType().getDescribe().getName());\n            row.put('idNull', caller.Id == null);\n        } catch (Exception error) {\n            row.put('success', false);\n            row.put('exceptionType', error.getTypeName());\n            row.put('exceptionMessage', error.getMessage());\n        }\n        row.put('stage', stage);\n        row.put('callerAfterType', caller.getSObjectType().getDescribe().getName());\n        row.put('preservedSeedName', seed.Name);\n        return row;\n    }\n\n    public static String observe() {\n        return JSON.serialize(new Map<String, Object>{\n            'profile' => construct(Profile.SObjectType),\n            'account' => construct(Account.SObjectType)\n        });\n    }\n}\n",
+        "ZeroArgSchemaProbe62Test": "@IsTest\nprivate class ZeroArgSchemaProbe62Test {\n    @IsTest static void observe() {\n        System.assert(false, 'ZERO_ROWS|' + ZeroArgSchemaProbe62.observe() + '|ZERO_END');\n    }\n}\n"
+      },
+      "classMetadata": {
+        "ZeroArgSchemaProbe62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "ZeroArgSchemaProbe62Test": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n"
+      },
+      "sourceSHA256": {
+        "ZeroArgSchemaProbe62": "cf702033f24b7292712e84db3c64080cca83e1105e893716458dd9366faf3c18",
+        "ZeroArgSchemaProbe62Test": "80820a04ce4e68dd480728002233e7c6e71a6a9b2d5f2c9fe958fc70e837cb08"
+      },
+      "metadataSHA256": {
+        "ZeroArgSchemaProbe62": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "ZeroArgSchemaProbe62Test": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+      },
+      "anonymous": "System.debug(LoggingLevel.ERROR, 'ZERO_ROWS|' + ZeroArgSchemaProbe62.observe() + '|ZERO_END');\n",
+      "anonymousSHA256": "8b8c410b09240d8417fed999091ffd5ff16a921c85d6650d0ac21a78738bc823",
+      "testClass": "ZeroArgSchemaProbe62Test"
+    },
+    "67.0": {
+      "classes": {
+        "ZeroArgSchemaProbe67": "public class ZeroArgSchemaProbe67 {\n    private static Map<String, Object> construct(Schema.SObjectType token) {\n        Account seed = new Account(Name = 'sentinel');\n        SObject caller = seed;\n        Map<String, Object> row = new Map<String, Object>();\n        String stage = 'before-call';\n        try {\n            stage = 'calling-newSObject';\n            caller = token.newSObject();\n            stage = 'assigned';\n            row.put('success', true);\n            row.put('resultType', caller.getSObjectType().getDescribe().getName());\n            row.put('idNull', caller.Id == null);\n        } catch (Exception error) {\n            row.put('success', false);\n            row.put('exceptionType', error.getTypeName());\n            row.put('exceptionMessage', error.getMessage());\n        }\n        row.put('stage', stage);\n        row.put('callerAfterType', caller.getSObjectType().getDescribe().getName());\n        row.put('preservedSeedName', seed.Name);\n        return row;\n    }\n\n    public static String observe() {\n        return JSON.serialize(new Map<String, Object>{\n            'profile' => construct(Profile.SObjectType),\n            'account' => construct(Account.SObjectType)\n        });\n    }\n}\n",
+        "ZeroArgSchemaProbe67Test": "@IsTest\nprivate class ZeroArgSchemaProbe67Test {\n    @IsTest static void observe() {\n        System.assert(false, 'ZERO_ROWS|' + ZeroArgSchemaProbe67.observe() + '|ZERO_END');\n    }\n}\n"
+      },
+      "classMetadata": {
+        "ZeroArgSchemaProbe67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "ZeroArgSchemaProbe67Test": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n"
+      },
+      "sourceSHA256": {
+        "ZeroArgSchemaProbe67": "d79f10ddac61555ce1cb5d1551fe8abe78a637b5537735d332d930f3c89aa325",
+        "ZeroArgSchemaProbe67Test": "4e636a5e411f2c9e17e72e6a14e51acd42415bc74faeaa444aa1fad7cef286db"
+      },
+      "metadataSHA256": {
+        "ZeroArgSchemaProbe67": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "ZeroArgSchemaProbe67Test": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+      },
+      "anonymous": "System.debug(LoggingLevel.ERROR, 'ZERO_ROWS|' + ZeroArgSchemaProbe67.observe() + '|ZERO_END');\n",
+      "anonymousSHA256": "4908361a70b046f086a5eb01bee313b094ae09ffa33659a6cfa68c774be29694",
+      "testClass": "ZeroArgSchemaProbe67Test"
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "native": {
+        "account": {
+          "preservedSeedName": "sentinel",
+          "callerAfterType": "Account",
+          "stage": "assigned",
+          "idNull": true,
+          "resultType": "Account",
+          "success": true
+        },
+        "profile": {
+          "preservedSeedName": "sentinel",
+          "callerAfterType": "Profile",
+          "stage": "assigned",
+          "idNull": true,
+          "resultType": "Profile",
+          "success": true
+        }
+      },
+      "nativeJSONSHA256": "44c65af6c9010c6ed03fbb0570bdb6c1b52939c16725dc32a0c367cbf9cb3b2e",
+      "rawSHA256": "a8accdb892f9bc27947cd723fa042733d38ebfb33abb8e249c3096204dcee94e",
+      "deploymentID": "0Afgw000000O7rcCAC",
+      "deploymentSHA256": "402c6e8e9721a628cd666c769e80c9139ada03d36cd79aeb76b045f1bd807922",
+      "orgIdSHA256": "8a4f37d5e33773918f4efdca03addc3ca447a799c5ea1bc75b91812667d16504",
+      "sourceStatus": "intentional assertion observation"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "native": {
+        "account": {
+          "preservedSeedName": "sentinel",
+          "callerAfterType": "Account",
+          "stage": "assigned",
+          "idNull": true,
+          "resultType": "Account",
+          "success": true
+        },
+        "profile": {
+          "preservedSeedName": "sentinel",
+          "callerAfterType": "Profile",
+          "stage": "assigned",
+          "idNull": true,
+          "resultType": "Profile",
+          "success": true
+        }
+      },
+      "nativeJSONSHA256": "44c65af6c9010c6ed03fbb0570bdb6c1b52939c16725dc32a0c367cbf9cb3b2e",
+      "rawSHA256": "3dcb114a5df0c9904f4cdca9e20187242b28760376aeab68ccf03caed3c10375",
+      "deploymentID": "0Afgw000000O7rcCAC",
+      "deploymentSHA256": "402c6e8e9721a628cd666c769e80c9139ada03d36cd79aeb76b045f1bd807922",
+      "orgIdSHA256": "8a4f37d5e33773918f4efdca03addc3ca447a799c5ea1bc75b91812667d16504",
+      "sourceStatus": "success/debug observation"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "native": {
+        "account": {
+          "preservedSeedName": "sentinel",
+          "callerAfterType": "Account",
+          "stage": "assigned",
+          "idNull": true,
+          "resultType": "Account",
+          "success": true
+        },
+        "profile": {
+          "preservedSeedName": "sentinel",
+          "callerAfterType": "Profile",
+          "stage": "assigned",
+          "idNull": true,
+          "resultType": "Profile",
+          "success": true
+        }
+      },
+      "nativeJSONSHA256": "44c65af6c9010c6ed03fbb0570bdb6c1b52939c16725dc32a0c367cbf9cb3b2e",
+      "rawSHA256": "93273304c98a6aaea771844757dc5585b2b603a4015823fad96e45dde399f870",
+      "deploymentID": "0Afgw000000O7rcCAC",
+      "deploymentSHA256": "402c6e8e9721a628cd666c769e80c9139ada03d36cd79aeb76b045f1bd807922",
+      "orgIdSHA256": "8a4f37d5e33773918f4efdca03addc3ca447a799c5ea1bc75b91812667d16504",
+      "sourceStatus": "intentional assertion observation"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "native": {
+        "account": {
+          "preservedSeedName": "sentinel",
+          "callerAfterType": "Account",
+          "stage": "assigned",
+          "idNull": true,
+          "resultType": "Account",
+          "success": true
+        },
+        "profile": {
+          "preservedSeedName": "sentinel",
+          "callerAfterType": "Profile",
+          "stage": "assigned",
+          "idNull": true,
+          "resultType": "Profile",
+          "success": true
+        }
+      },
+      "nativeJSONSHA256": "44c65af6c9010c6ed03fbb0570bdb6c1b52939c16725dc32a0c367cbf9cb3b2e",
+      "rawSHA256": "1b61ba9457107811574f6ebe74794e126510a4d51dccc513b34075c7451f7bf8",
+      "deploymentID": "0Afgw000000O7rcCAC",
+      "deploymentSHA256": "402c6e8e9721a628cd666c769e80c9139ada03d36cd79aeb76b045f1bd807922",
+      "orgIdSHA256": "8a4f37d5e33773918f4efdca03addc3ca447a799c5ea1bc75b91812667d16504",
+      "sourceStatus": "success/debug observation"
+    }
+  ],
+  "scope": "Profile and Account zero-argument SObjectType construction through a generic helper; both succeed. No DML, reflection, other overload or constructibility inference from permissions."
+}

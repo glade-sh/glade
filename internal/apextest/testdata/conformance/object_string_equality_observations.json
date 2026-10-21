@@ -1,0 +1,101 @@
+{
+  "provenance": "Owned check-only named-test observations, 2026-10-15. Intentional observation failures; no component or other failures. Both validations checkOnly=true and rollbackOnError=true.",
+  "captures": [
+    {
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "deployId": "0AfEc00000p1RDjKAM",
+      "checkOnly": true,
+      "rollbackOnError": true,
+      "sourceSHA256": {
+        "ObjectTextBox": "52ddad7d1decd5a7e497d295cc0a378814f24d44f329127d9daf7244d81c7b12",
+        "ObjectTextEqualityObservation": "b894a1d5ca35d77105a611bb1a7cd12480b8b734f2ef7057b17625e852363398"
+      },
+      "classes": {
+        "ObjectTextBox": "public class ObjectTextBox {private Object text;public ObjectTextBox(Object value){text=value;}public Boolean equals(Object other){return other instanceof ObjectTextBox && text.equals(((ObjectTextBox)other).text);}}",
+        "ObjectTextEqualityObservation": "@IsTest(SeeAllData=false) private class ObjectTextEqualityObservation{\n@IsTest static void ose01(){Map<String,Object> payload=new Map<String,Object>();try{Object left='NORTH';Object right='north';payload.put('objectEquals',left.equals(right));payload.put('operator',left==right);payload.put('typedEquals',((String)left).equals((String)right));}catch(Exception fault){payload.put('type',fault.getTypeName());payload.put('message',fault.getMessage());}System.assert(false,'OBJECT_TEXT_RESULT|OSE01|'+JSON.serialize(payload));}\n@IsTest static void ose02(){Map<String,Object> payload=new Map<String,Object>();try{ObjectTextBox left=new ObjectTextBox('NORTH');ObjectTextBox same=new ObjectTextBox('NORTH');ObjectTextBox mixed=new ObjectTextBox('north');ObjectTextBox different=new ObjectTextBox('south');payload.put('same',new List<Boolean>{left.equals(same),left==same});payload.put('mixed',new List<Boolean>{left.equals(mixed),left==mixed});payload.put('different',new List<Boolean>{left.equals(different),left==different});payload.put('nullArgument',left.equals(null));}catch(Exception fault){payload.put('type',fault.getTypeName());payload.put('message',fault.getMessage());}System.assert(false,'OBJECT_TEXT_RESULT|OSE02|'+JSON.serialize(payload));}\n}"
+      },
+      "metadata": {
+        "ObjectTextBox.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "ObjectTextEqualityObservation.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>"
+      },
+      "metadataSHA256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+      "observations": {
+        "OSE01": {
+          "objectEquals": true,
+          "operator": true,
+          "typedEquals": false
+        },
+        "OSE02": {
+          "different": [
+            false,
+            false
+          ],
+          "mixed": [
+            true,
+            true
+          ],
+          "nullArgument": false,
+          "same": [
+            true,
+            true
+          ]
+        }
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "route": "istest",
+      "deployId": "0AfEc00000p1Z3BKAU",
+      "checkOnly": true,
+      "rollbackOnError": true,
+      "sourceSHA256": {
+        "ObjectTextBox": "52ddad7d1decd5a7e497d295cc0a378814f24d44f329127d9daf7244d81c7b12",
+        "ObjectTextEqualityObservation": "b894a1d5ca35d77105a611bb1a7cd12480b8b734f2ef7057b17625e852363398"
+      },
+      "classes": {
+        "ObjectTextBox": "public class ObjectTextBox {private Object text;public ObjectTextBox(Object value){text=value;}public Boolean equals(Object other){return other instanceof ObjectTextBox && text.equals(((ObjectTextBox)other).text);}}",
+        "ObjectTextEqualityObservation": "@IsTest(SeeAllData=false) private class ObjectTextEqualityObservation{\n@IsTest static void ose01(){Map<String,Object> payload=new Map<String,Object>();try{Object left='NORTH';Object right='north';payload.put('objectEquals',left.equals(right));payload.put('operator',left==right);payload.put('typedEquals',((String)left).equals((String)right));}catch(Exception fault){payload.put('type',fault.getTypeName());payload.put('message',fault.getMessage());}System.assert(false,'OBJECT_TEXT_RESULT|OSE01|'+JSON.serialize(payload));}\n@IsTest static void ose02(){Map<String,Object> payload=new Map<String,Object>();try{ObjectTextBox left=new ObjectTextBox('NORTH');ObjectTextBox same=new ObjectTextBox('NORTH');ObjectTextBox mixed=new ObjectTextBox('north');ObjectTextBox different=new ObjectTextBox('south');payload.put('same',new List<Boolean>{left.equals(same),left==same});payload.put('mixed',new List<Boolean>{left.equals(mixed),left==mixed});payload.put('different',new List<Boolean>{left.equals(different),left==different});payload.put('nullArgument',left.equals(null));}catch(Exception fault){payload.put('type',fault.getTypeName());payload.put('message',fault.getMessage());}System.assert(false,'OBJECT_TEXT_RESULT|OSE02|'+JSON.serialize(payload));}\n}"
+      },
+      "metadata": {
+        "ObjectTextBox.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "ObjectTextEqualityObservation.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>"
+      },
+      "metadataSHA256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+      "observations": {
+        "OSE01": {
+          "objectEquals": true,
+          "operator": true,
+          "typedEquals": false
+        },
+        "OSE02": {
+          "different": [
+            false,
+            false
+          ],
+          "mixed": [
+            true,
+            true
+          ],
+          "nullArgument": false,
+          "same": [
+            true,
+            true
+          ]
+        }
+      }
+    }
+  ],
+  "uncaptured": [
+    {
+      "scope": "API61/API68 and anonymous routes",
+      "reason": "Not captured by this bounded named62/67 follow-through."
+    },
+    {
+      "scope": "Id carriers, non-String values, null receivers and other Object methods",
+      "reason": "No Object-view dispatch inference beyond the captured String receiver/argument pair."
+    }
+  ]
+}

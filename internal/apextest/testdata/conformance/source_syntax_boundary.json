@@ -1,0 +1,57 @@
+{
+  "apiVersions": [
+    "62.0",
+    "65.0",
+    "66.0",
+    "67.0",
+    "68.0"
+  ],
+  "owner": "source syntax and version rules",
+  "qualification": "Anonymous compilation and execution observed directly. Named observations are compiler-only check-only deploys; no native named runtime claim. Fresh compiled=true/success=false for C094 supersedes the earlier API68 COMPILE_ERROR with omitted diagnostic. No version split was observed.",
+  "rows": [
+    {
+      "id": "C058",
+      "code": "// line comment\nInteger x=1;\npq.out('C058','compiled');",
+      "compiled": true,
+      "diagnostic": "",
+      "success": true,
+      "exception": "",
+      "namedCompiled": true
+    },
+    {
+      "id": "C071",
+      "code": "Integer x=1; x.noSuchSyntaxMethod();\npq.out('C071','compiled');",
+      "compiled": false,
+      "diagnostic": "Method does not exist or incorrect signature: void noSuchSyntaxMethod() from the type Integer",
+      "success": false,
+      "exception": "",
+      "namedCompiled": false
+    },
+    {
+      "id": "C072",
+      "code": "Integer x=1; x.noSuchSyntaxField=2;\npq.out('C072','compiled');",
+      "compiled": false,
+      "diagnostic": "Variable does not exist: noSuchSyntaxField",
+      "success": false,
+      "exception": "",
+      "namedCompiled": false
+    },
+    {
+      "id": "C094",
+      "code": "try { final Integer x=1; x=2;\npq.out('C094','compiled'); } catch(Exception e) {pq.err('C094',e);}",
+      "compiled": true,
+      "diagnostic": "",
+      "success": false,
+      "exception": "System.FinalException: Final variable has already been initialized",
+      "namedCompiled": true
+    }
+  ],
+  "sourceHashes": {
+    "anonymous.json": "98ca07a585468305a951c4cb01b8bae7700d2ec3dc68d156fd4b6f725c62ea1b",
+    "named.json": "0a1a07c44533bf7a3028034b96830e5b8caec79441bbd1af8ff2c0ac106a7ed9",
+    "source-bindings.json": "0923a4e90107c606b6362024d918cc4b9440a3c3bdc6debe4faf2856a482b62a",
+    "anonymous-rows.json": "a8bc026e14399cbbc30371958f9a9153de26508553f50495e605df1129b02660",
+    "named-checkonly-rows.json": "14a513b30e5fde266c6a69538bae384965239949653ff1e4b1385e6e5536f1d9"
+  },
+  "helper": "public class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P64|' + id + '|' + EncodingUtil.base64Encode(Blob.valueOf('' + String.valueOf(v)))); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P64|' + id + '|' + EncodingUtil.base64Encode(Blob.valueOf('EXC|' + e.getTypeName() + '|' + e.getMessage()))); }\n}\n"
+}

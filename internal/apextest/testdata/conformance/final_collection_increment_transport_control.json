@@ -1,0 +1,102 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "transport-control",
+  "shapeCount": 1,
+  "nativeObservationCount": 0,
+  "carriedObservationCount": 6,
+  "rows": [
+    {
+      "id": "C166CONTROL_001",
+      "disposition": "infrastructure",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nInteger r;r=7;System.assert(false,'C126_RESULT|C166CONTROL_001|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "6384029ceb4b6f2d8a63a91d60eeaba76d961f2246e2de23f92d76239e559bf9"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "runtime",
+              "code": null,
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              }
+            },
+            "67.0": {
+              "status": "runtime",
+              "code": null,
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              }
+            },
+            "68.0": {
+              "status": "runtime",
+              "code": null,
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C166Transport001": "@IsTest private class C166Transport001{@IsTest static void observe(){Integer r;r=7;System.assert(false,'C126_RESULT|C166CONTROL_001|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Transport001"
+          ],
+          "sourceSha256": {
+            "class:C166Transport001": "e6a96c6aca27b61cc9176578a4cc1d33e9c929c8a37b4beb62bbd5a2c25e3d4c"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "runtime",
+              "code": null,
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              }
+            },
+            "67.0": {
+              "status": "runtime",
+              "code": null,
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              }
+            },
+            "68.0": {
+              "status": "runtime",
+              "code": null,
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

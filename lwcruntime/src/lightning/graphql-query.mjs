@@ -2,6 +2,9 @@ import { parseDocument, printDocument, resolvedValue } from "./graphql-document.
 
 const rest = "/services/data/v67.0";
 const schemas = new Map();
+// Internal wire contract: the attempt settles without provisioning an envelope.
+// Native observations establish bounded absence, not a forever-pending request.
+export const NO_WIRE_PROVISION = Symbol("GraphQL no wire provision");
 async function jsonRequest(url) {
   const response = await fetch(url, { credentials: "same-origin" });
   const body = await response.json();
@@ -82,13 +85,12 @@ function matches(record, filter) {
       if (op === "nin") return !expected.some(item => matches(record, { [field]: { eq: item } }));
       if (op === "like") {
         if (value === null) return false;
-        let pattern = "", escaped = false;
+        let pattern = "";
         for (const character of String(expected)) {
-          if (!escaped && character === "\\") { escaped = true; continue; }
-          pattern += !escaped && character === "%" ? ".*" : !escaped && character === "_" ? "." : character.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          escaped = false;
+          // W27 inline/variable controls retain literal backslashes; '_' and
+          // '%' remain wildcards even when preceded by a backslash.
+          pattern += character === "%" ? ".*" : character === "_" ? "." : character.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
-        if (escaped) pattern += "\\\\";
         return new RegExp("^" + pattern + "$", "iu").test(value);
       }
       return false;
@@ -99,7 +101,7 @@ function matches(record, filter) {
 // Execute against the product's schema and SOQL endpoints, never supplied
 // answers or fixture-name branches. AST aliases and fragment projections share
 // the same resolver as direct selections.
-export async function executeQuery(input, suppliedVariables = {}, operationName) {
+export async function executeQuery(input, suppliedVariables = {}, operationName, wireContext = false) {
   const source = printDocument(input);
   const document = parseDocument(source);
   const errors = [];
@@ -135,6 +137,7 @@ export async function executeQuery(input, suppliedVariables = {}, operationName)
     return { data: undefined, errors: [{ error: errors, errorType: "adapterError" }] };
   }
   const variables = {};
+  const nonStringVariables = new Set();
   for (const variable of operation.variables) {
     let value = suppliedVariables?.[variable.name];
     if (value == null && variable.defaultValue !== undefined) value = variable.defaultValue;
@@ -149,7 +152,12 @@ export async function executeQuery(input, suppliedVariables = {}, operationName)
       }
       value = converted;
     } else if (value != null && variable.type.replace(/!$/, "") === "Boolean" && typeof value === "string") value = value === "true";
-    else if (value != null && variable.type.replace(/!$/, "") === "String") value = javaString(value);
+    else if (value != null && variable.type.replace(/!$/, "") === "String") {
+      // Retain provenance only for the captured nullable String declaration.
+      // Ordinary String filters still use their existing coercion.
+      if (variable.type === "String" && suppliedVariables?.[variable.name] != null && ["number", "boolean", "object"].includes(typeof suppliedVariables[variable.name])) nonStringVariables.add(variable.name);
+      value = javaString(value);
+    }
     variables[variable.name] = value;
   }
   const usedFragments = new Set();
@@ -344,9 +352,22 @@ export async function executeQuery(input, suppliedVariables = {}, operationName)
           return String(left.Id).localeCompare(String(right.Id));
         });
         const first = args.first == null ? 10 : args.first;
-        if (first < 0) { fetching(node, current, "You have paginated maximum allowed number of records without using upperBound, to go further please provide upperBound"); continue; }
+        if (first < 0) {
+          if (wireContext && singleConnection && Number.isInteger(first) && !node.args.some(arg => arg.name === "upperBound")) {
+            // Stable discriminator observed for -1/-2, renamed/repeated queries,
+            // inline -1 and String-to-Int -1 at API 59/67/68 in W27. It is a
+            // captured protocol value, not a derived request/record identifier.
+            transportError = { body: { errorCode: "ILLEGAL_QUERY_PARAMETER_VALUE", id: "-1582122214", statusCode: 400 }, errorType: "fetchResponse", headers: {}, ok: false, status: 400, statusText: "Bad Request" };
+          } else fetching(node, current, "You have paginated maximum allowed number of records without using upperBound, to go further please provide upperBound");
+          continue;
+        }
         let offset = 0;
         if (args.after != null) {
+          const after = node.args.find(arg => arg.name === "after")?.value;
+          if (wireContext && singleConnection && after?.kind === "Variable" && nonStringVariables.has(after.name)) {
+            noWireProvision = true;
+            continue;
+          }
           let decoded = "";
           try { decoded = atob(String(args.after)); } catch { /* Validation below. */ }
           if (!/^v1:\d+$/.test(decoded)) { fetching(node, current, "Could not parse the cursor."); continue; }
@@ -430,9 +451,24 @@ export async function executeQuery(input, suppliedVariables = {}, operationName)
   if (errors.length) return { data: undefined, errors: [{ error: errors, errorType: "adapterError" }] };
   await validateSelections(operation.selection, "Query", []);
   if (errors.length) return { data: undefined, errors: [{ error: errors, errorType: "adapterError" }] };
+  // Mixed/aliased multiple connections were not captured. Keep their existing
+  // behavior rather than imposing a whole-document transport/non-provision rule.
+  const connections = [];
+  for (const uiapi of expand(operation.selection, "Query", [])) {
+    if (uiapi.name !== "uiapi" || !included(uiapi, variables)) continue;
+    for (const query of expand(uiapi.selection, "UIAPI", ["uiapi"])) {
+      if (query.name !== "query" || !included(query, variables)) continue;
+      connections.push(...expand(query.selection, "RecordQuery", ["uiapi", "query"]).filter(node => node.name !== "__typename" && included(node, variables)));
+    }
+  }
+  const singleConnection = connections.length === 1;
+  let noWireProvision = false, transportError;
   const data = await project(operation.selection, "Query", null, []);
   for (const [name, node] of fragments) {
     if (!usedFragments.has(name) && !cyclic.has(name)) validation("UnusedFragment", [], `Unused fragment '${name}'`, [node]);
   }
-  return errors.length ? { data: undefined, errors: [{ error: errors, errorType: "adapterError" }] } : { data, errors: undefined };
+  if (errors.length) return { data: undefined, errors: [{ error: errors, errorType: "adapterError" }] };
+  if (noWireProvision) return NO_WIRE_PROVISION;
+  if (transportError) return { data: undefined, errors: [transportError] };
+  return { data, errors: undefined };
 }

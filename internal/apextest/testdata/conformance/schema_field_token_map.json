@@ -1,0 +1,373 @@
+{
+  "family": "Schema field-token map",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "oracle": "Native Salesforce observations; every runtime answer and rejection problem text agrees across all three APIs and both routes. Named rejection JSON is projected to its exact problem text without generated source names or locations.",
+  "evidence": {
+    "sourceManifestSHA256": "d985eb7e772919d9da7e02c1b0c59d0ff23e31f38580dcc7aa05b3efdebd3c28",
+    "caseModuleSHA256": "2266296433d7218db1e4ee07f65e9f49cea0dd92e858f30e403b96bee03d6aef",
+    "observations": [
+      {
+        "apiVersion": "62.0",
+        "route": "anonymous",
+        "orgTSVSHA256": "8c85951662567320531348c1cd77da7eeec90e402a714056b45411537067a28f",
+        "orgRunSHA256": "2c959e01bfb7cb255a84c7b48f3a042c53806da88114f162262fe585f5c04e6f"
+      },
+      {
+        "apiVersion": "62.0",
+        "route": "isTest",
+        "orgTSVSHA256": "3e10fdaeb8c88d07829fc0e233e31a1952ce6075f15a69c1b16fd61077540081",
+        "orgRunSHA256": "6197bfcb0f65e0de7ea37845bf46132239d8ee900f88b6be44107b3717f9de01"
+      },
+      {
+        "apiVersion": "67.0",
+        "route": "anonymous",
+        "orgTSVSHA256": "8c85951662567320531348c1cd77da7eeec90e402a714056b45411537067a28f",
+        "orgRunSHA256": "5cb7dc05e941a4f5526a54ab8c61da01a7caeffffa6621a98f9509b5575c72b9"
+      },
+      {
+        "apiVersion": "67.0",
+        "route": "isTest",
+        "orgTSVSHA256": "3e10fdaeb8c88d07829fc0e233e31a1952ce6075f15a69c1b16fd61077540081",
+        "orgRunSHA256": "82fd0e6148ade76a579a5b2b60f1bc32308b8208acb2e77ff3ab1b233c0f30dd"
+      },
+      {
+        "apiVersion": "68.0",
+        "route": "anonymous",
+        "orgTSVSHA256": "8c85951662567320531348c1cd77da7eeec90e402a714056b45411537067a28f",
+        "orgRunSHA256": "ad7101574e0b4b55616ece6e79fdd234beafd9fae200391870d3fed21f10d236"
+      },
+      {
+        "apiVersion": "68.0",
+        "route": "isTest",
+        "orgTSVSHA256": "3e10fdaeb8c88d07829fc0e233e31a1952ce6075f15a69c1b16fd61077540081",
+        "orgRunSHA256": "31042b1abbefe056b21e7ba721c24d004166caeaee0ca188ddb0e78dcbc1e56a"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "group": "token-identity",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');r=contactName==accountName;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R002",
+      "group": "token-identity",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');r=contactName==Contact.Name;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R003",
+      "group": "token-identity",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');r=accountName==Account.Name;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R004",
+      "group": "token-identity",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');r=contactName.equals(accountName);",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R005",
+      "group": "token-identity",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');r=contactName.equals(Contact.Name);",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R006",
+      "group": "token-identity",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');r=contactName.getDescribe()==accountName.getDescribe();",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R007",
+      "group": "token-identity",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');r=contactName.getDescribe()==Contact.Name.getDescribe();",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R008",
+      "group": "token-identity",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');r=contactName.hashCode()==Contact.Name.hashCode();",
+      "expected": "true",
+      "compile": false,
+      "carryOwner": "nondeterministic SObject describe field map result fflib_SObjectDescribeTest.FieldsMap flakes",
+      "carryReason": "SObjectField.hashCode hashes the Go field-map pointer instead of field identity; separate hash repair remains owned here."
+    },
+    {
+      "id": "R009",
+      "group": "token-identity",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');r=accountName.hashCode()==Account.Name.hashCode();",
+      "expected": "true",
+      "compile": false,
+      "carryOwner": "nondeterministic SObject describe field map result fflib_SObjectDescribeTest.FieldsMap flakes",
+      "carryReason": "SObjectField.hashCode hashes the Go field-map pointer instead of field identity; separate hash repair remains owned here."
+    },
+    {
+      "id": "R010",
+      "group": "token-identity",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');r=Contact.Id==Account.Id;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R011",
+      "group": "ordinary-map/Schema.SObjectField",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get('slot__c')==contactName;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R012",
+      "group": "ordinary-map/Schema.SObjectField",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get('probe__slot__c')==accountName;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R013",
+      "group": "ordinary-map/Schema.SObjectField",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get('absent__slot__c')==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R014",
+      "group": "ordinary-map/Schema.SObjectField",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.containsKey('absent__slot__c');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R015",
+      "group": "ordinary-map/Schema.SObjectField",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get('SLOT__C')==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R016",
+      "group": "ordinary-map/Schema.SObjectField",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.containsKey('SLOT__C');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R017",
+      "group": "ordinary-map/Schema.SObjectField",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get('outer__probe__slot__c')==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R018",
+      "group": "ordinary-map/Schema.SObjectField",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.containsKey('outer__probe__slot__c');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R019",
+      "group": "ordinary-map/Schema.SObjectField",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get('other__c')==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R020",
+      "group": "ordinary-map/Schema.SObjectField",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get(null)==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R021",
+      "group": "ordinary-map/Schema.SObjectField",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.size();",
+      "expected": "4",
+      "compile": false
+    },
+    {
+      "id": "R022",
+      "group": "selection/Schema.SObjectField",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};String preferred=('absent__'+'SLoT__C').toLowerCase();Object selected;if(fields.containsKey(preferred)){selected=fields.get(preferred);}else{selected=fields.get('slot__c');}r=selected==contactName && selected!=accountName;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R023",
+      "group": "ordinary-map/Object",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Object> fields=new Map<String,Object>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get('slot__c')==contactName;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R024",
+      "group": "ordinary-map/Object",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Object> fields=new Map<String,Object>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get('probe__slot__c')==accountName;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R025",
+      "group": "ordinary-map/Object",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Object> fields=new Map<String,Object>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get('absent__slot__c')==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R026",
+      "group": "ordinary-map/Object",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Object> fields=new Map<String,Object>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.containsKey('absent__slot__c');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R027",
+      "group": "ordinary-map/Object",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Object> fields=new Map<String,Object>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get('SLOT__C')==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R028",
+      "group": "ordinary-map/Object",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Object> fields=new Map<String,Object>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.containsKey('SLOT__C');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R029",
+      "group": "ordinary-map/Object",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Object> fields=new Map<String,Object>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get('outer__probe__slot__c')==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R030",
+      "group": "ordinary-map/Object",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Object> fields=new Map<String,Object>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.containsKey('outer__probe__slot__c');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R031",
+      "group": "ordinary-map/Object",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Object> fields=new Map<String,Object>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get('other__c')==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R032",
+      "group": "ordinary-map/Object",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Object> fields=new Map<String,Object>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.get(null)==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R033",
+      "group": "ordinary-map/Object",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Object> fields=new Map<String,Object>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};r=fields.size();",
+      "expected": "4",
+      "compile": false
+    },
+    {
+      "id": "R034",
+      "group": "selection/Object",
+      "code": "Schema.SObjectField contactName=Schema.SObjectType.Contact.fields.getMap().get('Name');Schema.SObjectField accountName=Schema.SObjectType.Account.fields.getMap().get('Name');Map<String,Object> fields=new Map<String,Object>{'slot__c'=>contactName,'probe__slot__c'=>accountName,'probe__other__c'=>accountName,'createddate'=>Contact.CreatedDate};String preferred=('absent__'+'SLoT__C').toLowerCase();Object selected;if(fields.containsKey(preferred)){selected=fields.get(preferred);}else{selected=fields.get('slot__c');}r=selected==contactName && selected!=accountName;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R035",
+      "group": "must-not-apply",
+      "code": "Map<String,Schema.SObjectField> fields=Schema.SObjectType.Contact.fields.getMap();r=fields.get('NAME')==Contact.Name;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R036",
+      "group": "must-not-apply",
+      "code": "Map<String,Schema.SObjectField> fields=Schema.SObjectType.Contact.fields.getMap();r=fields.get('MissingField__c')==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R037",
+      "group": "must-not-apply",
+      "code": "Map<String,Schema.SObjectField> fields=Schema.SObjectType.Contact.fields.getMap();r=fields.containsKey('MissingField__c');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R038",
+      "group": "must-not-apply",
+      "code": "Map<String,String> fields=new Map<String,String>{'slot__c'=>'first','probe__slot__c'=>'second'};r=fields.get('absent__slot__c')==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R039",
+      "group": "must-not-apply",
+      "code": "Map<String,Object> fields=new Map<String,Object>{'slot__c'=>Contact.Name,'probe__slot__c'=>Account.Name,'plain'=>'text'};r=fields.get('absent__slot__c')==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R040",
+      "group": "must-not-apply",
+      "code": "Map<Schema.SObjectField,String> fields=new Map<Schema.SObjectField,String>{Contact.Name=>'contact',Account.Name=>'account'};r=fields.size()+'|'+fields.get(Contact.Name)+'|'+fields.get(Account.Name);",
+      "expected": "2|contact|account",
+      "compile": false
+    },
+    {
+      "id": "R041",
+      "group": "must-not-apply",
+      "code": "Set<Schema.SObjectField> fields=new Set<Schema.SObjectField>{Contact.Name,Account.Name,Contact.Name};r=fields.size();",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R042",
+      "group": "must-not-apply",
+      "code": "r=Schema.SObjectType.Contact!=Schema.SObjectType.Account;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "C001",
+      "group": "token-type-rejection",
+      "code": "Schema.SObjectField field='Name';pq.out('C001','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tIllegal assignment from String to Schema.SObjectField",
+      "compile": true,
+      "nativeDiagnostic": "Illegal assignment from String to Schema.SObjectField",
+      "diagnosticOwner": "nondeterministic SObject describe field map result fflib_SObjectDescribeTest.FieldsMap flakes",
+      "diagnosticReason": "Rejection is already supported; generic local compiler wording differs from the captured native problem text."
+    },
+    {
+      "id": "C002",
+      "group": "token-type-rejection",
+      "code": "Map<String,Schema.SObjectField> fields=new Map<String,Schema.SObjectField>{'slot__c'=>'Name'};pq.out('C002','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tInvalid value type String for Schema.SObjectField",
+      "compile": true,
+      "nativeDiagnostic": "Invalid value type String for Schema.SObjectField"
+    }
+  ]
+}

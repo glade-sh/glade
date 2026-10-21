@@ -21,7 +21,7 @@ type standardDescribeObject struct {
 	Name               string                              `json:"name"`
 	Label              string                              `json:"label"`
 	LabelPlural        string                              `json:"labelPlural"`
-	KeyPrefix          string                              `json:"keyPrefix"`
+	KeyPrefix          *string                             `json:"keyPrefix"`
 	Mergeable          *bool                               `json:"mergeable"`
 	Triggerable        *bool                               `json:"triggerable"`
 	Fields             []standardDescribeField             `json:"fields"`
@@ -30,6 +30,25 @@ type standardDescribeObject struct {
 }
 
 var standardObjectTriggerableCache sync.Map
+
+// StandardObjectDescribeKeyPrefix distinguishes an absent describe entry from
+// a captured null key prefix. Objects without a stable prefix return null from
+// Apex describe, even when local storage assigned an internal identifier prefix.
+func StandardObjectDescribeKeyPrefix(objectName string) (prefix *string, known bool) {
+	canonical, ok := standardDescribeCatalogCanonicalName(objectName)
+	if !ok {
+		return nil, false
+	}
+	describe, found, err := lookupStandardDescribeCatalogV2(canonical)
+	return describe.KeyPrefix, found && err == nil
+}
+
+func (describe standardDescribeObject) keyPrefixValue() string {
+	if describe.KeyPrefix == nil {
+		return ""
+	}
+	return *describe.KeyPrefix
+}
 
 // VisitStandardChildRelationships reads the parent-side describe catalog without
 // materializing unrelated objects. UI metadata must include unloaded children.
@@ -78,8 +97,54 @@ func StandardObjectTriggerable(objectName string) (triggerable, known bool) {
 	return value, true
 }
 
+// StandardFieldNameFlag returns an explicit nameField observation from the
+// owned standard describe catalog, scoped to the declared org feature shape.
+// Missing facets retain the caller's fallback.
+func StandardFieldNameFlag(definition ObjectDefinition, fieldName string) (nameField, known bool) {
+	field, found := standardDescribeFieldForName(definition.APIName, fieldName)
+	if !found || field.NameField == nil {
+		return false, false
+	}
+	// The shared catalog includes Person Account name components. A standard
+	// object metadata delta can retain those tokens without enabling the org
+	// feature; business Account observations have only Name as the name field.
+	features := strings.Split(definition.Metadata[standardFieldsOverlayMarker], ",")
+	if strings.EqualFold(definition.APIName, "Account") && !hasCanonicalFeature(features, "PersonAccounts") {
+		return strings.EqualFold(field.Name, "Name"), true
+	}
+	return *field.NameField, true
+}
+
+// StandardFieldRichTextLength exposes only an explicit rich-text textarea facet
+// from the owned catalog. Other field kinds and absent facets retain fallbacks.
+func StandardFieldRichTextLength(objectName, fieldName string) (length int, known bool) {
+	field, found := standardDescribeFieldForName(objectName, fieldName)
+	if !found || !strings.EqualFold(field.Type, "textarea") || !strings.EqualFold(field.ExtraTypeInfo, "richtextarea") {
+		return 0, false
+	}
+	return field.Length, true
+}
+
+func standardDescribeFieldForName(objectName, fieldName string) (standardDescribeField, bool) {
+	canonical, ok := standardDescribeCatalogCanonicalName(objectName)
+	if !ok {
+		return standardDescribeField{}, false
+	}
+	describe, found, err := lookupStandardDescribeCatalogV2(canonical)
+	if err != nil || !found {
+		return standardDescribeField{}, false
+	}
+	for _, field := range describe.Fields {
+		if strings.EqualFold(field.Name, fieldName) {
+			return field, true
+		}
+	}
+	return standardDescribeField{}, false
+}
+
 type standardDescribeField struct {
 	Name                string                          `json:"name"`
+	NameField           *bool                           `json:"nameField"`
 	Label               string                          `json:"label"`
 	Type                string                          `json:"type"`
 	Length              int                             `json:"length"`
@@ -108,6 +173,7 @@ type standardDescribeField struct {
 	RelationshipName    string                          `json:"relationshipName"`
 	Polymorphic         bool                            `json:"polymorphicForeignKey"`
 	PicklistValues      []standardDescribePicklistValue `json:"picklistValues"`
+	ExtraTypeInfo       string                          `json:"extraTypeInfo"`
 }
 
 type standardDescribePicklistValue struct {
@@ -242,7 +308,7 @@ func loadEmbeddedStandardDescribeCatalog() map[string]standardObjectCatalogEntry
 				APIName:     describe.Name,
 				Label:       firstStorageString(describe.Label, describe.Name),
 				PluralLabel: firstStorageString(describe.LabelPlural, describe.Label+"s", describe.Name+"s"),
-				KeyPrefix:   describe.KeyPrefix,
+				KeyPrefix:   describe.keyPrefixValue(),
 				Fields:      describeFieldMap(describe.Fields),
 				Relations:   describeRelationships(describe.Name, describe.Fields, childRelationships),
 				RecordTypes: describeRecordTypes(describe.RecordTypeInfos),

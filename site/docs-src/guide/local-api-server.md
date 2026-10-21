@@ -7,6 +7,11 @@ canonicalTask: /guide/workflows/local-data
 
 `glade server` starts local Salesforce-style HTTP routes backed by the same runtime used by the CLI. Use it for local integration tests, tools, and development loops that need REST-style org behavior without a live Salesforce org.
 
+Checked HTTP endpoint versions are 60.0, 65.0, 66.0, 67.0, and 68.0; the
+default is 65.0. These are independent of the v0.3.0 support window:
+Apex 62.0-68.0, LWC and Visualforce 59.0-68.0. Execute Anonymous accepts
+source API 65.0, 66.0, 67.0, and 68.0.
+
 ## Start the server
 
 Use an ephemeral in-memory org:
@@ -39,6 +44,16 @@ glade db seed --wizard --db .glade/refinement-local.sqlite --project . data/file
 glade db seed --db .glade/refinement-local.sqlite --project . --progress data/file-rows.json
 glade db inspect --db .glade/refinement-local.sqlite --json
 ```
+
+## Local identity
+
+The default local Organization ID is `00D000000000mH2`. The seeded current user
+is `005000000000001`, with time zone `America/Los_Angeles`; Automated Process
+uses a separate non-counter ID and `UTC`. These are local fixtures, not hosted
+org identities. Imported/configured identities are preserved where provided.
+Set `org.domainUrl` in `glade.yml` for the canonical org origin returned by
+`URL.getOrgDomainUrl()`. It is independent of the server bind address and
+incoming request origin. See [configuration](/reference/config).
 
 ## REST routes
 

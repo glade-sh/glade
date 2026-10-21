@@ -1,0 +1,5 @@
+source_api	route	observation
+59.0	anonymous	{"assetPage":"/apex/meadowassetpage","plainPage":"/apex/meadowplainpage"}
+59.0	isTest	{"assetPage":"/apex/meadowassetpage","plainPage":"/apex/meadowplainpage"}
+67.0	anonymous	{"assetPage":"/apex/meadowassetpage","plainPage":"/apex/meadowplainpage"}
+67.0	isTest	{"assetPage":"/apex/meadowassetpage","plainPage":"/apex/meadowplainpage"}

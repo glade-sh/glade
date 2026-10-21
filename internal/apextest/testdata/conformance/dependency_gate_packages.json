@@ -1,0 +1,840 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "packages",
+  "nativeObservationCount": 9,
+  "cells": [
+    {
+      "id": "C180GS_033",
+      "api": "62.0",
+      "route": "istest",
+      "group": "never-saved-package",
+      "state": "never-saved",
+      "kind": "package",
+      "classes": {
+        "E7624d75789eP33Root": "public class E7624d75789eP33Root{public static String token(){return 'root';}}",
+        "E7624d75789eP33Handler": "public class E7624d75789eP33Handler{public static String token(){return E7624d75789eP33Root.token();}}",
+        "E7624d75789eP33Client": "public class E7624d75789eP33Client{public static String token(){return E7624d75789eP33Handler.token();}}",
+        "E7624d75789eP33Independent": "public class E7624d75789eP33Independent{public static Integer value(){return 7;}}",
+        "E7624d75789eP33ByName": "public class E7624d75789eP33ByName{public static String value(){Type t=Type.forName('E7624d75789eP33Root');return 'E7624d75789eP33Root';}}",
+        "E7624d75789eP33IndependentTest": "@IsTest private class E7624d75789eP33IndependentTest{@IsTest static void observe(){System.assertEquals(7,E7624d75789eP33Independent.value());}}",
+        "E7624d75789eP33ByNameTest": "@IsTest private class E7624d75789eP33ByNameTest{@IsTest static void observe(){System.assertEquals('E7624d75789eP33Root',E7624d75789eP33ByName.value());}}"
+      },
+      "triggers": {
+        "E7624d75789eP33Trigger": "trigger E7624d75789eP33Trigger on E7624d75789eDirect__c(before insert){E7624d75789eP33Root.token();}"
+      },
+      "objects": {
+        "E7624d75789eDirect__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eDirect__c</label><pluralLabel>E7624d75789eDirect__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eDirectMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eChain__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eChain__c</label><pluralLabel>E7624d75789eChain__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eChainMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eMixed__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eMixed__c</label><pluralLabel>E7624d75789eMixed__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eMixedMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eClean__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eClean__c</label><pluralLabel>E7624d75789eClean__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eCleanMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eDependency__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eDependency__c</label><pluralLabel>E7624d75789eDependency__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Value__c</fullName><label>E7624d75789eDependencyValue__c</label><length>80</length><type>Text</type></fields></CustomObject>"
+      },
+      "anonymous": "",
+      "tests": [
+        "E7624d75789eP33IndependentTest",
+        "E7624d75789eP33ByNameTest"
+      ],
+      "native": {
+        "outcome": "rejected-with-tests",
+        "retry_recommended": false,
+        "infrastructure_faults": [],
+        "componentFailures": [],
+        "testFailures": [],
+        "codeCoverageWarnings": [
+          {
+            "id": "[REDACTED_ID]",
+            "message": "Test coverage of selected Apex Class is 0%, at least 75% test coverage is required",
+            "name": "E7624d75789eP33Handler",
+            "namespace": null
+          },
+          {
+            "id": "[REDACTED_ID]",
+            "message": "Test coverage of selected Apex Class is 0%, at least 75% test coverage is required",
+            "name": "E7624d75789eP33Root",
+            "namespace": null
+          },
+          {
+            "id": "[REDACTED_ID]",
+            "message": "Test coverage of selected Apex Trigger is 0%, at least 75% test coverage is required",
+            "name": "E7624d75789eP33Trigger",
+            "namespace": null
+          },
+          {
+            "id": "[REDACTED_ID]",
+            "message": "Test coverage of selected Apex Class is 0%, at least 75% test coverage is required",
+            "name": "E7624d75789eP33Client",
+            "namespace": null
+          }
+        ],
+        "flowCoverageWarnings": [],
+        "referencedFieldRejected": false,
+        "errorStatusCode": null,
+        "errorMessage": null
+      },
+      "carry": "Valid package rejected only for selected-test coverage; compile/runtime twin asserted separately under the partial-run policy.",
+      "sourceSha256": {
+        "classes:E7624d75789eP33Root": "ad6c91ea004e88fb602eb5a6e708c1ad73263840b1a7d86b1e5dd7576abe7b4e",
+        "classes:E7624d75789eP33Handler": "c4660d7cce0f378200798425d36ae3cd55a38a61b00a27d0704897ca536f0577",
+        "classes:E7624d75789eP33Client": "4e3b937ab6a754de3e63472137536512242e2f7e8db9e585c9477c5e1c116849",
+        "classes:E7624d75789eP33Independent": "dbf860fb90ff11e1c6baf220e20e39a50bc1bf0f8642b1a20524cc6da84cbe3f",
+        "classes:E7624d75789eP33ByName": "a3bc96879cac1f62c7e4322b5b35abbda47445f16a57abf9ce2a6775b1f13905",
+        "classes:E7624d75789eP33IndependentTest": "acb38a968430d1cc132a323812491204da1edb8e18546a175215a10ed8a2b591",
+        "classes:E7624d75789eP33ByNameTest": "a1efc8723ff05e1c0882b658a405f25e82624ed9cd58b716b76cd5fd77fe71c8",
+        "triggers:E7624d75789eP33Trigger": "1844c48038e93307109d00fa7eb5eb81ca62ceed348ecf9ef8a96df3093b2abf",
+        "objects:E7624d75789eDirect__c": "d479f8dbc7a4caa8ef4f3a9c3bf43d82d7b48555abf9c697c19734691317d5d9",
+        "objects:E7624d75789eChain__c": "2c3c4be5aeade82d59d53de89a6d15524852c7854f10e6bbc03a244c74462841",
+        "objects:E7624d75789eMixed__c": "906a7d7377d15265c8f672fbeb0c127bc86f4d0cc94313fa57705a2d4131e3b1",
+        "objects:E7624d75789eClean__c": "9fd4bb9203cadbf5aa41d67037bf7219bbb4b3213615457c392344c7a5c1ce37",
+        "objects:E7624d75789eDependency__c": "c5f146ac1b0e627b561d5f4580dde52ba7f3500e34895a52ebfa38342496b7e3"
+      }
+    },
+    {
+      "id": "C180GS_034",
+      "api": "62.0",
+      "route": "istest",
+      "group": "never-saved-package",
+      "state": "never-saved",
+      "kind": "package",
+      "classes": {
+        "E7624d75789eP34Root": "public class E7624d75789eP34Root{public static String token(){Integer x='bad';return String.valueOf(x);}}",
+        "E7624d75789eP34Handler": "public class E7624d75789eP34Handler{public static String token(){return E7624d75789eP34Root.token();}}",
+        "E7624d75789eP34Client": "public class E7624d75789eP34Client{public static String token(){return E7624d75789eP34Handler.token();}}",
+        "E7624d75789eP34Independent": "public class E7624d75789eP34Independent{public static Integer value(){return 7;}}",
+        "E7624d75789eP34ByName": "public class E7624d75789eP34ByName{public static String value(){Type t=Type.forName('E7624d75789eP34Root');return 'E7624d75789eP34Root';}}",
+        "E7624d75789eP34IndependentTest": "@IsTest private class E7624d75789eP34IndependentTest{@IsTest static void observe(){System.assertEquals(7,E7624d75789eP34Independent.value());}}",
+        "E7624d75789eP34ByNameTest": "@IsTest private class E7624d75789eP34ByNameTest{@IsTest static void observe(){System.assertEquals('E7624d75789eP34Root',E7624d75789eP34ByName.value());}}"
+      },
+      "triggers": {
+        "E7624d75789eP34Trigger": "trigger E7624d75789eP34Trigger on E7624d75789eDirect__c(before insert){E7624d75789eP34Root.token();}"
+      },
+      "objects": {
+        "E7624d75789eDirect__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eDirect__c</label><pluralLabel>E7624d75789eDirect__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eDirectMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eChain__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eChain__c</label><pluralLabel>E7624d75789eChain__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eChainMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eMixed__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eMixed__c</label><pluralLabel>E7624d75789eMixed__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eMixedMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eClean__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eClean__c</label><pluralLabel>E7624d75789eClean__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eCleanMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eDependency__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eDependency__c</label><pluralLabel>E7624d75789eDependency__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Value__c</fullName><label>E7624d75789eDependencyValue__c</label><length>80</length><type>Text</type></fields></CustomObject>"
+      },
+      "anonymous": "",
+      "tests": [
+        "E7624d75789eP34IndependentTest",
+        "E7624d75789eP34ByNameTest"
+      ],
+      "native": {
+        "outcome": "rejected-with-component",
+        "retry_recommended": false,
+        "infrastructure_faults": [],
+        "componentFailures": [
+          {
+            "fullName": "E7624d75789eP34Client",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Dependent class is invalid and needs recompilation:\n Class E7624d75789eP34Handler : Dependent class is invalid and needs recompilation:\n Class E7624d75789eP34Root : Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7624d75789eP34Handler",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Dependent class is invalid and needs recompilation:\n Class E7624d75789eP34Root : Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7624d75789eP34Root",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7624d75789eP34Trigger",
+            "componentType": "ApexTrigger",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Variable does not exist: E7624d75789eP34Root"
+          }
+        ],
+        "testFailures": [],
+        "codeCoverageWarnings": [],
+        "flowCoverageWarnings": [],
+        "referencedFieldRejected": false,
+        "errorStatusCode": null,
+        "errorMessage": null
+      },
+      "carry": "",
+      "sourceSha256": {
+        "classes:E7624d75789eP34Root": "50b4709b3b4aebe35ce8cd79af83826b01934fe0dc1de7d6a8e100ecaa989233",
+        "classes:E7624d75789eP34Handler": "22b86840fe772028d251caca3e48fbf74b7cc6979324def545fc9065ab058610",
+        "classes:E7624d75789eP34Client": "9f5acae04242a1c96bfcec03dd2c1a734b7566a95720a6a6329b07b257c25d4e",
+        "classes:E7624d75789eP34Independent": "6db78e01849b64e8f057bceff1f78eea454475a2f595646dfd03143c124f890a",
+        "classes:E7624d75789eP34ByName": "19506ee5ed785c5c34fe6939e2119bd1dcedc25fb8b62612d6f3f5fe103e19e6",
+        "classes:E7624d75789eP34IndependentTest": "e2b01316ab5cc536abcea7ddea0df379ac8b3c24f469a6f1af622fd0742bbd7c",
+        "classes:E7624d75789eP34ByNameTest": "d76d6f2fb5b7e00ba399c964d85a1f863a1aec11e4c894a4a46cc9e1e6e8bc3b",
+        "triggers:E7624d75789eP34Trigger": "ef121d81925882032fc146ad1bd7b56b2a4dbf00b512eef3b877dfa82176cfba",
+        "objects:E7624d75789eDirect__c": "d479f8dbc7a4caa8ef4f3a9c3bf43d82d7b48555abf9c697c19734691317d5d9",
+        "objects:E7624d75789eChain__c": "2c3c4be5aeade82d59d53de89a6d15524852c7854f10e6bbc03a244c74462841",
+        "objects:E7624d75789eMixed__c": "906a7d7377d15265c8f672fbeb0c127bc86f4d0cc94313fa57705a2d4131e3b1",
+        "objects:E7624d75789eClean__c": "9fd4bb9203cadbf5aa41d67037bf7219bbb4b3213615457c392344c7a5c1ce37",
+        "objects:E7624d75789eDependency__c": "c5f146ac1b0e627b561d5f4580dde52ba7f3500e34895a52ebfa38342496b7e3"
+      }
+    },
+    {
+      "id": "C180GS_035",
+      "api": "62.0",
+      "route": "istest",
+      "group": "never-saved-package",
+      "state": "never-saved",
+      "kind": "package",
+      "classes": {
+        "E7624d75789eP35Root": "public class E7624d75789eP35Root{public static String token(){Integer x='bad';return String.valueOf(x);}}",
+        "E7624d75789eP35Handler": "public class E7624d75789eP35Handler{public static String token(){return E7624d75789eP35Root.token();}}",
+        "E7624d75789eP35Client": "public class E7624d75789eP35Client{public static String token(){return E7624d75789eP35Handler.token();}}",
+        "E7624d75789eP35Independent": "public class E7624d75789eP35Independent{public static Integer value(){return 7;}}",
+        "E7624d75789eP35ByName": "public class E7624d75789eP35ByName{public static String value(){Type t=Type.forName('E7624d75789eP35Root');return 'E7624d75789eP35Root';}}",
+        "E7624d75789eP35IndependentTest": "@IsTest private class E7624d75789eP35IndependentTest{@IsTest static void observe(){System.assertEquals(7,E7624d75789eP35Independent.value());}}",
+        "E7624d75789eP35ByNameTest": "@IsTest private class E7624d75789eP35ByNameTest{@IsTest static void observe(){System.assertEquals('E7624d75789eP35Root',E7624d75789eP35ByName.value());}}"
+      },
+      "triggers": {
+        "E7624d75789eP35Trigger": "trigger E7624d75789eP35Trigger on E7624d75789eDirect__c(before insert){E7624d75789eP35Handler.token();}"
+      },
+      "objects": {
+        "E7624d75789eDirect__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eDirect__c</label><pluralLabel>E7624d75789eDirect__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eDirectMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eChain__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eChain__c</label><pluralLabel>E7624d75789eChain__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eChainMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eMixed__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eMixed__c</label><pluralLabel>E7624d75789eMixed__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eMixedMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eClean__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eClean__c</label><pluralLabel>E7624d75789eClean__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eCleanMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eDependency__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eDependency__c</label><pluralLabel>E7624d75789eDependency__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Value__c</fullName><label>E7624d75789eDependencyValue__c</label><length>80</length><type>Text</type></fields></CustomObject>"
+      },
+      "anonymous": "",
+      "tests": [
+        "E7624d75789eP35IndependentTest",
+        "E7624d75789eP35ByNameTest"
+      ],
+      "native": {
+        "outcome": "rejected-with-component",
+        "retry_recommended": false,
+        "infrastructure_faults": [],
+        "componentFailures": [
+          {
+            "fullName": "E7624d75789eP35Client",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Dependent class is invalid and needs recompilation:\n Class E7624d75789eP35Handler : Dependent class is invalid and needs recompilation:\n Class E7624d75789eP35Root : Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7624d75789eP35Handler",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Dependent class is invalid and needs recompilation:\n Class E7624d75789eP35Root : Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7624d75789eP35Root",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7624d75789eP35Trigger",
+            "componentType": "ApexTrigger",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Variable does not exist: E7624d75789eP35Handler"
+          }
+        ],
+        "testFailures": [],
+        "codeCoverageWarnings": [],
+        "flowCoverageWarnings": [],
+        "referencedFieldRejected": false,
+        "errorStatusCode": null,
+        "errorMessage": null
+      },
+      "carry": "",
+      "sourceSha256": {
+        "classes:E7624d75789eP35Root": "64352b6469a955e614ac50d3dfb01ca703a2c1dc5fbdd666acc86c5bd1aeee47",
+        "classes:E7624d75789eP35Handler": "b9d67572352676af8bee9d3b669679841221a170de8a13b20416f46bdd7e9b7e",
+        "classes:E7624d75789eP35Client": "6c21bdacfc25c60ec100934a7e0211e16519419214e9c8b02d24cca0869593fd",
+        "classes:E7624d75789eP35Independent": "cdbd7da59c14fadda51e2428e793c2087b975fdcb3a2dbc0bac0adc48086d6de",
+        "classes:E7624d75789eP35ByName": "1709b5d0789188d030b0db3039a79ab18b78025c686659c623429487ec9f6097",
+        "classes:E7624d75789eP35IndependentTest": "74230234eadd36e166eae41a51bb6dbd9a7a9dd44bb854dce2b024ab5541c458",
+        "classes:E7624d75789eP35ByNameTest": "2f94c3dd307a1e159bfa87aefd14fcbd671218da7cc0be0449b53fdbc339e163",
+        "triggers:E7624d75789eP35Trigger": "b27a92bc1a12b8cc719b4e1421dddd13a8c8f5efc608c8634d35ab1f4f331c40",
+        "objects:E7624d75789eDirect__c": "d479f8dbc7a4caa8ef4f3a9c3bf43d82d7b48555abf9c697c19734691317d5d9",
+        "objects:E7624d75789eChain__c": "2c3c4be5aeade82d59d53de89a6d15524852c7854f10e6bbc03a244c74462841",
+        "objects:E7624d75789eMixed__c": "906a7d7377d15265c8f672fbeb0c127bc86f4d0cc94313fa57705a2d4131e3b1",
+        "objects:E7624d75789eClean__c": "9fd4bb9203cadbf5aa41d67037bf7219bbb4b3213615457c392344c7a5c1ce37",
+        "objects:E7624d75789eDependency__c": "c5f146ac1b0e627b561d5f4580dde52ba7f3500e34895a52ebfa38342496b7e3"
+      }
+    },
+    {
+      "id": "C180GS_033",
+      "api": "67.0",
+      "route": "istest",
+      "group": "never-saved-package",
+      "state": "never-saved",
+      "kind": "package",
+      "classes": {
+        "E7674d75789eP33Root": "public class E7674d75789eP33Root{public static String token(){return 'root';}}",
+        "E7674d75789eP33Handler": "public class E7674d75789eP33Handler{public static String token(){return E7674d75789eP33Root.token();}}",
+        "E7674d75789eP33Client": "public class E7674d75789eP33Client{public static String token(){return E7674d75789eP33Handler.token();}}",
+        "E7674d75789eP33Independent": "public class E7674d75789eP33Independent{public static Integer value(){return 7;}}",
+        "E7674d75789eP33ByName": "public class E7674d75789eP33ByName{public static String value(){Type t=Type.forName('E7674d75789eP33Root');return 'E7674d75789eP33Root';}}",
+        "E7674d75789eP33IndependentTest": "@IsTest private class E7674d75789eP33IndependentTest{@IsTest static void observe(){System.assertEquals(7,E7674d75789eP33Independent.value());}}",
+        "E7674d75789eP33ByNameTest": "@IsTest private class E7674d75789eP33ByNameTest{@IsTest static void observe(){System.assertEquals('E7674d75789eP33Root',E7674d75789eP33ByName.value());}}"
+      },
+      "triggers": {
+        "E7674d75789eP33Trigger": "trigger E7674d75789eP33Trigger on E7674d75789eDirect__c(before insert){E7674d75789eP33Root.token();}"
+      },
+      "objects": {
+        "E7674d75789eDirect__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eDirect__c</label><pluralLabel>E7674d75789eDirect__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eDirectMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eChain__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eChain__c</label><pluralLabel>E7674d75789eChain__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eChainMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eMixed__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eMixed__c</label><pluralLabel>E7674d75789eMixed__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eMixedMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eClean__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eClean__c</label><pluralLabel>E7674d75789eClean__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eCleanMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eDependency__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eDependency__c</label><pluralLabel>E7674d75789eDependency__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Value__c</fullName><label>E7674d75789eDependencyValue__c</label><length>80</length><type>Text</type></fields></CustomObject>"
+      },
+      "anonymous": "",
+      "tests": [
+        "E7674d75789eP33IndependentTest",
+        "E7674d75789eP33ByNameTest"
+      ],
+      "native": {
+        "outcome": "rejected-with-tests",
+        "retry_recommended": false,
+        "infrastructure_faults": [],
+        "componentFailures": [],
+        "testFailures": [],
+        "codeCoverageWarnings": [
+          {
+            "id": "[REDACTED_ID]",
+            "message": "Test coverage of selected Apex Class is 0%, at least 75% test coverage is required",
+            "name": "E7674d75789eP33Root",
+            "namespace": null
+          },
+          {
+            "id": "[REDACTED_ID]",
+            "message": "Test coverage of selected Apex Class is 0%, at least 75% test coverage is required",
+            "name": "E7674d75789eP33Handler",
+            "namespace": null
+          },
+          {
+            "id": "[REDACTED_ID]",
+            "message": "Test coverage of selected Apex Class is 0%, at least 75% test coverage is required",
+            "name": "E7674d75789eP33Client",
+            "namespace": null
+          },
+          {
+            "id": "[REDACTED_ID]",
+            "message": "Test coverage of selected Apex Trigger is 0%, at least 75% test coverage is required",
+            "name": "E7674d75789eP33Trigger",
+            "namespace": null
+          }
+        ],
+        "flowCoverageWarnings": [],
+        "referencedFieldRejected": false,
+        "errorStatusCode": null,
+        "errorMessage": null
+      },
+      "carry": "Valid package rejected only for selected-test coverage; compile/runtime twin asserted separately under the partial-run policy.",
+      "sourceSha256": {
+        "classes:E7674d75789eP33Root": "86885430b58c2a9a7d469e867b9f57011e7c2bda7f448c2e1d75897fc09aef2f",
+        "classes:E7674d75789eP33Handler": "737de6f5fedd124df87c0b15bde1f3fe43f3452ac55a6fb04978785e08b3dda8",
+        "classes:E7674d75789eP33Client": "2fb052f0afd08508ea069df4a9f83385a87dfc9ae9e0346746649daf89d54b29",
+        "classes:E7674d75789eP33Independent": "a38abb0d618cc53e3130901db74b56dd029164004056a10cce631d7704744dbc",
+        "classes:E7674d75789eP33ByName": "c9c8c23324d3a31e9fc5a7a1a5df0c211f223ed34a26e39ef92ad2bd39b068e4",
+        "classes:E7674d75789eP33IndependentTest": "69ac4376fa622b21173c06b27e6a7eac52cac4dea07d8d0b2adffa941eb7e4e0",
+        "classes:E7674d75789eP33ByNameTest": "8a4d68375bf145a27a4812692353fdb722f8cfa2de1fa5db64f89447dc1c877c",
+        "triggers:E7674d75789eP33Trigger": "10af55c5855025443bbc4a7967450eddc3fc60bad62ded4aa48d528d9d7ad8c5",
+        "objects:E7674d75789eDirect__c": "36eafde74b41952660c25a2226b83459aba7232508c17cc3ba824322fe0615f1",
+        "objects:E7674d75789eChain__c": "51535fcf4859433ea8f8ab0263508f02749125777e36aafc83a72aff920ce564",
+        "objects:E7674d75789eMixed__c": "941c6084a20ac0821c5ed6a238c43d82f37653368c479d24e96f346a31b652f5",
+        "objects:E7674d75789eClean__c": "ba08817d4a19b73c62e16036bdceca34e423553ae72d11fd85d134c814006643",
+        "objects:E7674d75789eDependency__c": "d61e98fb4e4226ce5208949eed3c4be434094676a4b0c30e776f82a033132804"
+      }
+    },
+    {
+      "id": "C180GS_034",
+      "api": "67.0",
+      "route": "istest",
+      "group": "never-saved-package",
+      "state": "never-saved",
+      "kind": "package",
+      "classes": {
+        "E7674d75789eP34Root": "public class E7674d75789eP34Root{public static String token(){Integer x='bad';return String.valueOf(x);}}",
+        "E7674d75789eP34Handler": "public class E7674d75789eP34Handler{public static String token(){return E7674d75789eP34Root.token();}}",
+        "E7674d75789eP34Client": "public class E7674d75789eP34Client{public static String token(){return E7674d75789eP34Handler.token();}}",
+        "E7674d75789eP34Independent": "public class E7674d75789eP34Independent{public static Integer value(){return 7;}}",
+        "E7674d75789eP34ByName": "public class E7674d75789eP34ByName{public static String value(){Type t=Type.forName('E7674d75789eP34Root');return 'E7674d75789eP34Root';}}",
+        "E7674d75789eP34IndependentTest": "@IsTest private class E7674d75789eP34IndependentTest{@IsTest static void observe(){System.assertEquals(7,E7674d75789eP34Independent.value());}}",
+        "E7674d75789eP34ByNameTest": "@IsTest private class E7674d75789eP34ByNameTest{@IsTest static void observe(){System.assertEquals('E7674d75789eP34Root',E7674d75789eP34ByName.value());}}"
+      },
+      "triggers": {
+        "E7674d75789eP34Trigger": "trigger E7674d75789eP34Trigger on E7674d75789eDirect__c(before insert){E7674d75789eP34Root.token();}"
+      },
+      "objects": {
+        "E7674d75789eDirect__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eDirect__c</label><pluralLabel>E7674d75789eDirect__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eDirectMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eChain__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eChain__c</label><pluralLabel>E7674d75789eChain__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eChainMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eMixed__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eMixed__c</label><pluralLabel>E7674d75789eMixed__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eMixedMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eClean__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eClean__c</label><pluralLabel>E7674d75789eClean__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eCleanMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eDependency__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eDependency__c</label><pluralLabel>E7674d75789eDependency__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Value__c</fullName><label>E7674d75789eDependencyValue__c</label><length>80</length><type>Text</type></fields></CustomObject>"
+      },
+      "anonymous": "",
+      "tests": [
+        "E7674d75789eP34IndependentTest",
+        "E7674d75789eP34ByNameTest"
+      ],
+      "native": {
+        "outcome": "rejected-with-component",
+        "retry_recommended": false,
+        "infrastructure_faults": [],
+        "componentFailures": [
+          {
+            "fullName": "E7674d75789eP34Client",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Dependent class is invalid and needs recompilation:\n Class E7674d75789eP34Handler : Dependent class is invalid and needs recompilation:\n Class E7674d75789eP34Root : Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7674d75789eP34Handler",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Dependent class is invalid and needs recompilation:\n Class E7674d75789eP34Root : Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7674d75789eP34Root",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7674d75789eP34Trigger",
+            "componentType": "ApexTrigger",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Variable does not exist: E7674d75789eP34Root"
+          }
+        ],
+        "testFailures": [],
+        "codeCoverageWarnings": [],
+        "flowCoverageWarnings": [],
+        "referencedFieldRejected": false,
+        "errorStatusCode": null,
+        "errorMessage": null
+      },
+      "carry": "",
+      "sourceSha256": {
+        "classes:E7674d75789eP34Root": "c4005526149d1d7ee3252e0927baf3d068a0bbd9742f46adf963b6905c243534",
+        "classes:E7674d75789eP34Handler": "58a0541747822f839936fe61ed5df0e040bce121805d9a16f2877e529411f25e",
+        "classes:E7674d75789eP34Client": "88d4ecd3ef47f67d6eef4753ac9359551e3e48250a7c5c1689968ef735c4f0c6",
+        "classes:E7674d75789eP34Independent": "7720e6e48ef3e2147eabe948131a8e6079520b41d475eb927b26be4d0aa92b33",
+        "classes:E7674d75789eP34ByName": "011de606d6e0ed6c7e64d50f27273bf737ebf5bbd59a4d11bced4d9568845dd8",
+        "classes:E7674d75789eP34IndependentTest": "bab9b517b5227b7c60c354c5e99355d724b3d79fbfcd4428511d6c9e214faa54",
+        "classes:E7674d75789eP34ByNameTest": "3ec47fdc415533bea3fd9c05ae5dc145830d5281606278e3ced71efbd1da7145",
+        "triggers:E7674d75789eP34Trigger": "e064f66f623ce8723d1b7066b59eee51e8ad8e40deeb06a88b240316a83f6c9b",
+        "objects:E7674d75789eDirect__c": "36eafde74b41952660c25a2226b83459aba7232508c17cc3ba824322fe0615f1",
+        "objects:E7674d75789eChain__c": "51535fcf4859433ea8f8ab0263508f02749125777e36aafc83a72aff920ce564",
+        "objects:E7674d75789eMixed__c": "941c6084a20ac0821c5ed6a238c43d82f37653368c479d24e96f346a31b652f5",
+        "objects:E7674d75789eClean__c": "ba08817d4a19b73c62e16036bdceca34e423553ae72d11fd85d134c814006643",
+        "objects:E7674d75789eDependency__c": "d61e98fb4e4226ce5208949eed3c4be434094676a4b0c30e776f82a033132804"
+      }
+    },
+    {
+      "id": "C180GS_035",
+      "api": "67.0",
+      "route": "istest",
+      "group": "never-saved-package",
+      "state": "never-saved",
+      "kind": "package",
+      "classes": {
+        "E7674d75789eP35Root": "public class E7674d75789eP35Root{public static String token(){Integer x='bad';return String.valueOf(x);}}",
+        "E7674d75789eP35Handler": "public class E7674d75789eP35Handler{public static String token(){return E7674d75789eP35Root.token();}}",
+        "E7674d75789eP35Client": "public class E7674d75789eP35Client{public static String token(){return E7674d75789eP35Handler.token();}}",
+        "E7674d75789eP35Independent": "public class E7674d75789eP35Independent{public static Integer value(){return 7;}}",
+        "E7674d75789eP35ByName": "public class E7674d75789eP35ByName{public static String value(){Type t=Type.forName('E7674d75789eP35Root');return 'E7674d75789eP35Root';}}",
+        "E7674d75789eP35IndependentTest": "@IsTest private class E7674d75789eP35IndependentTest{@IsTest static void observe(){System.assertEquals(7,E7674d75789eP35Independent.value());}}",
+        "E7674d75789eP35ByNameTest": "@IsTest private class E7674d75789eP35ByNameTest{@IsTest static void observe(){System.assertEquals('E7674d75789eP35Root',E7674d75789eP35ByName.value());}}"
+      },
+      "triggers": {
+        "E7674d75789eP35Trigger": "trigger E7674d75789eP35Trigger on E7674d75789eDirect__c(before insert){E7674d75789eP35Handler.token();}"
+      },
+      "objects": {
+        "E7674d75789eDirect__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eDirect__c</label><pluralLabel>E7674d75789eDirect__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eDirectMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eChain__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eChain__c</label><pluralLabel>E7674d75789eChain__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eChainMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eMixed__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eMixed__c</label><pluralLabel>E7674d75789eMixed__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eMixedMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eClean__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eClean__c</label><pluralLabel>E7674d75789eClean__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eCleanMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eDependency__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eDependency__c</label><pluralLabel>E7674d75789eDependency__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Value__c</fullName><label>E7674d75789eDependencyValue__c</label><length>80</length><type>Text</type></fields></CustomObject>"
+      },
+      "anonymous": "",
+      "tests": [
+        "E7674d75789eP35IndependentTest",
+        "E7674d75789eP35ByNameTest"
+      ],
+      "native": {
+        "outcome": "rejected-with-component",
+        "retry_recommended": false,
+        "infrastructure_faults": [],
+        "componentFailures": [
+          {
+            "fullName": "E7674d75789eP35Client",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Dependent class is invalid and needs recompilation:\n Class E7674d75789eP35Handler : Dependent class is invalid and needs recompilation:\n Class E7674d75789eP35Root : Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7674d75789eP35Handler",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Dependent class is invalid and needs recompilation:\n Class E7674d75789eP35Root : Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7674d75789eP35Root",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7674d75789eP35Trigger",
+            "componentType": "ApexTrigger",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Variable does not exist: E7674d75789eP35Handler"
+          }
+        ],
+        "testFailures": [],
+        "codeCoverageWarnings": [],
+        "flowCoverageWarnings": [],
+        "referencedFieldRejected": false,
+        "errorStatusCode": null,
+        "errorMessage": null
+      },
+      "carry": "",
+      "sourceSha256": {
+        "classes:E7674d75789eP35Root": "5ecb69366182207728c0e6dd2955885c83455c39c7b7dd8941e41720f0044594",
+        "classes:E7674d75789eP35Handler": "d56dbf485c8b3b1991ee736968fe062dd0360a915ff478f6ba161da88072d860",
+        "classes:E7674d75789eP35Client": "251621519b4ed6c0864e7720da925b834e28e13b135d746810047372cade6894",
+        "classes:E7674d75789eP35Independent": "1dc0b94880276b4069fd3420aec4c2e5ed7899106000785ae24842e4dea25b85",
+        "classes:E7674d75789eP35ByName": "2c4f9cef02d107a4e3d76f7cba6590be150e11e8c58d5cdad965dfe2642cd719",
+        "classes:E7674d75789eP35IndependentTest": "98f19f182ee5fae3915010a421472714390015cbc4be3e36167a8bb8638ce1ac",
+        "classes:E7674d75789eP35ByNameTest": "132425c9594c47a1c21d85bf988bab170c9bf0f423d59a49f05d80513cbcb648",
+        "triggers:E7674d75789eP35Trigger": "ce5913af37a510ce7ffc24db1c434a275169f1b9f83ddbd8aa8a008f9c7038ba",
+        "objects:E7674d75789eDirect__c": "36eafde74b41952660c25a2226b83459aba7232508c17cc3ba824322fe0615f1",
+        "objects:E7674d75789eChain__c": "51535fcf4859433ea8f8ab0263508f02749125777e36aafc83a72aff920ce564",
+        "objects:E7674d75789eMixed__c": "941c6084a20ac0821c5ed6a238c43d82f37653368c479d24e96f346a31b652f5",
+        "objects:E7674d75789eClean__c": "ba08817d4a19b73c62e16036bdceca34e423553ae72d11fd85d134c814006643",
+        "objects:E7674d75789eDependency__c": "d61e98fb4e4226ce5208949eed3c4be434094676a4b0c30e776f82a033132804"
+      }
+    },
+    {
+      "id": "C180GS_033",
+      "api": "68.0",
+      "route": "istest",
+      "group": "never-saved-package",
+      "state": "never-saved",
+      "kind": "package",
+      "classes": {
+        "E7684d75789eP33Root": "public class E7684d75789eP33Root{public static String token(){return 'root';}}",
+        "E7684d75789eP33Handler": "public class E7684d75789eP33Handler{public static String token(){return E7684d75789eP33Root.token();}}",
+        "E7684d75789eP33Client": "public class E7684d75789eP33Client{public static String token(){return E7684d75789eP33Handler.token();}}",
+        "E7684d75789eP33Independent": "public class E7684d75789eP33Independent{public static Integer value(){return 7;}}",
+        "E7684d75789eP33ByName": "public class E7684d75789eP33ByName{public static String value(){Type t=Type.forName('E7684d75789eP33Root');return 'E7684d75789eP33Root';}}",
+        "E7684d75789eP33IndependentTest": "@IsTest private class E7684d75789eP33IndependentTest{@IsTest static void observe(){System.assertEquals(7,E7684d75789eP33Independent.value());}}",
+        "E7684d75789eP33ByNameTest": "@IsTest private class E7684d75789eP33ByNameTest{@IsTest static void observe(){System.assertEquals('E7684d75789eP33Root',E7684d75789eP33ByName.value());}}"
+      },
+      "triggers": {
+        "E7684d75789eP33Trigger": "trigger E7684d75789eP33Trigger on E7684d75789eDirect__c(before insert){E7684d75789eP33Root.token();}"
+      },
+      "objects": {
+        "E7684d75789eDirect__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eDirect__c</label><pluralLabel>E7684d75789eDirect__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eDirectMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eChain__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eChain__c</label><pluralLabel>E7684d75789eChain__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eChainMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eMixed__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eMixed__c</label><pluralLabel>E7684d75789eMixed__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eMixedMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eClean__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eClean__c</label><pluralLabel>E7684d75789eClean__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eCleanMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eDependency__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eDependency__c</label><pluralLabel>E7684d75789eDependency__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Value__c</fullName><label>E7684d75789eDependencyValue__c</label><length>80</length><type>Text</type></fields></CustomObject>"
+      },
+      "anonymous": "",
+      "tests": [
+        "E7684d75789eP33IndependentTest",
+        "E7684d75789eP33ByNameTest"
+      ],
+      "native": {
+        "outcome": "rejected-with-tests",
+        "retry_recommended": false,
+        "infrastructure_faults": [],
+        "componentFailures": [],
+        "testFailures": [],
+        "codeCoverageWarnings": [
+          {
+            "id": "[REDACTED_ID]",
+            "message": "Test coverage of selected Apex Class is 0%, at least 75% test coverage is required",
+            "name": "E7684d75789eP33Handler",
+            "namespace": null
+          },
+          {
+            "id": "[REDACTED_ID]",
+            "message": "Test coverage of selected Apex Class is 0%, at least 75% test coverage is required",
+            "name": "E7684d75789eP33Root",
+            "namespace": null
+          },
+          {
+            "id": "[REDACTED_ID]",
+            "message": "Test coverage of selected Apex Trigger is 0%, at least 75% test coverage is required",
+            "name": "E7684d75789eP33Trigger",
+            "namespace": null
+          },
+          {
+            "id": "[REDACTED_ID]",
+            "message": "Test coverage of selected Apex Class is 0%, at least 75% test coverage is required",
+            "name": "E7684d75789eP33Client",
+            "namespace": null
+          }
+        ],
+        "flowCoverageWarnings": [],
+        "referencedFieldRejected": false,
+        "errorStatusCode": null,
+        "errorMessage": null
+      },
+      "carry": "Valid package rejected only for selected-test coverage; compile/runtime twin asserted separately under the partial-run policy.",
+      "sourceSha256": {
+        "classes:E7684d75789eP33Root": "1fea5402a4d215d3b3c280eff3903bfec5106e0f857a3515703c5b40fd62bf9d",
+        "classes:E7684d75789eP33Handler": "0bb2d2a6b1ede8e8b13fc1389aae17f3925b9aadab99033780eda6ed57008339",
+        "classes:E7684d75789eP33Client": "4333cae2486debeff591a8357b99376c3daae8c74d921ee88b7ad769eab23992",
+        "classes:E7684d75789eP33Independent": "38bbfd606f48b5a790f8b74ece245302c5b6ef3b5166bcfff1d393bba6dd0347",
+        "classes:E7684d75789eP33ByName": "a31e5c8499c8c4cf23f19250cf95e5d781f44b04fce1b0782ff2ea4d584ab9d1",
+        "classes:E7684d75789eP33IndependentTest": "8cd28a9f61f267df8d6a2953f99f8a0841354bd050715242635a35d8baebbff1",
+        "classes:E7684d75789eP33ByNameTest": "34d5687fe01b612a22a58442b939ea0d152a7c29abb7f367ba35f50d014d0694",
+        "triggers:E7684d75789eP33Trigger": "1e4acff76e17e85d7ff99ea136d27651d0fc7ad45b60bea72cc16300302a5c74",
+        "objects:E7684d75789eDirect__c": "96bb1dc4c7c5e655995b498eef1926ccdba96031b3996bc7ca1b67ad1a4b730c",
+        "objects:E7684d75789eChain__c": "5d6bc1e643c64d3eb9246cf46776a1c4a20c31421a2ed78e1a0dff89d24d178f",
+        "objects:E7684d75789eMixed__c": "bddaad86951948aa959f28dd5a02a513b857918c397b16bae324473bbc95aa36",
+        "objects:E7684d75789eClean__c": "895746c33b11e1f049640fbd0e5cc7aff01bed8e9d9b2b3820bcc45470e2c339",
+        "objects:E7684d75789eDependency__c": "6a0393b841489cbf80b48767c41dd13336b5bacfdd54c125b36822833f43d38a"
+      }
+    },
+    {
+      "id": "C180GS_034",
+      "api": "68.0",
+      "route": "istest",
+      "group": "never-saved-package",
+      "state": "never-saved",
+      "kind": "package",
+      "classes": {
+        "E7684d75789eP34Root": "public class E7684d75789eP34Root{public static String token(){Integer x='bad';return String.valueOf(x);}}",
+        "E7684d75789eP34Handler": "public class E7684d75789eP34Handler{public static String token(){return E7684d75789eP34Root.token();}}",
+        "E7684d75789eP34Client": "public class E7684d75789eP34Client{public static String token(){return E7684d75789eP34Handler.token();}}",
+        "E7684d75789eP34Independent": "public class E7684d75789eP34Independent{public static Integer value(){return 7;}}",
+        "E7684d75789eP34ByName": "public class E7684d75789eP34ByName{public static String value(){Type t=Type.forName('E7684d75789eP34Root');return 'E7684d75789eP34Root';}}",
+        "E7684d75789eP34IndependentTest": "@IsTest private class E7684d75789eP34IndependentTest{@IsTest static void observe(){System.assertEquals(7,E7684d75789eP34Independent.value());}}",
+        "E7684d75789eP34ByNameTest": "@IsTest private class E7684d75789eP34ByNameTest{@IsTest static void observe(){System.assertEquals('E7684d75789eP34Root',E7684d75789eP34ByName.value());}}"
+      },
+      "triggers": {
+        "E7684d75789eP34Trigger": "trigger E7684d75789eP34Trigger on E7684d75789eDirect__c(before insert){E7684d75789eP34Root.token();}"
+      },
+      "objects": {
+        "E7684d75789eDirect__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eDirect__c</label><pluralLabel>E7684d75789eDirect__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eDirectMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eChain__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eChain__c</label><pluralLabel>E7684d75789eChain__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eChainMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eMixed__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eMixed__c</label><pluralLabel>E7684d75789eMixed__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eMixedMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eClean__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eClean__c</label><pluralLabel>E7684d75789eClean__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eCleanMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eDependency__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eDependency__c</label><pluralLabel>E7684d75789eDependency__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Value__c</fullName><label>E7684d75789eDependencyValue__c</label><length>80</length><type>Text</type></fields></CustomObject>"
+      },
+      "anonymous": "",
+      "tests": [
+        "E7684d75789eP34IndependentTest",
+        "E7684d75789eP34ByNameTest"
+      ],
+      "native": {
+        "outcome": "rejected-with-component",
+        "retry_recommended": false,
+        "infrastructure_faults": [],
+        "componentFailures": [
+          {
+            "fullName": "E7684d75789eP34Client",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Dependent class is invalid and needs recompilation:\n Class E7684d75789eP34Handler : Dependent class is invalid and needs recompilation:\n Class E7684d75789eP34Root : Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7684d75789eP34Handler",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Dependent class is invalid and needs recompilation:\n Class E7684d75789eP34Root : Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7684d75789eP34Root",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7684d75789eP34Trigger",
+            "componentType": "ApexTrigger",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Variable does not exist: E7684d75789eP34Root"
+          }
+        ],
+        "testFailures": [],
+        "codeCoverageWarnings": [],
+        "flowCoverageWarnings": [],
+        "referencedFieldRejected": false,
+        "errorStatusCode": null,
+        "errorMessage": null
+      },
+      "carry": "",
+      "sourceSha256": {
+        "classes:E7684d75789eP34Root": "78fa0fb6f63732466059f6beee482a38ff3f64b4d4739a64bc603b0b8050cc28",
+        "classes:E7684d75789eP34Handler": "5652a77d19f1fe65debca4f50a531ffe3eec456a349743237724a4962f0c20b9",
+        "classes:E7684d75789eP34Client": "05e04a28c4553d59d00b6164041aebfb04a21a1caa28b1112dafdb01ec6eb3fa",
+        "classes:E7684d75789eP34Independent": "135df692e1014a668e748e7cb41c90e65ffec32ea9a463e94ee01d056cbc7e4d",
+        "classes:E7684d75789eP34ByName": "4fb1fb6beb1af231213c477397b22a2046caa56d6669d856bc15e6befb6834c1",
+        "classes:E7684d75789eP34IndependentTest": "a88dc76448ed5e4b2911a1fef47a77af679e246720f4456810eb15dc9824d4e2",
+        "classes:E7684d75789eP34ByNameTest": "e6f484e02b8c83af3d2e85cb9d4c4a9b281649a777c1c96976f80980b748ca84",
+        "triggers:E7684d75789eP34Trigger": "4b1c54dcb04a7686e549dc55c9621ecdeb40a82e63355063453274c0406afb8c",
+        "objects:E7684d75789eDirect__c": "96bb1dc4c7c5e655995b498eef1926ccdba96031b3996bc7ca1b67ad1a4b730c",
+        "objects:E7684d75789eChain__c": "5d6bc1e643c64d3eb9246cf46776a1c4a20c31421a2ed78e1a0dff89d24d178f",
+        "objects:E7684d75789eMixed__c": "bddaad86951948aa959f28dd5a02a513b857918c397b16bae324473bbc95aa36",
+        "objects:E7684d75789eClean__c": "895746c33b11e1f049640fbd0e5cc7aff01bed8e9d9b2b3820bcc45470e2c339",
+        "objects:E7684d75789eDependency__c": "6a0393b841489cbf80b48767c41dd13336b5bacfdd54c125b36822833f43d38a"
+      }
+    },
+    {
+      "id": "C180GS_035",
+      "api": "68.0",
+      "route": "istest",
+      "group": "never-saved-package",
+      "state": "never-saved",
+      "kind": "package",
+      "classes": {
+        "E7684d75789eP35Root": "public class E7684d75789eP35Root{public static String token(){Integer x='bad';return String.valueOf(x);}}",
+        "E7684d75789eP35Handler": "public class E7684d75789eP35Handler{public static String token(){return E7684d75789eP35Root.token();}}",
+        "E7684d75789eP35Client": "public class E7684d75789eP35Client{public static String token(){return E7684d75789eP35Handler.token();}}",
+        "E7684d75789eP35Independent": "public class E7684d75789eP35Independent{public static Integer value(){return 7;}}",
+        "E7684d75789eP35ByName": "public class E7684d75789eP35ByName{public static String value(){Type t=Type.forName('E7684d75789eP35Root');return 'E7684d75789eP35Root';}}",
+        "E7684d75789eP35IndependentTest": "@IsTest private class E7684d75789eP35IndependentTest{@IsTest static void observe(){System.assertEquals(7,E7684d75789eP35Independent.value());}}",
+        "E7684d75789eP35ByNameTest": "@IsTest private class E7684d75789eP35ByNameTest{@IsTest static void observe(){System.assertEquals('E7684d75789eP35Root',E7684d75789eP35ByName.value());}}"
+      },
+      "triggers": {
+        "E7684d75789eP35Trigger": "trigger E7684d75789eP35Trigger on E7684d75789eDirect__c(before insert){E7684d75789eP35Handler.token();}"
+      },
+      "objects": {
+        "E7684d75789eDirect__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eDirect__c</label><pluralLabel>E7684d75789eDirect__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eDirectMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eChain__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eChain__c</label><pluralLabel>E7684d75789eChain__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eChainMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eMixed__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eMixed__c</label><pluralLabel>E7684d75789eMixed__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eMixedMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eClean__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eClean__c</label><pluralLabel>E7684d75789eClean__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eCleanMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eDependency__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eDependency__c</label><pluralLabel>E7684d75789eDependency__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Value__c</fullName><label>E7684d75789eDependencyValue__c</label><length>80</length><type>Text</type></fields></CustomObject>"
+      },
+      "anonymous": "",
+      "tests": [
+        "E7684d75789eP35IndependentTest",
+        "E7684d75789eP35ByNameTest"
+      ],
+      "native": {
+        "outcome": "rejected-with-component",
+        "retry_recommended": false,
+        "infrastructure_faults": [],
+        "componentFailures": [
+          {
+            "fullName": "E7684d75789eP35Client",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Dependent class is invalid and needs recompilation:\n Class E7684d75789eP35Handler : Dependent class is invalid and needs recompilation:\n Class E7684d75789eP35Root : Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7684d75789eP35Handler",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Dependent class is invalid and needs recompilation:\n Class E7684d75789eP35Root : Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7684d75789eP35Root",
+            "componentType": "ApexClass",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Illegal assignment from String to Integer"
+          },
+          {
+            "fullName": "E7684d75789eP35Trigger",
+            "componentType": "ApexTrigger",
+            "lineNumber": 1,
+            "problemType": "Error",
+            "problem": "Variable does not exist: E7684d75789eP35Handler"
+          }
+        ],
+        "testFailures": [],
+        "codeCoverageWarnings": [],
+        "flowCoverageWarnings": [],
+        "referencedFieldRejected": false,
+        "errorStatusCode": null,
+        "errorMessage": null
+      },
+      "carry": "",
+      "sourceSha256": {
+        "classes:E7684d75789eP35Root": "7e5fb36776b567e1245d6c755bebdd960c1b57a752abe9c1114772d4b2ae6f5e",
+        "classes:E7684d75789eP35Handler": "d96f5056b54fa1e82e23611b19b88945ff2a696c5e65453159902d3f3a07c2ac",
+        "classes:E7684d75789eP35Client": "ced56a9a783f6c4c46dbe0eeaf682d15bc180b9fe5c7c227879c737cd7c81055",
+        "classes:E7684d75789eP35Independent": "eeda43e6a2df6fcf10471e8f9afaba8946b3f2110b707ec1c134e230cd874747",
+        "classes:E7684d75789eP35ByName": "268dec4aca58fe477981f8ff0a2bdec6db1fcaada6ab4995c7594ca4e1d2c60e",
+        "classes:E7684d75789eP35IndependentTest": "0f9c9401387c569999d195d2397ecc1f54dab964a8a9e1ad631473d20084d9f6",
+        "classes:E7684d75789eP35ByNameTest": "d7885a80e289887aa0c07a22da4bf3787e039d29f920c4f0be0c981466c1072c",
+        "triggers:E7684d75789eP35Trigger": "5f3026d0093776c72089fe6a4e081ec9ae7dbbcc184d8ade1918ac9a9d249113",
+        "objects:E7684d75789eDirect__c": "96bb1dc4c7c5e655995b498eef1926ccdba96031b3996bc7ca1b67ad1a4b730c",
+        "objects:E7684d75789eChain__c": "5d6bc1e643c64d3eb9246cf46776a1c4a20c31421a2ed78e1a0dff89d24d178f",
+        "objects:E7684d75789eMixed__c": "bddaad86951948aa959f28dd5a02a513b857918c397b16bae324473bbc95aa36",
+        "objects:E7684d75789eClean__c": "895746c33b11e1f049640fbd0e5cc7aff01bed8e9d9b2b3820bcc45470e2c339",
+        "objects:E7684d75789eDependency__c": "6a0393b841489cbf80b48767c41dd13336b5bacfdd54c125b36822833f43d38a"
+      }
+    }
+  ],
+  "evidence": {
+    "sourceManifestSHA256": "538f12e7b0b7d6c23ee8ceb5f3ee137b2ac0aff5b9e57b01e52874c99f7f7135",
+    "routeControls": {
+      "62.0": {
+        "anonymous": {
+          "proven": true
+        },
+        "istest": {
+          "proven": true
+        }
+      },
+      "67.0": {
+        "anonymous": {
+          "proven": true
+        },
+        "istest": {
+          "proven": true
+        }
+      },
+      "68.0": {
+        "anonymous": {
+          "proven": true
+        },
+        "istest": {
+          "proven": true
+        }
+      }
+    },
+    "observations": 204,
+    "noAnswerRows": 0,
+    "stateUnavailable": 0
+  },
+  "assertionPolicy": "Native runtime/compiler facts only. Partial-run behavior is a local product policy; component acceptance never proves native tests ran. Carries retain observations without asserting local values.",
+  "excludedArtifacts": {
+    "noNativeAnswer": [],
+    "UNCAUGHT": [],
+    "emptyCompile": [],
+    "PLATFORM_FAULT": [],
+    "FIXTURE_ERROR": []
+  }
+}

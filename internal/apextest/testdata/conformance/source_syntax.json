@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "oracle": {
     "rows": 225,
@@ -1066,8 +1067,8 @@
     },
     {
       "id": "C027",
-      "code": "Integer café=7;\npq.out('C027','compiled');",
-      "expected": "COMPILE_ERROR\tline 6: Invalid character in identifier: café",
+      "code": "Integer caf\u00e9=7;\npq.out('C027','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Invalid character in identifier: caf\u00e9",
       "compile": true,
       "group": "identifiers/boundary"
     },
@@ -1571,6 +1572,40 @@
       "expected": "COMPILE_ERROR\tline 6: Missing closing mark */ on multi-line comment.",
       "compile": true,
       "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C043",
+      "code": "try { List<Account> x=new List<Account>(); insert as system x;\npq.out('C043','compiled'); } catch(Exception e) {pq.err('C043',e);}",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "compile": true,
+      "anonymousOnly": true
+    },
+    {
+      "id": "C071",
+      "code": "Integer x=1; x.noSuchSyntaxMethod();\npq.out('C071','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void noSuchSyntaxMethod() from the type Integer",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier",
+      "namedCompilationOnly": true
+    },
+    {
+      "id": "C072",
+      "code": "Integer x=1; x.noSuchSyntaxField=2;\npq.out('C072','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: noSuchSyntaxField",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier",
+      "namedCompilationOnly": true
+    },
+    {
+      "id": "C094",
+      "code": "try { final Integer x=1; x=2;\npq.out('C094','compiled'); } catch(Exception e) {pq.err('C094',e);}",
+      "expected": "UNCAUGHT|System.FinalException: Final variable has already been initialized",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier",
+      "namedCompilationOnly": true,
+      "nativeAnonymous": {
+        "68.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry { final Integer x=1; x=2;\npq.out('C094','compiled'); } catch(Exception e) {pq.err('C094',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      }
     }
   ],
   "controls": [
@@ -1768,30 +1803,1396 @@
       "group": "grammar/named-method-controls"
     }
   ],
-  "remaining": [
-    {
-      "id": "C043",
-      "code": "try { List<Account> x=new List<Account>(); insert as system x;\npq.out('C043','compiled'); } catch(Exception e) {pq.err('C043',e);}",
-      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
-      "reason": "DML transactions DML: anonymous SYSTEM_MODE insert needs the native SecurityException; the runtime execution policy is outside source syntax ownership."
+  "boundaryTest": "All225 primary rows are asserted here. C071/C072 also have exact diagnostic assertions and C094 has captured named compilation in TestSourceSyntaxBoundaryNativeConformance; named runtime is not inferred.",
+  "api68Qualification": "225 anonymous primary observations:224 retained native rows plus C094 from the exact fresh singleton source, compiled=true with raw uncatchable FinalException. Compile rejections match category here and carry diagnostic text except the separate exact C071/C072 boundary checks. All30 V/G controls and251 named-route checks at68 are local legacy regressions without native68 route captures. Three named rows C071/C072/C094 assert captured compilation only. C043 remains anonymous-only.",
+  "api68Evidence": {
+    "toolsCommit": "capture-revision-038922242939171818483227610950169864242628534922311775415491496155028953450663",
+    "sourceFiles": {
+      "source_syntax_cases.py": "c133d8ab66e729f9d0b8b58055c98b834c3312488f6838bc9540159444384c63",
+      "retained68/org.tsv": "c4582836150529039821ed1f66c9ac6d93bb9107d0a0a0a6877824feb864e5b6",
+      "retained68/ORG-RUN.txt": "c0d2a60eb0de03e83fb367375e2117fd0f90b75c93c3b95c54b53896177b397a",
+      "fresh68/rows.json": "4b271fce42a3d3eff35b5c50ec602959138195c53375c75a1f28e613060eb74f",
+      "fresh68/native.json": "1bc8b8f835729d211a6bd0e94062fa6be2508466e59437f8025e8bbbe1deb599",
+      "fresh68/controls-validation.json": "ad1a2cbce1e2a066ad1c16882b75cebf553a72bb841fd6d1dcdb0b6b1932b85c",
+      "fresh68/completion.json": "992f4a980167e989f71a61fc14a1717a01b8baae72ef6abfe5e3ab7e37a36e9e",
+      "fresh68/cleanup.json": "6e7cdf9d52d8efddf330ff24c837add335b58bd74ed1a82b710bb5228a2f988d"
     },
-    {
-      "id": "C071",
-      "code": "Integer x=1; x.noSuchSyntaxMethod();\npq.out('C071','compiled');",
-      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void noSuchSyntaxMethod() from the type Integer",
-      "reason": "type system type system and dispatch: the primitive method fallback accepts a missing method."
+    "retainedOracle": "native-capture",
+    "freshOracle": "native-capture",
+    "primaryAnonymousRows": 225,
+    "namedRuntimeCapturedRows": 0,
+    "namedCompilationBoundaryRows": [
+      "C071",
+      "C072",
+      "C094"
+    ],
+    "anonymousLocalControlRows": 30,
+    "superseded": {
+      "C094": {
+        "retainedValue": "COMPILE_ERROR\t",
+        "reason": "Empty compile diagnostic is a transport artifact, not a native compilation rejection.",
+        "nativeAnswer": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 6,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        },
+        "exactSourceSha256": "2548df22f23aabb3292ec369d721c17c42b231475fc80f4672d96217db10ab64"
+      }
     },
-    {
-      "id": "C072",
-      "code": "Integer x=1; x.noSuchSyntaxField=2;\npq.out('C072','compiled');",
-      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: noSuchSyntaxField",
-      "reason": "type system type system and dispatch: primitive field assignment is not rejected during compilation."
-    },
-    {
-      "id": "C094",
-      "code": "try { final Integer x=1; x=2;\npq.out('C094','compiled'); } catch(Exception e) {pq.err('C094',e);}",
-      "expected": "UNCAUGHT|System.FinalException: Final variable has already been initialized",
-      "reason": "integer values expressions and control: final-local reassignment does not raise the native uncatchable FinalException."
+    "rows": {
+      "R001": {
+        "caseSourceSha256": "af61c186f4f7480bbcb721adeb5aaa7ad9d64eba3cad07a33084a0b5dd1841ed",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R002": {
+        "caseSourceSha256": "acad65084f7c1c2ac055bdc6998f23175d87a58e3486007adaf2b54ff22fcb06",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R003": {
+        "caseSourceSha256": "389679ced833405060fe521bb52f176f3e4f2b2d2b62ffad83431903711bb9f9",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R004": {
+        "caseSourceSha256": "8da8513f0ac19dbbadbd00955159b363b7f80ca647fa1d45b9456f18033a5966",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R005": {
+        "caseSourceSha256": "eb65e6240c5626afbc1383f90bb99598f2669677afc985860720e42d93f538b3",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R006": {
+        "caseSourceSha256": "2b3d3451697cc0a1527bd21e710ac73c4819b21c6284dcda34e737650d0019e7",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R007": {
+        "caseSourceSha256": "d89463300011731ee71f72917dbc4e94fef35a8c90e6fae06a3509fda509d830",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R008": {
+        "caseSourceSha256": "1c1fd3c7002b42b510ae08476b3661681fe8550acda2046dad1a3dfd6c1f6a57",
+        "nativeValue": "COMPILE_ERROR\tline 13: Invalid character in identifier: _leading",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R009": {
+        "caseSourceSha256": "03a80af7518a374fe44226f8eb88698c979295669c0bbd4ea8ad55667e3fd959",
+        "nativeValue": "COMPILE_ERROR\tline 13: Invalid character in identifier: __double",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R010": {
+        "caseSourceSha256": "fe781360d105da357e3d374b62c01201fa91cad401cb6027246b4aaf1eb251f2",
+        "nativeValue": "COMPILE_ERROR\tline 13: Invalid character in identifier: trailing_",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R011": {
+        "caseSourceSha256": "ceca0201925e4d56d5402da8588d946c9302296e4cb9070b429c1b50390c5897",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R012": {
+        "caseSourceSha256": "9a58030035e3c67e5116360f882d845b7d00bd272387c3318d0330d40a9cb1d1",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R013": {
+        "caseSourceSha256": "33cd92d98867ed1d96e6811f305c0e7e08fd3ad0582d8f9832192f68271a3944",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R014": {
+        "caseSourceSha256": "14ce0850fa7ca2f76655da6175ca3283cdbea480f1da20e105eca836cde4ae32",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R015": {
+        "caseSourceSha256": "0b0f90ce634348b0459f6505921dd36361c91070b2f5b0085c9b9871f5f40fdb",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R016": {
+        "caseSourceSha256": "59efa097601415c94f86cad99563308c843d58edcad9154ac669a7738e291199",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R017": {
+        "caseSourceSha256": "16966c1c26e9b722020dde3f945fb64e62408dbe316d718d1e53c6d65b941362",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R018": {
+        "caseSourceSha256": "03fcc97db5c90a5a66a80ad2800d306d62aaf57c626db5511d9d60c05934d591",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R019": {
+        "caseSourceSha256": "d30ab2cdf301a46cf907e02b7c90e4c0857f7daa87cff7c9231ca79ea2a8813f",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R020": {
+        "caseSourceSha256": "d5e54de670de5c00a297b4a07a492af3088ed3adeafec8c63dc4c5e2359e623b",
+        "nativeValue": "COMPILE_ERROR\tline 22: Identifier name is reserved: set",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R021": {
+        "caseSourceSha256": "cd1eac2b81ed3620782546b849345d84854483abbe677b331d7720a374c68d8a",
+        "nativeValue": "COMPILE_ERROR\tline 26: Unexpected token 'from'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R022": {
+        "caseSourceSha256": "4336319a8bfa1ce7d4b57ca4542e40d8283c35198a7f45e7c2e4606c25371acf",
+        "nativeValue": "COMPILE_ERROR\tline 26: Unexpected token 'where'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R023": {
+        "caseSourceSha256": "3eb2bbfcbbfe0e30afe58240d9df388a1412bb1a619aa4bebe376339f4c28d66",
+        "nativeValue": "COMPILE_ERROR\tline 26: Unexpected token 'select'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R024": {
+        "caseSourceSha256": "17be0d320dd0626a33b38fd76ad8f5684536210ed415ce7464f2b43b1e2d6655",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R025": {
+        "caseSourceSha256": "5f40f97b967ada9d86e5bc94133dc98bad3f90ca0c1cc897ea68826158f27727",
+        "nativeValue": "COMPILE_ERROR\tline 27: Expecting ';' but was: 'limit'",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R026": {
+        "caseSourceSha256": "ef169d550a2947eeab2c95fcfa9c2fc3dee166e98e19f09ab9068b64b9cc7f2a",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R027": {
+        "caseSourceSha256": "66ed22d32ef0a212c249ef3ec8f8223d635d69b0e8df3f981bc076ef038ec2bf",
+        "nativeValue": "15",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R028": {
+        "caseSourceSha256": "fe84a770b867563b99d631ae25c74039768efcb408dfaf124ffe7d2f3655da48",
+        "nativeValue": "8",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R029": {
+        "caseSourceSha256": "759b4fd0cff1c20f5220440189c009e91457f6f066454e57e040bbb484444fa8",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R030": {
+        "caseSourceSha256": "7b99d9214b220c1b5162bb4726bcd5a462f867c8376ab2fe78a99000ada79ce4",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R031": {
+        "caseSourceSha256": "a624729c6bbd88f3aa76c8b758c63786818d03a3208765e26efb2d6b4b4d4d09",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R032": {
+        "caseSourceSha256": "e1d1e19429d723f4bf99dd47d7dffdeaa160e0f7f951b42577a5617565517cac",
+        "nativeValue": "false",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R033": {
+        "caseSourceSha256": "1704569c0576b07efc7069259a2b331ffb3eb8f9a1546a8517bf2cacd53a2879",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R034": {
+        "caseSourceSha256": "21a76e1c23d5cc92a32e304ea5194020a905dff9def5f65db69c6f744c378cda",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R035": {
+        "caseSourceSha256": "2b90e2f4aa50153385b4d27eca83e1c0317eccac7604ca02e6a948c11978adc5",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R036": {
+        "caseSourceSha256": "6781e530e46f4e83e7f03da2e2c29051a6c84a760a76a3a126e4358b1a77dd47",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R037": {
+        "caseSourceSha256": "e16e1142c36410acbd9fdf538132aedf7a204bdee91329bce12bd6be615cfe5e",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R038": {
+        "caseSourceSha256": "a1a022a09e565c77a2fe14360b759c9a3d26f6a9d1f6db518ca34668a5faa562",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R039": {
+        "caseSourceSha256": "e6cbcdf47e7834dadc25ee624409794c8d011aa2c6e4b0b620a454aabcd4964f",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R040": {
+        "caseSourceSha256": "5ae529c615b3bb402a4552a4786e641135fe334e1f587a7e0a2832b44eed6387",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R041": {
+        "caseSourceSha256": "4775eae9960e45498ae364bac6c4e880a56ced52f05872225f26cb9494a05599",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R042": {
+        "caseSourceSha256": "a63d3e67dedcca7559f7df1fc8c1baeb5d10b0afd212783a9084c6f9ca7c0840",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R043": {
+        "caseSourceSha256": "f73b42d75fd2c30989a0e3b4c680d117b9447f0f3a5bb7500d4373bf529e7da6",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R044": {
+        "caseSourceSha256": "618c7732dd53be4b542e1f1cc97f8bdad67d5e21aabf22a89238f938e0329174",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R045": {
+        "caseSourceSha256": "9a983b87adf410972cde8eb387074f94156e2491fa9c37ceb470f1199b6595db",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R046": {
+        "caseSourceSha256": "9507c6c5addbdc7cd7cd165b9cb75f310f6546e8ea07601d4b803af71e730da2",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R047": {
+        "caseSourceSha256": "227da4c0c977baee3f7fa095c625534bf583510e6fbb9543b00122bcbb8fc77c",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R048": {
+        "caseSourceSha256": "bf9957d51856e7f821770a65a9c67a6761bbafa869a7f4e0c70c92ab1974d2a1",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R049": {
+        "caseSourceSha256": "bf8a593fa001d0dd402a52703eeac812fba11a7836fbb78587e3b6e05fd1b90a",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R050": {
+        "caseSourceSha256": "83e6ed8d7246ab3c770199e4d9bb2bd63888b620b5266ce1ab0efb578606c922",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R051": {
+        "caseSourceSha256": "104d629a7be44d82d8de22acfbc420956bfb34a38a7e01e5b965d3c061f56606",
+        "nativeValue": "false",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R052": {
+        "caseSourceSha256": "edaa84c8ddbd1133f5061382678454586b887c1272ea6d8936438e8239704ef0",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R053": {
+        "caseSourceSha256": "c9480dea2176e72c7f329b9802828df6966b16229b4c66d99f2274bcbf64abf2",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R054": {
+        "caseSourceSha256": "7b0f3ca3e565e26ba5f06f5be3cf6a86c2ebb4a75298e7545e4eaf25098b0fd9",
+        "nativeValue": "false",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R055": {
+        "caseSourceSha256": "64e93218f32e634a3deb0ca4d91c890df9257cfd8dd5602230b2760d817dfd94",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R056": {
+        "caseSourceSha256": "d21f119a3e323d8d2b490d53f210c647ead39314839291d21f088e4433052e88",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R057": {
+        "caseSourceSha256": "59359dfd7b26be831f04a2603dc85d07d116c1e4aebfb6dcda6c424f571b587b",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R058": {
+        "caseSourceSha256": "ae8c83673a25bb6309e0d98f5f3a1331050543111b0d13c3988cf928910fb6c5",
+        "nativeValue": "0",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R059": {
+        "caseSourceSha256": "4386dfe1b38362ba6f26b4bc47782dde5896a8f3344e2be42124c22776aba1b9",
+        "nativeValue": "3",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R060": {
+        "caseSourceSha256": "44dacb38a0cdfc4aa0121510a50ca3b0e950de35c85dc3ce9fe8d3d842360625",
+        "nativeValue": "3",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R061": {
+        "caseSourceSha256": "93727fcac9be16b35821fba297293f5580f9be8e53bfa2acfdd01006acf756fb",
+        "nativeValue": "0",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R062": {
+        "caseSourceSha256": "8f99995d06de8f6f2099f36dcc3a281d69faabb209a0ac745b9ba3eb5e92c010",
+        "nativeValue": "2",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R063": {
+        "caseSourceSha256": "d187e42f86017bdaa85b163fd10f8a6c05668de35deec06d4b996e92d8325a4a",
+        "nativeValue": "0",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R064": {
+        "caseSourceSha256": "151033cfca483df8f2e69d54d68fc658de877b6891ece138a2287807274e5ae2",
+        "nativeValue": "2",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R065": {
+        "caseSourceSha256": "1f389b3ffe3a5c164f50519dabb9ef5ebd83e4424016686e761303f08c9a5749",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R066": {
+        "caseSourceSha256": "8f57535b9d9ad8eeda34e32acb4a4131b33c21df532c88e26dc2215f46097b32",
+        "nativeValue": "a",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R067": {
+        "caseSourceSha256": "47eb7a424e6323fadcf2fccfa4e9e8404e429c394c863a4f4680670d727bf357",
+        "nativeValue": "3",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R068": {
+        "caseSourceSha256": "f050b7e9369ba5d2c7617e9f3c88c0e3ea11183bc544d2a2d82d45b8b64560dc",
+        "nativeValue": "0",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R069": {
+        "caseSourceSha256": "a90c2c15b4ebe8a66cc15edf7ea898943c9eadf04e94b7796b7b093b334a4b48",
+        "nativeValue": "Boolean",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R070": {
+        "caseSourceSha256": "df5cd73fd58fb26d350541108cb254ad406b82cd9c04c04d04619e66d62c9cb9",
+        "nativeValue": "Account",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R071": {
+        "caseSourceSha256": "1f1620e87590f38ee5a6fce7e40f55d629de4397f3bdd2443f97b41d41ddf1d6",
+        "nativeValue": "COMPILE_ERROR\tline 26: Unexpected token 'List'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R072": {
+        "caseSourceSha256": "35084d0cc433412dc7871ec8b2e0956f1a0ade1478c30282c50f59850df5fa97",
+        "nativeValue": "COMPILE_ERROR\tline 26: Unexpected token 'Map'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R073": {
+        "caseSourceSha256": "5f9c4896a38f2c65423899b06923c57956ae2c71f931efcc5abd1464771535a5",
+        "nativeValue": "Syntax",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R074": {
+        "caseSourceSha256": "53261d3c1ca8ea6d2585bf1f9253b9ba0074db280a5b5022664e0197ba93886c",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R075": {
+        "caseSourceSha256": "d2f331a93b9439472c096ec97cbeb229c52449219804d6d6e71db4d0cd3ee41e",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R076": {
+        "caseSourceSha256": "383d4846b26fbbd484ec985b43f26329e50f309a6ba8827a94f1835c99baa4dc",
+        "nativeValue": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R077": {
+        "caseSourceSha256": "3725453068eeb23f3c3fe8f2dcf65f7d9ba61adbfa47a0459c455e859c1f68f9",
+        "nativeValue": "EXC|System.TypeException|Invalid conversion from runtime type Boolean to Account",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R078": {
+        "caseSourceSha256": "dd1f6d403c6aa6aa7607af5af70d3bcb76fc0f3a3d18d76c185047c7eae0c550",
+        "nativeValue": "COMPILE_ERROR\tline 31: Expecting '}' but was: ';'",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R079": {
+        "caseSourceSha256": "d9aed8043927f3001c6fee76fb3a741167c3f7f38ec0bb9bf55b4aac6a5ddd5a",
+        "nativeValue": "COMPILE_ERROR\tline 31: Expecting '}' but was: ';'",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R080": {
+        "caseSourceSha256": "749e847c4b749dc44b01de46b6f4d30fdd35e50207a72a86aa9f240016c6cc3b",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R081": {
+        "caseSourceSha256": "6999b8e7e3ded2203610758569602f94926a268af1a7b1caa77102487555c208",
+        "nativeValue": "COMPILE_ERROR\tline 32: Extra '}', at ';'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R082": {
+        "caseSourceSha256": "8c59b6acfc03e4e8fee0392af3d9aa04991ce4b69d6db562103dd54c0e371d7e",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R083": {
+        "caseSourceSha256": "3b912846ba632ef256192e4fc6e332987b6344becb452289463de5e87b27e240",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R084": {
+        "caseSourceSha256": "5c131071353fedaf533f2864336413bd2138232b53077732bb209ea0406c6261",
+        "nativeValue": "3",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R085": {
+        "caseSourceSha256": "55cff34737ea7933718b2dadd50789f1dc74474bbbecacb2a46d517338413cd3",
+        "nativeValue": "null3",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R086": {
+        "caseSourceSha256": "e634ab88f198e5fc15cb152ae309941fce6cfcae1f647cd264bcadc86f551c71",
+        "nativeValue": "1",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R087": {
+        "caseSourceSha256": "273c3e2b245f8536b496193a8309c8adf51cba4cfcbceda3f5c4ccac03cc58fa",
+        "nativeValue": "1",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R088": {
+        "caseSourceSha256": "7fb3857803846243c5c2f2de1695411c2b660977ab347bdeb100682d5e6a8447",
+        "nativeValue": "2",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R089": {
+        "caseSourceSha256": "7f4b53258681ef42cbc89ceb4a769b749a2e6f6b3cef4108e08fe8f9a5a00c55",
+        "nativeValue": "0",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R090": {
+        "caseSourceSha256": "57f9ae2c527de8857112763aacb9ac7f635a4987a3bb16b7a8942eeb0cc6c0a4",
+        "nativeValue": "0",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R091": {
+        "caseSourceSha256": "7b1265a4721e42be89103d7dd0e8dff6692e6a49d6a545baef4008f81c5c53d3",
+        "nativeValue": "1",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R092": {
+        "caseSourceSha256": "f35eb8bebb75f9cba6ffcc54d984f143a3e304898dc17467cc8024852a038713",
+        "nativeValue": "2",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R093": {
+        "caseSourceSha256": "d2274325469f8b02905adceaabfe67a7b3c1985c7970b1ef9ffa8339f9cdaf0a",
+        "nativeValue": "2",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R094": {
+        "caseSourceSha256": "c6908091987cf2902b659f2fabee6725944fe0e5efaaa1d0346bf40183e3408f",
+        "nativeValue": "1",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R095": {
+        "caseSourceSha256": "c5333ee1028902729b6e5b02285acd55bbaf8fc2daffaca1e8b19b4af0e98219",
+        "nativeValue": "COMPILE_ERROR\tline 45: Missing '{' at 'x'",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "R096": {
+        "caseSourceSha256": "b835af5ec16032210263d590a8482d0c7038e2c010cc5500ee1137e815b05be8",
+        "nativeValue": "1",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R097": {
+        "caseSourceSha256": "c2fc39a2124fe627150357221965714830d9aeeb4e6ec944c2f303824b5dfa9e",
+        "nativeValue": "1",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R098": {
+        "caseSourceSha256": "78f9235d43e3a1b12277534ca53d952af6850d3b8edf246f9039e1e9c258f2d4",
+        "nativeValue": "1",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R099": {
+        "caseSourceSha256": "4403264afe90106e88036c3891746fd0b5ac26b749505e68483b4bcbe6f2dea7",
+        "nativeValue": "a",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R100": {
+        "caseSourceSha256": "bfe022bf77702e295a76551a1a57998bf5355afc3772001181043fb73f8003b6",
+        "nativeValue": "1",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R101": {
+        "caseSourceSha256": "23003e2fa8c3a5c2f1b16d19a2bbae92ec80e638b84c8c802462d3b482e00841",
+        "nativeValue": "1",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R102": {
+        "caseSourceSha256": "2c9e0f51cba177a9fb06f664f20b596ebece5a33692c4b367e9c661361f1c07d",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R103": {
+        "caseSourceSha256": "1dd1f72117e38f1a2200d65f3d0e4d6c8f1f2f748cd6c315a95f79d51144e8fb",
+        "nativeValue": "false",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R104": {
+        "caseSourceSha256": "e3e7ff1dd0e59f3d2a98dd9e48cc6b6d967b57d6445d41559df8c42ecf83c847",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R105": {
+        "caseSourceSha256": "4ce82e0424506c92c965ea62646d331a495fd8384a716377985cc3c6c9510816",
+        "nativeValue": "System.IllegalArgumentException|syntax",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R106": {
+        "caseSourceSha256": "ef99ae85353019f1a873f032568afce28c011f96a95bbc6575817ce0ed260df0",
+        "nativeValue": "System.NullPointerException",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R107": {
+        "caseSourceSha256": "50d567c2c2c3d47345c11100afde6a865dd11bae62630fefad4072d6d3b6e0a9",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R108": {
+        "caseSourceSha256": "4743d18dd41137bb8594da5db979e16f05cee9c95070caa960712d92b279b2b7",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R109": {
+        "caseSourceSha256": "b68a59c8a07df3a200e0e3deb72ef20ff5ca0f15ec2973ce6d234408e85f2f89",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R110": {
+        "caseSourceSha256": "2f2f5b995df2181f7f97c3308e3cabc4d4bc2fbca38d8b7a40242975ef0b2fc2",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R111": {
+        "caseSourceSha256": "f1cd38565a8aa7f81959f0235b64fe96516c1ba97d51081e96c293fc18f6eaaf",
+        "nativeValue": "1",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R112": {
+        "caseSourceSha256": "65d52d637cdadedd769f46db664ad4e55ad68543e44f27ca355f8ddff9537f88",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R113": {
+        "caseSourceSha256": "c054c81a4d4f1a4bca135ef7edf6468c482d4eb34807a88cc009378814e31928",
+        "nativeValue": "true",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R114": {
+        "caseSourceSha256": "33b6e51be42ae2203984e5d4dd4220d4d8426670e3eecba7f9e42a9b039666ee",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R115": {
+        "caseSourceSha256": "393e1f63f46066df8018b063edf581b2f15fb4b5dacaf81245fcc6ebf8c35b7b",
+        "nativeValue": "1",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R116": {
+        "caseSourceSha256": "676bdea5746d2e59349bf5d31ab6a784b3576d2308eeaf10ff95b52fe3fe9af3",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R117": {
+        "caseSourceSha256": "47773b7afa612abf3b5c79410c58fceb5e4a269d69cbed4d4ffdd44f7bda5e3a",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R118": {
+        "caseSourceSha256": "57d965192fff23199a77c49154a588175502b186bd2456ac19fb27be874237fb",
+        "nativeValue": "null",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R119": {
+        "caseSourceSha256": "70a2fa8e8ac09b693c2fe8dcbe12513f401162ed4692747057d0cf3523ddfdac",
+        "nativeValue": "7",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R120": {
+        "caseSourceSha256": "4691485be9257b9815e38bbb8797f89785741ee909de3fb1104b8aa2fbd1f9bb",
+        "nativeValue": "fallback",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R121": {
+        "caseSourceSha256": "8b1f77549259f59f8df8740ef6376e8f5cfc3e6a60bd92cecdd8485ba3931659",
+        "nativeValue": "fallback",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R122": {
+        "caseSourceSha256": "cb6acaa90b7d807d28ea12ac6a7edb820e25e5b2ee4a161b64b54ca55f90ad09",
+        "nativeValue": "0",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "R123": {
+        "caseSourceSha256": "eddd40b9f9ca8c076250ae0a6db1e1f8aa1df61b9e1bc5454d1fb66b4786410d",
+        "nativeValue": "false",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C001": {
+        "caseSourceSha256": "75032844093deeb374916d717f06490a1424a2662091d88d80380541c7a815c8",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C002": {
+        "caseSourceSha256": "059a181f9f3ecca249140d44b7ee7077fe99d2a3b3b636e42eecd78b382aed6c",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'interface'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C003": {
+        "caseSourceSha256": "502d1addd4010b4ce7c5d85ffd5cddd9d2bde902d6ea4b6611a1dbd02145a938",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'enum'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C004": {
+        "caseSourceSha256": "d841fa34fd4130a3b70e11097bbabc2ab90d574d1788729d6101470998623dea",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'extends'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C005": {
+        "caseSourceSha256": "7a0158dcaa87545a18f5c77dc331bae7281a178195dd64cbd4d84756d11be8b6",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'implements'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C006": {
+        "caseSourceSha256": "7eeb5b5f5399fa9119736bb30fdcda412a4106eee01f01fea5d4e417a8945a05",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'public'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C007": {
+        "caseSourceSha256": "1c7bd9aaf724d8df15b0b59f6220311bfdeeb0972969016e2f742f7e79e504f2",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'private'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C008": {
+        "caseSourceSha256": "03f8e130748325de89700084e50038906fe150ed57d0c12509f9b21f13c13041",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'static'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C009": {
+        "caseSourceSha256": "d28c1ea041fd5175a9f1c54a18375110100ae6861b8898c4c31693bb1672b0df",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'final'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C010": {
+        "caseSourceSha256": "7dd5cb1e1611735c06680259360c1be7d20afbdce92346c38f156b0f12a552ef",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'new'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C011": {
+        "caseSourceSha256": "49532ce696bdcc811c0d89a083dd2fed18d0cdc0fbf171aae2c04996955a7334",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'this'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C012": {
+        "caseSourceSha256": "be4cd45183ef57617f673a480d007f496dadbbdea91efa6486c02f80045faf23",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'super'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C013": {
+        "caseSourceSha256": "8dbf2224a6b33853f7f73b5528b20d7bff5a6fd15bbc6e261b7c33f78d057566",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'return'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C014": {
+        "caseSourceSha256": "d5d2a6cff7d245fe250cb3e516f776c34f7e802e4192cbe8e98ca5c83a8b932d",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'if'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C015": {
+        "caseSourceSha256": "763c5429a4cada251f345b340d1d7074e827c56d3998952a5f51d8b956120531",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'else'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C016": {
+        "caseSourceSha256": "7f20009649f66ea77b3772f9c0b6da59a10bc266894a7e62e6d990dc9f612c11",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'for'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C017": {
+        "caseSourceSha256": "2b416c02a8d1a739db57e15d01cd77392dc35759d9e39f44f21ca9ca7480f4c5",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'while'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C018": {
+        "caseSourceSha256": "d88a496c7af65721d6c023fb1a3967e2a2df8c88d89c94de27479db2537964a3",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'try'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C019": {
+        "caseSourceSha256": "b3eedc4a53601a7b765b9c60aab4f3bddd6e360618c442725b7723eaf156e74b",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'catch'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C020": {
+        "caseSourceSha256": "b05c352a6f573438fbb191a74d6c3e6ca2b8f3dc133a8825bd757728f13a6a67",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'throw'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C021": {
+        "caseSourceSha256": "a629f5573b028ffce745903012bbb94274b4b208fc9228bdfe22e78a07e5ea43",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'null'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C022": {
+        "caseSourceSha256": "ec22c02a2f23509de550e128ef02cb0d3aac07ee203d60976b2ac31b77bdd484",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'true'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C023": {
+        "caseSourceSha256": "3faa9dc84e823ee1c2a98c027707d566e59715cc53775960e8bf5bd222a8ec68",
+        "nativeValue": "COMPILE_ERROR\tline 6: Identifier name is reserved: switch",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C024": {
+        "caseSourceSha256": "58c49e18e9c77edd56ee19ba80d94632b61a633ca3687b1de8b076639a6f38a6",
+        "nativeValue": "COMPILE_ERROR\tline 6: Identifier name is reserved: when",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C025": {
+        "caseSourceSha256": "f66ed50336172ab6327c1867db5706bbd2acc673b89ecf6e6846f9b3c5d9877d",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token '1'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C026": {
+        "caseSourceSha256": "a126ef5859856354cda0b5d4f5876b5f63a53281d028fc12417118cf70dca901",
+        "nativeValue": "COMPILE_ERROR\tline 6: Invalid character in identifier: dollar$name",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C027": {
+        "caseSourceSha256": "3360683af367bc048d2ef93bd380131ee5f976b771083ae4d66b7f1abaeb30bc",
+        "nativeValue": "COMPILE_ERROR\tline 6: Invalid character in identifier: caf\u00e9",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C028": {
+        "caseSourceSha256": "59e11d2507aaf0afdba6a238150a861c1d32d5c0cb92a9fc6f5186d5e359160d",
+        "nativeValue": "COMPILE_ERROR\tline 6: Duplicate field: X",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C029": {
+        "caseSourceSha256": "a6c8fd2067ace3beaaf4234dd39abfa2b243e2f511372d8eca8175ed6dfc0aba",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C030": {
+        "caseSourceSha256": "c8fc34cf9c6d89db60c3475e238a7ce922d87aaf1a1540f0488ddef031a01076",
+        "nativeValue": "COMPILE_ERROR\tline 6: Variable does not exist: x",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C031": {
+        "caseSourceSha256": "7d2559f41173922785a01f15cc37cece2bebfc37bf2ff53f6800b152915679c0",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C032": {
+        "caseSourceSha256": "3a8e6e806af34872eaebc4eaafd0b5a235b8eda52f99c58df99dee1a2e6ccb9a",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C033": {
+        "caseSourceSha256": "5b44ec8ee45dafbcb2cbe8c953ef6d3815cec077b524617bab49266eae77a7a3",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C034": {
+        "caseSourceSha256": "82e3be6afe6bdc085167e4f30140328a0cfaa5429577b9f11eb845762bcd3500",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C035": {
+        "caseSourceSha256": "53685b6a43ef9a0d841c5c9f2cc1a34932aaf4552dc39cd55953565cfe7c2c5e",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C036": {
+        "caseSourceSha256": "b4cf251df4b8d6ffcd972fbcd8b1c30d6a0411630c887c55b824b54df2db4bbc",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C037": {
+        "caseSourceSha256": "ea257575acd90f587a584cc5f91d6e28c46f9112ca5ce5092ceefd5be64277dc",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C038": {
+        "caseSourceSha256": "135ac8e78cc3af3f25d1dc8bf3e3b0872f26b1e63cd9cfbe6c0b344db6e05bce",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C039": {
+        "caseSourceSha256": "e0dafc1381bb50f8b8c0e9b8c7255ffe98ebfc476287973e5ecd7bddfc136513",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C040": {
+        "caseSourceSha256": "eef079a5df8c80828317ec1fa95c22aa6c14077e3accccc125dc0fd39837ac77",
+        "nativeValue": "COMPILE_ERROR\tline 6: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C041": {
+        "caseSourceSha256": "379dfc989a10790efecb4cc84f30fb88a0350de4c976e35805d923da8721a20e",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C042": {
+        "caseSourceSha256": "602e7b77d3a2fa67e3d5f935e607ecf9e88481e39ee713b310789ef3b7c64092",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C044": {
+        "caseSourceSha256": "bbe33a2262559b1654c27c361ca8da33c8b1acb25e12cf2de16c209be28f5691",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C045": {
+        "caseSourceSha256": "c4f95bf9a51a4838436971a2fc01f903e78270a3703db90d3ee1a77f8956c056",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C046": {
+        "caseSourceSha256": "864ba687df798947c535d4cd3216e8cb64b6b8707236669fad6fe8bb6a19a7f4",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C047": {
+        "caseSourceSha256": "e5521d2f55c3446706cdd61383a5117c98cfc816165bd1cafdac9b6de59734d7",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C048": {
+        "caseSourceSha256": "23f9bc6b93171ad15b89ab03083322a4e13c4396a83c23bc5565d51f5fccae6e",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C049": {
+        "caseSourceSha256": "bab2ab20599ec2e1bb8d9e4ea56f3c1187a6ecdaed1b9c9a205b9dca37f21e41",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C050": {
+        "caseSourceSha256": "a75276e83b46724bce602f36a315d93c7d75bab15f40371aae4a347429ac38a8",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C051": {
+        "caseSourceSha256": "a6f14c89ea40572f6c0cd9ab90667a8d6b63ae2a52bce9e331f2502e66e240e4",
+        "nativeValue": "COMPILE_ERROR\tline 1: classes are by default virtual",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C052": {
+        "caseSourceSha256": "1f649cb1441e0fa4041a97163866c6186d5b5beed9159a41cc2d2dcc7cfc8866",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C053": {
+        "caseSourceSha256": "a3cd43942c2a8e5adfa9616264090de7e4ec4eef0e08bcfa067eb02ac1052a30",
+        "nativeValue": "COMPILE_ERROR\tline 6: Inner types are not allowed to have inner types",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C054": {
+        "caseSourceSha256": "3548a662f3a5e9537329aeb01318526fa8e92c341b45137e66bf2caf87a60b23",
+        "nativeValue": "COMPILE_ERROR\tline 6: static can only be used on fields of a top level type",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C055": {
+        "caseSourceSha256": "5bbade9c28375fa87fdd370811ba0ec430e3bbed40731ef4eead67f1ed8c1ac7",
+        "nativeValue": "COMPILE_ERROR\tline 6: static can only be used on methods of a top level type",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C056": {
+        "caseSourceSha256": "b0575c76b67e8e33870facf390e3f7d30cf8f8890740389bb3a185f8c11c2924",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C057": {
+        "caseSourceSha256": "89bbde70ee48041c5e88120e3a3330cc5351bceb3db93e6319ff2309335eaeb5",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C058": {
+        "caseSourceSha256": "fa47c71e22cd7a56b64c73c94629cd92bc48445fdb4ef7c5880fe500d17d9ee2",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C059": {
+        "caseSourceSha256": "35bd480ee9d9623b5ac7142db7deb88f99360f46fb5afaa2e93e09e26ee029f7",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'x'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C060": {
+        "caseSourceSha256": "689bb6389daa6be6a7c687a0f0d6f3ff67b18fd4f322e48aa4e1a19047e33e96",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'x'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C061": {
+        "caseSourceSha256": "e071fc99512fd95ae3534ac6a775396a7d00a73cf2d9ac7792775ad70add39b4",
+        "nativeValue": "COMPILE_ERROR\tline 6: Variable does not exist: Integer",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C062": {
+        "caseSourceSha256": "9be386a80d6d5acfa77440bbbcdb7313e80c7619bad7a103eea5cf8f3de329d1",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'x'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C063": {
+        "caseSourceSha256": "2e716563c2313944227c805b1ee90b2c8423745d1f068c3f974d8753d1a19e67",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token '<'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C064": {
+        "caseSourceSha256": "e0eb2fad1e4ad6a5a9b9f1f6fca9a81fb09153672ac7a67c98df947c4708e660",
+        "nativeValue": "COMPILE_ERROR\tline 6: Variable does not exist: r",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C065": {
+        "caseSourceSha256": "d2c5c9b16b6e92114e1047f4ad791ce7f83cf67c2456dd0e273a9064f60d588e",
+        "nativeValue": "COMPILE_ERROR\tline 6: Variable does not exist: missingName",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C066": {
+        "caseSourceSha256": "3ec04d3d9f5f2e811044930ee958802e8b464b19d85eaa69e93c9b528c88e127",
+        "nativeValue": "COMPILE_ERROR\tline 6: Invalid type: MissingSyntaxType",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C067": {
+        "caseSourceSha256": "a60d590473606c9bc49c128a960102dac2cf607af4285bd4e58288f43e8e07bb",
+        "nativeValue": "COMPILE_ERROR\tline 6: Illegal assignment from Boolean to Integer",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C068": {
+        "caseSourceSha256": "106b7034155d3a18432359f3dabc05523e9afbacd65df4eda46d7404b178c462",
+        "nativeValue": "COMPILE_ERROR\tline 6: Illegal assignment from String to Boolean",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C069": {
+        "caseSourceSha256": "ca462687629ee840166eac9d8b22b6efb17c78470f8600e7f8c0969cf0e3b0b2",
+        "nativeValue": "COMPILE_ERROR\tline 6: Illegal assignment from Account to Integer",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C070": {
+        "caseSourceSha256": "676f123761b995a932aa2b3c73ee934674c116b0907e57377e103e5f67811f3c",
+        "nativeValue": "COMPILE_ERROR\tline 6: Illegal assignment from List<Integer> to List<String>",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C073": {
+        "caseSourceSha256": "4cbdeba4f0bae160133792d99a821969b7cbef7e062af0f3d950e70159e80d4a",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token ')'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C074": {
+        "caseSourceSha256": "1f1574fc96a606fefabdaa28497ee0a5bd7e3893dbee83d9e3d9aa8c1af34127",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C075": {
+        "caseSourceSha256": "fe59d546a2265822a785525809254c26b1e48a1af25e38c5cd18b66880af6408",
+        "nativeValue": "COMPILE_ERROR\tline 6: Missing '<EOF>' at 'else'",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C076": {
+        "caseSourceSha256": "1ff56547362cf488e238b0ac8c6ddc37f291fb5579cc46f36d4a98097b5ba426",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token ')'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C077": {
+        "caseSourceSha256": "866b4a12297ae384f0bd3bb3fb3495515f8594e7bbd09c708ea7b6ec2fd9333f",
+        "nativeValue": "COMPILE_ERROR\tline 7: Expecting 'WHILE' but was: 'pq.out'",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C078": {
+        "caseSourceSha256": "de914f78e9ede8154b5d9fc6645e9abc40c41bde39068148115377f0b864e86d",
+        "nativeValue": "COMPILE_ERROR\tline 6: Missing ';' at ')'",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C079": {
+        "caseSourceSha256": "6b4f533a730cd8d52489fd85025534ef03f60620f5e6b21f5a33e5d2facd8dd8",
+        "nativeValue": "COMPILE_ERROR\tline 6: Missing ';' at 'new'",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C080": {
+        "caseSourceSha256": "0332b65851a42c759793a8168859497647c95cc92155e9c2181a0e99844da5c8",
+        "nativeValue": "COMPILE_ERROR\tline 6: Break statement must be in loop",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C081": {
+        "caseSourceSha256": "b94308d92e2a529eaf9b341db109893e858d78e27476d012fcd33c5f649f669a",
+        "nativeValue": "COMPILE_ERROR\tline 6: Continue statement must be in loop",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C082": {
+        "caseSourceSha256": "d03cc9c0f596267b526234b80894194a980c952731ed24eb8616cecf93e3657f",
+        "nativeValue": "COMPILE_ERROR\tline 6: Try block must have at least one catch block or a finally block",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C083": {
+        "caseSourceSha256": "a8485d95c6c921c060b9089665e8b2b502e83bc22e0c0ffe0745372ee8a9740c",
+        "nativeValue": "COMPILE_ERROR\tline 6: Missing '<EOF>' at 'catch'",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C084": {
+        "caseSourceSha256": "9dc74f5efb98e5a85c86e2b25f087e342727ccdaa2dfac966a9076930f39a097",
+        "nativeValue": "COMPILE_ERROR\tline 6: Missing '<EOF>' at 'finally'",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C085": {
+        "caseSourceSha256": "eb9a7dfcb6ed85e250f58c5a5d4c5fbd977cebd92bf3cef9ddd537ad006e8148",
+        "nativeValue": "COMPILE_ERROR\tline 6: Catch block variable must be of type exception: String",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C086": {
+        "caseSourceSha256": "7fe7f2d2a0e8a0f0b8aefc2b1b6d7d3fbd8bf59a542695b6fb6f5c42633bc1f5",
+        "nativeValue": "COMPILE_ERROR\tline 6: Throw expression must be of type exception: Integer",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C087": {
+        "caseSourceSha256": "13e498d002a8a7e70d2004e1d0d1b9023c0ad93eb84a0153b51feb1e248300cc",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token '1'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C088": {
+        "caseSourceSha256": "280689c5fb290b7aeb3e5420d22f4ef3b2ac8456c430b7e8ef4e323af0a667e7",
+        "nativeValue": "COMPILE_ERROR\tline 6: Missing '}' at 'case'",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C089": {
+        "caseSourceSha256": "e40bbc29a36a7eab52925683efb6af1284a1525fc275b32a4da8c8d808409289",
+        "nativeValue": "COMPILE_ERROR\tline 6: 1 occurs as more than one when branch for this switch statement",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C090": {
+        "caseSourceSha256": "f794a35e7fb7ecccc577ed43dde12ccf3a87e557213d8c66e627332dd88d3f71",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token '<'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C091": {
+        "caseSourceSha256": "e12276c1274bd3e46349644b89f07934e1536b1a08e519edfb211f49bc2a61d6",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token '<'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C092": {
+        "caseSourceSha256": "a0259c405ea194e2c67ad95816ba2095b38618d189969935c8651cc64f64d620",
+        "nativeValue": "COMPILE_ERROR\tline 6: Variable does not exist: Truee",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C093": {
+        "caseSourceSha256": "def4ffaad930d7cfeb55520b2606e4db88ea2ecbeb9ee93bb9744cadec6f3aec",
+        "nativeValue": "COMPILE_ERROR\tline 6: Variable does not exist: NULLL",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C095": {
+        "caseSourceSha256": "4631904b105ac8ac092d2c10e56a9481477eb1c4736ae15c3bb457d0c8811dff",
+        "nativeValue": "COMPILE_ERROR\tline 6: Missing return statement required return type: Integer",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C096": {
+        "caseSourceSha256": "5fe2d816ebe867d515da6d4ea857ce39efa00af62433eb655d524b9a6a4c83ea",
+        "nativeValue": "COMPILE_ERROR\tline 6: Void method must not return a value",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C097": {
+        "caseSourceSha256": "7118e3aeef74730add6edecede75ca9e5012909e69f70c380b0f98e102fa0c05",
+        "nativeValue": "COMPILE_ERROR\tline 6: Illegal conversion from Boolean to Integer",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C098": {
+        "caseSourceSha256": "f90798378c009013323c316bb5c7783238a27a98fe3b90606311916acbeae0ad",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C099": {
+        "caseSourceSha256": "1068f951e4139a71d5c8f2e6408ae8e962813f165139851c4b9b64c7162d1468",
+        "nativeValue": "compiled",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C100": {
+        "caseSourceSha256": "6ec4a0b85649fc46ff5ec75c01aa97fa567a2c510a5c952c3a32536688678769",
+        "nativeValue": "COMPILE_ERROR\tline 6: Duplicate field: X",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C101": {
+        "caseSourceSha256": "b12b43849d84bdce7e9cd2fd88a036c7278f3afafe6b01e9f6aa7a52be83f879",
+        "nativeValue": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C102": {
+        "caseSourceSha256": "d52b30a8ef6139ca21e88d334002007b3cd2cae0595185f5b3f65901208e01eb",
+        "nativeValue": "COMPILE_ERROR\tline 6: Missing closing mark */ on multi-line comment.",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C043": {
+        "caseSourceSha256": "a2b40fab8e81bc06b681affb70f2f47010aa1070bfdf4aca00a42c97fe394b41",
+        "nativeValue": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+        "source": "retained68",
+        "comparison": "exact"
+      },
+      "C071": {
+        "caseSourceSha256": "c11f59be31a23b37d83a29285aad83ea842bcdac296e5f9995ae8b76592e0933",
+        "nativeValue": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void noSuchSyntaxMethod() from the type Integer",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C072": {
+        "caseSourceSha256": "340939d163c16de4aa7234c1243b731be30a0efe0125c3eca35f9d5ae39d8e4c",
+        "nativeValue": "COMPILE_ERROR\tline 6: Variable does not exist: noSuchSyntaxField",
+        "source": "retained68",
+        "comparison": "compile-category"
+      },
+      "C094": {
+        "caseSourceSha256": "2288a567e0844a8d4fbf178de8ff993f677cfa6698b095e11c5499711c30fa74",
+        "nativeValue": "UNCAUGHT|System.FinalException: Final variable has already been initialized",
+        "source": "fresh68",
+        "comparison": "exact"
+      }
     }
-  ]
+  }
 }

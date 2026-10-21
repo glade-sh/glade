@@ -1,0 +1,2 @@
+id	group	route	status	value
+SF03	SEARCH_FIND_FIXED_SNIPPET	anonymous	runtime	{"outcome":"exception","type":"System.StringException","message":"Test.setFixedSearchResults() can only be called from testMethods"}

@@ -1,0 +1,5105 @@
+{
+  "apiVersions": [
+    "58.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "istest"
+  ],
+  "shapeCount": 8,
+  "nativeObservationCount": 64,
+  "capture": {
+    "transport": "check-only metadata deployment; each test intentionally raises AssertException with NATIVE_OBSERVATION and the JSON Actual payload",
+    "anonymousBoundary": "Not expressible: Test.startTest and Test.stopTest require a test context. These observations cover only the named @IsTest methods; no anonymous answers are inferred."
+  },
+  "carriedPhases": {
+    "00": "Batch start Preparing job snapshot is retained as native evidence; start/worker job phase modeling is outside this finish and descendant scheduling correction. Cron states and pending count remain asserted.",
+    "01": "Batch execute-time worker Queued job snapshot is retained as native evidence; execute/worker job phase modeling is outside this finish and descendant scheduling correction. Cron states and pending count remain asserted."
+  },
+  "cells": [
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "directScheduleAbortChild",
+      "rawRow": "directScheduleAbortChild\t[\"ABORT\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "f8af8063c42f8722a256382216f395b9c3acb25d197fe9d01d4efc872a18344a",
+      "native": [
+        "ABORT",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "directScheduleKeepChild",
+      "rawRow": "directScheduleKeepChild\t[\"KEEP\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "2b35bed0f1602d2f2c1d65fac79dc3954d048026062572c503eda72e23d00be6",
+      "native": [
+        "KEEP",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "finishAbortChild",
+      "rawRow": "finishAbortChild\t[\"ABORT\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "ce0f436b298f08a2350f2622e83ec3caa57d298579ae914a7cdd7c26b47b7b9e",
+      "native": [
+        "ABORT",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "finishKeepChild",
+      "rawRow": "finishKeepChild\t[\"KEEP\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "535837ce1548fc1ba3c4a75a65b48d388dc5328bc3b4fb50deab4c5da342ec1f",
+      "native": [
+        "KEEP",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "finishScheduleOnly",
+      "rawRow": "finishScheduleOnly\t[\"SCHEDULE_ONLY\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"99\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "a3e9ab0b7bb9d610610303caa101d3a206acdbe493e1f81c609fb869e8311b4c",
+      "native": [
+        "SCHEDULE_ONLY",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "guardedEmpty",
+      "rawRow": "guardedEmpty\t[\"GUARDED\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "9236f1b5aacee23a25e164e1bbd3478702509b7d6c68aa15d362ad241ea9a7dd",
+      "native": [
+        "GUARDED",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "guardedOne",
+      "rawRow": "guardedOne\t[\"GUARDED\",true,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"01\",[\"B:P:r:0/1/0\",\"W:Q:o:0/1/0\"],[],1],[\"02\",[\"B:C:r:1/1/0\",\"W:C:o:1/1/0\"],[],0],[\"03\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:1/1/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],0],[\"12\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"99\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "4ceba59e01cceb5249bbaebec1e789928d6e88ecd76c6d89de703a0b74189f80",
+      "native": [
+        "GUARDED",
+        true,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "01",
+            [
+              "B:P:r:0/1/0",
+              "W:Q:o:0/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:1/1/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:1/1/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "plainEmpty",
+      "rawRow": "plainEmpty\t[\"NONE\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\"],[],0],[\"99\",[\"B:C:r:0/0/0\"],[],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "16d405dd977a05e224fae6b84bbb348c506197e46399138682966bd00b91d941",
+      "native": [
+        "NONE",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "directScheduleAbortChild",
+      "rawRow": "directScheduleAbortChild\t[\"ABORT\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "f8af8063c42f8722a256382216f395b9c3acb25d197fe9d01d4efc872a18344a",
+      "native": [
+        "ABORT",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "directScheduleKeepChild",
+      "rawRow": "directScheduleKeepChild\t[\"KEEP\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "2b35bed0f1602d2f2c1d65fac79dc3954d048026062572c503eda72e23d00be6",
+      "native": [
+        "KEEP",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "finishAbortChild",
+      "rawRow": "finishAbortChild\t[\"ABORT\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "ce0f436b298f08a2350f2622e83ec3caa57d298579ae914a7cdd7c26b47b7b9e",
+      "native": [
+        "ABORT",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "finishKeepChild",
+      "rawRow": "finishKeepChild\t[\"KEEP\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "535837ce1548fc1ba3c4a75a65b48d388dc5328bc3b4fb50deab4c5da342ec1f",
+      "native": [
+        "KEEP",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "finishScheduleOnly",
+      "rawRow": "finishScheduleOnly\t[\"SCHEDULE_ONLY\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"99\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "a3e9ab0b7bb9d610610303caa101d3a206acdbe493e1f81c609fb869e8311b4c",
+      "native": [
+        "SCHEDULE_ONLY",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "guardedEmpty",
+      "rawRow": "guardedEmpty\t[\"GUARDED\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "9236f1b5aacee23a25e164e1bbd3478702509b7d6c68aa15d362ad241ea9a7dd",
+      "native": [
+        "GUARDED",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "guardedOne",
+      "rawRow": "guardedOne\t[\"GUARDED\",true,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"01\",[\"B:P:r:0/1/0\",\"W:Q:o:0/1/0\"],[],1],[\"02\",[\"B:C:r:1/1/0\",\"W:C:o:1/1/0\"],[],0],[\"03\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:1/1/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],0],[\"12\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"99\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "4ceba59e01cceb5249bbaebec1e789928d6e88ecd76c6d89de703a0b74189f80",
+      "native": [
+        "GUARDED",
+        true,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "01",
+            [
+              "B:P:r:0/1/0",
+              "W:Q:o:0/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:1/1/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:1/1/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "plainEmpty",
+      "rawRow": "plainEmpty\t[\"NONE\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\"],[],0],[\"99\",[\"B:C:r:0/0/0\"],[],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "16d405dd977a05e224fae6b84bbb348c506197e46399138682966bd00b91d941",
+      "native": [
+        "NONE",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "directScheduleAbortChild",
+      "rawRow": "directScheduleAbortChild\t[\"ABORT\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "f8af8063c42f8722a256382216f395b9c3acb25d197fe9d01d4efc872a18344a",
+      "native": [
+        "ABORT",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "directScheduleKeepChild",
+      "rawRow": "directScheduleKeepChild\t[\"KEEP\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "2b35bed0f1602d2f2c1d65fac79dc3954d048026062572c503eda72e23d00be6",
+      "native": [
+        "KEEP",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "finishAbortChild",
+      "rawRow": "finishAbortChild\t[\"ABORT\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "ce0f436b298f08a2350f2622e83ec3caa57d298579ae914a7cdd7c26b47b7b9e",
+      "native": [
+        "ABORT",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "finishKeepChild",
+      "rawRow": "finishKeepChild\t[\"KEEP\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "535837ce1548fc1ba3c4a75a65b48d388dc5328bc3b4fb50deab4c5da342ec1f",
+      "native": [
+        "KEEP",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "finishScheduleOnly",
+      "rawRow": "finishScheduleOnly\t[\"SCHEDULE_ONLY\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"99\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "a3e9ab0b7bb9d610610303caa101d3a206acdbe493e1f81c609fb869e8311b4c",
+      "native": [
+        "SCHEDULE_ONLY",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "guardedEmpty",
+      "rawRow": "guardedEmpty\t[\"GUARDED\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "9236f1b5aacee23a25e164e1bbd3478702509b7d6c68aa15d362ad241ea9a7dd",
+      "native": [
+        "GUARDED",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "guardedOne",
+      "rawRow": "guardedOne\t[\"GUARDED\",true,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"01\",[\"B:P:r:0/1/0\",\"W:Q:o:0/1/0\"],[],1],[\"02\",[\"B:C:r:1/1/0\",\"W:C:o:1/1/0\"],[],0],[\"03\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:1/1/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],0],[\"12\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"99\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "4ceba59e01cceb5249bbaebec1e789928d6e88ecd76c6d89de703a0b74189f80",
+      "native": [
+        "GUARDED",
+        true,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "01",
+            [
+              "B:P:r:0/1/0",
+              "W:Q:o:0/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:1/1/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:1/1/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "plainEmpty",
+      "rawRow": "plainEmpty\t[\"NONE\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\"],[],0],[\"99\",[\"B:C:r:0/0/0\"],[],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "16d405dd977a05e224fae6b84bbb348c506197e46399138682966bd00b91d941",
+      "native": [
+        "NONE",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "directScheduleAbortChild",
+      "rawRow": "directScheduleAbortChild\t[\"ABORT\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "f8af8063c42f8722a256382216f395b9c3acb25d197fe9d01d4efc872a18344a",
+      "native": [
+        "ABORT",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "directScheduleKeepChild",
+      "rawRow": "directScheduleKeepChild\t[\"KEEP\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "2b35bed0f1602d2f2c1d65fac79dc3954d048026062572c503eda72e23d00be6",
+      "native": [
+        "KEEP",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "finishAbortChild",
+      "rawRow": "finishAbortChild\t[\"ABORT\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "ce0f436b298f08a2350f2622e83ec3caa57d298579ae914a7cdd7c26b47b7b9e",
+      "native": [
+        "ABORT",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "finishKeepChild",
+      "rawRow": "finishKeepChild\t[\"KEEP\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "535837ce1548fc1ba3c4a75a65b48d388dc5328bc3b4fb50deab4c5da342ec1f",
+      "native": [
+        "KEEP",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "finishScheduleOnly",
+      "rawRow": "finishScheduleOnly\t[\"SCHEDULE_ONLY\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"99\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "a3e9ab0b7bb9d610610303caa101d3a206acdbe493e1f81c609fb869e8311b4c",
+      "native": [
+        "SCHEDULE_ONLY",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "guardedEmpty",
+      "rawRow": "guardedEmpty\t[\"GUARDED\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "9236f1b5aacee23a25e164e1bbd3478702509b7d6c68aa15d362ad241ea9a7dd",
+      "native": [
+        "GUARDED",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "guardedOne",
+      "rawRow": "guardedOne\t[\"GUARDED\",true,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"01\",[\"B:P:r:0/1/0\",\"W:Q:o:0/1/0\"],[],1],[\"02\",[\"B:C:r:1/1/0\",\"W:C:o:1/1/0\"],[],0],[\"03\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:1/1/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],0],[\"12\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"99\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "4ceba59e01cceb5249bbaebec1e789928d6e88ecd76c6d89de703a0b74189f80",
+      "native": [
+        "GUARDED",
+        true,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "01",
+            [
+              "B:P:r:0/1/0",
+              "W:Q:o:0/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:1/1/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:1/1/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "default",
+      "method": "plainEmpty",
+      "rawRow": "plainEmpty\t[\"NONE\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\"],[],0],[\"99\",[\"B:C:r:0/0/0\"],[],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "16d405dd977a05e224fae6b84bbb348c506197e46399138682966bd00b91d941",
+      "native": [
+        "NONE",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "directScheduleAbortChild",
+      "rawRow": "directScheduleAbortChild\t[\"ABORT\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "f8af8063c42f8722a256382216f395b9c3acb25d197fe9d01d4efc872a18344a",
+      "native": [
+        "ABORT",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "directScheduleKeepChild",
+      "rawRow": "directScheduleKeepChild\t[\"KEEP\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "2b35bed0f1602d2f2c1d65fac79dc3954d048026062572c503eda72e23d00be6",
+      "native": [
+        "KEEP",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "finishAbortChild",
+      "rawRow": "finishAbortChild\t[\"ABORT\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "ce0f436b298f08a2350f2622e83ec3caa57d298579ae914a7cdd7c26b47b7b9e",
+      "native": [
+        "ABORT",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "finishKeepChild",
+      "rawRow": "finishKeepChild\t[\"KEEP\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "535837ce1548fc1ba3c4a75a65b48d388dc5328bc3b4fb50deab4c5da342ec1f",
+      "native": [
+        "KEEP",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "finishScheduleOnly",
+      "rawRow": "finishScheduleOnly\t[\"SCHEDULE_ONLY\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"99\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "a3e9ab0b7bb9d610610303caa101d3a206acdbe493e1f81c609fb869e8311b4c",
+      "native": [
+        "SCHEDULE_ONLY",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "guardedEmpty",
+      "rawRow": "guardedEmpty\t[\"GUARDED\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "9236f1b5aacee23a25e164e1bbd3478702509b7d6c68aa15d362ad241ea9a7dd",
+      "native": [
+        "GUARDED",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "guardedOne",
+      "rawRow": "guardedOne\t[\"GUARDED\",true,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"01\",[\"B:P:r:0/1/0\",\"W:Q:o:0/1/0\"],[],1],[\"02\",[\"B:C:r:1/1/0\",\"W:C:o:1/1/0\"],[],0],[\"03\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:1/1/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],0],[\"12\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"99\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "4ceba59e01cceb5249bbaebec1e789928d6e88ecd76c6d89de703a0b74189f80",
+      "native": [
+        "GUARDED",
+        true,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "01",
+            [
+              "B:P:r:0/1/0",
+              "W:Q:o:0/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:1/1/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:1/1/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "58.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "plainEmpty",
+      "rawRow": "plainEmpty\t[\"NONE\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\"],[],0],[\"99\",[\"B:C:r:0/0/0\"],[],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "16d405dd977a05e224fae6b84bbb348c506197e46399138682966bd00b91d941",
+      "native": [
+        "NONE",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "directScheduleAbortChild",
+      "rawRow": "directScheduleAbortChild\t[\"ABORT\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "f8af8063c42f8722a256382216f395b9c3acb25d197fe9d01d4efc872a18344a",
+      "native": [
+        "ABORT",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "directScheduleKeepChild",
+      "rawRow": "directScheduleKeepChild\t[\"KEEP\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "2b35bed0f1602d2f2c1d65fac79dc3954d048026062572c503eda72e23d00be6",
+      "native": [
+        "KEEP",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "finishAbortChild",
+      "rawRow": "finishAbortChild\t[\"ABORT\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "ce0f436b298f08a2350f2622e83ec3caa57d298579ae914a7cdd7c26b47b7b9e",
+      "native": [
+        "ABORT",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "finishKeepChild",
+      "rawRow": "finishKeepChild\t[\"KEEP\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "535837ce1548fc1ba3c4a75a65b48d388dc5328bc3b4fb50deab4c5da342ec1f",
+      "native": [
+        "KEEP",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "finishScheduleOnly",
+      "rawRow": "finishScheduleOnly\t[\"SCHEDULE_ONLY\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"99\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "a3e9ab0b7bb9d610610303caa101d3a206acdbe493e1f81c609fb869e8311b4c",
+      "native": [
+        "SCHEDULE_ONLY",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "guardedEmpty",
+      "rawRow": "guardedEmpty\t[\"GUARDED\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "9236f1b5aacee23a25e164e1bbd3478702509b7d6c68aa15d362ad241ea9a7dd",
+      "native": [
+        "GUARDED",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "guardedOne",
+      "rawRow": "guardedOne\t[\"GUARDED\",true,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"01\",[\"B:P:r:0/1/0\",\"W:Q:o:0/1/0\"],[],1],[\"02\",[\"B:C:r:1/1/0\",\"W:C:o:1/1/0\"],[],0],[\"03\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:1/1/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],0],[\"12\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"99\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "4ceba59e01cceb5249bbaebec1e789928d6e88ecd76c6d89de703a0b74189f80",
+      "native": [
+        "GUARDED",
+        true,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "01",
+            [
+              "B:P:r:0/1/0",
+              "W:Q:o:0/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:1/1/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:1/1/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "plainEmpty",
+      "rawRow": "plainEmpty\t[\"NONE\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\"],[],0],[\"99\",[\"B:C:r:0/0/0\"],[],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "16d405dd977a05e224fae6b84bbb348c506197e46399138682966bd00b91d941",
+      "native": [
+        "NONE",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "directScheduleAbortChild",
+      "rawRow": "directScheduleAbortChild\t[\"ABORT\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "f8af8063c42f8722a256382216f395b9c3acb25d197fe9d01d4efc872a18344a",
+      "native": [
+        "ABORT",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "directScheduleKeepChild",
+      "rawRow": "directScheduleKeepChild\t[\"KEEP\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "2b35bed0f1602d2f2c1d65fac79dc3954d048026062572c503eda72e23d00be6",
+      "native": [
+        "KEEP",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "finishAbortChild",
+      "rawRow": "finishAbortChild\t[\"ABORT\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "ce0f436b298f08a2350f2622e83ec3caa57d298579ae914a7cdd7c26b47b7b9e",
+      "native": [
+        "ABORT",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "finishKeepChild",
+      "rawRow": "finishKeepChild\t[\"KEEP\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "535837ce1548fc1ba3c4a75a65b48d388dc5328bc3b4fb50deab4c5da342ec1f",
+      "native": [
+        "KEEP",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "finishScheduleOnly",
+      "rawRow": "finishScheduleOnly\t[\"SCHEDULE_ONLY\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"99\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "a3e9ab0b7bb9d610610303caa101d3a206acdbe493e1f81c609fb869e8311b4c",
+      "native": [
+        "SCHEDULE_ONLY",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "guardedEmpty",
+      "rawRow": "guardedEmpty\t[\"GUARDED\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "9236f1b5aacee23a25e164e1bbd3478702509b7d6c68aa15d362ad241ea9a7dd",
+      "native": [
+        "GUARDED",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "guardedOne",
+      "rawRow": "guardedOne\t[\"GUARDED\",true,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"01\",[\"B:P:r:0/1/0\",\"W:Q:o:0/1/0\"],[],1],[\"02\",[\"B:C:r:1/1/0\",\"W:C:o:1/1/0\"],[],0],[\"03\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:1/1/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],0],[\"12\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"99\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "4ceba59e01cceb5249bbaebec1e789928d6e88ecd76c6d89de703a0b74189f80",
+      "native": [
+        "GUARDED",
+        true,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "01",
+            [
+              "B:P:r:0/1/0",
+              "W:Q:o:0/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:1/1/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:1/1/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "plainEmpty",
+      "rawRow": "plainEmpty\t[\"NONE\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\"],[],0],[\"99\",[\"B:C:r:0/0/0\"],[],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "16d405dd977a05e224fae6b84bbb348c506197e46399138682966bd00b91d941",
+      "native": [
+        "NONE",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "directScheduleAbortChild",
+      "rawRow": "directScheduleAbortChild\t[\"ABORT\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "f8af8063c42f8722a256382216f395b9c3acb25d197fe9d01d4efc872a18344a",
+      "native": [
+        "ABORT",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "directScheduleKeepChild",
+      "rawRow": "directScheduleKeepChild\t[\"KEEP\",false,true,\"\",[[\"10\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"S:Q:o:0/0/0\"],[\"WAITING\"],0]]]\n",
+      "rawRowSHA256": "2b35bed0f1602d2f2c1d65fac79dc3954d048026062572c503eda72e23d00be6",
+      "native": [
+        "KEEP",
+        false,
+        true,
+        "",
+        [
+          [
+            "10",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "finishAbortChild",
+      "rawRow": "finishAbortChild\t[\"ABORT\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "ce0f436b298f08a2350f2622e83ec3caa57d298579ae914a7cdd7c26b47b7b9e",
+      "native": [
+        "ABORT",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "finishKeepChild",
+      "rawRow": "finishKeepChild\t[\"KEEP\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "535837ce1548fc1ba3c4a75a65b48d388dc5328bc3b4fb50deab4c5da342ec1f",
+      "native": [
+        "KEEP",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "finishScheduleOnly",
+      "rawRow": "finishScheduleOnly\t[\"SCHEDULE_ONLY\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"99\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "a3e9ab0b7bb9d610610303caa101d3a206acdbe493e1f81c609fb869e8311b4c",
+      "native": [
+        "SCHEDULE_ONLY",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "guardedEmpty",
+      "rawRow": "guardedEmpty\t[\"GUARDED\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:0/0/0\",\"S:Q:o:0/0/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:0/0/0\",\"S:A:o:0/0/0\"],[],0],[\"12\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"99\",[\"B:C:r:0/0/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "9236f1b5aacee23a25e164e1bbd3478702509b7d6c68aa15d362ad241ea9a7dd",
+      "native": [
+        "GUARDED",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:0/0/0",
+              "S:Q:o:0/0/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "guardedOne",
+      "rawRow": "guardedOne\t[\"GUARDED\",true,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"01\",[\"B:P:r:0/1/0\",\"W:Q:o:0/1/0\"],[],1],[\"02\",[\"B:C:r:1/1/0\",\"W:C:o:1/1/0\"],[],0],[\"03\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"10\",[\"B:C:r:1/1/0\",\"S:Q:o:0/0/0\",\"W:C:o:1/1/0\"],[\"WAITING\"],0],[\"11\",[\"B:C:r:1/1/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],0],[\"12\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"99\",[\"B:C:r:1/1/0\",\"B:Q:o:0/0/0\",\"S:A:o:0/0/0\",\"W:C:o:1/1/0\"],[],1],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "4ceba59e01cceb5249bbaebec1e789928d6e88ecd76c6d89de703a0b74189f80",
+      "native": [
+        "GUARDED",
+        true,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "01",
+            [
+              "B:P:r:0/1/0",
+              "W:Q:o:0/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:1/1/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "10",
+            [
+              "B:C:r:1/1/0",
+              "S:Q:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [
+              "WAITING"
+            ],
+            0
+          ],
+          [
+            "11",
+            [
+              "B:C:r:1/1/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "12",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "99",
+            [
+              "B:C:r:1/1/0",
+              "B:Q:o:0/0/0",
+              "S:A:o:0/0/0",
+              "W:C:o:1/1/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "variant": "explicit100",
+      "method": "plainEmpty",
+      "rawRow": "plainEmpty\t[\"NONE\",false,false,\"\",[[\"00\",[\"B:R:r:0/0/0\"],[],1],[\"02\",[\"B:C:r:0/0/0\"],[],0],[\"03\",[\"B:C:r:0/0/0\"],[],0],[\"99\",[\"B:C:r:0/0/0\"],[],0],[\"enq\",[\"B:Q:r:0/0/0\"],[],1]]]\n",
+      "rawRowSHA256": "16d405dd977a05e224fae6b84bbb348c506197e46399138682966bd00b91d941",
+      "native": [
+        "NONE",
+        false,
+        false,
+        "",
+        [
+          [
+            "00",
+            [
+              "B:R:r:0/0/0"
+            ],
+            [],
+            1
+          ],
+          [
+            "02",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "03",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "99",
+            [
+              "B:C:r:0/0/0"
+            ],
+            [],
+            0
+          ],
+          [
+            "enq",
+            [
+              "B:Q:r:0/0/0"
+            ],
+            [],
+            1
+          ]
+        ]
+      ]
+    }
+  ],
+  "variants": [
+    "default",
+    "explicit100"
+  ],
+  "fixtures": {
+    "default": {
+      "classes": {
+        "CyclePhaseObservation": "@IsTest private class CyclePhaseObservation {\n private static void run(String mode,Boolean input,Boolean scheduled){\n  if(input)insert new Account(Name='cycle-input');\n  Test.startTest();\n  Id parent;\n  if(scheduled)System.schedule('cycle-phase-continuation','0 0 0 1 1 ? 2099',new CyclePhaseBatch(mode));\n  else parent=Database.executeBatch(new CyclePhaseBatch(mode));\n  CyclePhaseBatch.snapshot('enq',parent);\n  String error='';\n  try{Test.stopTest();}catch(Exception e){error=e.getTypeName()+':'+e.getMessage();}\n  CyclePhaseBatch.snapshot('99',parent);\n  List<Object> rows=new List<Object>();\n  for(Account row:[SELECT Description FROM Account WHERE Name LIKE 'cycle-phase-%' ORDER BY Name])rows.add(JSON.deserializeUntyped(row.Description));\n  System.assertEquals('NATIVE_OBSERVATION',JSON.serialize(new List<Object>{mode,input,scheduled,error,rows}));\n }\n @IsTest static void plainEmpty(){run('NONE',false,false);}\n @IsTest static void guardedEmpty(){run('GUARDED',false,false);}\n @IsTest static void guardedOne(){run('GUARDED',true,false);}\n @IsTest static void finishScheduleOnly(){run('SCHEDULE_ONLY',false,false);}\n @IsTest static void finishAbortChild(){run('ABORT',false,false);}\n @IsTest static void finishKeepChild(){run('KEEP',false,false);}\n @IsTest static void directScheduleAbortChild(){run('ABORT',false,true);}\n @IsTest static void directScheduleKeepChild(){run('KEEP',false,true);}\n}",
+        "CyclePhaseBatch": "public class CyclePhaseBatch implements Database.Batchable<SObject>,Database.Stateful,Database.AllowsCallouts,Schedulable {\n private String mode; private Boolean child; private Id rootId;\n public CyclePhaseBatch(String value){mode=value;child=false;}\n public CyclePhaseBatch(String value,Id parent){mode=value;child=true;rootId=parent;}\n public Database.QueryLocator start(Database.BatchableContext context){\n  if(rootId==null)rootId=context.getJobId();\n  snapshot(child?'20':'00',rootId);\n  return Database.getQueryLocator([SELECT Id FROM Account WHERE Name='cycle-input']);\n }\n public void execute(Database.BatchableContext context,List<SObject> scope){snapshot(child?'21':'01',rootId);}\n public void finish(Database.BatchableContext context){\n  snapshot(child?'22':'02',rootId);\n  Set<String> pending=new Set<String>{'Preparing','Processing','Queued','Holding'};\n  Boolean permitted=mode!='GUARDED'||[SELECT COUNT() FROM AsyncApexJob WHERE ApexClass.Name='CyclePhaseBatch' AND JobType IN ('BatchApex','ScheduledApex') AND Status IN :pending]==0;\n  if(!child&&mode!='NONE'&&permitted){\n   Datetime nextTime=Datetime.now().addMinutes(15);\n   String cron=nextTime.second()+' '+nextTime.minute()+' '+nextTime.hour()+' '+nextTime.day()+' '+nextTime.month()+' ? '+nextTime.year();\n   System.schedule('cycle-phase-continuation',cron,new CyclePhaseBatch(mode,rootId));\n  }\n  if(!child)snapshot('03',rootId);\n }\n public void execute(SchedulableContext context){\n  snapshot('10',rootId);\n  if(mode=='ABORT'||mode=='GUARDED'){System.abortJob(context.getTriggerId());snapshot('11',rootId);}\n  if(mode!='SCHEDULE_ONLY'){Database.executeBatch(new CyclePhaseBatch(mode,rootId),100);snapshot('12',rootId);}\n }\n public static void snapshot(String phase,Id root){\n  List<String> jobs=new List<String>();\n  for(AsyncApexJob job:[SELECT Id,JobType,Status,JobItemsProcessed,TotalJobItems,NumberOfErrors FROM AsyncApexJob WHERE ApexClass.Name='CyclePhaseBatch']){\n   String kind=job.JobType=='BatchApex'?'B':(job.JobType=='BatchApexWorker'?'W':'S');\n   Map<String,String> states=new Map<String,String>{'Queued'=>'Q','Preparing'=>'R','Processing'=>'P','Completed'=>'C','Aborted'=>'A','Failed'=>'F'};\n   jobs.add(kind+':'+states.get(job.Status)+':'+(job.Id==root?'r':'o')+':'+job.JobItemsProcessed+'/'+job.TotalJobItems+'/'+job.NumberOfErrors);\n  }\n  jobs.sort();\n  List<String> crons=new List<String>();\n  for(CronTrigger cron:[SELECT State FROM CronTrigger WHERE CronJobDetail.Name='cycle-phase-continuation'])crons.add(cron.State);\n  crons.sort();\n  Set<String> pending=new Set<String>{'Preparing','Processing','Queued','Holding'};\n  Integer selected=[SELECT COUNT() FROM AsyncApexJob WHERE ApexClass.Name='CyclePhaseBatch' AND JobType='BatchApex' AND Status IN :pending];\n  insert new Account(Name='cycle-phase-'+phase,Description=JSON.serialize(new List<Object>{phase,jobs,crons,selected}));\n }\n}"
+      },
+      "sourceSHA256": {
+        "CyclePhaseObservation": "df4aef9ae9142bf01ceb1810ed1aa9b811c4487c338e942b253b9120906118db",
+        "CyclePhaseBatch": "10aa41eec1e686a085bb46d20cd27a1f6245f1832e1721cfaef61e32b18461e2"
+      },
+      "metadata": {
+        "58.0": {
+          "CyclePhaseObservation": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>58.0</apiVersion><status>Active</status></ApexClass>",
+          "CyclePhaseBatch": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>58.0</apiVersion><status>Active</status></ApexClass>"
+        },
+        "62.0": {
+          "CyclePhaseObservation": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+          "CyclePhaseBatch": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>"
+        },
+        "67.0": {
+          "CyclePhaseObservation": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+          "CyclePhaseBatch": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>"
+        },
+        "68.0": {
+          "CyclePhaseObservation": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+          "CyclePhaseBatch": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>"
+        }
+      },
+      "metadataSHA256": {
+        "58.0": {
+          "CyclePhaseObservation": "4ece82a488fd844a2a0ae4cd5148d08f6ef2ba85c17063c77e29d8dacda093d3",
+          "CyclePhaseBatch": "4ece82a488fd844a2a0ae4cd5148d08f6ef2ba85c17063c77e29d8dacda093d3"
+        },
+        "62.0": {
+          "CyclePhaseObservation": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+          "CyclePhaseBatch": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+        },
+        "67.0": {
+          "CyclePhaseObservation": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+          "CyclePhaseBatch": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+        },
+        "68.0": {
+          "CyclePhaseObservation": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+          "CyclePhaseBatch": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d"
+        }
+      }
+    },
+    "explicit100": {
+      "classes": {
+        "CyclePhaseObservation": "@IsTest private class CyclePhaseObservation {\n private static void run(String mode,Boolean input,Boolean scheduled){\n  if(input)insert new Account(Name='cycle-input');\n  Test.startTest();\n  Id parent;\n  if(scheduled)System.schedule('cycle-phase-continuation','0 0 0 1 1 ? 2099',new CyclePhaseBatch(mode));\n  else parent=Database.executeBatch(new CyclePhaseBatch(mode),100);\n  CyclePhaseBatch.snapshot('enq',parent);\n  String error='';\n  try{Test.stopTest();}catch(Exception e){error=e.getTypeName()+':'+e.getMessage();}\n  CyclePhaseBatch.snapshot('99',parent);\n  List<Object> rows=new List<Object>();\n  for(Account row:[SELECT Description FROM Account WHERE Name LIKE 'cycle-phase-%' ORDER BY Name])rows.add(JSON.deserializeUntyped(row.Description));\n  System.assertEquals('NATIVE_OBSERVATION',JSON.serialize(new List<Object>{mode,input,scheduled,error,rows}));\n }\n @IsTest static void plainEmpty(){run('NONE',false,false);}\n @IsTest static void guardedEmpty(){run('GUARDED',false,false);}\n @IsTest static void guardedOne(){run('GUARDED',true,false);}\n @IsTest static void finishScheduleOnly(){run('SCHEDULE_ONLY',false,false);}\n @IsTest static void finishAbortChild(){run('ABORT',false,false);}\n @IsTest static void finishKeepChild(){run('KEEP',false,false);}\n @IsTest static void directScheduleAbortChild(){run('ABORT',false,true);}\n @IsTest static void directScheduleKeepChild(){run('KEEP',false,true);}\n}",
+        "CyclePhaseBatch": "public class CyclePhaseBatch implements Database.Batchable<SObject>,Database.Stateful,Database.AllowsCallouts,Schedulable {\n private String mode; private Boolean child; private Id rootId;\n public CyclePhaseBatch(String value){mode=value;child=false;}\n public CyclePhaseBatch(String value,Id parent){mode=value;child=true;rootId=parent;}\n public Database.QueryLocator start(Database.BatchableContext context){\n  if(rootId==null)rootId=context.getJobId();\n  snapshot(child?'20':'00',rootId);\n  return Database.getQueryLocator([SELECT Id FROM Account WHERE Name='cycle-input']);\n }\n public void execute(Database.BatchableContext context,List<SObject> scope){snapshot(child?'21':'01',rootId);}\n public void finish(Database.BatchableContext context){\n  snapshot(child?'22':'02',rootId);\n  Set<String> pending=new Set<String>{'Preparing','Processing','Queued','Holding'};\n  Boolean permitted=mode!='GUARDED'||[SELECT COUNT() FROM AsyncApexJob WHERE ApexClass.Name='CyclePhaseBatch' AND JobType IN ('BatchApex','ScheduledApex') AND Status IN :pending]==0;\n  if(!child&&mode!='NONE'&&permitted){\n   Datetime nextTime=Datetime.now().addMinutes(15);\n   String cron=nextTime.second()+' '+nextTime.minute()+' '+nextTime.hour()+' '+nextTime.day()+' '+nextTime.month()+' ? '+nextTime.year();\n   System.schedule('cycle-phase-continuation',cron,new CyclePhaseBatch(mode,rootId));\n  }\n  if(!child)snapshot('03',rootId);\n }\n public void execute(SchedulableContext context){\n  snapshot('10',rootId);\n  if(mode=='ABORT'||mode=='GUARDED'){System.abortJob(context.getTriggerId());snapshot('11',rootId);}\n  if(mode!='SCHEDULE_ONLY'){Database.executeBatch(new CyclePhaseBatch(mode,rootId),100);snapshot('12',rootId);}\n }\n public static void snapshot(String phase,Id root){\n  List<String> jobs=new List<String>();\n  for(AsyncApexJob job:[SELECT Id,JobType,Status,JobItemsProcessed,TotalJobItems,NumberOfErrors FROM AsyncApexJob WHERE ApexClass.Name='CyclePhaseBatch']){\n   String kind=job.JobType=='BatchApex'?'B':(job.JobType=='BatchApexWorker'?'W':'S');\n   Map<String,String> states=new Map<String,String>{'Queued'=>'Q','Preparing'=>'R','Processing'=>'P','Completed'=>'C','Aborted'=>'A','Failed'=>'F'};\n   jobs.add(kind+':'+states.get(job.Status)+':'+(job.Id==root?'r':'o')+':'+job.JobItemsProcessed+'/'+job.TotalJobItems+'/'+job.NumberOfErrors);\n  }\n  jobs.sort();\n  List<String> crons=new List<String>();\n  for(CronTrigger cron:[SELECT State FROM CronTrigger WHERE CronJobDetail.Name='cycle-phase-continuation'])crons.add(cron.State);\n  crons.sort();\n  Set<String> pending=new Set<String>{'Preparing','Processing','Queued','Holding'};\n  Integer selected=[SELECT COUNT() FROM AsyncApexJob WHERE ApexClass.Name='CyclePhaseBatch' AND JobType='BatchApex' AND Status IN :pending];\n  insert new Account(Name='cycle-phase-'+phase,Description=JSON.serialize(new List<Object>{phase,jobs,crons,selected}));\n }\n}"
+      },
+      "sourceSHA256": {
+        "CyclePhaseObservation": "2974797b19a6fb3091f2d95767b20610638c2f20f5cf714cfc9702fd996fe4dc",
+        "CyclePhaseBatch": "10aa41eec1e686a085bb46d20cd27a1f6245f1832e1721cfaef61e32b18461e2"
+      },
+      "metadata": {
+        "58.0": {
+          "CyclePhaseObservation": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>58.0</apiVersion><status>Active</status></ApexClass>",
+          "CyclePhaseBatch": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>58.0</apiVersion><status>Active</status></ApexClass>"
+        },
+        "62.0": {
+          "CyclePhaseObservation": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+          "CyclePhaseBatch": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>"
+        },
+        "67.0": {
+          "CyclePhaseObservation": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+          "CyclePhaseBatch": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>"
+        },
+        "68.0": {
+          "CyclePhaseObservation": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+          "CyclePhaseBatch": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>"
+        }
+      },
+      "metadataSHA256": {
+        "58.0": {
+          "CyclePhaseObservation": "4ece82a488fd844a2a0ae4cd5148d08f6ef2ba85c17063c77e29d8dacda093d3",
+          "CyclePhaseBatch": "4ece82a488fd844a2a0ae4cd5148d08f6ef2ba85c17063c77e29d8dacda093d3"
+        },
+        "62.0": {
+          "CyclePhaseObservation": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+          "CyclePhaseBatch": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+        },
+        "67.0": {
+          "CyclePhaseObservation": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+          "CyclePhaseBatch": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+        },
+        "68.0": {
+          "CyclePhaseObservation": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+          "CyclePhaseBatch": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d"
+        }
+      }
+    }
+  }
+}

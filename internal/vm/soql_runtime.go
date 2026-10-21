@@ -38,9 +38,6 @@ func (vm *VM) countQueryParseError(err error, queryText string) error {
 }
 
 func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand func(string) (string, error), binds Value, accessLevelMode string) ([]Value, error) {
-	if strings.TrimSpace(accessLevelMode) == "" {
-		accessLevelMode = vm.defaultAccessLevelMode()
-	}
 	return vm.executeSOQLRowsWithExpanderAndScope(raw, execResult, expand, binds, accessLevelMode, "")
 }
 
@@ -55,6 +52,10 @@ func (vm *VM) executeSOQLRowsWithAccounting(raw string, execResult *Result, expa
 }
 
 func (vm *VM) executeSOQLRowsWithAccountingAndSource(raw string, execResult *Result, expand func(string) (string, error), binds Value, accessLevelMode, permissionSetID string, accounting soqlHandleAccounting, captureSource func(*storage.OrgState)) ([]Value, error) {
+	return vm.executeSOQLRowsWithSecurityDetails(raw, execResult, expand, binds, accessLevelMode, permissionSetID, accounting, captureSource, false, false)
+}
+
+func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result, expand func(string) (string, error), binds Value, accessLevelMode, permissionSetID string, accounting soqlHandleAccounting, captureSource func(*storage.OrgState), denialDetails, explicitBindAccessLevel bool) ([]Value, error) {
 	if soql.IsSOSLFind(raw) {
 		return nil, unsupportedCallError("SOSL/FIND local search surface")
 	}
@@ -105,6 +106,13 @@ func (vm *VM) executeSOQLRowsWithAccountingAndSource(raw string, execResult *Res
 	if accounting != soqlOrdinaryAccounting && query.HasOffset {
 		query.Limit, query.HasLimit = 0, true
 	}
+	explicitUserMode := strings.EqualFold(query.SecurityMode, "USER_MODE")
+	explicitSystemMode := strings.EqualFold(query.SecurityMode, "SYSTEM_MODE") ||
+		(strings.TrimSpace(query.SecurityMode) == "" && explicitBindAccessLevel && strings.EqualFold(accessLevelMode, "SYSTEM_MODE"))
+	defaultMode := strings.TrimSpace(query.SecurityMode) == "" && strings.TrimSpace(accessLevelMode) == ""
+	if strings.TrimSpace(accessLevelMode) == "" {
+		accessLevelMode = vm.defaultAccessLevelMode()
+	}
 	if strings.TrimSpace(query.SecurityMode) == "" {
 		query.SecurityMode = accessLevelMode
 	}
@@ -118,8 +126,10 @@ func (vm *VM) executeSOQLRowsWithAccountingAndSource(raw string, execResult *Res
 		}
 		// A child relationship selection spends the
 		// aggregate-query budget even when the parent query returns no rows.
-		if err := vm.incrementLimit("aggregateQueries", len(query.ChildQueries)); err != nil {
-			return nil, err
+		for range query.ChildQueries {
+			if err := vm.incrementLimit("aggregateQueries", 1); err != nil {
+				return nil, err
+			}
 		}
 	}
 	if values, handled, err := vm.executeSoqlStub(query, queryText, binds, execResult); handled || err != nil {
@@ -132,12 +142,33 @@ func (vm *VM) executeSOQLRowsWithAccountingAndSource(raw string, execResult *Res
 	if vm.Org == nil {
 		return nil, fmt.Errorf("SOQL requires org state")
 	}
+	if err := vm.validateSemiJoinRelationshipOperand(query, queryText); err != nil {
+		return nil, err
+	}
+	// The inaccessible-map capture covers explicit USER_MODE in ordinary
+	// static SOQL and Database.query, not defaults or query handles.
+	if denialDetails && accounting == soqlOrdinaryAccounting && explicitUserMode {
+		if err := vm.userModeInaccessibleDenial(query, permissionSetID); err != nil {
+			return nil, err
+		}
+	}
+	if defaultMode && accounting == soqlOrdinaryAccounting {
+		if err := vm.defaultRunAsSOQLDenial(query); err != nil {
+			return nil, err
+		}
+	}
 	if err := vm.enforceSOQLSecurity(query, permissionSetID); err != nil {
 		return nil, err
 	}
 	if err := vm.enforceOrgShapeObjectAvailability(query); err != nil {
 		return nil, err
 	}
+	// Ordinary queries and pagination queries share the captured Mine scope.
+	// Cursor/locator accounting routes retain their unobserved boundary.
+	if accounting != soqlOrdinaryAccounting && strings.EqualFold(query.UsingScope, "mine") {
+		return nil, &RuntimeError{Type: "UnsupportedFeature", Message: "soql: USING SCOPE " + query.UsingScope + " is not supported by the local SOQL runtime"}
+	}
+	query = vm.applyPicklistSourcePolicy(query)
 	executeQuery := query
 	executeQuery.SecurityMode = ""
 	if resolved, ok := vm.resolveObjectName(executeQuery.Object); ok {
@@ -161,14 +192,17 @@ func (vm *VM) executeSOQLRowsWithAccountingAndSource(raw string, execResult *Res
 	} else if strings.EqualFold(executeQuery.Object, "RecentlyViewed") {
 		syntheticOrg := vm.orgWithSyntheticRecentlyViewed()
 		executeOrg = &syntheticOrg
-	} else if strings.EqualFold(executeQuery.Object, "FlowDefinitionView") || strings.EqualFold(executeQuery.Object, "FlowVariableView") {
+	} else if strings.EqualFold(executeQuery.Object, "FlowDefinitionView") || strings.EqualFold(executeQuery.Object, "FlowVariableView") || strings.EqualFold(executeQuery.Object, "FlowVersionView") {
 		syntheticOrg := vm.orgWithSyntheticFlowMetadata()
 		executeOrg = &syntheticOrg
+	}
+	if accounting == soqlOrdinaryAccounting {
+		executeOrg = vm.orgWithVisibleAggregateInputs(executeOrg, query)
 	}
 	if captureSource != nil {
 		captureSource(executeOrg)
 	}
-	result, err := soql.ExecuteWithCache(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg))
+	result, err := soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), soql.ExecutionContext{UserID: storage.ID(vm.currentUserID()), UserRecordAccess: vm.userRecordAccessForRecord})
 	if err != nil {
 		var queryErr *soql.QueryError
 		if errors.As(err, &queryErr) && queryErr.Message != "" {
@@ -180,7 +214,13 @@ func (vm *VM) executeSOQLRowsWithAccountingAndSource(raw string, execResult *Res
 		}
 		return nil, newExceptionError("QueryException", fmt.Sprintf("%s in generated SOQL %q", err.Error(), queryText))
 	}
+	// Ordinary aggregate inputs already respect sharing. Keep their row
+	// provenance when the later output filter handles other query routes.
+	aggregateInputRows := result.AggregateInputRows
 	result = vm.applySOQLSharing(query, result)
+	if accounting == soqlOrdinaryAccounting {
+		result.AggregateInputRows = aggregateInputRows
+	}
 	if query.ForView || query.ForReference {
 		vm.recordRecentlyViewedRows(query.Object, result.Records, query.ForView, query.ForReference)
 	}
@@ -190,8 +230,12 @@ func (vm *VM) executeSOQLRowsWithAccountingAndSource(raw string, execResult *Res
 		if err := vm.incrementLimit("apexCursorRows", len(result.Records)); err != nil {
 			return nil, err
 		}
-	} else if accounting == soqlOrdinaryAccounting && (countsQueryLimit || vm.triggerDepth == 0) {
-		if err := vm.incrementLimit("queryRows", limitRows); err != nil {
+	} else if accounting == soqlOrdinaryAccounting {
+		queryRows := limitRows
+		if result.AggregateInputRows != nil {
+			queryRows = *result.AggregateInputRows
+		}
+		if err := vm.incrementLimit("queryRows", queryRows); err != nil {
 			return nil, err
 		}
 	}
@@ -207,6 +251,11 @@ func (vm *VM) executeSOQLRowsWithAccountingAndSource(raw string, execResult *Res
 		if value.Kind == ValueObject {
 			vm.applySOQLRecordProjection(&value, record, query)
 			vm.hydrateQueriedRecordTypeRelationships(value)
+			// Native observations cover explicit system-mode queries in runAs
+			// tests. Other access modes and non-test contexts remain unchanged.
+			if accounting == soqlOrdinaryAccounting && explicitSystemMode && vm.testContext != nil && vm.testContext.RunAsDepth > 0 {
+				vm.applyPrivateSelfLookupSharing(&value, query.Object, vm.soqlSharingUserID(query))
+			}
 		}
 		values = append(values, value)
 	}
@@ -330,13 +379,51 @@ func (vm *VM) applySOQLRecordProjection(value *Value, record storage.Record, que
 			for relationship, records := range record.Children {
 				if strings.EqualFold(relationship, child.Relationship) && i < len(records) {
 					vm.applySOQLRecordProjection(&rows.List[i], records[i], child.Query)
+					rows.List[i].Fields[sobjectSubqueryProjectionField] = Bool(true)
 					break
 				}
 			}
 		}
 		value.Fields[actual] = rows
 	}
-	value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(record.Object, fields)
+	selectedFields := queriedSObjectFieldsValue(record.Object, fields)
+	// Preserve the projection order for the record's Apex text, including
+	// the identity implicitly returned when it was not selected explicitly.
+	for _, path := range paths {
+		parts := splitSOQLRelationshipFieldPath(path)
+		if len(parts) == 0 {
+			continue
+		}
+		if len(parts) > 1 && vm.soqlFieldQualifierMatchesObject(record.Object, parts[0]) {
+			parts = parts[1:]
+		}
+		key := mapKey(String(strings.ToLower(parts[0])))
+		if !containsString(selectedFields.MapOrder, key) {
+			selectedFields.MapOrder = append(selectedFields.MapOrder, key)
+		}
+	}
+	for _, child := range query.ChildQueries {
+		selectedFields.MapOrder = append(selectedFields.MapOrder, mapKey(String(strings.ToLower(child.Relationship))))
+	}
+	idKey := mapKey(String("id"))
+	if !containsString(selectedFields.MapOrder, idKey) {
+		selectedFields.MapOrder = append(selectedFields.MapOrder, idKey)
+	}
+	value.Fields[sobjectQueriedFieldsField] = selectedFields
+	// Compound getters synthesize values from their components. Materialize
+	// selected addresses so serialization and populated maps see that same view.
+	for field := range fields {
+		_, definition, ok := vm.sObjectFieldDefinition(record.Object, field)
+		if !ok || definition.Type != storage.FieldAddress {
+			continue
+		}
+		if _, existing, ok := objectFieldValue(*value, definition.APIName); ok && existing.Kind != ValueNull {
+			continue
+		}
+		if address, ok := vm.sObjectCompoundAddressValue(*value, definition.APIName); ok {
+			value.Fields[definition.APIName] = address
+		}
+	}
 	for field := range value.Fields {
 		if isInternalSObjectField(field) || vm.queriedSObjectFieldsIncludes(*value, field) {
 			continue
@@ -409,7 +496,7 @@ func (vm *VM) aggregateResultFromRecord(record storage.Record, query soql.Query)
 	}
 	out := Object("AggregateResult")
 	for name, value := range fields {
-		fieldValue := vmValueFromStorage(value)
+		fieldValue := vm.aggregateSumNumberValue(value, query, name)
 		// R127/R192/N019/Q001-Q003: get() returns Object. Preserve the
 		// runtime payload and use the existing boxed formatting/cast paths.
 		fieldValue.Static = "Object"
@@ -547,7 +634,7 @@ func (vm *VM) validateDynamicSOQLBinds(raw string, binds Value) error {
 	if err != nil {
 		return nil // The execution parser supplies the syntax diagnostic.
 	}
-	lookup := vm.lookup
+	lookup := vm.lookupSOQLBind
 	if binds.Kind == ValueMap {
 		lookup = func(name string) (Value, error) { return soqlBindMapValue(binds, name) }
 	}
@@ -609,6 +696,7 @@ func (vm *VM) validateDynamicSOQLBinds(raw string, binds Value) error {
 			if err != nil {
 				continue // Preserve expression lookup and missing-name diagnostics.
 			}
+			value = value.currentMapKeySet()
 			if value.Kind == ValueNull {
 				if collection {
 					return newExceptionError("NullPointerException", "Attempt to de-reference a null object")
@@ -700,9 +788,6 @@ func (vm *VM) soqlCountsQueryLimit(query soql.Query) bool {
 	if vm == nil || vm.Org == nil {
 		return true
 	}
-	if vm.triggerDepth > 0 {
-		return false
-	}
 	if !storage.IsCustomMetadataObject(*vm.Org, query.Object) {
 		return true
 	}
@@ -732,9 +817,9 @@ func (vm *VM) recordRecentlyViewedRows(queryObject string, records []storage.Rec
 	if vm.recentlyViewed == nil {
 		vm.recentlyViewed = make(map[string]map[storage.ID]recentlyViewedEntry)
 	}
-	userID := vm.currentUserInfoField("Id", "005000000000001")
+	userID := vm.currentUserInfoField("Id", storage.DefaultUserID)
 	if strings.TrimSpace(userID) == "" {
-		userID = "005000000000001"
+		userID = storage.DefaultUserID
 	}
 	views := vm.recentlyViewed[userID]
 	if views == nil {
@@ -802,7 +887,7 @@ func (vm *VM) orgWithSyntheticRecentlyViewed() storage.OrgState {
 	storage.EnsureStandardObject(&org, "RecentlyViewed")
 	object := org.Objects["RecentlyViewed"]
 	object.Records = make(map[storage.ID]storage.Record)
-	userID := vm.currentUserInfoField("Id", "005000000000001")
+	userID := vm.currentUserInfoField("Id", storage.DefaultUserID)
 	views := vm.recentlyViewed[userID]
 	ids := make([]string, 0, len(views))
 	for id := range views {
@@ -844,31 +929,71 @@ func (vm *VM) orgWithSyntheticFlowMetadata() storage.OrgState {
 	org := cloneRuntimeOrgState(*vm.Org)
 	storage.EnsureStandardObject(&org, "FlowDefinitionView")
 	storage.EnsureStandardObject(&org, "FlowVariableView")
+	storage.EnsureStandardObject(&org, "FlowVersionView")
 	definitions := org.Objects["FlowDefinitionView"]
 	variables := org.Objects["FlowVariableView"]
+	versions := org.Objects["FlowVersionView"]
 	definitions.Records = make(map[storage.ID]storage.Record)
 	variables.Records = make(map[storage.ID]storage.Record)
+	versions.Records = make(map[storage.ID]storage.Record)
 	rules := append([]storage.FlowRule(nil), vm.Org.Metadata.Flows...)
+	rules = append(rules, vm.Org.Metadata.FlowDeclarations...)
 	sort.Slice(rules, func(i, j int) bool { return strings.ToLower(rules[i].Name) < strings.ToLower(rules[j].Name) })
 	for index, rule := range rules {
 		if strings.TrimSpace(rule.Name) == "" {
 			continue
 		}
-		definitionID := storage.ID(fmt.Sprintf("3FD%012d", index+1))
-		versionID := storage.ID(fmt.Sprintf("3FV%012d", index+1))
+		definitionID := storage.ID(apexIDTo18(fmt.Sprintf("3FD%012d", index+1)))
+		versionID := storage.ID(apexIDTo18(fmt.Sprintf("3FV%012d", index+1)))
+		active := rule.Active
+		if rule.SourceStatus != "" {
+			active = strings.EqualFold(rule.SourceStatus, "Active")
+		}
+		label := rule.Label
+		if label == "" {
+			label = rule.Name
+		}
+		triggerType := storage.StringValue(rule.TriggerType)
+		// Owned API62/67 observations preserve null for omitted trigger types
+		// in autolaunched and Screen flows; explicit types stay intact.
+		if (strings.EqualFold(rule.ProcessType, "AutoLaunchedFlow") || strings.EqualFold(rule.ProcessType, "Flow")) && rule.TriggerType == "" {
+			triggerType = storage.NullValue()
+		}
 		definitions.Records[definitionID] = storage.Record{
 			ID:     definitionID,
 			Object: "FlowDefinitionView",
 			Fields: map[string]storage.Value{
+				"DurableId":       storage.StringValue(apexIDTo18(string(definitionID))),
 				"ApiName":         storage.StringValue(rule.Name),
 				"ActiveVersionId": storage.IDValue(versionID),
 				"LatestVersionId": storage.IDValue(versionID),
-				"IsActive":        storage.BooleanValue(rule.Active),
-				"Label":           storage.StringValue(rule.Name),
+				"IsActive":        storage.BooleanValue(active),
+				"Label":           storage.StringValue(label),
 				"ProcessType":     storage.StringValue(rule.ProcessType),
-				"TriggerType":     storage.StringValue(rule.TriggerType),
+				"TriggerType":     triggerType,
 			},
 		}
+		if !active {
+			record := definitions.Records[definitionID]
+			record.Fields["ActiveVersionId"] = storage.NullValue()
+			definitions.Records[definitionID] = record
+		}
+		status := rule.SourceStatus
+		if status == "" && active {
+			status = "Active"
+		}
+		fields := map[string]storage.Value{
+			"DurableId":            storage.StringValue(apexIDTo18(string(versionID))),
+			"FlowDefinitionViewId": storage.IDValue(definitionID),
+			"Status":               storage.StringValue(status), "VersionNumber": storage.IntegerValue(1),
+			"Label": storage.StringValue(label), "ProcessType": storage.StringValue(rule.ProcessType),
+			"RunInMode": storage.StringValue(rule.RunInMode),
+		}
+		if rule.APIVersion != "" {
+			fields["ApiVersionRuntime"] = storage.DecimalValue(rule.APIVersion)
+			fields["ApiVersion"] = storage.DecimalValue(rule.APIVersion)
+		}
+		versions.Records[versionID] = storage.Record{ID: versionID, Object: "FlowVersionView", Fields: fields}
 		for variableIndex, variable := range rule.Variables {
 			if strings.TrimSpace(variable.Name) == "" {
 				continue
@@ -892,7 +1017,39 @@ func (vm *VM) orgWithSyntheticFlowMetadata() storage.OrgState {
 	}
 	org.Objects["FlowDefinitionView"] = definitions
 	org.Objects["FlowVariableView"] = variables
+	org.Objects["FlowVersionView"] = versions
 	return org
+}
+
+// userRecordAccessForRecord derives both query surfaces from the current actor's
+// grants. Actor-dependent values never enter the shared query or schema caches.
+func (vm *VM) userRecordAccessForRecord(objectName string, record storage.Record) storage.Record {
+	userID := vm.currentUserInfoField("Id", "005-local-user")
+	live := !record.System.IsDeleted
+	read := live && vm.currentUserObjectPermission(objectName, "isAccessible") && vm.userModeRecordVisible(objectName, record, userID)
+	edit := live && vm.currentUserCanWriteRecord(objectName, record, userID, "update") && vm.currentUserObjectPermission(objectName, "isUpdateable")
+	remove := live && vm.currentUserCanWriteRecord(objectName, record, userID, "delete") && vm.currentUserObjectPermission(objectName, "isDeletable")
+	all := read && edit && remove
+	level := "None"
+	if read {
+		level = "Read"
+	}
+	if edit {
+		level = "Edit"
+	}
+	if all {
+		level = "All"
+	}
+	return storage.Record{Object: "UserRecordAccess", Fields: map[string]storage.Value{
+		"RecordId":          storage.IDValue(record.ID),
+		"UserId":            storage.IDValue(storage.ID(userID)),
+		"HasReadAccess":     storage.BooleanValue(read),
+		"HasEditAccess":     storage.BooleanValue(edit),
+		"HasDeleteAccess":   storage.BooleanValue(remove),
+		"HasTransferAccess": storage.BooleanValue(live && vm.currentUserCanWriteRecord(objectName, record, userID, "transfer")),
+		"HasAllAccess":      storage.BooleanValue(all),
+		"MaxAccessLevel":    storage.StringValue(level),
+	}}
 }
 
 func (vm *VM) orgWithSyntheticUserRecordAccess() storage.OrgState {
@@ -900,7 +1057,6 @@ func (vm *VM) orgWithSyntheticUserRecordAccess() storage.OrgState {
 	storage.EnsureStandardObject(&org, "UserRecordAccess")
 	accessObject := org.Objects["UserRecordAccess"]
 	accessObject.Records = make(map[storage.ID]storage.Record)
-	userID := vm.currentUserInfoField("Id", "005-local-user")
 	objectNames := make([]string, 0, len(vm.Org.Objects))
 	for objectName := range vm.Org.Objects {
 		if strings.EqualFold(objectName, "UserRecordAccess") {
@@ -918,7 +1074,7 @@ func (vm *VM) orgWithSyntheticUserRecordAccess() storage.OrgState {
 			if recordID == "" {
 				recordID = id
 			}
-			if recordID == "" || record.System.IsDeleted {
+			if recordID == "" {
 				continue
 			}
 			text := string(recordID)
@@ -928,36 +1084,12 @@ func (vm *VM) orgWithSyntheticUserRecordAccess() storage.OrgState {
 		for _, recordIDText := range recordIDs {
 			recordID := storage.ID(recordIDText)
 			_, record, _ := storage.LookupRecordByID(object.Records, recordID)
-			read := vm.currentUserObjectPermission(objectName, "isAccessible") && vm.userModeRecordVisible(objectName, record, userID)
-			edit := vm.currentUserCanWriteRecord(objectName, record, userID, "update") && vm.currentUserObjectPermission(objectName, "isUpdateable")
-			remove := vm.currentUserCanWriteRecord(objectName, record, userID, "delete") && vm.currentUserObjectPermission(objectName, "isDeletable")
-			all := read && edit && remove
-			level := "None"
-			if read {
-				level = "Read"
-			}
-			if edit {
-				level = "Edit"
-			}
-			if all {
-				level = "All"
-			}
+			record.ID = recordID
 			accessID := storage.ID(fmt.Sprintf("0UR%012d", sequence))
 			sequence++
-			accessObject.Records[accessID] = storage.Record{
-				ID:     accessID,
-				Object: "UserRecordAccess",
-				Fields: map[string]storage.Value{
-					"RecordId":          storage.IDValue(recordID),
-					"UserId":            storage.IDValue(storage.ID(userID)),
-					"HasReadAccess":     storage.BooleanValue(read),
-					"HasEditAccess":     storage.BooleanValue(edit),
-					"HasDeleteAccess":   storage.BooleanValue(remove),
-					"HasTransferAccess": storage.BooleanValue(vm.currentUserCanWriteRecord(objectName, record, userID, "transfer")),
-					"HasAllAccess":      storage.BooleanValue(all),
-					"MaxAccessLevel":    storage.StringValue(level),
-				},
-			}
+			access := vm.userRecordAccessForRecord(objectName, record)
+			access.ID = accessID
+			accessObject.Records[accessID] = access
 		}
 	}
 	org.Objects["UserRecordAccess"] = accessObject
@@ -1017,7 +1149,7 @@ func (vm *VM) enforceOrgShapeObjectAvailability(query soql.Query) error {
 	if resolved, ok := vm.resolveObjectName(objectName); ok {
 		objectName = resolved
 	}
-	if strings.EqualFold(objectName, "DatedConversionRate") && !vm.orgBool("Organization", "IsMultiCurrencyEnabled", false) {
+	if strings.EqualFold(objectName, "DatedConversionRate") && !vm.Org.HasFeature("MultiCurrency") {
 		return newExceptionError("QueryException", "sObject type 'DatedConversionRate' is not supported")
 	}
 	for _, child := range query.ChildQueries {
@@ -1043,7 +1175,7 @@ func (vm *VM) testSetFixedSearchResults(args []Value) (Value, error) {
 
 func (vm *VM) testSetCreatedDate(args []Value) (Value, error) {
 	if err := vm.requireTestContext("Test.setCreatedDate"); err != nil {
-		return Null, err
+		return Null, newExceptionError("NoAccessException", "Use Test.setCreatedDate() within tests.")
 	}
 	if len(args) != 2 {
 		return Null, fmt.Errorf("Test.setCreatedDate expects record Id and Datetime")
@@ -1052,9 +1184,22 @@ func (vm *VM) testSetCreatedDate(args []Value) (Value, error) {
 	if !ok || idText == "" {
 		return Null, fmt.Errorf("Test.setCreatedDate expects record Id")
 	}
-	createdDate, err := platformScalarText(args[1], "Datetime")
+	createdDateValue := args[1]
+	if createdDateValue.Kind == ValueObject && strings.EqualFold(canonicalRuntimePlatformType(createdDateValue.Type), "Date") {
+		// The Datetime parameter accepts Apex's documented implicit Date
+		// conversion. Reuse the ordinary conversion without widening inputs.
+		converted, err := vm.coerceAssignable("Datetime", createdDateValue)
+		if err != nil {
+			return Null, err
+		}
+		createdDateValue = converted
+	}
+	createdDate, err := platformScalarText(createdDateValue, "Datetime")
 	if err != nil {
 		return Null, fmt.Errorf("Test.setCreatedDate expects Datetime")
+	}
+	if stamp, err := time.Parse(time.RFC3339Nano, createdDate); err == nil {
+		createdDate = stamp.UTC().Format(time.RFC3339)
 	}
 	if vm.Org == nil {
 		return Null, fmt.Errorf("Test.setCreatedDate requires org state")
@@ -1150,15 +1295,22 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 			record := storage.Record{}
 			if value.Kind == ValueObject {
 				if id, ok := valueIDString(value.Fields["Id"]); ok {
-					if found, foundOK := vm.findOrgRecord(group.ObjectName, storage.ID(id)); foundOK {
+					if found, foundOK := group.VirtualRecords[storage.ID(id)]; foundOK {
+						record = found
+					} else if found, foundOK := vm.findOrgRecord(group.ObjectName, storage.ID(id)); foundOK {
 						record = found
 					}
 				}
 			}
 			row := Object("Search.SearchResult")
 			row.Fields["sObject"] = value
-			snippet, snippets := soslSnippetsForRecord(record, query.WithSnippet, query.Terms)
+			// Fixed test results select records without asking the search index
+			// to generate snippets (native APIs 62/67 return null per field).
+			snippet, snippets := soslSnippetsForRecord(record, query.WithSnippet && !vm.fixedSearchResultsSet, query.Terms)
 			row.Fields["snippet"] = String(snippet)
+			if vm.fixedSearchResultsSet {
+				row.Fields["snippet"] = Null
+			}
 			row.Fields["snippets"] = snippets
 			list.List = append(list.List, row)
 		}
@@ -1383,6 +1535,7 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 		}
 		rows := List()
 		rows.Type = "List<" + specObjectName + ">"
+		var virtualRecords map[storage.ID]storage.Record
 		if vm.Org != nil {
 			matcherBoundary := query.MatchUnsupported
 			if query.SpellCorrection != nil && *query.SpellCorrection {
@@ -1392,7 +1545,13 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 			if err != nil {
 				return nil, err
 			}
+			if strings.EqualFold(specObjectName, "KnowledgeArticleVersion") {
+				virtualRecords = make(map[storage.ID]storage.Record, len(records))
+			}
 			for _, record := range records {
+				if virtualRecords != nil {
+					virtualRecords[record.ID] = record
+				}
 				value := vm.vmValueFromRecord(record)
 				vm.applySOSLReturningFunctionAliases(&value, record, spec)
 				if len(spec.Fields) > 0 {
@@ -1419,10 +1578,10 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 		if len(rows.List) > 0 && query.WithHighlight {
 			return nil, unsupportedCallError("SOSL WITH HIGHLIGHT result formatting")
 		}
-		if len(rows.List) > 0 && query.SnippetTargetLength {
+		if len(rows.List) > 0 && query.SnippetTargetLength && !vm.fixedSearchResultsSet {
 			return nil, unsupportedCallError("SOSL WITH SNIPPET TARGET_LENGTH result formatting")
 		}
-		groups = append(groups, soslResultGroup{ObjectName: specObjectName, Rows: rows})
+		groups = append(groups, soslResultGroup{ObjectName: specObjectName, Rows: rows, VirtualRecords: virtualRecords})
 	}
 	return groups, nil
 }
@@ -1432,6 +1591,8 @@ type soslWhere = sosl.Condition
 type soslResultGroup struct {
 	ObjectName string
 	Rows       Value
+	// Query-only records remain available for Search.find result formatting.
+	VirtualRecords map[storage.ID]storage.Record
 }
 
 func soslFieldSet(spec sosl.ReturningObject) map[string]bool {
@@ -1457,7 +1618,12 @@ func (vm *VM) soslRecordsForSpec(spec sosl.ReturningObject, objectName string, p
 	if strings.HasSuffix(strings.ToLower(strings.TrimSpace(objectName)), "__x") {
 		return nil, unsupportedCallError("Search.query SOSL external indexes")
 	}
-	state, ok := vm.Org.Objects[objectName]
+	readOrg := vm.Org
+	knowledgeView := strings.EqualFold(objectName, "KnowledgeArticleVersion")
+	if knowledgeView {
+		readOrg = storage.KnowledgeArticleVersionReadView(readOrg)
+	}
+	state, ok := readOrg.Objects[objectName]
 	if !ok {
 		return nil, nil
 	}
@@ -1477,10 +1643,16 @@ func (vm *VM) soslRecordsForSpec(spec sosl.ReturningObject, objectName string, p
 			if !ok {
 				foundObject, ok = vm.sObjectNameForExistingID(id)
 			}
+			if knowledgeView && strings.EqualFold(foundObject, "Knowledge__kav") {
+				foundObject = objectName
+			}
 			if !ok || !strings.EqualFold(foundObject, objectName) {
 				continue
 			}
 			record, ok := vm.findOrgRecord(objectName, storage.ID(id))
+			if knowledgeView {
+				_, record, ok = storage.LookupRecordByID(state.Records, storage.ID(id))
+			}
 			if !ok {
 				continue
 			}
@@ -1831,27 +2003,45 @@ func containsFold(text, needle string) bool {
 }
 
 func soslRecordMatchesWhere(record storage.Record, where *sosl.Condition) bool {
-	matches, _ := soslWhereResult(record, where, nil)
+	matches, _ := soslWhereResult(record, where, nil, record.GetField)
 	return matches
 }
 
 func (vm *VM) soslRecordMatchesWhere(record storage.Record, where *sosl.Condition) (bool, error) {
 	var boundary error
+	fieldValue := record.GetField
+	if vm.Org != nil {
+		if objectName, ok := vm.resolveObjectName(record.Object); ok {
+			definition := vm.Org.Objects[objectName].Definition
+			fieldValue = func(field string) (storage.Value, bool) {
+				// Same-namespace SOSL schema names resolve to the stored key.
+				if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
+					field = canonical
+				}
+				// SW01-SW03 named API62/67/68 read the audit column in a
+				// fixed-result CreatedDate window, as ordinary SOQL does.
+				if strings.EqualFold(field, "CreatedDate") && record.System.CreatedDate != "" {
+					return storage.DateTimeValue(record.System.CreatedDate), true
+				}
+				return record.GetField(field)
+			}
+		}
+	}
 	matches, known := soslWhereResult(record, where, func(field string) storage.FieldType {
 		_, definition, ok := vm.sObjectFieldDefinition(record.Object, field)
 		if !ok {
 			boundary = unsupportedCallError("SOSL ordered null predicate without field metadata")
 			return storage.FieldAny
 		}
-		// The new null-predicate controls cover text, integer and decimal
-		// fields. Keep other nullable operand types explicit until captured.
+		// Owned datetime-null D01- named rows at API62/67/68 also
+		// preserve unknown through NOT/AND/OR. Other types remain uncaptured.
 		switch definition.Type {
-		case storage.FieldString, storage.FieldInteger, storage.FieldDecimal:
+		case storage.FieldString, storage.FieldInteger, storage.FieldDecimal, storage.FieldDateTime:
 		default:
 			boundary = unsupportedCallError("SOSL ordered null predicate for " + string(definition.Type))
 		}
 		return definition.Type
-	})
+	}, fieldValue)
 	if known {
 		return matches, nil
 	}
@@ -1860,11 +2050,11 @@ func (vm *VM) soslRecordMatchesWhere(record storage.Record, where *sosl.Conditio
 
 // Q004/Q021-Q023/Q034-Q036/Q043-Q044 preserve unknown numeric null
 // comparisons through NOT/AND/OR. Equality, LIKE and IN retain their own rules.
-func soslWhereResult(record storage.Record, where *sosl.Condition, fieldType func(string) storage.FieldType) (matches, known bool) {
+func soslWhereResult(record storage.Record, where *sosl.Condition, fieldType func(string) storage.FieldType, fieldValue func(string) (storage.Value, bool)) (matches, known bool) {
 	if where != nil && where.Not {
 		positive := *where
 		positive.Not = false
-		matches, known := soslWhereResult(record, &positive, fieldType)
+		matches, known := soslWhereResult(record, &positive, fieldType, fieldValue)
 		return known && !matches, known
 	}
 	if where == nil {
@@ -1873,7 +2063,7 @@ func soslWhereResult(record storage.Record, where *sosl.Condition, fieldType fun
 	if len(where.And) > 0 {
 		known := true
 		for i := range where.And {
-			matches, childKnown := soslWhereResult(record, &where.And[i], fieldType)
+			matches, childKnown := soslWhereResult(record, &where.And[i], fieldType, fieldValue)
 			if childKnown && !matches {
 				return false, true
 			}
@@ -1884,7 +2074,7 @@ func soslWhereResult(record storage.Record, where *sosl.Condition, fieldType fun
 	if len(where.Or) > 0 {
 		known := true
 		for i := range where.Or {
-			matches, childKnown := soslWhereResult(record, &where.Or[i], fieldType)
+			matches, childKnown := soslWhereResult(record, &where.Or[i], fieldType, fieldValue)
 			if childKnown && matches {
 				return true, true
 			}
@@ -1895,7 +2085,7 @@ func soslWhereResult(record storage.Record, where *sosl.Condition, fieldType fun
 	if strings.TrimSpace(where.Field) == "" {
 		return true, true
 	}
-	value, ok := record.GetField(where.Field)
+	value, ok := fieldValue(where.Field)
 	text := storageValueText(value)
 	if strings.EqualFold(where.Field, "Id") {
 		text, ok = string(record.ID), record.ID != ""
@@ -2431,6 +2621,22 @@ func (vm *VM) markQueriedParentRelationshipPath(value *Value, objectName string,
 	if !ok || relationshipValue.Kind != ValueObject {
 		return
 	}
+	if lookupField, known := vm.parentRelationshipField(objectName, relationship); known {
+		markQueriedSObjectField(value, lookupField)
+		if selected, exists := value.Fields[sobjectQueriedFieldsField]; exists && selected.Kind == ValueMap {
+			if selected.MapKeys == nil {
+				selected.MapKeys = make(map[string]Value)
+			}
+			key := String(strings.ToLower(lookupField))
+			selected.MapKeys[mapKey(key)] = key
+			value.Fields[sobjectQueriedFieldsField] = selected
+		}
+		if _, _, present := objectFieldValue(*value, lookupField); !present {
+			if id := sObjectIDFromFields(relationshipValue.Fields); id != "" {
+				value.Fields[lookupField] = String(string(id))
+			}
+		}
+	}
 	vm.resolveSOQLParentRuntimeType(&relationshipValue, objectName, relationship)
 	if vm.isSObjectLikeType(relationshipValue.Type) {
 		parentObject = relationshipValue.Type
@@ -2582,29 +2788,52 @@ func (vm *VM) enforceSOQLSecurity(query soql.Query, permissionSetID string) erro
 			objectName = canonical
 		}
 	}
+	// UserRecordAccess is a derived query surface, not an ordinary CRUD/FLS
+	// object. Native USER_MODE queries can read the executing user's access rows
+	// without a separate UserRecordAccess object or field grant.
+	if mode == "USER_MODE" && permissionSetID == "" && strings.EqualFold(objectName, "UserRecordAccess") {
+		return nil
+	}
 	if !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", permissionSetID) {
+		if vm.userModeInaccessibleSecureDenial(query, permissionSetID) {
+			return newExceptionError("QueryException", "Insufficient permissions: secure query included inaccessible field")
+		}
 		return newExceptionError("QueryException", fmt.Sprintf("sObject type '%s' is not supported by %s", objectName, mode))
 	}
 	for _, field := range query.Fields {
-		if err := vm.enforceSOQLRelationshipSecurityWithScope(objectName, field, mode, permissionSetID); err != nil {
+		if parts := strings.Fields(field); len(parts) == 2 {
+			for _, grouped := range query.GroupBy {
+				if strings.EqualFold(parts[0], grouped) {
+					field = parts[0]
+					break
+				}
+			}
+		}
+		if err := vm.enforceSOQLRelationshipSecurityWithScope(objectName, field, mode, permissionSetID, true); err != nil {
 			return err
 		}
-		for _, fieldName := range vm.securityFieldNames(objectName, field, mode) {
+		for _, fieldName := range vm.securityFieldNames(objectName, field, mode, true) {
 			if !vm.currentUserFieldPermissionWithScope(objectName, fieldName, "isAccessible", permissionSetID) {
+				if mode == "USER_MODE" {
+					return newExceptionError("QueryException", soql.MissingColumnMessage(fieldName, objectName))
+				}
+				if vm.userModeInaccessibleSecureDenial(query, permissionSetID) {
+					return newExceptionError("QueryException", "Insufficient permissions: secure query included inaccessible field")
+				}
 				return newExceptionError("QueryException", fmt.Sprintf("No such column '%s' on entity '%s'.", fieldName, objectName))
 			}
 		}
 	}
 	for _, field := range soqlConditionFields(query.Where) {
-		if err := vm.enforceSOQLRelationshipSecurityWithScope(objectName, field, mode, permissionSetID); err != nil {
+		if err := vm.enforceSOQLRelationshipSecurityWithScope(objectName, field, mode, permissionSetID, false); err != nil {
 			return err
 		}
 	}
 	for _, order := range query.Order {
-		if err := vm.enforceSOQLRelationshipSecurityWithScope(objectName, order.Field, mode, permissionSetID); err != nil {
+		if err := vm.enforceSOQLRelationshipSecurityWithScope(objectName, order.Field, mode, permissionSetID, false); err != nil {
 			return err
 		}
-		for _, fieldName := range vm.securityFieldNames(objectName, order.Field, mode) {
+		for _, fieldName := range vm.securityFieldNames(objectName, order.Field, mode, false) {
 			if !vm.currentUserFieldPermissionWithScope(objectName, fieldName, "isAccessible", permissionSetID) {
 				return newExceptionError("QueryException", fmt.Sprintf("No such column '%s' on entity '%s'.", fieldName, objectName))
 			}
@@ -2723,10 +2952,10 @@ func (vm *VM) validateSOQLIDLiteralCondition(definition storage.ObjectDefinition
 }
 
 func (vm *VM) enforceSOQLRelationshipSecurity(objectName, expression, mode string) error {
-	return vm.enforceSOQLRelationshipSecurityWithScope(objectName, expression, mode, "")
+	return vm.enforceSOQLRelationshipSecurityWithScope(objectName, expression, mode, "", false)
 }
 
-func (vm *VM) enforceSOQLRelationshipSecurityWithScope(objectName, expression, mode, permissionSetID string) error {
+func (vm *VM) enforceSOQLRelationshipSecurityWithScope(objectName, expression, mode, permissionSetID string, projection bool) error {
 	if vm == nil || vm.Org == nil {
 		return nil
 	}
@@ -2738,13 +2967,25 @@ func (vm *VM) enforceSOQLRelationshipSecurityWithScope(objectName, expression, m
 		expression = raw
 	}
 	if strings.EqualFold(mode, "USER_MODE") {
-		if relation, ok := vm.polymorphicSOQLNameFieldRelationship(objectName, expression); ok {
+		if relation, ok := vm.polymorphicSOQLNameFieldRelationship(objectName, expression, projection); ok {
 			fieldName, found := vm.soqlRelationshipReferenceFieldName(objectName, relation)
 			if !found {
 				fieldName = relation.Field
 			}
 			if !found || !vm.currentUserFieldPermissionWithScope(objectName, fieldName, "isAccessible", permissionSetID) {
 				return newExceptionError("QueryException", fmt.Sprintf("No such column '%s' on entity '%s'.", fieldName, objectName))
+			}
+			leaf := expression[strings.LastIndexByte(expression, '.')+1:]
+			if soql.IsUserGroupContactField(relation.ParentObjects, leaf) {
+				// These common Name projections can be null on a queue. Check
+				// FLS on each target that actually defines the projected field.
+				for _, target := range relation.ParentObjects {
+					object := vm.Org.Objects[target]
+					if canonical, known := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, leaf); known &&
+						!vm.currentUserFieldPermissionWithScope(target, canonical, "isAccessible", permissionSetID) {
+						return newExceptionError("QueryException", fmt.Sprintf("No such column '%s' on entity '%s' for %s", expression, objectName, mode))
+					}
+				}
 			}
 			return nil
 		}
@@ -2810,6 +3051,16 @@ func (vm *VM) soqlRelationshipSecurityTargetsAllowed(targets []string, parts []s
 		object, ok := vm.Org.Objects[targetName]
 		if !ok {
 			return false
+		}
+		if len(parts) == 2 && strings.EqualFold(parts[0], "UserRecordAccess") {
+			// Access flags are derived from the actor's grants rather than a
+			// stored parent field. Keep object read access and the restricted
+			// pseudo-parent projection surface; the outer path checks lookup FLS.
+			if soql.UserRecordAccessProjectionError(targetName, parts[1]) != nil ||
+				!vm.currentUserObjectPermissionWithScope(targetName, "isAccessible", permissionSetID) {
+				return false
+			}
+			continue
 		}
 		if strings.EqualFold(mode, "USER_MODE") && len(parts) == 2 && strings.EqualFold(parts[1], "Type") {
 			if relation, ok := vm.parentRelationshipMetadata(targetName, parts[0]); ok && relation.Polymorphic && len(relation.ParentObjects) > 0 {
@@ -2892,7 +3143,7 @@ func (vm *VM) soqlRelationshipReferenceFieldName(objectName string, relation sto
 	return storage.ResolveFieldName(object.Definition, vm.Org.Namespace, relation.Field)
 }
 
-func (vm *VM) polymorphicSOQLNameFieldRelationship(objectName, expression string) (storage.Relationship, bool) {
+func (vm *VM) polymorphicSOQLNameFieldRelationship(objectName, expression string, projection bool) (storage.Relationship, bool) {
 	if vm == nil || vm.Org == nil {
 		return storage.Relationship{}, false
 	}
@@ -2904,33 +3155,71 @@ func (vm *VM) polymorphicSOQLNameFieldRelationship(objectName, expression string
 	if vm.soqlFieldQualifierMatchesObject(objectName, parts[0]) && len(parts) >= 3 {
 		parts = parts[1:]
 	}
-	// R186–R189: Name and Type use the common polymorphic parent shape.
-	// Their security check uses the reference field, not every target schema.
-	if len(parts) != 2 || !(strings.EqualFold(parts[1], "Name") || strings.EqualFold(parts[1], "Type")) {
+	if len(parts) != 2 {
 		return storage.Relationship{}, false
 	}
 	relation, ok := vm.parentRelationshipMetadata(objectName, parts[0])
-	return relation, ok && relation.Polymorphic && len(relation.ParentObjects) > 0
+	if !ok || !relation.Polymorphic || len(relation.ParentObjects) == 0 {
+		return storage.Relationship{}, false
+	}
+	// R186–R189: Name and Type use the common polymorphic parent shape.
+	if strings.EqualFold(parts[1], "Name") || strings.EqualFold(parts[1], "Type") {
+		return relation, true
+	}
+	// Native owner_contact_user_mode rows at source 61/62/67 admit these
+	// Name projections for User/Group references even when Group lacks the
+	// field. Other polymorphic target sets keep the all-target validation.
+	if !projection || !soql.IsUserGroupContactField(relation.ParentObjects, parts[1]) {
+		return storage.Relationship{}, false
+	}
+	for _, target := range relation.ParentObjects {
+		object, exists := vm.Org.Objects[target]
+		if !exists {
+			return storage.Relationship{}, false
+		}
+		if strings.EqualFold(target, "User") {
+			if _, known := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, parts[1]); !known {
+				return storage.Relationship{}, false
+			}
+		}
+	}
+	return relation, true
 }
 
-func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result {
+func (vm *VM) soqlSharingUserID(query soql.Query) string {
 	userMode := strings.EqualFold(strings.TrimSpace(query.SecurityMode), "USER_MODE")
+	// An AutomatedProcess success callback sees the captured private
+	// rows even through a with-sharing helper. This is a callback read scope,
+	// not a profile grant or a general AutomatedProcess sharing exemption.
+	if strings.EqualFold(strings.TrimSpace(query.SecurityMode), "SYSTEM_MODE") &&
+		vm.eventPublishReadUserID != "" && vm.currentUserID() == vm.eventPublishReadUserID {
+		return ""
+	}
 	if !userMode && vm.testContext != nil && vm.testContext.RunAsDepth == 0 {
-		return result
+		return ""
 	}
 	if !userMode && !vm.currentClassHasSharingMode("with sharing") {
-		return result
+		return ""
 	}
 	if vm.soqlObjectHasPublicReadSharing(query.Object) {
-		return result
+		return ""
 	}
 	if vm.currentUserBypassesRecordSharing() {
-		return result
+		return ""
 	}
 	userID := vm.currentUserID()
 	if userID == "" {
+		return ""
+	}
+	return userID
+}
+
+func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result {
+	userID := vm.soqlSharingUserID(query)
+	if userID == "" {
 		return result
 	}
+	userMode := strings.EqualFold(strings.TrimSpace(query.SecurityMode), "USER_MODE")
 	if soqlSharingCountQuery(query) {
 		visibleQuery := query
 		visibleQuery.Count = false
@@ -2948,7 +3237,7 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 		if !userMode {
 			visibleQuery.SecurityMode = ""
 		}
-		visibleResult, err := soql.ExecuteWithCache(*vm.Org, visibleQuery, vm.soqlExecutionCacheForOrg(vm.Org))
+		visibleResult, err := soql.ExecuteWithCacheAndContext(*vm.Org, visibleQuery, vm.soqlExecutionCacheForOrg(vm.Org), soql.ExecutionContext{UserID: storage.ID(vm.currentUserID()), UserRecordAccess: vm.userRecordAccessForRecord})
 		if err == nil {
 			visibleResult = vm.applySOQLSharing(visibleQuery, visibleResult)
 			count := storage.IntegerValue(int64(len(visibleResult.Records)))
@@ -2964,6 +3253,9 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 		}
 		return result
 	}
+	// Other routes can filter only outputs, after provenance was computed.
+	// Ordinary execution restores its already-visible input count.
+	result.AggregateInputRows = nil
 	records := result.Records[:0]
 	for _, record := range result.Records {
 		if vm.userModeRecordVisible(query.Object, record, userID) {
@@ -3116,9 +3408,6 @@ func (vm *VM) nearestCallStackSharingMode() (string, bool) {
 			return mode, true
 		}
 		className := classNameFromMethod(vm.callStack[i].Symbol)
-		if hasSuffixFold(className, ".withsharing") {
-			return "with sharing", true
-		}
 		if class, ok := vm.lookupClass(className); ok {
 			if methodHasModifier(class.Modifiers, "with sharing") {
 				return "with sharing", true
@@ -3145,13 +3434,13 @@ func (vm *VM) currentUserID() string {
 	return vm.currentUserInfoField("Id", "")
 }
 
-func (vm *VM) securityFieldNames(objectName, expression, mode string) []string {
+func (vm *VM) securityFieldNames(objectName, expression, mode string, projection bool) []string {
 	expression = strings.TrimSpace(expression)
 	if expression == "" || strings.Contains(expression, "(") {
 		return nil
 	}
 	if strings.EqualFold(mode, "USER_MODE") {
-		if relation, ok := vm.polymorphicSOQLNameFieldRelationship(objectName, expression); ok {
+		if relation, ok := vm.polymorphicSOQLNameFieldRelationship(objectName, expression, projection); ok {
 			return []string{relation.Field}
 		}
 	}
@@ -3166,6 +3455,11 @@ func (vm *VM) securityFieldNames(objectName, expression, mode string) []string {
 			return nil
 		}
 		expression = parts[0]
+		if relation, ok := vm.parentRelationshipMetadata(objectName, expression); ok {
+			if field, found := vm.soqlRelationshipReferenceFieldName(objectName, relation); found {
+				expression = field
+			}
+		}
 	}
 	if dot := strings.IndexByte(expression, '.'); dot >= 0 {
 		expression = expression[:dot]
@@ -3207,7 +3501,7 @@ func aggregateCount(value Value) (Value, bool) {
 
 func (vm *VM) expandSOQLBinds(raw string) (string, error) {
 	return vm.expandSOQLBindsWith(raw, func(name string) (Value, error) {
-		value, err := vm.lookup(name)
+		value, err := vm.lookupSOQLBind(name)
 		if err != nil && strings.HasPrefix(err.Error(), "unknown variable ") {
 			return Null, newExceptionError("QueryException", "Variable does not exist: "+name)
 		}
@@ -3255,6 +3549,7 @@ func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error)
 // Native R013/R015/R031: typed Id text binds use the 18-character
 // String form, including IN and LIKE. Id/reference columns retain Id literals.
 func soqlTextBindLiteral(value Value) string {
+	value = value.currentMapKeySet()
 	if text, ok := typedIDValueText(value); ok {
 		text = displayIDText(text)
 		return soqlQuotedStringLiteral(text)
@@ -3284,22 +3579,9 @@ func (vm *VM) expandSOQLBindsWithContextLiteral(raw string, lookup func(string) 
 	var out strings.Builder
 	for i := 0; i < len(raw); {
 		if raw[i] == '\'' {
-			out.WriteByte(raw[i])
-			i++
-			for i < len(raw) {
-				out.WriteByte(raw[i])
-				if raw[i] == '\'' {
-					if i+1 < len(raw) && raw[i+1] == '\'' {
-						i++
-						out.WriteByte(raw[i])
-						i++
-						continue
-					}
-					i++
-					break
-				}
-				i++
-			}
+			end := soqlBindQuotedEnd(raw, i)
+			out.WriteString(raw[i:end])
+			i = end
 			continue
 		}
 		if raw[i] != ':' {
@@ -3341,6 +3623,23 @@ func (vm *VM) expandSOQLBindsWithContextLiteral(raw string, lookup func(string) 
 			i = valueStart + end
 			continue
 		}
+		// DateTime token colons follow digits; preserve them instead of
+		// interpreting the following time or offset digits as a numeric bind.
+		numericBind := valueStart < len(raw) && raw[valueStart] >= '0' && raw[valueStart] <= '9' &&
+			(i == 0 || raw[i-1] < '0' || raw[i-1] > '9')
+		if call != nil && (soqlBindUnaryExpressionStart(raw, valueStart) || numericBind) {
+			// Native binds any Apex expression, including `:!flag` and `:-n`.
+			value, end, err := vm.evalSOQLBindExpression(raw[valueStart:], resultForLookup())
+			if err != nil {
+				return "", err
+			}
+			writeSOQLBindExpansion(&out, value, raw[valueStart:valueStart+end], bindLiteral)
+			i = valueStart + end
+			continue
+		}
+		if call == nil && valueStart < len(raw) && raw[valueStart] == '$' {
+			return "", newExceptionError("QueryException", "unexpected token: '$'")
+		}
 		if valueStart >= len(raw) || !isIdentStart(raw[valueStart]) {
 			out.WriteByte(raw[i])
 			i++
@@ -3350,7 +3649,7 @@ func (vm *VM) expandSOQLBindsWithContextLiteral(raw string, lookup func(string) 
 		j := nameStart
 		var name strings.Builder
 		for j < len(raw) {
-			if isIdentPart(raw[j]) {
+			if isIdentPart(raw[j]) || call == nil && raw[j] == '$' {
 				name.WriteByte(raw[j])
 				j++
 				continue
@@ -3450,10 +3749,36 @@ func (vm *VM) expandSOQLBindsWithContextLiteral(raw string, lookup func(string) 
 }
 
 func (vm *VM) executeSOQL(raw string, execResult *Result) (Value, error) {
+	return vm.executeSOQLWithDenialDetails(raw, execResult, false)
+}
+
+// The captured static query and single-argument Database.query routes opt in;
+// query handles, explicit AccessLevel overloads and other callers retain their
+// existing exceptions until those routes have their own native observations.
+func (vm *VM) executeSOQLQuery(raw string, execResult *Result) (Value, error) {
+	return vm.executeSOQLWithDenialDetails(raw, execResult, true)
+}
+
+func (vm *VM) executeSOQLWithDenialDetails(raw string, execResult *Result, denialDetails bool) (Value, error) {
 	if soql.IsSOSLFind(raw) {
 		return vm.executeSOSL(raw, execResult)
 	}
-	values, err := vm.executeSOQLRows(raw, execResult)
+	if denialDetails {
+		query, parseErr := vm.parseSOQLAt(raw)
+		if parseErr != nil {
+			denialDetails = false
+		} else {
+			_, fields, _ := vm.userModeInaccessibleDeniedFields(query, "")
+			denialDetails = len(fields) > 0
+		}
+	}
+	var values []Value
+	var err error
+	if denialDetails {
+		values, err = vm.executeSOQLRowsWithSecurityDetails(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"), vm.defaultAccessLevelMode(), "", soqlOrdinaryAccounting, nil, true, false)
+	} else {
+		values, err = vm.executeSOQLRows(raw, execResult)
+	}
 	if err != nil {
 		return Null, err
 	}
@@ -3488,6 +3813,9 @@ func (vm *VM) executeCursorSOQL(raw string, binds Value, execResult *Result) (Va
 	return out, nil
 }
 func (vm *VM) executeSOQLWithAccessLevel(raw string, accessLevel Value, execResult *Result) (Value, error) {
+	if err := vm.validateSOQLAccessLevel(raw, accessLevel); err != nil {
+		return Null, err
+	}
 	values, err := vm.executeSOQLRowsWithAccessLevel(raw, execResult, accessLevel)
 	if err != nil {
 		return Null, err
@@ -3560,9 +3888,11 @@ func (vm *VM) executeSOQLWithBindMap(raw string, binds Value, execResult *Result
 	return out, nil
 }
 func (vm *VM) executeSOQLWithBindMapAccessLevel(raw string, binds Value, accessLevel Value, execResult *Result) (Value, error) {
-	values, err := vm.executeSOQLRowsWithExpanderAndScope(raw, execResult, func(query string) (string, error) {
+	// queryWithBinds supplies an explicit access level. Keep this provenance
+	// separate from defaults and other access-level routes until observed.
+	values, err := vm.executeSOQLRowsWithSecurityDetails(raw, execResult, func(query string) (string, error) {
 		return vm.expandSOQLBindsFromMap(query, binds)
-	}, binds, databaseAccessLevelSecurityMode(accessLevel), accessLevelPermissionSetID(accessLevel))
+	}, binds, databaseAccessLevelSecurityMode(accessLevel), accessLevelPermissionSetID(accessLevel), soqlOrdinaryAccounting, nil, false, true)
 	if err != nil {
 		return Null, err
 	}
@@ -3586,6 +3916,11 @@ func tagSOQLQueryList(value *Value, raw string) {
 		value.Fields = make(map[string]Value)
 	}
 	value.Fields["__soqlQuery"] = String(raw)
+	emptyType := ""
+	if len(value.List) == 0 {
+		emptyType, _ = collectionElementType(value.Type)
+	}
+	value.Fields["__soqlEmptyResultType"] = String(emptyType)
 }
 func (vm *VM) soqlResultObjectNameWithExpander(raw string, expand func(string) (string, error)) string {
 	queryText := raw
@@ -3613,7 +3948,7 @@ func (vm *VM) soqlResultObjectName(raw string) string {
 	return objectName
 }
 func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, error) {
-	value, err := vm.executeSOQL(raw, result)
+	value, err := vm.executeSOQLQuery(raw, result)
 	if err != nil {
 		return Null, err
 	}
@@ -3638,13 +3973,23 @@ func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, e
 		}
 	}
 	if len(value.List) == 0 {
-		return Null, newExceptionError("QueryException", "List has no rows for assignment to SObject")
+		return Null, vm.emptySObjectQueryError(value)
 	}
 	if len(value.List) > 1 {
 		return Null, newExceptionError("QueryException", "List has more than 1 row for assignment to SObject")
 	}
 	return value.List[0], nil
 }
+
+// Empty collections and DTO projections are local data. Requiring an absent
+// Network record is a hosted dependency; clearing a populated query list is not.
+func (vm *VM) emptySObjectQueryError(value Value) error {
+	if strings.EqualFold(value.Fields["__soqlEmptyResultType"].Text, "Network") {
+		return &RuntimeError{Type: "UnsupportedFeature", Message: "Network configuration record is unavailable locally; singleton assignment requires hosted Experience Cloud data"}
+	}
+	return newExceptionError("QueryException", "List has no rows for assignment to SObject")
+}
+
 func (vm *VM) executeSOQLRows(raw string, execResult *Result) ([]Value, error) {
 	return vm.executeSOQLRowsWithExpander(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"), "")
 }
@@ -3665,6 +4010,7 @@ func soslQuotedStringLiteral(text string) string {
 }
 
 func soslLiteral(value Value) string {
+	value = value.currentMapKeySet()
 	switch value.Kind {
 	case ValueList:
 		items := make([]string, 0, len(value.List))
@@ -3697,6 +4043,26 @@ func soslLiteral(value Value) string {
 	}
 	return soqlLiteral(value)
 }
+
+// soqlBindUnaryExpressionStart reports whether a bind starts with a unary `!`
+// or `-` applied to an identifier or a parenthesized expression.
+func soqlBindUnaryExpressionStart(raw string, pos int) bool {
+	if pos >= len(raw) || (raw[pos] != '!' && raw[pos] != '-') {
+		return false
+	}
+	next := pos + 1
+	for next < len(raw) && (raw[next] == ' ' || raw[next] == '\t' || raw[next] == '\n' || raw[next] == '\r') {
+		next++
+	}
+	if next >= len(raw) {
+		return false
+	}
+	if raw[pos] == '!' && raw[next] == '=' {
+		return false
+	}
+	return isIdentStart(raw[next]) || raw[next] == '(' || raw[pos] == '!' && raw[next] == '!'
+}
+
 func shouldEvaluateSOQLBindExpression(raw string, pos, callEnd int, isCall bool) bool {
 	if isCall {
 		pos = callEnd
@@ -3704,7 +4070,7 @@ func shouldEvaluateSOQLBindExpression(raw string, pos, callEnd int, isCall bool)
 	for pos < len(raw) && (raw[pos] == ' ' || raw[pos] == '\t' || raw[pos] == '\n' || raw[pos] == '\r') {
 		pos++
 	}
-	return pos < len(raw) && (raw[pos] == '[' || raw[pos] == '(' || raw[pos] == '.' || raw[pos] == '+' || raw[pos] == '-')
+	return pos < len(raw) && (raw[pos] == '[' || raw[pos] == '(' || raw[pos] == '.' || raw[pos] == '?' || raw[pos] == '+' || raw[pos] == '-')
 }
 func (vm *VM) evalSOQLBindExpression(source string, result *Result) (Value, int, error) {
 	expr, end, err := compileExpressionPrefix(source)

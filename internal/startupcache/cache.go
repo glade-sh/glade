@@ -14,14 +14,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Version 10 rejects snapshots with queryable synthetic Master record types.
-const Version = 10
+// Version 14 requires path-aware Flow target references and rejects expanded paths.
+const Version = 14
 
 const manifestSchemaVersion = 1
 
@@ -940,13 +941,14 @@ func deduplicateFileFingerprints(values []File) []File {
 }
 
 type semanticProject struct {
-	Root               string                     `json:"root"`
-	Namespace          string                     `json:"namespace,omitempty"`
-	SourceAPIVersion   string                     `json:"sourceApiVersion,omitempty"`
-	PackageDirectories []project.PackageDirectory `json:"packageDirectories"`
-	NamespaceRemaps    []string                   `json:"namespaceRemaps,omitempty"`
-	Dependencies       []semanticDependency       `json:"dependencies,omitempty"`
-	PackageShims       []semanticPackageShim      `json:"packageShims,omitempty"`
+	Root                      string                     `json:"root"`
+	Namespace                 string                     `json:"namespace,omitempty"`
+	SourceAPIVersion          string                     `json:"sourceApiVersion,omitempty"`
+	PackageDirectories        []project.PackageDirectory `json:"packageDirectories"`
+	NamespaceRemaps           []string                   `json:"namespaceRemaps,omitempty"`
+	NamespaceRemapFingerprint string                     `json:"namespaceRemapFingerprint,omitempty"`
+	Dependencies              []semanticDependency       `json:"dependencies,omitempty"`
+	PackageShims              []semanticPackageShim      `json:"packageShims,omitempty"`
 }
 
 type semanticDependency struct {
@@ -986,10 +988,11 @@ func semanticProjectDigest(root string, p project.Project, features []string) (s
 func projectSemantics(root string, p project.Project, seen map[string]bool) semanticProject {
 	projectRoot := filepath.Clean(p.Root)
 	out := semanticProject{
-		Root:               semanticPath(root, projectRoot),
-		Namespace:          p.Namespace,
-		SourceAPIVersion:   p.SourceAPIVersion,
-		PackageDirectories: canonicalPackageDirectories(p.PackageDirectories),
+		Root:                      semanticPath(root, projectRoot),
+		Namespace:                 p.Namespace,
+		SourceAPIVersion:          p.SourceAPIVersion,
+		PackageDirectories:        canonicalPackageDirectories(p.PackageDirectories),
+		NamespaceRemapFingerprint: namespaceremap.Fingerprint(p.NamespaceRemaps),
 	}
 	for _, remap := range p.NamespaceRemaps {
 		out.NamespaceRemaps = append(out.NamespaceRemaps, remap.From+":"+remap.To)
@@ -1106,19 +1109,22 @@ func appendProjectFilesFromProject(p project.Project) []string {
 }
 
 func manifestProjects(p project.Project) []project.Project {
+	viewKey := func(p project.Project) string {
+		return filepath.Clean(p.Root) + "\x00" + strings.Join(packageRootsForProject(p), "\x00")
+	}
 	out := []project.Project{p}
-	seen := map[string]bool{filepath.Clean(p.Root): true}
+	seen := map[string]bool{viewKey(p): true}
 	var appendProjects func(project.Project)
 	appendProjects = func(parent project.Project) {
 		for _, dep := range parent.ManagedPackageDependencies {
 			if dep.Project == nil || dep.Project.Root == "" {
 				continue
 			}
-			root := filepath.Clean(dep.Project.Root)
-			if seen[root] {
+			key := viewKey(*dep.Project)
+			if seen[key] {
 				continue
 			}
-			seen[root] = true
+			seen[key] = true
 			out = append(out, *dep.Project)
 			appendProjects(*dep.Project)
 		}
@@ -1126,11 +1132,11 @@ func manifestProjects(p project.Project) []project.Project {
 			if shim.Project == nil || shim.Project.Root == "" {
 				continue
 			}
-			root := filepath.Clean(shim.Project.Root)
-			if seen[root] {
+			key := viewKey(*shim.Project)
+			if seen[key] {
 				continue
 			}
-			seen[root] = true
+			seen[key] = true
 			out = append(out, *shim.Project)
 			appendProjects(*shim.Project)
 		}

@@ -1,0 +1,5 @@
+id	shape
+null	null PageReference
+relative	relative PageReference
+absolute	absolute PageReference
+login	login result passed to redirect outside a site

@@ -9,10 +9,17 @@ import (
 )
 
 type PartialResponse struct {
-	Targets   map[string]string `json:"targets"`
-	ViewState string            `json:"viewState"`
-	Messages  []string          `json:"messages,omitempty"`
-	Redirect  string            `json:"redirect,omitempty"`
+	Targets   map[string]string          `json:"targets"`
+	ViewState string                     `json:"viewState"`
+	Messages  []string                   `json:"messages,omitempty"`
+	Redirect  string                     `json:"redirect,omitempty"`
+	Error     string                     `json:"error,omitempty"`
+	Pollers   map[string]AjaxPollerState `json:"pollers,omitempty"`
+}
+
+type AjaxPollerState struct {
+	Enabled  bool   `json:"enabled"`
+	Interval string `json:"interval"`
 }
 
 func NewPartialResponse(renderedHTML, viewState string, rerenderIDs []string) PartialResponse {
@@ -21,7 +28,42 @@ func NewPartialResponse(renderedHTML, viewState string, rerenderIDs []string) Pa
 		Targets:   targets,
 		ViewState: viewState,
 		Messages:  messages,
+		Pollers:   partialPollerStates(renderedHTML),
 	}
+}
+
+// Poller enabled bindings are evaluated again on postback even when the
+// poller's own DOM node is outside the requested rerender targets.
+func partialPollerStates(renderedHTML string) map[string]AjaxPollerState {
+	doc, err := nethtml.Parse(strings.NewReader(renderedHTML))
+	if err != nil {
+		return nil
+	}
+	states := map[string]AjaxPollerState{}
+	var walk func(*nethtml.Node)
+	walk = func(node *nethtml.Node) {
+		id, enabled, interval, poller := "", "", "", false
+		for _, attribute := range node.Attr {
+			switch attribute.Key {
+			case "id":
+				id = attribute.Val
+			case "data-vf-poller":
+				poller = attribute.Val == "true"
+			case "data-enabled":
+				enabled = attribute.Val
+			case "data-interval":
+				interval = attribute.Val
+			}
+		}
+		if poller && id != "" {
+			states[id] = AjaxPollerState{Enabled: enabled == "true", Interval: interval}
+		}
+		for child := node.FirstChild; child != nil; child = child.NextSibling {
+			walk(child)
+		}
+	}
+	walk(doc)
+	return states
 }
 
 func RenderPartialTargets(renderedHTML string, rerenderIDs []string) map[string]string {

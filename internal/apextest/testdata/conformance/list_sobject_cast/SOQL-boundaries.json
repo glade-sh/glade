@@ -1,0 +1,368 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "SOQL-boundaries",
+  "shapeCount": 4,
+  "nativeObservationCount": 24,
+  "rows": [
+    {
+      "id": "C167CL_040",
+      "disposition": "conformance",
+      "label": "direct SOQL single assignment 1",
+      "twin": "C167CL_039",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;Set<Id> ids;try{List<Account> made=new List<Account>{new Account(Name='C167synthetic0')};try{insert made;}catch(Exception setupFailure){throw setupFailure;}ids=new Map<Id,Account>(made).keySet();if(ids.size()!=made.size()||ids.contains(null)){System.assert(false,'C14_SUBJECT_ERROR|ids');}Account a=[SELECT Id,Name FROM Account WHERE Id IN :ids];r=String.valueOf(a.Name);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_040|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_040|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "3103c179e4c078c01fa7707407dd411b0d1632ee8c76270245776a8eb577d321"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "C167synthetic0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"C167synthetic0\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "C167synthetic0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"C167synthetic0\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "C167synthetic0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"C167synthetic0\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe040": "@IsTest private class C167Observe040{@IsTest static void observe(){String r;Set<Id> ids;try{List<Account> made=new List<Account>{new Account(Name='C167synthetic0')};try{insert made;}catch(Exception setupFailure){throw setupFailure;}ids=new Map<Id,Account>(made).keySet();if(ids.size()!=made.size()||ids.contains(null)){System.assert(false,'C14_SUBJECT_ERROR|ids');}Account a=[SELECT Id,Name FROM Account WHERE Id IN :ids];r=String.valueOf(a.Name);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_040|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_040|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe040"
+          ],
+          "sourceSha256": {
+            "class:C167Observe040": "c68480440aac841145d821201e83f694ed26ad2d45ced911989a6add19021d47"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "C167synthetic0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"C167synthetic0\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "C167synthetic0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"C167synthetic0\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "C167synthetic0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"C167synthetic0\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C167CL_041",
+      "disposition": "conformance",
+      "label": "query list Object holder 1",
+      "twin": "C167CL_042",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;Set<Id> ids;try{List<Account> made=new List<Account>{new Account(Name='C167synthetic0')};try{insert made;}catch(Exception setupFailure){throw setupFailure;}ids=new Map<Id,Account>(made).keySet();if(ids.size()!=made.size()||ids.contains(null)){System.assert(false,'C14_SUBJECT_ERROR|ids');}Object o=[SELECT Id,Name FROM Account WHERE Id IN :ids];Account a=(Account)o;r=String.valueOf(a==null?null:a.Name);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_041|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_041|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "19bf7baff7428e6eee81694eb68f40aabc09aafa0851b1fac4e035dfd87e842e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe041": "@IsTest private class C167Observe041{@IsTest static void observe(){String r;Set<Id> ids;try{List<Account> made=new List<Account>{new Account(Name='C167synthetic0')};try{insert made;}catch(Exception setupFailure){throw setupFailure;}ids=new Map<Id,Account>(made).keySet();if(ids.size()!=made.size()||ids.contains(null)){System.assert(false,'C14_SUBJECT_ERROR|ids');}Object o=[SELECT Id,Name FROM Account WHERE Id IN :ids];Account a=(Account)o;r=String.valueOf(a==null?null:a.Name);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_041|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_041|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe041"
+          ],
+          "sourceSha256": {
+            "class:C167Observe041": "94cf3665c4a3b20e10a528f306e88a5c9d550c02807dd3479d8b2ab5b653158c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C167CL_042",
+      "disposition": "conformance",
+      "label": "direct SOQL single assignment 2",
+      "twin": "C167CL_041",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;Set<Id> ids;try{List<Account> made=new List<Account>{new Account(Name='C167synthetic0'),new Account(Name='C167synthetic1')};try{insert made;}catch(Exception setupFailure){throw setupFailure;}ids=new Map<Id,Account>(made).keySet();if(ids.size()!=made.size()||ids.contains(null)){System.assert(false,'C14_SUBJECT_ERROR|ids');}Account a=[SELECT Id,Name FROM Account WHERE Id IN :ids];r=String.valueOf(a.Name);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_042|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_042|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "e2830666d6dc8cb91563d46f4bccdb95e88ec1bc4167d84031a4d0022d7f0261"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.QueryException|List has more than 1 row for assignment to SObject"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.QueryException|List has more than 1 row for assignment to SObject\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.QueryException|List has more than 1 row for assignment to SObject"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.QueryException|List has more than 1 row for assignment to SObject\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.QueryException|List has more than 1 row for assignment to SObject"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.QueryException|List has more than 1 row for assignment to SObject\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe042": "@IsTest private class C167Observe042{@IsTest static void observe(){String r;Set<Id> ids;try{List<Account> made=new List<Account>{new Account(Name='C167synthetic0'),new Account(Name='C167synthetic1')};try{insert made;}catch(Exception setupFailure){throw setupFailure;}ids=new Map<Id,Account>(made).keySet();if(ids.size()!=made.size()||ids.contains(null)){System.assert(false,'C14_SUBJECT_ERROR|ids');}Account a=[SELECT Id,Name FROM Account WHERE Id IN :ids];r=String.valueOf(a.Name);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_042|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_042|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe042"
+          ],
+          "sourceSha256": {
+            "class:C167Observe042": "23d7346aa0432b2d9a4834f256c0c951d25dd06e237394915f3686b4bc3a02f5"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.QueryException|List has more than 1 row for assignment to SObject"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.QueryException|List has more than 1 row for assignment to SObject\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.QueryException|List has more than 1 row for assignment to SObject"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.QueryException|List has more than 1 row for assignment to SObject\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.QueryException|List has more than 1 row for assignment to SObject"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.QueryException|List has more than 1 row for assignment to SObject\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C167CL_043",
+      "disposition": "conformance",
+      "label": "query list Object holder 2",
+      "twin": "C167CL_044",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;Set<Id> ids;try{List<Account> made=new List<Account>{new Account(Name='C167synthetic0'),new Account(Name='C167synthetic1')};try{insert made;}catch(Exception setupFailure){throw setupFailure;}ids=new Map<Id,Account>(made).keySet();if(ids.size()!=made.size()||ids.contains(null)){System.assert(false,'C14_SUBJECT_ERROR|ids');}Object o=[SELECT Id,Name FROM Account WHERE Id IN :ids];Account a=(Account)o;r=String.valueOf(a==null?null:a.Name);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_043|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_043|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "c0f278af6cefb996e55d173e8f99b57d7ddecba0c23554fa6c93cf7a7044afd6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe043": "@IsTest private class C167Observe043{@IsTest static void observe(){String r;Set<Id> ids;try{List<Account> made=new List<Account>{new Account(Name='C167synthetic0'),new Account(Name='C167synthetic1')};try{insert made;}catch(Exception setupFailure){throw setupFailure;}ids=new Map<Id,Account>(made).keySet();if(ids.size()!=made.size()||ids.contains(null)){System.assert(false,'C14_SUBJECT_ERROR|ids');}Object o=[SELECT Id,Name FROM Account WHERE Id IN :ids];Account a=(Account)o;r=String.valueOf(a==null?null:a.Name);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_043|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_043|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe043"
+          ],
+          "sourceSha256": {
+            "class:C167Observe043": "c9febe0eea1d7ecc914fc3a1821fb2c5c2c4439df5c02edaae9e1cc93bcc6211"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"EXC|System.TypeException|Invalid conversion from runtime type List<Account> to Account\"}"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

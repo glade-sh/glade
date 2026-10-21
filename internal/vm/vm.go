@@ -44,7 +44,7 @@ func (vm *VM) orgID() string {
 	if vm.Org != nil && vm.Org.OrgID != "" {
 		return vm.Org.OrgID
 	}
-	return "00D000000000001"
+	return storage.DefaultOrgID
 }
 
 func firstStringField(record storage.Record, names ...string) string {
@@ -456,7 +456,7 @@ func (vm *VM) calleeStartsWithRuntimeReceiver(callee string, args []Value) bool 
 			return true
 		}
 	}
-	if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
+	if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject && !vm.runtimeOnlyDerivedField(this, root, callee, args) {
 		if _, _, ok := objectFieldValue(this, root); ok {
 			return true
 		}
@@ -475,6 +475,52 @@ func (vm *VM) calleeStartsWithRuntimeReceiver(callee string, args []Value) bool 
 		}
 	}
 	return false
+}
+
+// A field introduced by a subclass does not hide a lexical static factory in
+// an inherited method. Native H09 rows also cover public/protected collisions
+// at source API62/67/68; other shapes retain the existing private-field rule.
+func (vm *VM) runtimeOnlyDerivedField(receiver Value, name, callee string, args []Value) bool {
+	context := vm.currentClass
+	if context == "" {
+		context = vm.currentMethod.ClassName
+	}
+	if context == "" || strings.EqualFold(receiver.Type, context) || !vm.isSubclass(receiver.Type, context) {
+		return false
+	}
+	if _, _, found := vm.lookupFieldForReceiver(context, name, vm.currentMethod.Dependency); found {
+		return false
+	}
+	field, owner, found := vm.lookupFieldForReceiver(receiver.Type, name, vm.currentMethod.Dependency)
+	if !found || strings.EqualFold(owner, context) || !vm.isSubclass(owner, context) {
+		return false
+	}
+	if field.Access == "" || strings.EqualFold(field.Access, "private") {
+		return true
+	}
+	if vm.currentMethod.Dependency || vm.currentExecutionNamespace() != "" || !strings.EqualFold(field.Type, "String") ||
+		(!strings.EqualFold(field.Access, "public") && !strings.EqualFold(field.Access, "protected")) {
+		return false
+	}
+	derived, ok := vm.lookupClass(owner)
+	if !ok || !strings.EqualFold(owner, receiver.Type) || derived.Dependency || derived.Namespace != "" || derived.APIVersion != vm.currentMethod.APIVersion {
+		return false
+	}
+	switch vm.currentMethod.APIVersion {
+	case "62.0", "67.0", "68.0":
+	default:
+		return false
+	}
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok || !vm.hasExactRuntimeClass(name) {
+		return false
+	}
+	class, ok := vm.lookupClass(className)
+	if !ok || class.Dependency || class.PlatformType || class.Namespace != "" || class.APIVersion != vm.currentMethod.APIVersion {
+		return false
+	}
+	method, found, _ := vm.resolveStaticMethodForArgs(className, methodName, args)
+	return found && !method.Dependency && method.Namespace == ""
 }
 
 func (vm *VM) hasExactRuntimeClass(name string) bool {
@@ -567,6 +613,16 @@ func (vm *VM) emptyChildRelationshipForEach(expr ir.Expr) (Value, bool) {
 	path := expr.Name
 	if path == "" {
 		path = expr.Callee
+	}
+	// Direct traversal of getSObjects uses the empty relationship view even
+	// though the getter itself returns null. A stored null list still throws.
+	dot := strings.LastIndex(path, ".")
+	if expr.Kind == ir.ExprCall && dot >= 0 && strings.EqualFold(path[dot+1:], "getSObjects") && expr.Left == nil && len(expr.Args) == 1 && expr.Args[0].Kind == ir.ExprLiteral {
+		relationship, err := parseLiteral(expr.Args[0].Value)
+		if err != nil || relationship.Kind != ValueString {
+			return Null, false
+		}
+		path = path[:dot] + "." + relationship.Text
 	}
 	parts := strings.Split(path, ".")
 	if len(parts) < 2 {
@@ -956,6 +1012,9 @@ func parsePlatformDate(value Value) (time.Time, error) {
 	}
 	date, err := parseDateText(text)
 	if err != nil {
+		if extended, ok := parseExtendedDateYear(text); ok {
+			return extended, nil
+		}
 		return parsePlatformDateText(text)
 	}
 	return date, nil
@@ -980,9 +1039,65 @@ func datetimeFromLocalParts(year, month, day, hour, minute, second, millisecond 
 	}
 	zone, ok := supportedNamedTimeZone(zoneID)
 	if !ok {
+		if zoneID == "Pacific/Kiritimati" {
+			return datetimeKiritimatiFromUniqueLocalParts(year, month, day, hour, minute, second, millisecond)
+		}
 		return time.Time{}, unsupportedCallError("Datetime.newInstance timezone " + zoneID)
 	}
-	return zone.instantFromLocal(year, time.Month(month), day, hour, minute, second, millisecond), nil
+	return zone.instantFromLocal(year, time.Month(month), day, hour, minute, second, millisecond, false), nil
+}
+
+func datetimeKiritimatiFromUniqueLocalParts(year, month, day, hour, minute, second, millisecond int) (time.Time, error) {
+	const zoneID = "Pacific/Kiritimati"
+	location, err := time.LoadLocation(zoneID)
+	if err != nil {
+		return time.Time{}, unsupportedCallError("Datetime.newInstance timezone " + zoneID)
+	}
+	wall := time.Date(year, time.Month(month), day, hour, minute, second, millisecond*int(time.Millisecond), time.UTC)
+	offsets := make(map[int]struct{})
+	for delta := -48 * time.Hour; delta <= 48*time.Hour; delta += time.Hour {
+		_, offset := wall.Add(delta).In(location).Zone()
+		offsets[offset] = struct{}{}
+	}
+	var matches []time.Time
+	for offset := range offsets {
+		candidate := wall.Add(-time.Duration(offset) * time.Second).UTC()
+		local := candidate.In(location)
+		if local.Year() != wall.Year() || local.Month() != wall.Month() || local.Day() != wall.Day() ||
+			local.Hour() != wall.Hour() || local.Minute() != wall.Minute() || local.Second() != wall.Second() || local.Nanosecond() != wall.Nanosecond() {
+			continue
+		}
+		duplicate := false
+		for _, match := range matches {
+			if match.Equal(candidate) {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			matches = append(matches, candidate)
+		}
+	}
+	if len(matches) == 1 {
+		return matches[0], nil
+	}
+	// Salesforce's choice for skipped or repeated Kiritimati civil times is
+	// unsettled here; keep those cases unsupported instead of guessing.
+	return time.Time{}, unsupportedCallError("Datetime.newInstance timezone " + zoneID)
+}
+
+func datetimeValueOfLocalClock(value time.Time, zoneID string) (time.Time, error) {
+	// Native user-zone rows 061/062 observe the String valueOf overload,
+	// not newInstance or parse. Keep those constructors' overlap choice.
+	if zoneID == "America/Los_Angeles" {
+		if zone, ok := supportedNamedTimeZone(zoneID); ok {
+			return zone.instantFromLocal(value.Year(), value.Month(), value.Day(), value.Hour(), value.Minute(), value.Second(), 0, true), nil
+		}
+	}
+	if zoneID == "Pacific/Kiritimati" {
+		return time.Time{}, unsupportedCallError("Datetime.newInstance timezone " + zoneID)
+	}
+	return datetimeFromLocalParts(value.Year(), int(value.Month()), value.Day(), value.Hour(), value.Minute(), value.Second(), 0, zoneID)
 }
 
 func addMonthsClamped(value time.Time, months int) time.Time {
@@ -1417,6 +1532,9 @@ func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, o
 		if zoneID == "UTC" {
 			return "Coordinated Universal Time", nil
 		}
+		if zoneID == "Pacific/Kiritimati" {
+			return "Line Is. Time", nil // Owned API 62/67 F01-F05, en_US.
+		}
 		if zone, ok := supportedNamedTimeZone(zoneID); ok {
 			_, name := zone.displayNameAt(value)
 			return name, nil
@@ -1639,6 +1757,9 @@ type modeledTimeZone struct {
 }
 
 var supportedNamedTimeZones = map[string]modeledTimeZone{
+	// Owned API62/67/68 factory/offset/display/format snapshots, January/July2026.
+	"Africa/Johannesburg": {id: "Africa/Johannesburg", standardOffset: 2 * time.Hour, standardLabel: "SAST", standardDisplayName: "South Africa Standard Time"},
+	"Australia/Brisbane":  {id: "Australia/Brisbane", standardOffset: 10 * time.Hour, standardLabel: "AEST", standardDisplayName: "Australian Eastern Standard Time"},
 	"America/Los_Angeles": {id: "America/Los_Angeles", standardOffset: -8 * time.Hour, daylightOffset: -7 * time.Hour, standardLabel: "PST", daylightLabel: "PDT", standardDisplayName: "Pacific Standard Time", daylightDisplayName: "Pacific Daylight Time", daylightRule: "us"},
 	"America/New_York":    {id: "America/New_York", standardOffset: -5 * time.Hour, daylightOffset: -4 * time.Hour, standardLabel: "EST", daylightLabel: "EDT", standardDisplayName: "Eastern Standard Time", daylightDisplayName: "Eastern Daylight Time", daylightRule: "us"},
 	"America/Chicago":     {id: "America/Chicago", standardOffset: -6 * time.Hour, daylightOffset: -5 * time.Hour, standardLabel: "CST", daylightLabel: "CDT", standardDisplayName: "Central Standard Time", daylightDisplayName: "Central Daylight Time", daylightRule: "us"},
@@ -1648,6 +1769,7 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	"Europe/London":       {id: "Europe/London", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "BST", standardDisplayName: "Greenwich Mean Time", daylightDisplayName: "British Summer Time", daylightRule: "europe"},
 	"Europe/Dublin":       {id: "Europe/Dublin", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "IST", standardDisplayName: "Greenwich Mean Time", daylightDisplayName: "Irish Standard Time", daylightRule: "europe"},
 	"Europe/Berlin":       {id: "Europe/Berlin", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
+	"Europe/Oslo":         {id: "Europe/Oslo", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
 	"Asia/Ho_Chi_Minh":    {id: "Asia/Ho_Chi_Minh", standardOffset: 7 * time.Hour, standardLabel: "ICT", standardDisplayName: "Indochina Time"},
 	"Asia/Kolkata":        {id: "Asia/Kolkata", standardOffset: 5*time.Hour + 30*time.Minute, standardLabel: "IST", standardDisplayName: "India Standard Time"},
 	"Asia/Tokyo":          {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST", standardDisplayName: "Japan Standard Time"},
@@ -1747,7 +1869,7 @@ func (zone modeledTimeZone) displayNameAt(instant time.Time) (time.Duration, str
 	return offset, zone.standardDisplayName
 }
 
-func (zone modeledTimeZone) instantFromLocal(year int, month time.Month, day, hour, minute, second, millisecond int) time.Time {
+func (zone modeledTimeZone) instantFromLocal(year int, month time.Month, day, hour, minute, second, millisecond int, preferStandard bool) time.Time {
 	local := time.Date(year, month, day, hour, minute, second, millisecond*int(time.Millisecond), time.UTC)
 	offsets := []time.Duration{zone.standardOffset}
 	if zone.daylightRule != "" && zone.daylightOffset != zone.standardOffset {
@@ -1763,6 +1885,9 @@ func (zone modeledTimeZone) instantFromLocal(year int, month time.Month, day, ho
 	}
 	if len(matches) > 0 {
 		sort.Slice(matches, func(i, j int) bool { return matches[i].Before(matches[j]) })
+		if preferStandard {
+			return matches[len(matches)-1]
+		}
 		return matches[0]
 	}
 	return local.Add(-zone.standardOffset).UTC()
@@ -3037,7 +3162,7 @@ func newPageReference(rawURL string) Value {
 	page := Object("PageReference")
 	page.Fields["url"] = String(rawURL)
 	page.Fields["parameters"] = pageReferenceParameters(rawURL)
-	page.Fields["headers"] = typedMap("Map<String,String>")
+	page.Fields["headers"] = pageReferenceHeaders()
 	page.Fields["cookies"] = typedMap("Map<String,Cookie>")
 	// The pageref_empty/default and external_boundary/default cases are redirects;
 	// paths within the current origin retain server-side navigation by default.
@@ -3050,14 +3175,22 @@ func newCookie(args []Value) (Value, error) {
 	if len(args) != 5 && len(args) != 6 && len(args) != 7 {
 		return Null, fmt.Errorf("Cookie constructor expects 5, 6, or 7 arguments")
 	}
-	if args[0].Kind != ValueString || args[1].Kind != ValueString || (args[2].Kind != ValueString && args[2].Kind != ValueNull) || args[3].Kind != ValueInt || args[4].Kind != ValueBool {
+	if (args[0].Kind != ValueString && args[0].Kind != ValueNull) || (args[1].Kind != ValueString && args[1].Kind != ValueNull) || (args[2].Kind != ValueString && args[2].Kind != ValueNull) || args[3].Kind != ValueInt || args[4].Kind != ValueBool {
 		return Null, fmt.Errorf("Cookie constructor expects name, value, path, maxAge, and isSecure")
+	}
+	// authorization and request context cookies_null_name/value/path: the name is required, the value
+	// remains a raw null, and a null path defaults to the origin root.
+	if args[0].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "Argument 1 cannot be null")
 	}
 	cookie := Object("Cookie")
 	cookie.Runtime = "System.Cookie"
 	cookie.Fields["name"] = args[0]
 	cookie.Fields["value"] = args[1]
 	cookie.Fields["path"] = args[2]
+	if args[2].Kind == ValueNull {
+		cookie.Fields["path"] = String("/")
+	}
 	cookie.Fields["maxAge"] = args[3]
 	cookie.Fields["secure"] = args[4]
 	cookie.Fields["sameSite"] = Null
@@ -3537,7 +3670,7 @@ func pageReferenceURL(page Value) Value {
 		}
 		query.Set(key.Text, value.String())
 	}
-	parsed.RawQuery = query.Encode()
+	parsed.RawQuery = canonicalPageReferenceQuery(query.Encode())
 	return String(parsed.String())
 }
 
@@ -3997,6 +4130,10 @@ func (vm *VM) assignRestContextField(name string, value Value) (bool, error) {
 }
 
 func canonicalRestContextPath(name string) (string, bool) {
+	// RestContext belongs to System; both names share its static state.
+	if len(name) >= len("System.") && strings.EqualFold(name[:len("System.")], "System.") {
+		name = name[len("System."):]
+	}
 	switch {
 	case strings.EqualFold(name, "RestContext.request"):
 		return "RestContext.request", true
@@ -4343,7 +4480,32 @@ func (vm *VM) describeFromSObjectFieldToken(value Value) (Value, error) {
 	return vm.describeFieldValue(objectValue.Text, fieldValue.Text)
 }
 
-func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
+func (vm *VM) coerceCastForOperand(typeName string, value Value, directQuery bool) (Value, error) {
+	// Owned native observations at API 62/67/68 reject a direct Datetime-to-Date cast.
+	// Keep assignment coercion, nulls and the reverse temporal pair unchanged.
+	if value.Kind == ValueObject && !value.classInstance && strings.EqualFold(value.Type, "Datetime") {
+		targetType := vm.resolveTypeNameInCurrentExecutionContext(typeName)
+		if scalar, ok := stripLeadingSystemNamespace(targetType); ok {
+			targetType = scalar
+		}
+		if strings.EqualFold(targetType, "Date") {
+			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", vm.typeExceptionSourceName(runtimeValueTypeName(value)), vm.typeExceptionDisplayName(typeName)))
+		}
+	}
+	// E21 rows: an Object-held Map of class or SObject values fails the
+	// cast with the same TypeException whether its graph is cyclic or not.
+	if vm.recordMapToRecordTarget(typeName, value) {
+		return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", vm.typeExceptionSourceName(runtimeValueTypeName(value)), vm.typeExceptionDisplayName(typeName)))
+	}
+	if !directQuery && vm.listSObjectCastRejectsRecord(typeName, value) {
+		return Null, vm.listSObjectCastError(typeName, value)
+	}
+	if vm.listSObjectCastRejectsObjectElements(typeName, value) {
+		return Null, vm.listSObjectCastError(typeName, value)
+	}
+	if sObjectListViewCastRejectsUnrelatedConcrete(typeName, value) {
+		return Null, vm.listSObjectCastError(typeName, value)
+	}
 	if value.Kind == ValueObject && value.classInstance && strings.EqualFold(canonicalRuntimePlatformType(typeName), "SObject") {
 		return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to SObject", runtimeValueTypeName(value)))
 	}
@@ -4362,21 +4524,59 @@ func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
 			sourceType = value.Type
 		}
 		if isMapType(sourceType) && !vm.typeAssignableTo(sourceType, typeName) && !vm.typeAssignableTo(typeName, sourceType) {
-			return Null, newExceptionError("TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", typeExceptionTargetName(sourceType), typeExceptionTargetName(typeName)))
+			return Null, newExceptionError("TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", vm.typeExceptionSourceName(sourceType), vm.typeExceptionDisplayName(typeName)))
 		}
 	}
 	if strings.EqualFold(value.Static, "Object") && strings.EqualFold(typeName, "Integer") && ((value.Kind == ValueInt && isLongIntValue(value)) || value.Kind == ValueDecimal) {
-		return Null, newExceptionError("TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to Integer", runtimeValueTypeName(value)))
+		return Null, newExceptionError("TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to Integer", scaleZeroNumberBoxedCastSourceName(value)))
+	}
+	if scaleZeroNumberBoxedLongCastRejected(typeName, value) {
+		return Null, newExceptionError("TypeException", "Invalid conversion from runtime type "+scaleZeroNumberBoxedCastSourceName(value)+" to Long")
+	}
+	if value.Kind == ValueList || value.Kind == ValueSet {
+		if base, _, known := vm.genericInterfaceCastParts(typeName); known && base == "iterable" {
+			// An explicit Iterable cast changes the view without checking elements.
+			value.Static = vm.resolveAssignableTargetType(typeName)
+			return value, nil
+		}
+	}
+	if vm.genericInterfaceImplementationCast(typeName, value) || vm.iteratorObjectImplementationCast(typeName, value) {
+		value.Static = typeName
+		return value, nil
+	}
+	// A cast keeps today's Iterable list view of a QueryLocator; no native
+	// cast row exists (query_locators V001 failed natively).
+	if value.Kind == ValueObject && value.Type == "Database.QueryLocator" && collectionBase(vm.resolveAssignableTargetType(typeName)) == "Iterable" {
+		coerced, err := vm.queryLocatorIterable(vm.resolveAssignableTargetType(typeName), value)
+		if err == nil {
+			coerced.Static = typeName
+		}
+		return coerced, err
 	}
 	coerced, err := vm.coerceAssignable(typeName, value)
 	if err == nil {
+		// Named and anonymous API 62/67 observations narrow an explicit
+		// scalar Long cast to its signed low 32-bit word. Assignment and
+		// Object-held numeric conversions keep their separate contracts.
+		if value.Kind == ValueInt && isLongIntValue(value) && !strings.EqualFold(value.Static, "Object") &&
+			strings.EqualFold(canonicalRuntimePlatformType(vm.resolveAssignableTargetType(typeName)), "Integer") {
+			coerced.Int = int64(int32(value.Int))
+		}
 		coerced.Static = typeName
 		return coerced, nil
 	}
-	targetType := typeExceptionTargetName(typeName)
-	// Cast diagnostics name the lexical nested target, not its short spelling.
-	if resolved := vm.resolveNestedTypeNameInCurrentExecutionContext(typeName); resolved != "" {
-		targetType = resolved
+	// Cast diagnostics name the canonical target, including the lexical nested
+	// target of a short spelling (NS342A/NS342C, NS352A-D).
+	targetType := vm.typeExceptionDisplayName(typeName)
+	if captured := vm.genericInterfaceCastErrorTarget(typeName, value); captured != "" {
+		targetType = captured
+	}
+	// Native H1XC8-A@62.0/67.0: a failed (Iterator<Integer>) cast names the raw
+	// interface, "Invalid conversion from runtime type X to System.Iterator".
+	if collectionBase(typeName) == "Iterator" {
+		if _, generic := collectionElementType(typeName); generic {
+			targetType = "System.Iterator"
+		}
 	}
 	if value.Kind == ValueDecimal && strings.EqualFold(typeName, "Integer") {
 		converted, conversionErr := int32FromDecimalValue("Integer cast", value)
@@ -4396,7 +4596,35 @@ func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
 	if errors.As(err, &thrown) {
 		return Null, err
 	}
-	return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", runtimeValueTypeName(value), targetType))
+	return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", vm.typeExceptionSourceName(runtimeValueTypeName(value)), targetType))
+}
+
+// iteratorObjectImplementationCast reports whether a user class implementing
+// an Iterator casts to a typed Iterator<X>. Native API 62.0 and 67.0 do not
+// check the type argument: an Iterator<Object> class casts to X = Integer
+// (PA01, H1XC1-A, H1XC1O-A), Double (PA03, H1XC2-A), SObject (PA04, H1XC3-A),
+// Long (H1XC4-A, H1TXC4), String (H1XC5-A, H1TXC5) and Account (H1XC6-A,
+// H1TXC6), and an Iterator<Integer> class casts to Iterator<String> and
+// Iterator<Object> (H1TB1, H1TB2 and -A). A class that implements no Iterator
+// fails with "... to System.Iterator" (H1XC8-A, H1TXC8).
+func (vm *VM) iteratorObjectImplementationCast(typeName string, value Value) bool {
+	if value.Kind != ValueObject || !value.classInstance || collectionBase(typeName) != "Iterator" {
+		return false
+	}
+	if _, ok := collectionElementType(typeName); !ok {
+		return false
+	}
+	class, ok := vm.lookupClass(value.Type)
+	if !ok {
+		return false
+	}
+	for _, iface := range vm.resolvedInterfaceNamesInHierarchy(class) {
+		iface = canonicalRuntimePlatformType(iface)
+		if collectionBase(iface) == "Iterator" || strings.EqualFold(iface, "Iterator") {
+			return true
+		}
+	}
+	return false
 }
 
 func untypedIntegralDecimalLiteral(value Value) bool {
@@ -4465,6 +4693,10 @@ func stringEnumCoercionTarget(typeName string) bool {
 func (vm *VM) coerceCollectionElement(collectionType string, value Value) (Value, error) {
 	elementType, ok := collectionElementType(collectionType)
 	if !ok {
+		return value, nil
+	}
+	if collectionBase(collectionType) == "List" && vm.iteratorObjectImplementationCast(elementType, value) {
+		value.Static = elementType
 		return value, nil
 	}
 	return vm.coerceAssignable(elementType, value)
@@ -4901,7 +5133,11 @@ func (vm *VM) callCustomNotificationMember(receiver Value, method string, args [
 		receiver.Fields[customNotificationFieldName(method)] = value
 		return Null, receiver, true, true, nil
 	case "send":
-		// Native validation precedes recipient/target checks.
+		// Named tests suppress notification delivery and payload validation.
+		if vm.testContext != nil && len(args) == 1 {
+			return Null, receiver, false, true, nil
+		}
+		// Native missing-type validation precedes recipient/target checks.
 		if receiver.Fields["notificationTypeId"].Kind == ValueNull {
 			return Null, receiver, false, true, newExceptionError("HandledException", "Missing required input parameter: customNotifTypeId")
 		}

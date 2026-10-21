@@ -1,0 +1,181 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 1,
+  "nativeObservationCount": 6,
+  "rows": [
+    {
+      "id": "LH01",
+      "expected": {
+        "outcome": "runtime",
+        "value": "direct:7|legacy:7:7|floor:7|nested:38:38:40|list:38:38:38|primitive:true|null:System.NullPointerException:Argument 1 cannot be null"
+      },
+      "routes": {
+        "anonymous": {
+          "id": "LH01A",
+          "anonymous": "System.assert(false,'P|LH01A|'+LegacyHashProbe.observe());\n",
+          "setupClasses": {
+            "LegacyHashKey": "public class LegacyHashKey {\n public Integer token;\n public LegacyHashKey(Integer token){this.token=token;}\n public Integer hashCode(){return token;}\n}\n",
+            "LegacyHashCaller": "public class LegacyHashCaller {\n public static Integer hash(Object value){return System.hashCode(value);}\n}\n",
+            "LegacyHashBox": "public class LegacyHashBox {\n public LegacyHashKey child {get;set;}\n public LegacyHashBox(Integer token){child=new LegacyHashKey(token);}\n public Integer hashCode(){return 31+(child==null?0:System.hashCode(child));}\n}\n",
+            "FloorHashCaller": "public class FloorHashCaller {\n public static Integer hash(Object value){return System.hashCode(value);}\n}\n",
+            "LegacyHashProbe": "public class LegacyHashProbe {\n public static String observe(){\n  LegacyHashKey left=new LegacyHashKey(7);\n  LegacyHashKey right=new LegacyHashKey(7);\n  Object held=right;\n  List<LegacyHashKey> singleton=new List<LegacyHashKey>{left};\n  LegacyHashBox box=new LegacyHashBox(7);\n  LegacyHashBox other=new LegacyHashBox(7);\n  LegacyHashBox changed=new LegacyHashBox(9);\n  String result='direct:'+System.hashCode(left)+'|legacy:'+LegacyHashCaller.hash(left)\n   +':'+LegacyHashCaller.hash(held)+'|floor:'+FloorHashCaller.hash(left)\n   +'|nested:'+System.hashCode(box)+':'+System.hashCode(other)+':'+System.hashCode(changed)\n   +'|list:'+LegacyHashCaller.hash(singleton)+':'+FloorHashCaller.hash(singleton)+':'+System.hashCode(singleton)\n   +'|primitive:'+(LegacyHashCaller.hash('owned')==System.hashCode('owned'));\n  try{LegacyHashCaller.hash(null);return result+'|null:accepted';}\n  catch(Exception e){return result+'|null:'+e.getTypeName()+':'+e.getMessage();}\n }\n}\n"
+          },
+          "fixedClassAPIVersions": {
+            "LegacyHashKey": "52.0",
+            "LegacyHashCaller": "52.0",
+            "LegacyHashBox": "52.0",
+            "FloorHashCaller": "61.0"
+          },
+          "stage": "runtime",
+          "sourceSha256": {
+            "anonymous": "ac32707572bd6133ecb7cbd824e20230b0bc8a775ae62f231332f44e7af4fa89",
+            "setupClass:LegacyHashKey": "eadd56475e47a5d637e63f2a9f60c20f308705195ebab8f2a2ec1b662d33d8e3",
+            "setupClass:LegacyHashCaller": "573ce7fe6e13d51f5bd85ef6f09bf4f387aef36139b78c06f4fa4c7d31d2a8c6",
+            "setupClass:LegacyHashBox": "20d423d1600c584a5bd8c260b2b7d0c6f309efc79143eeec7a1f2892654491c5",
+            "setupClass:FloorHashCaller": "55bbe22b851f7fcef026a69c68693cff83beffdf6cf90177e1ce62107088cb5f",
+            "setupClass:LegacyHashProbe": "282843d31577cff2831f5359a124438e6d7acd3597c82c996897ba250a09a968"
+          }
+        },
+        "isTest": {
+          "id": "LH01T",
+          "classes": {
+            "LegacyHashKey": "public class LegacyHashKey {\n public Integer token;\n public LegacyHashKey(Integer token){this.token=token;}\n public Integer hashCode(){return token;}\n}\n",
+            "LegacyHashCaller": "public class LegacyHashCaller {\n public static Integer hash(Object value){return System.hashCode(value);}\n}\n",
+            "LegacyHashBox": "public class LegacyHashBox {\n public LegacyHashKey child {get;set;}\n public LegacyHashBox(Integer token){child=new LegacyHashKey(token);}\n public Integer hashCode(){return 31+(child==null?0:System.hashCode(child));}\n}\n",
+            "FloorHashCaller": "public class FloorHashCaller {\n public static Integer hash(Object value){return System.hashCode(value);}\n}\n",
+            "LegacyHashProbe": "public class LegacyHashProbe {\n public static String observe(){\n  LegacyHashKey left=new LegacyHashKey(7);\n  LegacyHashKey right=new LegacyHashKey(7);\n  Object held=right;\n  List<LegacyHashKey> singleton=new List<LegacyHashKey>{left};\n  LegacyHashBox box=new LegacyHashBox(7);\n  LegacyHashBox other=new LegacyHashBox(7);\n  LegacyHashBox changed=new LegacyHashBox(9);\n  String result='direct:'+System.hashCode(left)+'|legacy:'+LegacyHashCaller.hash(left)\n   +':'+LegacyHashCaller.hash(held)+'|floor:'+FloorHashCaller.hash(left)\n   +'|nested:'+System.hashCode(box)+':'+System.hashCode(other)+':'+System.hashCode(changed)\n   +'|list:'+LegacyHashCaller.hash(singleton)+':'+FloorHashCaller.hash(singleton)+':'+System.hashCode(singleton)\n   +'|primitive:'+(LegacyHashCaller.hash('owned')==System.hashCode('owned'));\n  try{LegacyHashCaller.hash(null);return result+'|null:accepted';}\n  catch(Exception e){return result+'|null:'+e.getTypeName()+':'+e.getMessage();}\n }\n}\n",
+            "LegacyHashSpec": "@IsTest private class LegacyHashSpec { @IsTest static void observe(){ System.assert(false,'P|LH01T|'+LegacyHashProbe.observe()); } }\n"
+          },
+          "fixedClassAPIVersions": {
+            "LegacyHashKey": "52.0",
+            "LegacyHashCaller": "52.0",
+            "LegacyHashBox": "52.0",
+            "FloorHashCaller": "61.0"
+          },
+          "tests": [
+            "LegacyHashSpec"
+          ],
+          "stage": "runtime",
+          "sourceSha256": {
+            "class:LegacyHashKey": "eadd56475e47a5d637e63f2a9f60c20f308705195ebab8f2a2ec1b662d33d8e3",
+            "class:LegacyHashCaller": "573ce7fe6e13d51f5bd85ef6f09bf4f387aef36139b78c06f4fa4c7d31d2a8c6",
+            "class:LegacyHashBox": "20d423d1600c584a5bd8c260b2b7d0c6f309efc79143eeec7a1f2892654491c5",
+            "class:FloorHashCaller": "55bbe22b851f7fcef026a69c68693cff83beffdf6cf90177e1ce62107088cb5f",
+            "class:LegacyHashProbe": "282843d31577cff2831f5359a124438e6d7acd3597c82c996897ba250a09a968",
+            "class:LegacyHashSpec": "20db272b5fc4b646315ab3e481b08b2fb0f76535acdaf03afb81fad6b5ec2248"
+          }
+        }
+      }
+    }
+  ],
+  "cells": [
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "LH01A",
+      "native": "direct:7|legacy:7:7|floor:7|nested:38:38:40|list:38:38:38|primitive:true|null:System.NullPointerException:Argument 1 cannot be null",
+      "nativeSHA256": "3ce9448a0fe27a6e0addebcc0a006b4757c65e371ad58b2158fc8077e1a7b89e",
+      "rawReceiptSHA256": "409755df6d1abd0a7bdb656babb96f59262624e8eb25bb9aa5052e64750b3fbb"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "LH01T",
+      "native": "direct:7|legacy:7:7|floor:7|nested:38:38:40|list:38:38:38|primitive:true|null:System.NullPointerException:Argument 1 cannot be null",
+      "nativeSHA256": "3ce9448a0fe27a6e0addebcc0a006b4757c65e371ad58b2158fc8077e1a7b89e",
+      "rawReceiptSHA256": "caace26834acc08226bd9b7e59aa7627d6a3b362765f53e0bd2d2941054bd319"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "LH01A",
+      "native": "direct:7|legacy:7:7|floor:7|nested:38:38:40|list:38:38:38|primitive:true|null:System.NullPointerException:Argument 1 cannot be null",
+      "nativeSHA256": "3ce9448a0fe27a6e0addebcc0a006b4757c65e371ad58b2158fc8077e1a7b89e",
+      "rawReceiptSHA256": "cafdb2cedadeccf59f083671004a5f162b03bdac5504b822e023ecad6ae808cf"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "LH01T",
+      "native": "direct:7|legacy:7:7|floor:7|nested:38:38:40|list:38:38:38|primitive:true|null:System.NullPointerException:Argument 1 cannot be null",
+      "nativeSHA256": "3ce9448a0fe27a6e0addebcc0a006b4757c65e371ad58b2158fc8077e1a7b89e",
+      "rawReceiptSHA256": "9bfad2927d47af76aa863f29070b3c9816af0f6dce5966f89e182c95293ef1dd"
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "id": "LH01A",
+      "native": "direct:7|legacy:7:7|floor:7|nested:38:38:40|list:38:38:38|primitive:true|null:System.NullPointerException:Argument 1 cannot be null",
+      "nativeSHA256": "3ce9448a0fe27a6e0addebcc0a006b4757c65e371ad58b2158fc8077e1a7b89e",
+      "rawReceiptSHA256": "62cdb2816ef7507d23a5be8526a6148da2b44f3a13f398e907b65c4872ef3bbe"
+    },
+    {
+      "api": "68.0",
+      "route": "isTest",
+      "id": "LH01T",
+      "native": "direct:7|legacy:7:7|floor:7|nested:38:38:40|list:38:38:38|primitive:true|null:System.NullPointerException:Argument 1 cannot be null",
+      "nativeSHA256": "3ce9448a0fe27a6e0addebcc0a006b4757c65e371ad58b2158fc8077e1a7b89e",
+      "rawReceiptSHA256": "4ef057d0adc2f80f9d11b48606279c9d5d79849e585e10872f301dea41691d3c"
+    }
+  ],
+  "classMetadataByAPI": {
+    "62.0": {
+      "LegacyHashKey": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+      "LegacyHashCaller": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+      "LegacyHashBox": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+      "FloorHashCaller": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>\n",
+      "LegacyHashProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "LegacyHashSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "67.0": {
+      "LegacyHashKey": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+      "LegacyHashCaller": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+      "LegacyHashBox": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+      "FloorHashCaller": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>\n",
+      "LegacyHashProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "LegacyHashSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "68.0": {
+      "LegacyHashKey": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+      "LegacyHashCaller": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+      "LegacyHashBox": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+      "FloorHashCaller": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>\n",
+      "LegacyHashProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "LegacyHashSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+    }
+  },
+  "classMetadataSHA256": {
+    "62.0": {
+      "LegacyHashKey": "76a6557f5339d573bc363183797376017a15559457544e091345c775b32174f2",
+      "LegacyHashCaller": "76a6557f5339d573bc363183797376017a15559457544e091345c775b32174f2",
+      "LegacyHashBox": "76a6557f5339d573bc363183797376017a15559457544e091345c775b32174f2",
+      "FloorHashCaller": "6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b",
+      "LegacyHashProbe": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "LegacyHashSpec": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+    },
+    "67.0": {
+      "LegacyHashKey": "76a6557f5339d573bc363183797376017a15559457544e091345c775b32174f2",
+      "LegacyHashCaller": "76a6557f5339d573bc363183797376017a15559457544e091345c775b32174f2",
+      "LegacyHashBox": "76a6557f5339d573bc363183797376017a15559457544e091345c775b32174f2",
+      "FloorHashCaller": "6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b",
+      "LegacyHashProbe": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "LegacyHashSpec": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+    },
+    "68.0": {
+      "LegacyHashKey": "76a6557f5339d573bc363183797376017a15559457544e091345c775b32174f2",
+      "LegacyHashCaller": "76a6557f5339d573bc363183797376017a15559457544e091345c775b32174f2",
+      "LegacyHashBox": "76a6557f5339d573bc363183797376017a15559457544e091345c775b32174f2",
+      "FloorHashCaller": "6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b",
+      "LegacyHashProbe": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "LegacyHashSpec": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+    }
+  }
+}

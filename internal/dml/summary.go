@@ -73,6 +73,29 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 	}
 }
 
+// A template cache is already shared only within its frozen schema generation.
+// Index summary fields once for that generation, rather than scanning every
+// scalar field again for each distinct child object. Unstamped host orgs remain
+// mutable and retain the full scan on each uncached child lookup.
+func (c *SummaryRelationCache) summaryCandidates(org *storage.OrgState) []summaryRelation {
+	collect := func() []summaryRelation {
+		var fields []summaryRelation
+		for parentName, parent := range org.Objects {
+			for fieldName, field := range parent.Definition.Fields {
+				if field.Type == storage.FieldSummary {
+					fields = append(fields, summaryRelation{parentObject: parentName, parentField: fieldName, field: field})
+				}
+			}
+		}
+		return fields
+	}
+	if org.RuntimeSchemaStamp == "" {
+		return collect()
+	}
+	c.candidatesOnce.Do(func() { c.candidates = collect() })
+	return c.candidates
+}
+
 func (e *Engine) summaryRelationsForChild(childObjectName string) []summaryRelation {
 	if e == nil || e.Org == nil || strings.TrimSpace(childObjectName) == "" {
 		return nil
@@ -84,39 +107,35 @@ func (e *Engine) summaryRelationsForChild(childObjectName string) []summaryRelat
 		return relations
 	}
 	relations := make([]summaryRelation, 0)
-	for parentObjectName, parentObject := range e.Org.Objects {
-		for parentFieldName, field := range parentObject.Definition.Fields {
-			if field.Type != storage.FieldSummary {
-				continue
-			}
-			operation := strings.ToLower(strings.TrimSpace(field.SummaryOperation))
-			summaryChild, _ := splitSummaryQualifiedField(field.SummarizedField)
-			fkChild, fkField := splitSummaryQualifiedField(field.SummaryForeignKey)
-			if summaryChild == "" && operation == "count" {
-				summaryChild = fkChild
-			}
-			if summaryChild == "" || fkChild == "" || fkField == "" || !strings.EqualFold(summaryChild, fkChild) {
-				continue
-			}
-			resolvedSummaryChild, ok := storage.ResolveObjectName(*e.Org, summaryChild)
-			if !ok {
-				resolvedSummaryChild = summaryChild
-			}
-			if !strings.EqualFold(resolvedSummaryChild, childObjectName) {
-				continue
-			}
-			childObject := e.Org.Objects[resolvedSummaryChild]
-			fkFieldName, ok := storage.ResolveFieldName(childObject.Definition, e.Org.Namespace, fkField)
-			if !ok {
-				continue
-			}
-			relations = append(relations, summaryRelation{
-				parentObject: parentObjectName,
-				parentField:  parentFieldName,
-				field:        field,
-				fkFieldName:  fkFieldName,
-			})
+	for _, candidate := range e.SummaryByChild.summaryCandidates(e.Org) {
+		parentObjectName, parentFieldName, field := candidate.parentObject, candidate.parentField, candidate.field
+		operation := strings.ToLower(strings.TrimSpace(field.SummaryOperation))
+		summaryChild, _ := splitSummaryQualifiedField(field.SummarizedField)
+		fkChild, fkField := splitSummaryQualifiedField(field.SummaryForeignKey)
+		if summaryChild == "" && operation == "count" {
+			summaryChild = fkChild
 		}
+		if summaryChild == "" || fkChild == "" || fkField == "" || !strings.EqualFold(summaryChild, fkChild) {
+			continue
+		}
+		resolvedSummaryChild, ok := storage.ResolveObjectName(*e.Org, summaryChild)
+		if !ok {
+			resolvedSummaryChild = summaryChild
+		}
+		if !strings.EqualFold(resolvedSummaryChild, childObjectName) {
+			continue
+		}
+		childObject := e.Org.Objects[resolvedSummaryChild]
+		fkFieldName, ok := storage.ResolveFieldName(childObject.Definition, e.Org.Namespace, fkField)
+		if !ok {
+			continue
+		}
+		relations = append(relations, summaryRelation{
+			parentObject: parentObjectName,
+			parentField:  parentFieldName,
+			field:        field,
+			fkFieldName:  fkFieldName,
+		})
 	}
 	// DuplicateRecordSet.RecordCount is a system-maintained count of manually
 	// persisted items. Reuse the rollup pipeline, including deletion and rollback.
@@ -127,6 +146,37 @@ func (e *Engine) summaryRelationsForChild(childObjectName string) []summaryRelat
 			field.SummaryOperation = "count"
 			field.SummaryForeignKey = "DuplicateRecordItem.DuplicateRecordSetId"
 			relations = append(relations, summaryRelation{parentObject: "DuplicateRecordSet", parentField: "RecordCount", field: field, fkFieldName: "DuplicateRecordSetId"})
+		}
+	}
+	if strings.EqualFold(childObjectName, "WorkOrderLineItem") {
+		parent, parentOK := e.Org.Objects["WorkOrder"]
+		field, fieldOK := parent.Definition.Fields["LineItemCount"]
+		if parentOK && fieldOK && field.Type != storage.FieldSummary {
+			field.SummaryOperation = "count"
+			field.SummaryForeignKey = "WorkOrderLineItem.WorkOrderId"
+			relations = append(relations, summaryRelation{parentObject: "WorkOrder", parentField: "LineItemCount", field: field, fkFieldName: "WorkOrderId"})
+		}
+	}
+	// Order totals use the same child-mutation, deletion and rollback path
+	// as declared rollups without changing the public describe field shape.
+	if strings.EqualFold(childObjectName, "OrderItem") {
+		parent, parentOK := e.Org.Objects["Order"]
+		field, fieldOK := parent.Definition.Fields["TotalAmount"]
+		if parentOK && fieldOK && field.Type != storage.FieldSummary {
+			field.SummaryOperation = "sum"
+			field.SummaryForeignKey = "OrderItem.OrderId"
+			field.SummarizedField = "OrderItem.TotalPrice"
+			relations = append(relations, summaryRelation{parentObject: "Order", parentField: "TotalAmount", field: field, fkFieldName: "OrderId"})
+		}
+	}
+	if strings.EqualFold(childObjectName, "OpportunityLineItem") {
+		parent, parentOK := e.Org.Objects["Opportunity"]
+		field, fieldOK := parent.Definition.Fields["Amount"]
+		if parentOK && fieldOK && field.Type != storage.FieldSummary {
+			field.SummaryOperation = "sum"
+			field.SummaryForeignKey = "OpportunityLineItem.OpportunityId"
+			field.SummarizedField = "OpportunityLineItem.TotalPrice"
+			relations = append(relations, summaryRelation{parentObject: "Opportunity", parentField: "Amount", field: field, fkFieldName: "OpportunityId"})
 		}
 	}
 	e.SummaryByChild.store(childObjectName, relations)
@@ -371,6 +421,8 @@ func summaryFilterMatches(value storage.Value, filter storage.SummaryFilterItem)
 	switch strings.ToLower(strings.TrimSpace(filter.Operation)) {
 	case "", "equals":
 		return summaryValueMatchesText(value, filter.Value)
+	case "notequal":
+		return !summaryValueMatchesText(value, filter.Value)
 	default:
 		return false
 	}

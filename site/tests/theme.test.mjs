@@ -195,14 +195,14 @@ test("release notes record final v0.2.12 validation", () => {
   assert.match(candidateText, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.12\/docs\/KNOWN_GAPS\.md/);
 });
 
-test("launch docs identify the published v0.2.15 release and retain historical notes", () => {
-  const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
-  assert.ok(unreleased, "release notes should contain an Unreleased section");
-  const unreleasedText = unreleased[1].replace(/\s+/g, " ");
-  assert.match(unreleasedText, /playground --example refinement-service --once/);
-  assert.match(unreleasedText, /JSON schema advances to `1\.1`/);
-  assert.match(unreleasedText, /readinessScope: "apex"/);
-  assert.match(unreleasedText, /Salesforce was not contacted/);
+test("launch docs identify v0.3.0 and retain historical release notes", () => {
+  const current = releaseNotes.split("## v0.3.0\n")[1]?.split(/\n## /)[0];
+  assert.ok(current, "release notes should contain a v0.3.0 section");
+  const currentText = current.replace(/\s+/g, " ");
+  assert.match(currentText, /playground --example refinement-service --once/);
+  assert.match(currentText, /JSON schema advances to `1\.1`/);
+  assert.match(currentText, /readinessScope: "apex"/);
+  assert.match(currentText, /Salesforce was not contacted/);
 
   const candidate = releaseNotes.match(/^## v0\.2\.15 - 2026-09-04\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(candidate, "release notes should contain a v0.2.15 section");
@@ -231,7 +231,7 @@ test("launch docs identify the published v0.2.15 release and retain historical n
   for (const page of [repoReadme, quickstart, examples]) {
     const pageText = page.replace(/\s+/g, " ");
     assert.match(pageText, /first shipped in (?:\*\*)?v0\.2\.14/);
-    assert.match(pageText, /v0\.2\.15 stable release/);
+    assert.match(pageText, /v0\.3\.0 release/);
     assert.doesNotMatch(pageText, /v0\.2\.14 release candidate|published v0\.2\.13/);
   }
   assert.doesNotMatch(plugins, /licensing decision pending/i);
@@ -247,7 +247,7 @@ test("launch docs identify the published v0.2.15 release and retain historical n
   }
 
   for (const ciPage of [ciArtifacts, helpCiSetup, helpProjectSetupScript]) {
-    assert.match(ciPage, /GLADE_VERSION=v0\.2\.15/);
+    assert.match(ciPage, /GLADE_VERSION=v0\.3\.0/);
     assert.doesNotMatch(ciPage, /GLADE_VERSION=v0\.2\.13/);
   }
 
@@ -256,6 +256,11 @@ test("launch docs identify the published v0.2.15 release and retain historical n
 });
 
 test("release docs publish the sealed private-corpus assurance snapshot", () => {
+  const notice = privateCorpusAssuranceExplorer.match(/<aside data-historical-notice>[\s\S]*?<\/aside>/)?.[0];
+  assert.ok(notice, "the historical explorer must identify its release scope");
+  assert.match(notice, /Historical report/);
+  assert.match(notice, /v0\.2\.11\/v0\.2\.12/);
+  assert.match(notice, /not v0\.3\.0 qualification evidence/);
   const assuranceJSON = privateCorpusAssuranceExplorer.match(/<script id="assurance-data" type="application\/json">([\s\S]*?)<\/script>/)?.[1];
   assert.ok(assuranceJSON, "the styled explorer must embed the redacted evidence payload");
   const assuranceSha256 = createHash("sha256").update(assuranceJSON).digest("hex");
@@ -742,8 +747,8 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(securityWorkflow, /golang\.org\/x\/vuln\/cmd\/govulncheck@v1\.6\.0/);
   assert.match(securityWorkflow, /github\/codeql-action\/init@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /- uses: security-extended/);
-  assert.match(securityWorkflow, /timeout-minutes: 45/);
-  assert.match(securityWorkflow, /codeql:\n    name: CodeQL\n    runs-on: ubuntu-latest/);
+  assert.match(securityWorkflow, /codeql:\n    name: CodeQL\n    runs-on: ubuntu-latest\n(?:    #[^\n]*\n)*    timeout-minutes: 100\n/);
+  assert.match(securityWorkflow, /- name: Analyze CodeQL\n        timeout-minutes: 90\n/);
   assert.match(securityWorkflow, /- go\/allocation-size-overflow/);
   assert.match(securityWorkflow, /- go\/incorrect-integer-conversion/);
   assert.match(securityWorkflow, /github\/codeql-action\/analyze@[0-9a-f]{40}/);
@@ -756,8 +761,8 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(securityWorkflow, /ossf\/scorecard-action@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /publish_results: true/);
 
-  assert.match(ciWorkflow, /go-version: "1\.26\.9"/);
-  assert.match(releaseWorkflow, /go-version: "1\.26\.9"/);
+  assert.match(ciWorkflow, /go-version: "1\.26\.10"/);
+  assert.match(releaseWorkflow, /go-version: "1\.26\.10"/);
   assert.match(releaseWorkflow, /cyclonedx-gomod/);
   assert.match(releaseWorkflow, /tar -xzf "\$archive" -C "\$extract_dir" glade/);
   assert.match(releaseWorkflow, /cyclonedx-gomod bin -json -version "\$VERSION" -output "\$sbom" "\$extract_dir\/glade"/);

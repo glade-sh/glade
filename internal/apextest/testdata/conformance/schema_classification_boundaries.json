@@ -1,0 +1,395 @@
+{
+  "apiVersions": [
+    "62.0",
+    "65.0",
+    "67.0"
+  ],
+  "routes": [
+    "istest"
+  ],
+  "fixtures": {
+    "62.0/list": {
+      "className": "SchemaClassificationObservation",
+      "classes": {
+        "SchemaClassificationObservation": "@IsTest private class SchemaClassificationObservation {\n private static Object listType(List<SObject> rows) {\n  Schema.SObjectType token=rows.getSObjectType();\n  return token==null?null:token.getDescribe().getName();\n }\n private static List<SObject> fromIds(Iterable<Id> ids) {\n  List<SObject> records=new List<SObject>();\n  for(Id key:ids)records.add(key.getSObjectType().newSObject(key));\n  return records;\n }\n @IsTest static void lists() {\n  List<User> concrete=[SELECT Id FROM User LIMIT 2];\n  Map<Id,User> keyed=new Map<Id,User>(concrete);\n  List<Id> ids=new List<Id>(keyed.keySet());\n  List<SObject> listRows=fromIds(ids);\n  List<SObject> setRows=fromIds(keyed.keySet());\n  List<SObject> singleton=fromIds(new List<Id>{UserInfo.getUserId()});\n  List<SObject> doubled=fromIds(new List<Id>{UserInfo.getUserId(),UserInfo.getUserId()});\n  List<User> typed=new List<User>{(User)User.SObjectType.newSObject(UserInfo.getUserId())};\n  List<SObject> widened=typed;\n  Map<String,Object> out=new Map<String,Object>{'count'=>ids.size(),'list'=>listType(listRows),'set'=>listType(setRows),'singleton'=>listType(singleton),'double'=>listType(doubled),'typed'=>listType(widened),'element'=>singleton[0].getSObjectType().getDescribe().getName(),'populated'=>singleton[0].getPopulatedFieldsAsMap().keySet()};\n  System.assertEquals('CLASS_NATIVE',JSON.serialize(out));\n }\n private static Map<String,Object> idType(Schema.SObjectType token,Integer width) {\n  String prefix=token.getDescribe().getKeyPrefix();\n  String raw=prefix+'0'.repeat(width-prefix.length()-1)+'1';\n  Map<String,Object> out=new Map<String,Object>{'prefix'=>prefix,'length'=>raw.length()};\n  try {Id key=Id.valueOf(raw);out.put('token',key.getSObjectType().getDescribe().getName());}\n  catch(Exception failure){out.put('exception',failure.getTypeName());out.put('message',failure.getMessage());}\n  return out;\n }\n @IsTest static void templateId() {\n  Integer width=CaseComment.SObjectType.getDescribe().fields.getMap().get('Id').getDescribe().getLength();\n  Map<String,Object> out=new Map<String,Object>{'width'=>width,'short'=>idType(CaseComment.SObjectType,15),'described'=>idType(CaseComment.SObjectType,width),'standard'=>idType(User.SObjectType,width),'instance'=>new CaseComment().getSObjectType().getDescribe().getName()};\n  System.assertEquals('CLASS_NATIVE',JSON.serialize(out));\n }\n}\n"
+      },
+      "sourceSHA256": {
+        "SchemaClassificationObservation": "910f736fe3747112b5e80a55afe1e6fb1db3d010251b1614aac7c97688d2792a"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+    },
+    "62.0/id": {
+      "className": "IdClassificationObservation",
+      "classes": {
+        "IdClassificationObservation": "@IsTest private class IdClassificationObservation {\n private static Map<String,Object> lookup(Id key) {\n  Map<String,Object> out=new Map<String,Object>{'id'=>String.valueOf(key)};\n  try {out.put('token',key.getSObjectType().getDescribe().getName());}\n  catch(Exception failure){out.put('exception',failure.getTypeName());out.put('message',failure.getMessage());}\n  return out;\n }\n private static Object implicit(String raw) {\n  try {Id key=raw;return lookup(key);}\n  catch(Exception failure){return new Map<String,Object>{'exception'=>failure.getTypeName(),'message'=>failure.getMessage()};}\n }\n private static Object argument(String raw) {\n  try {return lookup(raw);}\n  catch(Exception failure){return new Map<String,Object>{'exception'=>failure.getTypeName(),'message'=>failure.getMessage()};}\n }\n @IsTest static void observe() {\n  String prefix=CaseComment.SObjectType.getDescribe().getKeyPrefix();\n  Integer width=CaseComment.SObjectType.getDescribe().fields.getMap().get('Id').getDescribe().getLength();\n  String shortText=prefix+'0'.repeat(11)+'1';\n  Id shortId=shortText;\n  String longText=String.valueOf(shortId);\n  String padded=prefix+'0'.repeat(width-prefix.length()-1)+'1';\n  Case parent=new Case(Subject='Owned type observation',Status='New',Origin='Web');insert parent;\n  CaseComment child=new CaseComment(ParentId=parent.Id,CommentBody='Owned type observation');insert child;\n  System.assertEquals('ID_NATIVE',JSON.serialize(new Map<String,Object>{'short'=>implicit(shortText),'canonical'=>implicit(longText),'padded'=>implicit(padded),'argument'=>argument(padded),'stored'=>lookup(child.Id),'user'=>lookup(UserInfo.getUserId())}));\n }\n}\n"
+      },
+      "sourceSHA256": {
+        "IdClassificationObservation": "ed4547aae48614543a40e8d3f5980b1d41408010ea12f1b0e91352d7c3bfb5d6"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+    },
+    "65.0/list": {
+      "className": "SchemaClassificationObservation",
+      "classes": {
+        "SchemaClassificationObservation": "@IsTest private class SchemaClassificationObservation {\n private static Object listType(List<SObject> rows) {\n  Schema.SObjectType token=rows.getSObjectType();\n  return token==null?null:token.getDescribe().getName();\n }\n private static List<SObject> fromIds(Iterable<Id> ids) {\n  List<SObject> records=new List<SObject>();\n  for(Id key:ids)records.add(key.getSObjectType().newSObject(key));\n  return records;\n }\n @IsTest static void lists() {\n  List<User> concrete=[SELECT Id FROM User LIMIT 5];\n  Map<Id,User> keyed=new Map<Id,User>(concrete);\n  List<Id> ids=new List<Id>(keyed.keySet());\n  List<SObject> listRows=fromIds(ids);\n  List<SObject> setRows=fromIds(keyed.keySet());\n  List<SObject> singleton=fromIds(new List<Id>{UserInfo.getUserId()});\n  List<SObject> doubled=fromIds(new List<Id>{UserInfo.getUserId(),UserInfo.getUserId()});\n  List<User> typed=new List<User>{(User)User.SObjectType.newSObject(UserInfo.getUserId())};\n  List<SObject> widened=typed;\n  Map<String,Object> out=new Map<String,Object>{'count'=>ids.size(),'list'=>listType(listRows),'set'=>listType(setRows),'singleton'=>listType(singleton),'double'=>listType(doubled),'typed'=>listType(widened),'element'=>singleton[0].getSObjectType().getDescribe().getName(),'populated'=>singleton[0].getPopulatedFieldsAsMap().keySet()};\n  System.assertEquals('CLASS_NATIVE',JSON.serialize(out));\n }\n}\n"
+      },
+      "sourceSHA256": {
+        "SchemaClassificationObservation": "b8aae0b81ed257cfddd646500273e24b092bbe40cce6308f2e94ffe1715d5c87"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "62c496b4c1c6fd12d9773fcd11ea6ffcc9c9794dbbd053439950cbdd5eb1e241"
+    },
+    "65.0/id": {
+      "className": "IdClassificationObservation",
+      "classes": {
+        "IdClassificationObservation": "@IsTest private class IdClassificationObservation {\n private static Map<String,Object> lookup(Id key) {\n  Map<String,Object> out=new Map<String,Object>{'id'=>String.valueOf(key)};\n  try {out.put('token',key.getSObjectType().getDescribe().getName());}\n  catch(Exception failure){out.put('exception',failure.getTypeName());out.put('message',failure.getMessage());}\n  return out;\n }\n private static Object implicit(String raw) {\n  try {Id key=raw;return lookup(key);}\n  catch(Exception failure){return new Map<String,Object>{'exception'=>failure.getTypeName(),'message'=>failure.getMessage()};}\n }\n private static Object argument(String raw) {\n  try {return lookup(raw);}\n  catch(Exception failure){return new Map<String,Object>{'exception'=>failure.getTypeName(),'message'=>failure.getMessage()};}\n }\n @IsTest static void observe() {\n  String prefix=CaseComment.SObjectType.getDescribe().getKeyPrefix();\n  Integer width=CaseComment.SObjectType.getDescribe().fields.getMap().get('Id').getDescribe().getLength();\n  String shortText=prefix+'0'.repeat(11)+'1';\n  Id shortId=shortText;\n  String longText=String.valueOf(shortId);\n  String padded=prefix+'0'.repeat(width-prefix.length()-1)+'1';\n  Case parent=new Case(Subject='Owned type observation',Status='New',Origin='Web');insert parent;\n  CaseComment child=new CaseComment(ParentId=parent.Id,CommentBody='Owned type observation');insert child;\n  System.assertEquals('ID_NATIVE',JSON.serialize(new Map<String,Object>{'short'=>implicit(shortText),'canonical'=>implicit(longText),'padded'=>implicit(padded),'argument'=>argument(padded),'stored'=>lookup(child.Id),'user'=>lookup(UserInfo.getUserId())}));\n }\n}\n"
+      },
+      "sourceSHA256": {
+        "IdClassificationObservation": "ed4547aae48614543a40e8d3f5980b1d41408010ea12f1b0e91352d7c3bfb5d6"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "62c496b4c1c6fd12d9773fcd11ea6ffcc9c9794dbbd053439950cbdd5eb1e241"
+    },
+    "67.0/list": {
+      "className": "SchemaClassificationObservation",
+      "classes": {
+        "SchemaClassificationObservation": "@IsTest private class SchemaClassificationObservation {\n private static Object listType(List<SObject> rows) {\n  Schema.SObjectType token=rows.getSObjectType();\n  return token==null?null:token.getDescribe().getName();\n }\n private static List<SObject> fromIds(Iterable<Id> ids) {\n  List<SObject> records=new List<SObject>();\n  for(Id key:ids)records.add(key.getSObjectType().newSObject(key));\n  return records;\n }\n @IsTest static void lists() {\n  List<User> concrete=[SELECT Id FROM User LIMIT 2];\n  Map<Id,User> keyed=new Map<Id,User>(concrete);\n  List<Id> ids=new List<Id>(keyed.keySet());\n  List<SObject> listRows=fromIds(ids);\n  List<SObject> setRows=fromIds(keyed.keySet());\n  List<SObject> singleton=fromIds(new List<Id>{UserInfo.getUserId()});\n  List<SObject> doubled=fromIds(new List<Id>{UserInfo.getUserId(),UserInfo.getUserId()});\n  List<User> typed=new List<User>{(User)User.SObjectType.newSObject(UserInfo.getUserId())};\n  List<SObject> widened=typed;\n  Map<String,Object> out=new Map<String,Object>{'count'=>ids.size(),'list'=>listType(listRows),'set'=>listType(setRows),'singleton'=>listType(singleton),'double'=>listType(doubled),'typed'=>listType(widened),'element'=>singleton[0].getSObjectType().getDescribe().getName(),'populated'=>singleton[0].getPopulatedFieldsAsMap().keySet()};\n  System.assertEquals('CLASS_NATIVE',JSON.serialize(out));\n }\n private static Map<String,Object> idType(Schema.SObjectType token,Integer width) {\n  String prefix=token.getDescribe().getKeyPrefix();\n  String raw=prefix+'0'.repeat(width-prefix.length()-1)+'1';\n  Map<String,Object> out=new Map<String,Object>{'prefix'=>prefix,'length'=>raw.length()};\n  try {Id key=Id.valueOf(raw);out.put('token',key.getSObjectType().getDescribe().getName());}\n  catch(Exception failure){out.put('exception',failure.getTypeName());out.put('message',failure.getMessage());}\n  return out;\n }\n @IsTest static void templateId() {\n  Integer width=CaseComment.SObjectType.getDescribe().fields.getMap().get('Id').getDescribe().getLength();\n  Map<String,Object> out=new Map<String,Object>{'width'=>width,'short'=>idType(CaseComment.SObjectType,15),'described'=>idType(CaseComment.SObjectType,width),'standard'=>idType(User.SObjectType,width),'instance'=>new CaseComment().getSObjectType().getDescribe().getName()};\n  System.assertEquals('CLASS_NATIVE',JSON.serialize(out));\n }\n}\n"
+      },
+      "sourceSHA256": {
+        "SchemaClassificationObservation": "910f736fe3747112b5e80a55afe1e6fb1db3d010251b1614aac7c97688d2792a"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+    },
+    "67.0/id": {
+      "className": "IdClassificationObservation",
+      "classes": {
+        "IdClassificationObservation": "@IsTest private class IdClassificationObservation {\n private static Map<String,Object> lookup(Id key) {\n  Map<String,Object> out=new Map<String,Object>{'id'=>String.valueOf(key)};\n  try {out.put('token',key.getSObjectType().getDescribe().getName());}\n  catch(Exception failure){out.put('exception',failure.getTypeName());out.put('message',failure.getMessage());}\n  return out;\n }\n private static Object implicit(String raw) {\n  try {Id key=raw;return lookup(key);}\n  catch(Exception failure){return new Map<String,Object>{'exception'=>failure.getTypeName(),'message'=>failure.getMessage()};}\n }\n private static Object argument(String raw) {\n  try {return lookup(raw);}\n  catch(Exception failure){return new Map<String,Object>{'exception'=>failure.getTypeName(),'message'=>failure.getMessage()};}\n }\n @IsTest static void observe() {\n  String prefix=CaseComment.SObjectType.getDescribe().getKeyPrefix();\n  Integer width=CaseComment.SObjectType.getDescribe().fields.getMap().get('Id').getDescribe().getLength();\n  String shortText=prefix+'0'.repeat(11)+'1';\n  Id shortId=shortText;\n  String longText=String.valueOf(shortId);\n  String padded=prefix+'0'.repeat(width-prefix.length()-1)+'1';\n  Case parent=new Case(Subject='Owned type observation',Status='New',Origin='Web');insert parent;\n  CaseComment child=new CaseComment(ParentId=parent.Id,CommentBody='Owned type observation');insert child;\n  System.assertEquals('ID_NATIVE',JSON.serialize(new Map<String,Object>{'short'=>implicit(shortText),'canonical'=>implicit(longText),'padded'=>implicit(padded),'argument'=>argument(padded),'stored'=>lookup(child.Id),'user'=>lookup(UserInfo.getUserId())}));\n }\n}\n"
+      },
+      "sourceSHA256": {
+        "IdClassificationObservation": "ed4547aae48614543a40e8d3f5980b1d41408010ea12f1b0e91352d7c3bfb5d6"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "fixture": "62.0/list",
+      "method": "lists",
+      "marker": "CLASS_NATIVE",
+      "deploymentID": "0AfEc00000p1cNdKAI",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; cleanup owner b60/k13; no persistent metadata or data",
+      "rawDeploymentSHA256": "c1495166a4bdcb60b1f62f20f8c4adf83e10204c289f8b08f0962251bc795e9e",
+      "rawRowSHA256": "4caa63fc2f2bf0e98ede40525d7f29e01e4520cb5ed9f9e4713265c39806f7fb",
+      "projectedPayload": "{\"count\":2,\"double\":null,\"element\":\"User\",\"list\":null,\"populated\":[\"Id\"],\"set\":null,\"singleton\":null,\"typed\":\"User\"}",
+      "projectedPayloadSHA256": "79187c3634d9d13f068df2d1bc511043fd6fb3f0ba18f8c7139273b44a4f262c",
+      "native": {
+        "populated": [
+          "Id"
+        ],
+        "element": "User",
+        "typed": "User",
+        "double": null,
+        "singleton": null,
+        "set": null,
+        "list": null,
+        "count": 2
+      }
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "fixture": "62.0/list",
+      "method": "templateId",
+      "marker": "CLASS_NATIVE",
+      "deploymentID": "0AfEc00000p1cNdKAI",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; cleanup owner b60/k13; no persistent metadata or data",
+      "rawDeploymentSHA256": "c1495166a4bdcb60b1f62f20f8c4adf83e10204c289f8b08f0962251bc795e9e",
+      "rawRowSHA256": "bc611be13c5de7206519e987c364ee420ea1891572de3f9171c6120e9427e854",
+      "projectedPayload": "{\"described\":{\"exception\":\"System.StringException\",\"length\":18,\"message\":\"Invalid id: 00a000000000000001\",\"prefix\":\"00a\"},\"instance\":\"CaseComment\",\"short\":{\"exception\":\"System.SObjectException\",\"length\":15,\"message\":\"Cannot locate Apex Type for ID: 00a000000000001AAA\",\"prefix\":\"00a\"},\"standard\":{\"exception\":\"System.StringException\",\"length\":18,\"message\":\"Invalid id: 005000000000000001\",\"prefix\":\"005\"},\"width\":18}",
+      "projectedPayloadSHA256": "91f5b263b227e99a8e935b26463920381a5c9b343c0acc32c238d507be62bea5",
+      "native": {
+        "instance": "CaseComment",
+        "standard": {
+          "message": "Invalid id: 005000000000000001",
+          "exception": "System.StringException",
+          "length": 18,
+          "prefix": "005"
+        },
+        "described": {
+          "message": "Invalid id: 00a000000000000001",
+          "exception": "System.StringException",
+          "length": 18,
+          "prefix": "00a"
+        },
+        "short": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000001AAA",
+          "exception": "System.SObjectException",
+          "length": 15,
+          "prefix": "00a"
+        },
+        "width": 18
+      }
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "fixture": "62.0/id",
+      "method": "observe",
+      "marker": "ID_NATIVE",
+      "deploymentID": "0AfEc00000p1cgzKAA",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; cleanup owner b60/k13; no persistent metadata or data",
+      "rawDeploymentSHA256": "f314662169677869e41d564c861b55501ed7632354ed61afe21a99bc8655421f",
+      "rawRowSHA256": "d34731ae04e0756815dfffa3fc3754353b50fd3fa8a2c73305dd08fdfb208c5d",
+      "projectedPayload": "{\"argument\":{\"exception\":\"System.SObjectException\",\"id\":\"00a000000000000001\",\"message\":\"Cannot locate Apex Type for ID: 00a000000000000001\"},\"canonical\":{\"exception\":\"System.SObjectException\",\"id\":\"00a000000000001AAA\",\"message\":\"Cannot locate Apex Type for ID: 00a000000000001AAA\"},\"padded\":{\"exception\":\"System.SObjectException\",\"id\":\"00a000000000000001\",\"message\":\"Cannot locate Apex Type for ID: 00a000000000000001\"},\"short\":{\"exception\":\"System.SObjectException\",\"id\":\"00a000000000001AAA\",\"message\":\"Cannot locate Apex Type for ID: 00a000000000001AAA\"},\"stored\":{\"id\":\"[STORED_ID]\",\"token\":\"CaseComment\"},\"user\":{\"id\":\"[USER_ID]\",\"token\":\"User\"}}",
+      "projectedPayloadSHA256": "aa335d6132b66e2253c3549823743286ecee21f274e8ec0c82b87e6f2234cc27",
+      "native": {
+        "user": {
+          "token": "User",
+          "id": "[USER_ID]"
+        },
+        "stored": {
+          "token": "CaseComment",
+          "id": "[STORED_ID]"
+        },
+        "argument": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000000001",
+          "exception": "System.SObjectException",
+          "id": "00a000000000000001"
+        },
+        "padded": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000000001",
+          "exception": "System.SObjectException",
+          "id": "00a000000000000001"
+        },
+        "canonical": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000001AAA",
+          "exception": "System.SObjectException",
+          "id": "00a000000000001AAA"
+        },
+        "short": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000001AAA",
+          "exception": "System.SObjectException",
+          "id": "00a000000000001AAA"
+        }
+      }
+    },
+    {
+      "api": "65.0",
+      "transportAPI": "65.0",
+      "route": "istest",
+      "fixture": "65.0/list",
+      "method": "lists",
+      "marker": "CLASS_NATIVE",
+      "deploymentID": "0AfEc00000p1ZxfKAE",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; cleanup owner b60/k13; no persistent metadata or data",
+      "rawDeploymentSHA256": "15777d4721d5e97f7d0a9f3ba2379438557da896049aef82459a056f12689b0e",
+      "rawRowSHA256": "8b62e3f639412c1909970913d0e26307850636d055ebd391241dc22806a2a85d",
+      "projectedPayload": "{\"count\":5,\"double\":null,\"element\":\"User\",\"list\":null,\"populated\":[\"Id\"],\"set\":null,\"singleton\":null,\"typed\":\"User\"}",
+      "projectedPayloadSHA256": "a334eff62c653c0dc216891ccbf8b8ac1eff5a49542d1896d57e6b8b8dd05b9d",
+      "native": {
+        "populated": [
+          "Id"
+        ],
+        "element": "User",
+        "typed": "User",
+        "double": null,
+        "singleton": null,
+        "set": null,
+        "list": null,
+        "count": 5
+      }
+    },
+    {
+      "api": "65.0",
+      "transportAPI": "65.0",
+      "route": "istest",
+      "fixture": "65.0/id",
+      "method": "observe",
+      "marker": "ID_NATIVE",
+      "deploymentID": "0AfEc00000p1cttKAA",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; cleanup owner b60/k13; no persistent metadata or data",
+      "rawDeploymentSHA256": "bcf71ac336e0c768cd681b338e6bc3882b1f3150a6ce24f7cff5b393337dbc02",
+      "rawRowSHA256": "dfa2f611ec71bbd01a500da5b31ece1944ad8c712db3e884af2f7131a2b5e757",
+      "projectedPayload": "{\"argument\":{\"exception\":\"System.SObjectException\",\"id\":\"00a000000000000001\",\"message\":\"Cannot locate Apex Type for ID: 00a000000000000001\"},\"canonical\":{\"exception\":\"System.SObjectException\",\"id\":\"00a000000000001AAA\",\"message\":\"Cannot locate Apex Type for ID: 00a000000000001AAA\"},\"padded\":{\"exception\":\"System.SObjectException\",\"id\":\"00a000000000000001\",\"message\":\"Cannot locate Apex Type for ID: 00a000000000000001\"},\"short\":{\"exception\":\"System.SObjectException\",\"id\":\"00a000000000001AAA\",\"message\":\"Cannot locate Apex Type for ID: 00a000000000001AAA\"},\"stored\":{\"id\":\"[STORED_ID]\",\"token\":\"CaseComment\"},\"user\":{\"id\":\"[USER_ID]\",\"token\":\"User\"}}",
+      "projectedPayloadSHA256": "aa335d6132b66e2253c3549823743286ecee21f274e8ec0c82b87e6f2234cc27",
+      "native": {
+        "user": {
+          "token": "User",
+          "id": "[USER_ID]"
+        },
+        "stored": {
+          "token": "CaseComment",
+          "id": "[STORED_ID]"
+        },
+        "argument": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000000001",
+          "exception": "System.SObjectException",
+          "id": "00a000000000000001"
+        },
+        "padded": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000000001",
+          "exception": "System.SObjectException",
+          "id": "00a000000000000001"
+        },
+        "canonical": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000001AAA",
+          "exception": "System.SObjectException",
+          "id": "00a000000000001AAA"
+        },
+        "short": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000001AAA",
+          "exception": "System.SObjectException",
+          "id": "00a000000000001AAA"
+        }
+      }
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "fixture": "67.0/list",
+      "method": "lists",
+      "marker": "CLASS_NATIVE",
+      "deploymentID": "0AfEc00000p1UMsKAM",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; cleanup owner b60/k13; no persistent metadata or data",
+      "rawDeploymentSHA256": "1cfcd6c6033366b1a4770d88bee62ca0976e1a0aa47bbb553488cdf4baf315ea",
+      "rawRowSHA256": "4caa63fc2f2bf0e98ede40525d7f29e01e4520cb5ed9f9e4713265c39806f7fb",
+      "projectedPayload": "{\"count\":2,\"double\":null,\"element\":\"User\",\"list\":null,\"populated\":[\"Id\"],\"set\":null,\"singleton\":null,\"typed\":\"User\"}",
+      "projectedPayloadSHA256": "79187c3634d9d13f068df2d1bc511043fd6fb3f0ba18f8c7139273b44a4f262c",
+      "native": {
+        "populated": [
+          "Id"
+        ],
+        "element": "User",
+        "typed": "User",
+        "double": null,
+        "singleton": null,
+        "set": null,
+        "list": null,
+        "count": 2
+      }
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "fixture": "67.0/list",
+      "method": "templateId",
+      "marker": "CLASS_NATIVE",
+      "deploymentID": "0AfEc00000p1UMsKAM",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; cleanup owner b60/k13; no persistent metadata or data",
+      "rawDeploymentSHA256": "1cfcd6c6033366b1a4770d88bee62ca0976e1a0aa47bbb553488cdf4baf315ea",
+      "rawRowSHA256": "bc611be13c5de7206519e987c364ee420ea1891572de3f9171c6120e9427e854",
+      "projectedPayload": "{\"described\":{\"exception\":\"System.StringException\",\"length\":18,\"message\":\"Invalid id: 00a000000000000001\",\"prefix\":\"00a\"},\"instance\":\"CaseComment\",\"short\":{\"exception\":\"System.SObjectException\",\"length\":15,\"message\":\"Cannot locate Apex Type for ID: 00a000000000001AAA\",\"prefix\":\"00a\"},\"standard\":{\"exception\":\"System.StringException\",\"length\":18,\"message\":\"Invalid id: 005000000000000001\",\"prefix\":\"005\"},\"width\":18}",
+      "projectedPayloadSHA256": "91f5b263b227e99a8e935b26463920381a5c9b343c0acc32c238d507be62bea5",
+      "native": {
+        "instance": "CaseComment",
+        "standard": {
+          "message": "Invalid id: 005000000000000001",
+          "exception": "System.StringException",
+          "length": 18,
+          "prefix": "005"
+        },
+        "described": {
+          "message": "Invalid id: 00a000000000000001",
+          "exception": "System.StringException",
+          "length": 18,
+          "prefix": "00a"
+        },
+        "short": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000001AAA",
+          "exception": "System.SObjectException",
+          "length": 15,
+          "prefix": "00a"
+        },
+        "width": 18
+      }
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "fixture": "67.0/id",
+      "method": "observe",
+      "marker": "ID_NATIVE",
+      "deploymentID": "0AfEc00000p1caXKAQ",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; cleanup owner b60/k13; no persistent metadata or data",
+      "rawDeploymentSHA256": "560073251d929a3e8fba7ab42b094bfedba8020e9d7510329dd053a8d59d9ba3",
+      "rawRowSHA256": "f0b5e98e7354090d15addffd220009bb6f9ad05141a26fc21f6a29ffa57f54e3",
+      "projectedPayload": "{\"argument\":{\"exception\":\"System.SObjectException\",\"id\":\"00a000000000000001\",\"message\":\"Cannot locate Apex Type for ID: 00a000000000000001\"},\"canonical\":{\"exception\":\"System.SObjectException\",\"id\":\"00a000000000001AAA\",\"message\":\"Cannot locate Apex Type for ID: 00a000000000001AAA\"},\"padded\":{\"exception\":\"System.SObjectException\",\"id\":\"00a000000000000001\",\"message\":\"Cannot locate Apex Type for ID: 00a000000000000001\"},\"short\":{\"exception\":\"System.SObjectException\",\"id\":\"00a000000000001AAA\",\"message\":\"Cannot locate Apex Type for ID: 00a000000000001AAA\"},\"stored\":{\"id\":\"[STORED_ID]\",\"token\":\"CaseComment\"},\"user\":{\"id\":\"[USER_ID]\",\"token\":\"User\"}}",
+      "projectedPayloadSHA256": "aa335d6132b66e2253c3549823743286ecee21f274e8ec0c82b87e6f2234cc27",
+      "native": {
+        "user": {
+          "token": "User",
+          "id": "[USER_ID]"
+        },
+        "stored": {
+          "token": "CaseComment",
+          "id": "[STORED_ID]"
+        },
+        "argument": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000000001",
+          "exception": "System.SObjectException",
+          "id": "00a000000000000001"
+        },
+        "padded": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000000001",
+          "exception": "System.SObjectException",
+          "id": "00a000000000000001"
+        },
+        "canonical": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000001AAA",
+          "exception": "System.SObjectException",
+          "id": "00a000000000001AAA"
+        },
+        "short": {
+          "message": "Cannot locate Apex Type for ID: 00a000000000001AAA",
+          "exception": "System.SObjectException",
+          "id": "00a000000000001AAA"
+        }
+      }
+    }
+  ],
+  "carried": {
+    "count": "The scratch User query returns two or five rows; local seeded User counts differ. Exact cardinalities 1/2/5 and token results are separately covered by the VM regression.",
+    "populated": "The raw populated Id-only projection is retained as source context; general schema default/omission behavior is separately owned.",
+    "ids": "Only the generated stored-record and actor Id texts are normalized; synthetic describe-derived Ids and exception text stay exact.",
+    "anonymous": "This bounded request captures named tests only; anonymous parity is not claimed.",
+    "api68": "Not captured by this bounded request; no API68 native claim.",
+    "otherTemplates": "Only CaseComment is observed; do not extend the Id-method exception to other template types."
+  },
+  "nativeObservationCount": 8
+}

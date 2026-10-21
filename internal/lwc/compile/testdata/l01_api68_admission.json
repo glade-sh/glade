@@ -1,0 +1,119 @@
+[
+  {
+    "id": "meta_no_version",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta_fragment": "<isExposed>false</isExposed>",
+    "omit_version": true,
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
+    },
+    "diagnostics": {
+      "59.0": [],
+      "67.0": [],
+      "68.0": []
+    }
+  },
+  {
+    "id": "meta_no_version_complex",
+    "kind": "compile",
+    "template": "<template><span>{1 + 2}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta_fragment": "<isExposed>false</isExposed>",
+    "omit_version": true,
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
+    },
+    "diagnostics": {
+      "59.0": [],
+      "67.0": [],
+      "68.0": []
+    }
+  },
+  {
+    "id": "meta_no_version_details_name",
+    "kind": "compile",
+    "template": "<template><details name=\"owned\"><summary>Owned</summary></details></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta_fragment": "<isExposed>false</isExposed>",
+    "omit_version": true,
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
+    },
+    "diagnostics": {
+      "59.0": [],
+      "67.0": [],
+      "68.0": []
+    }
+  },
+  {
+    "id": "wire_current_property",
+    "kind": "compile",
+    "template": "<template><span>owned</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { CurrentPageReference } from 'lightning/navigation'; export default class FamilyCompile extends LightningElement { @wire(CurrentPageReference) current; }",
+    "meta_fragment": "<isExposed>false</isExposed>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK",
+      "68.0": "COMPILE_OK"
+    },
+    "diagnostics": {
+      "59.0": [],
+      "67.0": [],
+      "68.0": []
+    }
+  },
+  {
+    "id": "wire_current_api_wire",
+    "kind": "compile",
+    "template": "<template><span>owned</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { CurrentPageReference } from 'lightning/navigation'; export default class FamilyCompile extends LightningElement { @api @wire(CurrentPageReference) current; }",
+    "meta_fragment": "<isExposed>false</isExposed>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
+    },
+    "diagnostics": {
+      "59.0": [
+        "[Line: 5, Col: 2] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - SyntaxError: /home/sfdc/tools/sfdc-lwc-compiler/15.3.16010/familyL01000.js: LWC1095: @wire method or property cannot be used with @api\n  3 | export default class FamilyL01000 extends LightningElement {\n  4 |   @api\n> 5 |   @wire(CurrentPageReference)\n    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  6 |   current;\n  7 | }"
+      ],
+      "67.0": [
+        "[Line: 5, Col: 2] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - SyntaxError: /home/sfdc/tools/sfdc-lwc-compiler/15.3.16010/familyL01000.js: LWC1095: @wire method or property cannot be used with @api\n  3 | export default class FamilyL01000 extends LightningElement {\n  4 |   @api\n> 5 |   @wire(CurrentPageReference)\n    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  6 |   current;\n  7 | }"
+      ],
+      "68.0": [
+        "[Line: 5, Col: 2] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - SyntaxError: /home/sfdc/tools/sfdc-lwc-compiler/15.3.16010/familyL01000.js: LWC1095: @wire method or property cannot be used with @api\n  3 | export default class FamilyL01000 extends LightningElement {\n  4 |   @api\n> 5 |   @wire(CurrentPageReference)\n    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  6 |   current;\n  7 | }"
+      ]
+    }
+  },
+  {
+    "id": "wire_current_duplicate_wire",
+    "kind": "compile",
+    "template": "<template><span>owned</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { CurrentPageReference } from 'lightning/navigation'; export default class FamilyCompile extends LightningElement { @wire(CurrentPageReference) @wire(CurrentPageReference) current; }",
+    "meta_fragment": "<isExposed>false</isExposed>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR",
+      "68.0": "COMPILE_ERROR"
+    },
+    "diagnostics": {
+      "59.0": [
+        "[Line: 4, Col: 2] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - SyntaxError: /home/sfdc/tools/sfdc-lwc-compiler/15.3.16010/familyL01000.js: LWC1105: Method or property can only have 1 @wire decorator\n  2 | import { CurrentPageReference } from 'lightning/navigation';\n  3 | export default class FamilyL01000 extends LightningElement {\n> 4 |   @wire(CurrentPageReference)\n    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  5 |   @wire(CurrentPageReference)\n  6 |   current;\n  7 | }"
+      ],
+      "67.0": [
+        "[Line: 4, Col: 2] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - SyntaxError: /home/sfdc/tools/sfdc-lwc-compiler/15.3.16010/familyL01000.js: LWC1105: Method or property can only have 1 @wire decorator\n  2 | import { CurrentPageReference } from 'lightning/navigation';\n  3 | export default class FamilyL01000 extends LightningElement {\n> 4 |   @wire(CurrentPageReference)\n    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  5 |   @wire(CurrentPageReference)\n  6 |   current;\n  7 | }"
+      ],
+      "68.0": [
+        "[Line: 4, Col: 2] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - SyntaxError: /home/sfdc/tools/sfdc-lwc-compiler/15.3.16010/familyL01000.js: LWC1105: Method or property can only have 1 @wire decorator\n  2 | import { CurrentPageReference } from 'lightning/navigation';\n  3 | export default class FamilyL01000 extends LightningElement {\n> 4 |   @wire(CurrentPageReference)\n    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  5 |   @wire(CurrentPageReference)\n  6 |   current;\n  7 | }"
+      ]
+    }
+  }
+]

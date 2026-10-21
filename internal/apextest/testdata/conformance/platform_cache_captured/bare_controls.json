@@ -1,0 +1,422 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "bare_controls",
+  "cellCount": 18,
+  "observedCount": 18,
+  "assertedCount": 18,
+  "carriedCount": 0,
+  "cells": [
+    {
+      "id": "PCCTRLPOSITIVE",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r='control'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCCTRLPOSITIVE|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "820bfa18110957b82df7eb962abb9ecb72cc3059257fde38ccbbf45fa839b252"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "control"
+      },
+      "value": "control"
+    },
+    {
+      "id": "PCCTRLCAUGHT",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { try{throw new IllegalArgumentException('PcControlCaught');}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCCTRLCAUGHT|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "cea398668272bdc71f4a5bc3f2146b4090f1a798730b26b6944dbb1c67bef9be"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|System.IllegalArgumentException|PcControlCaught"
+      },
+      "value": "EXC|System.IllegalArgumentException|PcControlCaught"
+    },
+    {
+      "id": "PCCTRLUNCAUGHT",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "throw new IllegalArgumentException('PcControlUncaught');",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "0566edc0e3cc2916ef66542cdd1749da1c59e9de4b99facdb817df3f1af97b42"
+      },
+      "outcome": "uncaught",
+      "native": {
+        "outcome": "uncaught",
+        "message": "System.IllegalArgumentException: PcControlUncaught"
+      },
+      "exceptionType": "System.IllegalArgumentException",
+      "message": "PcControlUncaught"
+    },
+    {
+      "id": "PCCTRLPOSITIVE",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCCTRLPOSITIVEA62Test": "@IsTest private class PcPCCTRLPOSITIVEA62Test { @IsTest static void observe(){String r; try { r='control'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+28>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCCTRLPOSITIVE|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCCTRLPOSITIVEA62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCCTRLPOSITIVEA62Test": "ce582d53f53d353a899439f2631a6703f8d19a9ff128f3ce15b85c07eae8a8ef"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "control"
+      },
+      "value": "control"
+    },
+    {
+      "id": "PCCTRLCAUGHT",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCCTRLCAUGHTA62Test": "@IsTest private class PcPCCTRLCAUGHTA62Test { @IsTest static void observe(){String r; try { try{throw new IllegalArgumentException('PcControlCaught');}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+26>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCCTRLCAUGHT|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCCTRLCAUGHTA62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCCTRLCAUGHTA62Test": "339ba771ef5298933ec747746162f45ef0d7290b9fb1c5e987cfef526fb5cb4f"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|System.IllegalArgumentException|PcControlCaught"
+      },
+      "value": "EXC|System.IllegalArgumentException|PcControlCaught"
+    },
+    {
+      "id": "PCCTRLUNCAUGHT",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCCTRLUNCAUGHTA62Test": "@IsTest private class PcPCCTRLUNCAUGHTA62Test { @IsTest static void observe(){throw new IllegalArgumentException('PcControlUncaught');} }"
+        },
+        "tests": [
+          "PcPCCTRLUNCAUGHTA62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCCTRLUNCAUGHTA62Test": "22983446a81ac977b175a7dbe0d4e688b14e344f9b0a380eaf680c059f989714"
+      },
+      "outcome": "uncaught",
+      "native": {
+        "outcome": "rejected-with-tests",
+        "failures": [
+          {
+            "cls": "PcPCCTRLUNCAUGHTA62Test",
+            "method": "observe",
+            "message": "System.IllegalArgumentException: PcControlUncaught"
+          }
+        ],
+        "coverage": [],
+        "message": null
+      },
+      "exceptionType": "System.IllegalArgumentException",
+      "message": "PcControlUncaught"
+    },
+    {
+      "id": "PCCTRLPOSITIVE",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r='control'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCCTRLPOSITIVE|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "820bfa18110957b82df7eb962abb9ecb72cc3059257fde38ccbbf45fa839b252"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "control"
+      },
+      "value": "control"
+    },
+    {
+      "id": "PCCTRLCAUGHT",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { try{throw new IllegalArgumentException('PcControlCaught');}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCCTRLCAUGHT|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "cea398668272bdc71f4a5bc3f2146b4090f1a798730b26b6944dbb1c67bef9be"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|System.IllegalArgumentException|PcControlCaught"
+      },
+      "value": "EXC|System.IllegalArgumentException|PcControlCaught"
+    },
+    {
+      "id": "PCCTRLUNCAUGHT",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "throw new IllegalArgumentException('PcControlUncaught');",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "0566edc0e3cc2916ef66542cdd1749da1c59e9de4b99facdb817df3f1af97b42"
+      },
+      "outcome": "uncaught",
+      "native": {
+        "outcome": "uncaught",
+        "message": "System.IllegalArgumentException: PcControlUncaught"
+      },
+      "exceptionType": "System.IllegalArgumentException",
+      "message": "PcControlUncaught"
+    },
+    {
+      "id": "PCCTRLPOSITIVE",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCCTRLPOSITIVEA67Test": "@IsTest private class PcPCCTRLPOSITIVEA67Test { @IsTest static void observe(){String r; try { r='control'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+28>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCCTRLPOSITIVE|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCCTRLPOSITIVEA67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCCTRLPOSITIVEA67Test": "e30cdf9844a2e7593f78d8f5798a31d5252a41419f8522ac689cbe00db722b3b"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "control"
+      },
+      "value": "control"
+    },
+    {
+      "id": "PCCTRLCAUGHT",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCCTRLCAUGHTA67Test": "@IsTest private class PcPCCTRLCAUGHTA67Test { @IsTest static void observe(){String r; try { try{throw new IllegalArgumentException('PcControlCaught');}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+26>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCCTRLCAUGHT|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCCTRLCAUGHTA67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCCTRLCAUGHTA67Test": "d1d4a8d68f23e5e2829f648da11e13c8b83bd3b995b58eba45b7b286b2eb5dca"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|System.IllegalArgumentException|PcControlCaught"
+      },
+      "value": "EXC|System.IllegalArgumentException|PcControlCaught"
+    },
+    {
+      "id": "PCCTRLUNCAUGHT",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCCTRLUNCAUGHTA67Test": "@IsTest private class PcPCCTRLUNCAUGHTA67Test { @IsTest static void observe(){throw new IllegalArgumentException('PcControlUncaught');} }"
+        },
+        "tests": [
+          "PcPCCTRLUNCAUGHTA67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCCTRLUNCAUGHTA67Test": "8b2478112f69ad906248eda8be6a25c307151872b1a86aa226a4bd448615d355"
+      },
+      "outcome": "uncaught",
+      "native": {
+        "outcome": "rejected-with-tests",
+        "failures": [
+          {
+            "cls": "PcPCCTRLUNCAUGHTA67Test",
+            "method": "observe",
+            "message": "System.IllegalArgumentException: PcControlUncaught"
+          }
+        ],
+        "coverage": [],
+        "message": null
+      },
+      "exceptionType": "System.IllegalArgumentException",
+      "message": "PcControlUncaught"
+    },
+    {
+      "id": "PCCTRLPOSITIVE",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r='control'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCCTRLPOSITIVE|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "820bfa18110957b82df7eb962abb9ecb72cc3059257fde38ccbbf45fa839b252"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "control"
+      },
+      "value": "control"
+    },
+    {
+      "id": "PCCTRLCAUGHT",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { try{throw new IllegalArgumentException('PcControlCaught');}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCCTRLCAUGHT|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "cea398668272bdc71f4a5bc3f2146b4090f1a798730b26b6944dbb1c67bef9be"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|System.IllegalArgumentException|PcControlCaught"
+      },
+      "value": "EXC|System.IllegalArgumentException|PcControlCaught"
+    },
+    {
+      "id": "PCCTRLUNCAUGHT",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "throw new IllegalArgumentException('PcControlUncaught');",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "0566edc0e3cc2916ef66542cdd1749da1c59e9de4b99facdb817df3f1af97b42"
+      },
+      "outcome": "uncaught",
+      "native": {
+        "outcome": "uncaught",
+        "message": "System.IllegalArgumentException: PcControlUncaught"
+      },
+      "exceptionType": "System.IllegalArgumentException",
+      "message": "PcControlUncaught"
+    },
+    {
+      "id": "PCCTRLPOSITIVE",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCCTRLPOSITIVEA68Test": "@IsTest private class PcPCCTRLPOSITIVEA68Test { @IsTest static void observe(){String r; try { r='control'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+28>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCCTRLPOSITIVE|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCCTRLPOSITIVEA68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCCTRLPOSITIVEA68Test": "7971cdd6c6cd06b74e02a2e14522d078af272035eb49d60cfa0d0adc6a4a4ba9"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "control"
+      },
+      "value": "control"
+    },
+    {
+      "id": "PCCTRLCAUGHT",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCCTRLCAUGHTA68Test": "@IsTest private class PcPCCTRLCAUGHTA68Test { @IsTest static void observe(){String r; try { try{throw new IllegalArgumentException('PcControlCaught');}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+26>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCCTRLCAUGHT|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCCTRLCAUGHTA68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCCTRLCAUGHTA68Test": "e2b5bbd698bf3089c922f4452914229e917d8f9ecae1fb662b1737a93977a286"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|System.IllegalArgumentException|PcControlCaught"
+      },
+      "value": "EXC|System.IllegalArgumentException|PcControlCaught"
+    },
+    {
+      "id": "PCCTRLUNCAUGHT",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCCTRLUNCAUGHTA68Test": "@IsTest private class PcPCCTRLUNCAUGHTA68Test { @IsTest static void observe(){throw new IllegalArgumentException('PcControlUncaught');} }"
+        },
+        "tests": [
+          "PcPCCTRLUNCAUGHTA68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCCTRLUNCAUGHTA68Test": "3d82a2dfddedacd811206d6da665d5b16ac883b25d93e14cc3282841af6f922e"
+      },
+      "outcome": "uncaught",
+      "native": {
+        "outcome": "rejected-with-tests",
+        "failures": [
+          {
+            "cls": "PcPCCTRLUNCAUGHTA68Test",
+            "method": "observe",
+            "message": "System.IllegalArgumentException: PcControlUncaught"
+          }
+        ],
+        "coverage": [],
+        "message": null
+      },
+      "exceptionType": "System.IllegalArgumentException",
+      "message": "PcControlUncaught"
+    }
+  ]
+}

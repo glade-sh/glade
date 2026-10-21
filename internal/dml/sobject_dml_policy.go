@@ -4,7 +4,7 @@ import "github.com/glade-sh/glade/internal/storage"
 
 func sobjectInsertNeedsFullRollback(objectName string) bool {
 	switch objectName {
-	case "ContentVersion":
+	case "ContentVersion", "PermissionSetGroup":
 		return true
 	default:
 		return false
@@ -21,6 +21,10 @@ func (e *Engine) afterInsertSObject(objectName string, record storage.Record) er
 		return e.afterInsertEmailMessage(record)
 	case "User":
 		e.afterInsertUser(record)
+	case "PermissionSetGroup":
+		return e.afterInsertPermissionSetGroup(record)
+	case "PermissionSetGroupComponent":
+		e.afterInsertPermissionSetGroupComponent(record)
 	}
 	return nil
 }

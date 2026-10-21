@@ -1,0 +1,84 @@
+package dml
+
+import (
+	"strings"
+
+	"github.com/glade-sh/glade/internal/storage"
+)
+
+func flowStepsReadPriorDecision(steps []storage.FlowStep, targets map[string][]storage.FlowStep) bool {
+	readsPrior := false
+	valid := flowStepsSatisfy(steps, targets, func(step storage.FlowStep, _ bool) bool {
+		for _, branch := range step.Branches {
+			for _, criterion := range branch.Criteria {
+				if strings.HasPrefix(strings.TrimSpace(criterion.Field), "$Record__Prior.") || strings.EqualFold(strings.TrimSpace(criterion.Operation), "ischanged") {
+					readsPrior = true
+				}
+			}
+		}
+		return true
+	})
+	return valid && readsPrior
+}
+
+// Before-save execution has no engine prior map. Resolve the stored update
+// target only for a decision reading a prior field or Is Changed. Formula and
+// validation prior-value handling remain unchanged. After-save uses the seeded map.
+func (e *Engine) seedFlowDecisionPrior(flowName string, record storage.Record, definition storage.ObjectDefinition, steps []storage.FlowStep, frame *flowFrame) {
+	if e == nil || e.Org == nil || frame == nil || !frame.priorDecisions || record.ID == "" || !flowStepsReadPriorDecision(steps, frame.stepTargets) {
+		return
+	}
+	key := flowFrameKey("$Record__Prior")
+	if prior := frame.records[key]; prior.ID != "" {
+		return
+	}
+	for _, rule := range definition.FlowRules {
+		if rule.Name != flowName || !strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordBeforeSave") {
+			continue
+		}
+		if objectName, ok := storage.ResolveObjectName(*e.Org, record.Object); ok {
+			if _, prior, found := storage.LookupRecordByID(e.Org.Objects[objectName].Records, record.ID); found {
+				frame.records[key] = prior.Clone()
+			}
+		}
+		return
+	}
+}
+
+// Prior decisions cover identity-null checks and direct Boolean equality.
+// Missing prior records are null, including Boolean fields on insert.
+func flowPriorDecisionValue(item storage.WorkflowCriteriaItem, definition storage.ObjectDefinition, namespace string, frame *flowFrame) (storage.Value, bool) {
+	reference := strings.TrimSpace(item.Field)
+	if frame == nil || !frame.priorDecisions || !strings.HasPrefix(reference, "$Record__Prior.") {
+		return storage.Value{}, false
+	}
+	field := strings.TrimPrefix(reference, "$Record__Prior.")
+	if strings.Contains(field, ".") {
+		return storage.Value{}, false
+	}
+	name, ok := storage.ResolveFieldName(definition, namespace, field)
+	if !ok {
+		return storage.Value{}, false
+	}
+	switch strings.ToLower(strings.TrimSpace(item.Operation)) {
+	case "equals":
+		if definition.Fields[name].Type != storage.FieldBoolean || !strings.EqualFold(trimFormulaLiteral(item.Value), "true") {
+			return storage.Value{}, false
+		}
+	case "isnull":
+		if name != "Id" || !strings.EqualFold(trimFormulaLiteral(item.Value), "true") {
+			return storage.Value{}, false
+		}
+	default:
+		return storage.Value{}, false
+	}
+	prior := frame.records[flowFrameKey("$Record__Prior")]
+	if prior.ID == "" {
+		return storage.NullValue(), true
+	}
+	value, found := sourceRecordFieldValue(prior, name)
+	if !found {
+		return storage.NullValue(), true
+	}
+	return value.Clone(), true
+}

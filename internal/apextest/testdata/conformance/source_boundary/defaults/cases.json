@@ -1,0 +1,86 @@
+[
+  {
+    "api": "62.0",
+    "id": "flags",
+    "route": "isTest",
+    "className": "DefaultObservation62",
+    "source": "@IsTest private class DefaultObservation62 { @IsTest static void observe(){Map<String,Object> result=new Map<String,Object>();{List<String> keys=new List<String>(ActivitySample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();result.put('ActivitySample__c',keys);}{List<String> keys=new List<String>(SearchSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();result.put('SearchSample__c',keys);}{List<String> keys=new List<String>(TypedSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();result.put('TypedSample__c',keys);}System.assert(false,'OBS|'+JSON.serialize(result));} }",
+    "objects": {
+      "ActivitySample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><enableActivities>true</enableActivities></CustomObject>",
+      "SearchSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><enableSearch>true</enableSearch></CustomObject>",
+      "TypedSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><recordTypes><fullName>Choice</fullName><label>Choice</label><active>true</active></recordTypes></CustomObject>"
+    },
+    "native": {
+      "tests": [
+        {
+          "MethodName": "observe",
+          "Outcome": "Fail",
+          "Message": "System.AssertException: Assertion Failed: OBS|{\"TypedSample__c\":[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"recordtypeid\",\"systemmodstamp\"],\"SearchSample__c\":[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"systemmodstamp\"],\"ActivitySample__c\":[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastactivitydate\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"systemmodstamp\"]}",
+          "StackTrace": "Class.DefaultObservation62.observe: line 1, column 1"
+        }
+      ]
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "flags",
+    "route": "anonymous",
+    "source": "Map<String,Object> result=new Map<String,Object>();{List<String> keys=new List<String>(ActivitySample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();result.put('ActivitySample__c',keys);}{List<String> keys=new List<String>(SearchSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();result.put('SearchSample__c',keys);}{List<String> keys=new List<String>(TypedSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();result.put('TypedSample__c',keys);}System.assert(false,'OBS|'+JSON.serialize(result));",
+    "objects": {
+      "ActivitySample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><enableActivities>true</enableActivities></CustomObject>",
+      "SearchSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><enableSearch>true</enableSearch></CustomObject>",
+      "TypedSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><recordTypes><fullName>Choice</fullName><label>Choice</label><active>true</active></recordTypes></CustomObject>"
+    },
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|{\"TypedSample__c\":[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"recordtypeid\",\"systemmodstamp\"],\"SearchSample__c\":[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"systemmodstamp\"],\"ActivitySample__c\":[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastactivitydate\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"systemmodstamp\"]}",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "flags",
+    "route": "isTest",
+    "className": "DefaultObservation67",
+    "source": "@IsTest private class DefaultObservation67 { @IsTest static void observe(){Map<String,Object> result=new Map<String,Object>();{List<String> keys=new List<String>(ActivitySample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();result.put('ActivitySample__c',keys);}{List<String> keys=new List<String>(SearchSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();result.put('SearchSample__c',keys);}{List<String> keys=new List<String>(TypedSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();result.put('TypedSample__c',keys);}System.assert(false,'OBS|'+JSON.serialize(result));} }",
+    "objects": {
+      "ActivitySample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><enableActivities>true</enableActivities></CustomObject>",
+      "SearchSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><enableSearch>true</enableSearch></CustomObject>",
+      "TypedSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><recordTypes><fullName>Choice</fullName><label>Choice</label><active>true</active></recordTypes></CustomObject>"
+    },
+    "native": {
+      "tests": [
+        {
+          "MethodName": "observe",
+          "Outcome": "Fail",
+          "Message": "System.AssertException: Assertion Failed: OBS|{\"TypedSample__c\":[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"recordtypeid\",\"systemmodstamp\"],\"SearchSample__c\":[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"systemmodstamp\"],\"ActivitySample__c\":[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastactivitydate\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"systemmodstamp\"]}",
+          "StackTrace": "Class.DefaultObservation67.observe: line 1, column 1"
+        }
+      ]
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "flags",
+    "route": "anonymous",
+    "source": "Map<String,Object> result=new Map<String,Object>();{List<String> keys=new List<String>(ActivitySample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();result.put('ActivitySample__c',keys);}{List<String> keys=new List<String>(SearchSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();result.put('SearchSample__c',keys);}{List<String> keys=new List<String>(TypedSample__c.SObjectType.getDescribe().fields.getMap().keySet());keys.sort();result.put('TypedSample__c',keys);}System.assert(false,'OBS|'+JSON.serialize(result));",
+    "objects": {
+      "ActivitySample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><enableActivities>true</enableActivities></CustomObject>",
+      "SearchSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><enableSearch>true</enableSearch></CustomObject>",
+      "TypedSample__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Sparse Sample</label><pluralLabel>Sparse Samples</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><recordTypes><fullName>Choice</fullName><label>Choice</label><active>true</active></recordTypes></CustomObject>"
+    },
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|{\"TypedSample__c\":[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"recordtypeid\",\"systemmodstamp\"],\"SearchSample__c\":[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"systemmodstamp\"],\"ActivitySample__c\":[\"createdbyid\",\"createddate\",\"id\",\"isdeleted\",\"lastactivitydate\",\"lastmodifiedbyid\",\"lastmodifieddate\",\"name\",\"ownerid\",\"systemmodstamp\"]}",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  }
+]

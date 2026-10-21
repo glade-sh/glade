@@ -1,0 +1,39 @@
+{
+  "api": "68.0",
+  "deployment": {
+    "id": "0Afhv000000WzDHCA0",
+    "status": "Succeeded",
+    "success": true,
+    "numberComponentErrors": 0,
+    "numberComponentsDeployed": 15
+  },
+  "captured_at": "2026-10-19T04:28:42.242914+00:00",
+  "anonymous": {
+    "success": true,
+    "compiled": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": {
+      "fieldCall": {
+        "value": "7,blue"
+      },
+      "localCall": {
+        "value": "7,blue"
+      }
+    }
+  },
+  "tests": [
+    {
+      "MethodName": "fieldCall",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|fieldCall|{\"value\":\"7,blue\"}",
+      "StackTrace": "Class.JoinProbeTest.fieldCall: line 2, column 1"
+    },
+    {
+      "MethodName": "localCall",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|localCall|{\"value\":\"7,blue\"}",
+      "StackTrace": "Class.JoinProbeTest.localCall: line 3, column 1"
+    }
+  ]
+}

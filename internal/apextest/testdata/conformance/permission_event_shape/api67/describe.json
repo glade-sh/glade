@@ -1,0 +1,334 @@
+{
+  "name": "PermissionSetEvent",
+  "fields": [
+    {
+      "name": "ReplayId",
+      "type": "string",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 1000
+    },
+    {
+      "name": "CreatedDate",
+      "type": "datetime",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 0
+    },
+    {
+      "name": "EventUuid",
+      "type": "string",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 36
+    },
+    {
+      "name": "EventIdentifier",
+      "type": "string",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 80
+    },
+    {
+      "name": "UserId",
+      "type": "reference",
+      "referenceTo": [
+        "User"
+      ],
+      "relationshipName": "User",
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 18
+    },
+    {
+      "name": "Username",
+      "type": "string",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 255
+    },
+    {
+      "name": "EventDate",
+      "type": "datetime",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 0
+    },
+    {
+      "name": "RelatedEventIdentifier",
+      "type": "string",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 80
+    },
+    {
+      "name": "PolicyId",
+      "type": "reference",
+      "referenceTo": [
+        "TransactionSecurityPolicy"
+      ],
+      "relationshipName": "Policy",
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 18
+    },
+    {
+      "name": "PolicyOutcome",
+      "type": "picklist",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 255
+    },
+    {
+      "name": "EvaluationTime",
+      "type": "double",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 18,
+      "scale": 0,
+      "length": 0
+    },
+    {
+      "name": "SessionKey",
+      "type": "string",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 24
+    },
+    {
+      "name": "LoginKey",
+      "type": "string",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 24
+    },
+    {
+      "name": "SessionLevel",
+      "type": "picklist",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 255
+    },
+    {
+      "name": "SourceIp",
+      "type": "string",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 255
+    },
+    {
+      "name": "LoginHistoryId",
+      "type": "reference",
+      "referenceTo": [
+        "LoginHistory"
+      ],
+      "relationshipName": "LoginHistory",
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 18
+    },
+    {
+      "name": "EventSource",
+      "type": "picklist",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 255
+    },
+    {
+      "name": "Operation",
+      "type": "picklist",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 255
+    },
+    {
+      "name": "ParentIdList",
+      "type": "json",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 250000
+    },
+    {
+      "name": "ParentNameList",
+      "type": "json",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 250000
+    },
+    {
+      "name": "PermissionType",
+      "type": "string",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 30
+    },
+    {
+      "name": "PermissionList",
+      "type": "json",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 250000
+    },
+    {
+      "name": "PermissionExpiration",
+      "type": "datetime",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 0
+    },
+    {
+      "name": "PermissionExpirationList",
+      "type": "json",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 250000
+    },
+    {
+      "name": "HasExternalUsers",
+      "type": "boolean",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 0
+    },
+    {
+      "name": "ImpactedUserIds",
+      "type": "json",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 250000
+    },
+    {
+      "name": "UserCount",
+      "type": "string",
+      "referenceTo": [],
+      "relationshipName": null,
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 1000
+    },
+    {
+      "name": "ProfileId",
+      "type": "reference",
+      "referenceTo": [
+        "Profile"
+      ],
+      "relationshipName": "Profile",
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 18
+    },
+    {
+      "name": "RoleId",
+      "type": "reference",
+      "referenceTo": [
+        "UserRole"
+      ],
+      "relationshipName": "Role",
+      "createable": false,
+      "updateable": false,
+      "precision": 0,
+      "scale": 0,
+      "length": 18
+    }
+  ]
+}

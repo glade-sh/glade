@@ -1,6 +1,12 @@
 # Release Notes
 
-## Unreleased
+## v0.3.0
+
+v0.3.0 expands offline Salesforce development support: Apex 62.0-68.0, LWC and
+Visualforce 59.0-68.0. Supported local behavior remains bounded by the
+[compatibility policy](COMPATIBILITY.md) and the hosted-service limits below.
+
+### What is new
 
 - `glade playground --example refinement-service --once` now materializes a
   testable managed demo project without starting a server. It refuses to replace
@@ -12,10 +18,127 @@
 - The five-minute Quickstart verifies a clean check and exactly one named test,
   and separates Apex source, LWC bundle, local HTTP route, and Salesforce
   validation contracts.
+- **Apex semantics.** The supported source window is 62.0 through 68.0; LWC and
+  Visualforce support spans 59.0 through 68.0. Runtime fixes improve method and
+  interface dispatch, namespace-qualified and shadowed names, casts, collection
+  behavior, null handling, and exception outcomes. Source, component, and HTTP
+  endpoint versions remain independent.
+- **SOQL.** Query fixes cover bind values, including DateTime literals,
+  conditional predicates, relationship projections, aliases, and
+  namespace-qualified fields.
+- **DML and triggers.** Record validation, queried-child updates, partial-save
+  results, trigger context and exception behavior, and rollback handling now
+  cover more Salesforce cases.
+- **Flows.** Local execution handles more entry and changed-to-meet conditions,
+  delete criteria, action chains, record inputs and outputs, record routing,
+  and subflow fault details.
+- **Permissions and FLS.** Additional fixes cover profile and permission-set
+  grants, object and field access checks, and security-mode query and DML
+  behavior. See the default-access gap under Known issues.
+- **Platform APIs and metadata.** The local standard-library surface and
+  metadata behavior cover more cases, alongside local LWC services and
+  Visualforce previews within their documented boundaries.
+- **Experience Cloud and Network.** The local `Communities` feature supplies
+  Site and Network schema for local development. Enable it with `org.features`
+  or a supported scratch-definition setting; this does not provision a hosted
+  Experience Cloud site.
+- **Permission-set pre-assignment.** `test.permissionSets` and
+  `test.permissionSetGroups` assign project permission metadata to the running
+  test user before class initialization and `@TestSetup`. Custom permissions,
+  CRUD, and FLS grants from those assignments are available to tests. See
+  [test user permissions](CONFIG.md#test-user-permissions).
+- **Performance.** Runtime and test startup work avoid repeated schema and index
+  setup and reduce selected reflection and refresh costs.
+- **CLI.** `glade test --json` identifies classes excluded by compile gates in
+  `excludedClasses`. Flow and workflow warnings in test progress show their
+  source file, diagnostic code, and detail.
+
+### Behavior to check when upgrading
 
 Consumers of `glade doctor --json` should recognize schema `1.1` before relying
 on `status` or `exitCode`: those fields now describe Apex check/test readiness,
 while LWC-toolchain and local-data health remain independently reported.
+
+- Stop old test servers with the original binary before upgrading. If a daemon
+  uses an incompatible protocol, `glade test daemon stop` reports an error and
+  preserves its socket and PID file so it can still be stopped.
+- Compile errors exclude the invalid class, dependent classes, and triggers
+  referencing it. Unrelated tests still run; any exclusion exits `1`.
+- The default local running user uses `America/Los_Angeles`. Set
+  `TimeZoneSidKey` explicitly for inserted `System.runAs` users. Checked heap
+  caps are 10,000,000 bytes for synchronous and Scheduled Apex, and 25,000,000
+  for Queueable, future, and Batchable execution; local heap accounting
+  remains approximate.
+- Projects that use Person Account fields must declare the feature: set
+  `org: features: [PersonAccounts]` in `glade.yml` (or enable it in a scratch
+  definition Glade reads). Glade no longer infers `PersonAccounts` from field
+  references in source, so undeclared use now fails instead of being enabled
+  silently.
+- Custom metadata record identity preserves the owner namespace separately
+  from the metadata type's namespace, including `NamespacePrefix` and
+  `QualifiedApiName`. Owner-qualified lookup strings retain their separately
+  checked `getInstance` rules.
+- Assignment and explicit casts between unrelated concrete record-list types
+  can raise `TypeException` even for empty lists. The checked method-return
+  conversion can succeed and retains the runtime list type.
+- Ordinary Apex exceptions from platform-event subscribers during
+  `Test.stopTest()` do not fail the enclosing test; writes before the exception
+  remain visible. Retry/checkpoint handling and internal VM errors are separate.
+- Local org and platform-user identities are deterministic fixtures. The
+  default Organization ID is `00D000000000mH2`; Automated Process has a separate
+  user ID rather than the next sequential User ID. Avoid constructing expected
+  platform identities with counters.
+- Source API 43.0 and earlier has captured legacy null reads for omitted fields
+  after assigning to a queried root record. API 44.0 and later retain the
+  missing-field error. This does not extend the supported source window below
+  62.0; see [language compatibility](APEX_LANGUAGE_COMPATIBILITY.md#legacy-queried-record-reads).
+- The persistent test server now uses protocol 3. Stop the old server before
+  upgrading and restart it with the new binary. Startup cache format 14 is
+  rebuilt automatically when incompatible; see [cache and server upgrades](TEST_STARTUP_CACHE.md#upgrading-a-test-server).
+
+### Install and verify
+
+Install and verification steps are unchanged. Release archives remain available
+for macOS and Linux on AMD64 and ARM64, with `SHA256SUMS.txt`, CycloneDX SBOMs,
+and GitHub artifact attestations. Follow
+[installation and security verification](INSTALL.md#security-verification).
+Upgrade with `glade update`, then run `glade version` and
+`glade doctor --project .`. Existing `glade.yml` files use the same format;
+see [configuration](CONFIG.md) for the supported keys and timeout environment
+variable.
+
+### Known issues
+
+- Apex source API below 62.0 is unsupported, including legacy 24.0, 29.0, 36.0,
+  39.0, and 40.0 behavior. Loading older source does not establish support.
+- With no profile metadata, local custom-object CRUD and FLS defaults are more
+  permissive than Salesforce's default for a Standard User. Tests that depend on
+  Salesforce's default-deny behavior need Salesforce verification.
+- Tests that depend on hosted Experience Cloud `Network` records report
+  unsupported behavior when the required hosted configuration is missing.
+- DataWeave, ConnectApi, and Slack are excluded and unsupported.
+- Execute Anonymous remains eligible only at source API 65.0, 66.0, 67.0, and
+  68.0, independently of the wider Apex source support window.
+- The checked Salesforce release contract covers source API 62.0 through 68.0.
+  Its API 62.0 baseline release-notes inventory is one article short (1,471 of
+  1,472): the source returned HTTP 200 with no versioned content, and the
+  contract records the gap instead of an invented entry. Changes between API
+  61.0 and 62.0 are therefore not established by the checked contract.
+- Execute Anonymous output for a Flow fault omits the per-run `Error ID: n-n
+  (...)` text that Salesforce prints; `@IsTest` output matches.
+- Without project profile metadata, Glade keeps permissive custom-object
+  CRUD/FLS for its local test user; Salesforce Standard Users may have no
+  custom-object access. In captured restricted-user cases, Glade also retains
+  `Name` during `CREATABLE` stripping and reports `QueryException` for an API 67
+  plain `COUNT()` denial where Salesforce reports `System.SecurityException`.
+  Native user-mode DML is denied, and plain DML is denied at API 67 without
+  grants. See [test-user permissions](CONFIG.md#test-user-permissions).
+
+The collection-iteration case that raises `System.FinalException` matches native
+Salesforce behavior and is not a known issue.
+
+These notes describe supported local behavior. They do not establish blanket
+Salesforce parity or replace validation of hosted behavior.
 
 ## v0.2.15 - 2026-09-04
 

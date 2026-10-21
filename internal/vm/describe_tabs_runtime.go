@@ -286,12 +286,12 @@ func (vm *VM) describeTabValue(tab storage.TabMetadata) Value {
 	}
 	value.Fields["label"] = String(label)
 	if sObjectName == "" {
-		value.Fields["sObjectName"] = Null
+		value.Fields["sObjectName"] = vm.describeNonObjectTabName(tab)
 	} else {
 		sObjectName = vm.describeObjectName(sObjectName)
 		value.Fields["sObjectName"] = String(sObjectName)
 	}
-	value.Fields["custom"] = Bool(tab.Custom)
+	value.Fields["custom"] = Bool(tab.Custom || tab.Page != "" || tab.URL != "")
 	iconURL := vm.salesforceBaseURL() + describeTabIconURL(tab)
 	value.Fields["iconUrl"] = String(iconURL)
 	value.Fields["icons"] = List(describeTabIconValue(tab))
@@ -302,6 +302,24 @@ func (vm *VM) describeTabValue(tab storage.TabMetadata) Value {
 	value.Fields["mobileUrl"] = String(relativeURL)
 	value.Fields["tabEnumOrId"] = String(tab.Name)
 	return value
+}
+
+func (vm *VM) describeNonObjectTabName(tab storage.TabMetadata) Value {
+	if tab.Page != "" && vm.Org != nil {
+		for _, record := range vm.Org.Objects["ApexPage"].Records {
+			if name := record.Fields["Name"]; name.Kind == storage.ValueString && name.String == tab.Page {
+				// Page-tab names expose the deployed page's 15-character identity.
+				id := string(record.ID)
+				if len(id) >= 15 {
+					return String(id[:15])
+				}
+			}
+		}
+	}
+	if tab.URL != "" {
+		return String("000000000000000")
+	}
+	return Null
 }
 
 func describeTabURL(tab storage.TabMetadata) string {

@@ -1,0 +1,7 @@
+source_api	case	compiled	message
+62.0	missing_static	false	Variable does not exist: AbsentUtility
+67.0	missing_static	false	Variable does not exist: AbsentUtility
+62.0	missing_qualified	false	Variable does not exist: vendor.MissingUtility
+67.0	missing_qualified	false	Variable does not exist: vendor.MissingUtility
+62.0	missing_instance	false	Invalid type: AbsentUtility
+67.0	missing_instance	false	Invalid type: AbsentUtility

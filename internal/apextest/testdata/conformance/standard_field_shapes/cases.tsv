@@ -1,0 +1,7 @@
+observation	native_source_apis	routes
+Account.NumberOfEmployees	62.0,67.0	anonymous,isTest
+ContactPointAddress.BestTimeToContactEndTime	62.0,67.0	anonymous,isTest
+ContactPointAddress.PreferenceRank	62.0,67.0	anonymous,isTest
+ContactPointEmail.BestTimeToContactEndTime	62.0,67.0	anonymous,isTest
+ContactPointEmail.PreferenceRank	62.0,67.0	anonymous,isTest
+QuickText.Channel	62.0,67.0	anonymous,isTest

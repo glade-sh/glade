@@ -1,0 +1,17 @@
+<CompactLayout xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Captured compact layout</label>
+  <fields>Name</fields>
+  <fields>Type</fields>
+  <fields>Phone</fields>
+  <fields>Website</fields>
+  <fields>OwnerId</fields>
+  <fields>Site</fields>
+  <fields>Industry</fields>
+  <fields>BillingStreet</fields>
+  <fields>BillingCity</fields>
+  <fields>BillingState</fields>
+  <fields>BillingPostalCode</fields>
+  <fields>BillingCountry</fields>
+  <fields>ParentId</fields>
+  <fields>AnnualRevenue</fields>
+</CompactLayout>

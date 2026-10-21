@@ -1,0 +1,2 @@
+test_result=API 62.0 DiskScopeProbe62Test.lookupIsNullAfterParentDelete: PASS, 1 test.
+test_result=API 67.0 DiskScopeProbe67Test.lookupIsNullAfterParentDelete: PASS, 1 test.

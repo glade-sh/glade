@@ -17,7 +17,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Owned Salesforce observations at both API endpoints. CI needs no org or tools.
+// Owned Salesforce observations at API 62, 67 and 68. CI needs no org or tools.
 func TestCryptoOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected  string
@@ -35,10 +35,11 @@ func TestCryptoOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
+	// L017 remains omitted: its native fatal error bypasses catch and has a variable hosted ID.
 	if len(data.Cases) != 299 || len(data.Controls) != 20 {
 		t.Fatalf("oracle rows: %d + %d", len(data.Cases), len(data.Controls))
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle versions: %v", data.APIVersions)
 	}
 	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)
@@ -96,7 +97,7 @@ func TestCryptoOrgConformance(t *testing.T) {
 				if extra != "" {
 					files = append(files, extra)
 				}
-				return typesys.Build(project.Project{Root: root, ApexFiles: files}, gladeschema.Schema{})
+				return typesys.Build(project.Project{Root: root, ApexFiles: files, SourceAPIVersion: api}, gladeschema.Schema{})
 			}
 			index := buildIndex("")
 			if index.HasErrors() {

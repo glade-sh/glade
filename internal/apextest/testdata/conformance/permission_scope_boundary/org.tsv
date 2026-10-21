@@ -1,0 +1,9 @@
+source_api	method	observation
+62.0	baseScope	{"present":true}
+62.0	invalidScope	{"message":"Custom AccessLevel usage requires ApexUserModeWithPermset enabled in a scratch org.","type":"System.SecurityException","accepted":false}
+62.0	missingScope	{"message":"Custom AccessLevel usage requires ApexUserModeWithPermset enabled in a scratch org.","type":"System.SecurityException","accepted":false}
+62.0	nullScope	{"message":"Custom AccessLevel usage requires ApexUserModeWithPermset enabled in a scratch org.","type":"System.SecurityException","accepted":false}
+67.0	baseScope	{"present":true}
+67.0	invalidScope	{"message":"Custom AccessLevel usage requires ApexUserModeWithPermset enabled in a scratch org.","type":"System.SecurityException","accepted":false}
+67.0	missingScope	{"message":"Custom AccessLevel usage requires ApexUserModeWithPermset enabled in a scratch org.","type":"System.SecurityException","accepted":false}
+67.0	nullScope	{"message":"Custom AccessLevel usage requires ApexUserModeWithPermset enabled in a scratch org.","type":"System.SecurityException","accepted":false}

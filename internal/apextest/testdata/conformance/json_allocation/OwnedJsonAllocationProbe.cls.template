@@ -1,0 +1,42 @@
+@IsTest private class OwnedJsonAllocationProbe {
+ private static Integer constructorCalls=0;
+ private static Integer initializerCalls=0;
+ private class OwnedCtorException extends Exception {}
+ private static String initialized(){initializerCalls++;return 'owned-initial';}
+ private class PlainDto {
+  public String initial=initialized();
+  public String payload;
+  public PlainDto(){constructorCalls++;payload='owned-constructor';}
+ }
+ private class ThrowingDto {
+  public String payload;
+  public ThrowingDto(){throw new OwnedCtorException('owned-constructor');}
+ }
+ private class ThrowingInitializerDto {
+  private String absent;
+  public String payload=absent.toLowerCase();
+  public ThrowingInitializerDto(){}
+ }
+ private class ParameterDto {
+  public String payload=initialized();
+  public ParameterDto(String input){constructorCalls++;payload=input;}
+ }
+ private static Map<String,Object> observe(Boolean strict,String shape){
+ if(shape=='normal-new'){constructorCalls=0;initializerCalls=0;PlainDto normal=new PlainDto();return new Map<String,Object>{'shape'=>shape,'constructors'=>constructorCalls,'initializers'=>initializerCalls,'payload'=>normal.payload,'initial'=>normal.initial};}
+    constructorCalls=0;initializerCalls=0;
+    Map<String,Object> cell=new Map<String,Object>{'shape'=>shape,'strict'=>strict};
+    try{
+     Type target=shape=='plain'?PlainDto.class:(shape=='throwing'?ThrowingDto.class:(shape=='initializer'?ThrowingInitializerDto.class:(shape=='parameter'?ParameterDto.class:(shape=='list'?List<PlainDto>.class:Envelope.class))));
+     String body=shape=='list'?'[{"payload":"owned-json"}]':(shape=='nested'?'{"child":{"payload":"owned-json"}}':'{"payload":"owned-json"}');
+     Object value=strict?JSON.deserializeStrict(body,target):JSON.deserialize(body,target);
+     cell.put('decoded',value!=null);
+     if(shape=='plain'){PlainDto row=(PlainDto)value;cell.put('payload',row.payload);cell.put('initial',row.initial);}
+     if(shape=='throwing')cell.put('payload',((ThrowingDto)value).payload);
+     if(shape=='initializer')cell.put('payload',((ThrowingInitializerDto)value).payload);
+     if(shape=='parameter')cell.put('payload',((ParameterDto)value).payload);
+     if(shape=='list'){List<PlainDto> rows=(List<PlainDto>)value;cell.put('size',rows.size());cell.put('payload',rows[0].payload);cell.put('initial',rows[0].initial);}
+     if(shape=='nested'){Envelope row=(Envelope)value;cell.put('payload',row.child.payload);cell.put('initial',row.child.initial);}
+    }catch(Exception e){cell.put('error',e instanceof OwnedCtorException?'owned-constructor':(e instanceof NullPointerException?'NullPointerException':(e instanceof JSONException?'JSONException':'other')));}
+    cell.put('constructors',constructorCalls);cell.put('initializers',initializerCalls);return cell;
+ }
+ private class Envelope { public PlainDto child; }

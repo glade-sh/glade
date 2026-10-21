@@ -30,7 +30,7 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 		"macos-15-intel",
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
 		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
-		`go-version: "1.26.9"`,
+		`go-version: "1.26.10"`,
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
 		`node-version: "22"`,
 		"shared-payload:",
@@ -440,9 +440,9 @@ func TestReleaseBuildSharedPlatformAndDefaultModes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	api67PrepCall := "API67_PREP " + filepath.Join(root, "third_party", "lwc") + " scripts/apply-lwc-shared-api67.mjs"
-	if got := strings.Count(string(npmBefore), api67PrepCall); got != 2 {
-		t.Fatalf("API 67 preparation calls from the LWC root after two shared-payload builds = %d, want 2\n%s", got, npmBefore)
+	lwcPrepCall := "LWC_SHARED_PREP " + filepath.Join(root, "third_party", "lwc") + " scripts/prepare-lwc-shared.mjs"
+	if got := strings.Count(string(npmBefore), lwcPrepCall); got != 2 {
+		t.Fatalf("LWC shared preparation calls from the LWC root after two shared-payload builds = %d, want 2\n%s", got, npmBefore)
 	}
 
 	platformDist := filepath.Join(root, "platform-dist")
@@ -493,12 +493,12 @@ func TestReleaseBuildSharedPlatformAndDefaultModes(t *testing.T) {
 
 	defaultDist := filepath.Join(root, "default-dist")
 	runReleaseBuildFixture(t, root, script, npmLog, defaultDist, "", false, nil)
-	api67Log, err := os.ReadFile(npmLog)
+	prepLog, err := os.ReadFile(npmLog)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Count(string(api67Log), api67PrepCall); got != 3 {
-		t.Fatalf("API 67 preparation calls from the LWC root after default build = %d, want 3\n%s", got, api67Log)
+	if got := strings.Count(string(prepLog), lwcPrepCall); got != 3 {
+		t.Fatalf("LWC shared preparation calls from the LWC root after default build = %d, want 3\n%s", got, prepLog)
 	}
 	defaultArchive := filepath.Join(defaultDist, "glade_vtest_linux_amd64.tar.gz")
 	if info, err := os.Stat(defaultArchive); err != nil || info.Size() == 0 {
@@ -530,7 +530,7 @@ func TestReleaseBuildRejectsDirtyWorktree(t *testing.T) {
 	out := runReleaseBuildFixtureError(t, root, script, npmLog, filepath.Join(root, "platform-dist"), map[string]string{
 		"RELEASE_SHARED_PAYLOAD_ARCHIVE": filepath.Join(payloadDist, "glade-shared-payload.tar.gz"),
 		"RELEASE_SHARED_PAYLOAD_SHA256":  filepath.Join(payloadDist, "glade-shared-payload.tar.gz.sha256"),
-		"FAKE_GIT_STATUS":                 "?? .release-shared/payload.tar.gz\n",
+		"FAKE_GIT_STATUS":                "?? .release-shared/payload.tar.gz\n",
 	})
 	if !strings.Contains(out, "release build requires a clean Git worktree") {
 		t.Fatalf("dirty-worktree rejection lacked release diagnostic:\n%s", out)
@@ -813,16 +813,16 @@ PY
 fi
 `)
 	// This fixture uses a synthetic LWC package and npm tree, not the pinned
-	// @lwc/shared package that the standalone API 67 applier tests exercise.
+	// @lwc/shared package that the standalone preparation script tests exercise.
 	// Stub only that exact preparation command so the release-mode test remains
 	// hermetic while verifying the builder invokes it in the correct directory.
 	writeExecutable(t, filepath.Join(binDir, "node"), `#!/usr/bin/env bash
 set -euo pipefail
-if [[ "$#" != "1" || "$1" != "scripts/apply-lwc-shared-api67.mjs" ]]; then
+if [[ "$#" != "1" || "$1" != "scripts/prepare-lwc-shared.mjs" ]]; then
   echo "unexpected node invocation: $*" >&2
   exit 2
 fi
-printf 'API67_PREP %s %s\n' "$PWD" "$*" >> "${FAKE_NPM_LOG}"
+printf 'LWC_SHARED_PREP %s %s\n' "$PWD" "$*" >> "${FAKE_NPM_LOG}"
 `)
 	fakeGlade := filepath.Join(root, "fake-glade")
 	writeExecutable(t, fakeGlade, `#!/usr/bin/env bash

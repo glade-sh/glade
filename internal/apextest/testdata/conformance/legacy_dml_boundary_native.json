@@ -1,0 +1,557 @@
+{
+  "nativeObservationCount": 6,
+  "sources": {
+    "helper59-test64": {
+      "testApi": "64.0",
+      "files": {
+        "force-app/main/default/classes/OwnedLegacyAsync59.cls": {
+          "source": "public class OwnedLegacyAsync59 {\n public static List<String> callbacks=new List<String>();\n public static List<Database.SaveResult> send(List<SObject> draft,AccessLevel mode) {\n  return Database.insertAsync(draft,new OwnedLegacyCallback59(),mode);\n }\n public static Map<String,Object> snapshot(List<Database.SaveResult> results,List<SObject> draft,String label) {\n  List<Object> rows=new List<Object>();\n  for(Database.SaveResult saved:results){\n   Map<String,Object> row=new Map<String,Object>();\n   try{row.put('raw',JSON.serialize(saved));}catch(Exception e){row.put('rawException',e.getTypeName()+'|'+e.getMessage());}\n   try{row.put('success',saved.isSuccess());row.put('id',saved.getId());}catch(Exception e){row.put('resultException',e.getTypeName()+'|'+e.getMessage());}\n   try{List<Object> errors=new List<Object>();List<Database.Error> es=saved.getErrors();row.put('errorsNull',es==null);if(es!=null){for(Database.Error error:es){errors.add(new Map<String,Object>{'statusCode'=>String.valueOf(error.getStatusCode()),'message'=>error.getMessage(),'fields'=>error.getFields()});}}row.put('errors',errors);}catch(Exception e){row.put('errorsException',e.getTypeName()+'|'+e.getMessage());}\n   try{row.put('asyncLocator',Database.getAsyncLocator(saved));}catch(Exception e){row.put('locatorException',e.getTypeName()+'|'+e.getMessage());}\n   rows.add(row);\n  }\n  List<Object> inputIds=new List<Object>();for(SObject input:draft){inputIds.add(input.Id);}\n  List<String> callbackCopy=new List<String>();callbackCopy.addAll(callbacks);\n  return new Map<String,Object>{'resultCount'=>results.size(),'results'=>rows,'inputIds'=>inputIds,'callbackCount'=>callbackCopy.size(),'callbacks'=>callbackCopy,'ownedRows'=>[SELECT COUNT() FROM Account WHERE Name=:label],'dmlStatements'=>Limits.getDmlStatements(),'dmlRows'=>Limits.getDmlRows()};\n }\n\n public static Map<String,Object> observe(String kind) {\n  String label='OwnedLegacyAsync';\n  List<SObject> draft=new List<SObject>{new Account(Name=label)};\n  if(kind=='PUBLISH59')draft=new List<SObject>{new BatchApexErrorEvent()};\n  List<Database.SaveResult> results=new List<Database.SaveResult>();\n  callbacks.clear();\n  Map<String,Object> beforeCall=snapshot(results,draft,label);\n  Test.startTest();\n  String callException=null;\n  try {\n   if(kind=='PUBLISH59')results=EventBus.publish(draft);\n   else results=send(draft,kind=='INSERT59_USER'?AccessLevel.USER_MODE:AccessLevel.SYSTEM_MODE);\n  }catch(Exception e){callException=e.getTypeName()+'|'+e.getMessage();}\n  Map<String,Object> immediate=snapshot(results,draft,label);immediate.put('callException',callException);\n  String stopException=null;\n  try{Test.stopTest();}catch(Exception e){stopException=e.getTypeName()+'|'+e.getMessage();}\n  Map<String,Object> afterStop=snapshot(results,draft,label);afterStop.put('stopException',stopException);\n  return new Map<String,Object>{'row'=>kind,'beforeCall'=>beforeCall,'immediate'=>immediate,'afterStop'=>afterStop};\n }\n}\n",
+          "sha256": "baa879a665b99b8951147f4cb1f6ddad51a5d6fc75b20451e4bc389a56dd2c02"
+        },
+        "force-app/main/default/classes/OwnedLegacyAsync59.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "a8105ac01bbc2a3daffc58af3a6a94c7f90724796a45677c121de40796aba306"
+        },
+        "force-app/main/default/classes/OwnedLegacyAsyncTest64.cls": {
+          "source": "@IsTest private class OwnedLegacyAsyncTest64{\n@IsTest static void observe1(){System.assert(false,'NATIVE_RESULT|INSERT59_USER|'+JSON.serialize(OwnedLegacyAsync59.observe('INSERT59_USER')));}\n@IsTest static void observe2(){System.assert(false,'NATIVE_RESULT|INSERT59_SYSTEM|'+JSON.serialize(OwnedLegacyAsync59.observe('INSERT59_SYSTEM')));}\n@IsTest static void observe3(){System.assert(false,'NATIVE_RESULT|PUBLISH59|'+JSON.serialize(OwnedLegacyAsync59.observe('PUBLISH59')));}\n}\n",
+          "sha256": "f86e6e9179d62e720b29ad58f8740c4994a3faf6373ca0b619c66bd5af51ebd2"
+        },
+        "force-app/main/default/classes/OwnedLegacyAsyncTest64.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4"
+        },
+        "force-app/main/default/classes/OwnedLegacyCallback59.cls": {
+          "source": "public class OwnedLegacyCallback59 extends DataSource.AsyncSaveCallback {\n public override void processSave(Database.SaveResult saved) {\n  String observation=JSON.serialize(saved);\n  OwnedLegacyAsync59.callbacks.add(observation);\n  System.debug(LoggingLevel.ERROR,'OWNED_ASYNC_CALLBACK64|'+observation);\n }\n}",
+          "sha256": "68592bd43cd444482514345e015d4ee9b58819b67915a78afeebb0fa67495723"
+        },
+        "force-app/main/default/classes/OwnedLegacyCallback59.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "a8105ac01bbc2a3daffc58af3a6a94c7f90724796a45677c121de40796aba306"
+        },
+        "sfdx-project.json": {
+          "source": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"64.0\"}\n",
+          "sha256": "73145065356bfbedbf50c0073e9904047e3a8cefa4500f1a984e49665e6335eb"
+        }
+      }
+    },
+    "publish59-retry1": {
+      "testApi": "64.0",
+      "files": {
+        "force-app/main/default/classes/OwnedLegacyPublish59.cls": {
+          "source": "public class OwnedLegacyPublish59 {\n public static Map<String,Object> snapshot(List<Database.SaveResult> results) {\n  List<Object> rows=new List<Object>();\n  for(Database.SaveResult saved:results) {\n   List<Object> errors=new List<Object>();List<Database.Error> es=saved.getErrors();\n   if(es!=null)for(Database.Error e:es)errors.add(new Map<String,Object>{'statusCode'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});\n   rows.add(new Map<String,Object>{'success'=>saved.isSuccess(),'id'=>saved.getId(),'errorsNull'=>es==null,'errors'=>errors,'raw'=>JSON.serialize(saved)});\n  }\n  return new Map<String,Object>{'resultCount'=>results.size(),'results'=>rows,'dmlStatements'=>Limits.getDmlStatements(),'dmlRows'=>Limits.getDmlRows()};\n }\n public static Map<String,Object> observe() {\n  List<SObject> events=new List<SObject>{new BatchApexErrorEvent()};\n  List<Database.SaveResult> results=new List<Database.SaveResult>();\n  Map<String,Object> beforeCall=snapshot(results);\n  Test.startTest();String callException=null;\n  try{results=EventBus.publish(events);}catch(Exception e){callException=e.getTypeName()+'|'+e.getMessage();}\n  Map<String,Object> immediate=snapshot(results);immediate.put('callException',callException);\n  String stopException=null;try{Test.stopTest();}catch(Exception e){stopException=e.getTypeName()+'|'+e.getMessage();}\n  Map<String,Object> afterStop=snapshot(results);afterStop.put('stopException',stopException);\n  return new Map<String,Object>{'row'=>'PUBLISH59','beforeCall'=>beforeCall,'immediate'=>immediate,'afterStop'=>afterStop};\n }\n}",
+          "sha256": "7b118b7dec8aac1b45ab31becffc277e08faaed90ebacb792b979c45285323f8"
+        },
+        "force-app/main/default/classes/OwnedLegacyPublish59.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "a8105ac01bbc2a3daffc58af3a6a94c7f90724796a45677c121de40796aba306"
+        },
+        "force-app/main/default/classes/OwnedLegacyPublishTest64.cls": {
+          "source": "@IsTest private class OwnedLegacyPublishTest64{@IsTest static void observe(){System.assert(false,'NATIVE_RESULT|PUBLISH59|'+JSON.serialize(OwnedLegacyPublish59.observe()));}}",
+          "sha256": "fff16550a6849628a79f6194eca36670b86c809414e200885c61fdcac2bebb4a"
+        },
+        "force-app/main/default/classes/OwnedLegacyPublishTest64.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4"
+        },
+        "sfdx-project.json": {
+          "source": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"64.0\"}\n",
+          "sha256": "73145065356bfbedbf50c0073e9904047e3a8cefa4500f1a984e49665e6335eb"
+        }
+      }
+    },
+    "helper60-test64": {
+      "testApi": "64.0",
+      "files": {
+        "force-app/main/default/classes/OwnedBoundaryAsync60.cls": {
+          "source": "public class OwnedBoundaryAsync60 {\n public static List<String> callbacks=new List<String>();\n public static List<Database.SaveResult> send(List<SObject> draft,AccessLevel mode) {\n  return Database.insertAsync(draft,new OwnedBoundaryCallback60(),mode);\n }\n public static Map<String,Object> snapshot(List<Database.SaveResult> results,List<SObject> draft,String label) {\n  List<Object> rows=new List<Object>();\n  for(Database.SaveResult saved:results){\n   Map<String,Object> row=new Map<String,Object>();\n   try{row.put('raw',JSON.serialize(saved));}catch(Exception e){row.put('rawException',e.getTypeName()+'|'+e.getMessage());}\n   try{row.put('success',saved.isSuccess());row.put('id',saved.getId());}catch(Exception e){row.put('resultException',e.getTypeName()+'|'+e.getMessage());}\n   try{List<Object> errors=new List<Object>();List<Database.Error> es=saved.getErrors();row.put('errorsNull',es==null);if(es!=null){for(Database.Error error:es){errors.add(new Map<String,Object>{'statusCode'=>String.valueOf(error.getStatusCode()),'message'=>error.getMessage(),'fields'=>error.getFields()});}}row.put('errors',errors);}catch(Exception e){row.put('errorsException',e.getTypeName()+'|'+e.getMessage());}\n   try{row.put('asyncLocator',Database.getAsyncLocator(saved));}catch(Exception e){row.put('locatorException',e.getTypeName()+'|'+e.getMessage());}\n   rows.add(row);\n  }\n  List<Object> inputIds=new List<Object>();for(SObject input:draft){inputIds.add(input.Id);}\n  List<String> callbackCopy=new List<String>();callbackCopy.addAll(callbacks);\n  return new Map<String,Object>{'resultCount'=>results.size(),'results'=>rows,'inputIds'=>inputIds,'callbackCount'=>callbackCopy.size(),'callbacks'=>callbackCopy,'ownedRows'=>[SELECT COUNT() FROM Account WHERE Name=:label],'dmlStatements'=>Limits.getDmlStatements(),'dmlRows'=>Limits.getDmlRows()};\n }\n\n public static Map<String,Object> observe(String kind) {\n  String label='OwnedLegacyAsync';\n  List<SObject> draft=new List<SObject>{new Account(Name=label)};\n  if(kind=='PUBLISH59')draft=new List<SObject>{new BatchApexErrorEvent()};\n  List<Database.SaveResult> results=new List<Database.SaveResult>();\n  callbacks.clear();\n  Map<String,Object> beforeCall=snapshot(results,draft,label);\n  Test.startTest();\n  String callException=null;\n  try {\n   if(kind=='PUBLISH59')results=EventBus.publish(draft);\n   else results=send(draft,kind=='INSERT60_USER'?AccessLevel.USER_MODE:AccessLevel.SYSTEM_MODE);\n  }catch(Exception e){callException=e.getTypeName()+'|'+e.getMessage();}\n  Map<String,Object> immediate=snapshot(results,draft,label);immediate.put('callException',callException);\n  String stopException=null;\n  try{Test.stopTest();}catch(Exception e){stopException=e.getTypeName()+'|'+e.getMessage();}\n  Map<String,Object> afterStop=snapshot(results,draft,label);afterStop.put('stopException',stopException);\n  return new Map<String,Object>{'row'=>kind,'beforeCall'=>beforeCall,'immediate'=>immediate,'afterStop'=>afterStop};\n }\n}\n",
+          "sha256": "407b18d833ca1d56ffc0a98a31c88d1fac6a08c0f42e2e95d77e0915c01d4a79"
+        },
+        "force-app/main/default/classes/OwnedBoundaryAsync60.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>60.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "f250d93bf3c572045d819c12bd15e08e1219d9631641a123e09eba77a00dc3ce"
+        },
+        "force-app/main/default/classes/OwnedBoundaryCallback60.cls": {
+          "source": "public class OwnedBoundaryCallback60 extends DataSource.AsyncSaveCallback {\n public override void processSave(Database.SaveResult saved) {\n  String observation=JSON.serialize(saved);\n  OwnedBoundaryAsync60.callbacks.add(observation);\n  System.debug(LoggingLevel.ERROR,'OWNED_ASYNC_CALLBACK64|'+observation);\n }\n}",
+          "sha256": "f82937694fc450208045142edaede9d80e52bfd0cffd626f4b538c76ffa85957"
+        },
+        "force-app/main/default/classes/OwnedBoundaryCallback60.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>60.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "f250d93bf3c572045d819c12bd15e08e1219d9631641a123e09eba77a00dc3ce"
+        },
+        "force-app/main/default/classes/OwnedBoundaryPublish60.cls": {
+          "source": "public class OwnedBoundaryPublish60 {\n public static Map<String,Object> snapshot(List<Database.SaveResult> results) {\n  List<Object> rows=new List<Object>();\n  for(Database.SaveResult saved:results) {\n   List<Object> errors=new List<Object>();List<Database.Error> es=saved.getErrors();\n   if(es!=null)for(Database.Error e:es)errors.add(new Map<String,Object>{'statusCode'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});\n   rows.add(new Map<String,Object>{'success'=>saved.isSuccess(),'id'=>saved.getId(),'errorsNull'=>es==null,'errors'=>errors,'raw'=>JSON.serialize(saved)});\n  }\n  return new Map<String,Object>{'resultCount'=>results.size(),'results'=>rows,'dmlStatements'=>Limits.getDmlStatements(),'dmlRows'=>Limits.getDmlRows()};\n }\n public static Map<String,Object> observe() {\n  List<SObject> events=new List<SObject>{new BatchApexErrorEvent()};\n  List<Database.SaveResult> results=new List<Database.SaveResult>();\n  Map<String,Object> beforeCall=snapshot(results);\n  Test.startTest();String callException=null;\n  try{results=EventBus.publish(events);}catch(Exception e){callException=e.getTypeName()+'|'+e.getMessage();}\n  Map<String,Object> immediate=snapshot(results);immediate.put('callException',callException);\n  String stopException=null;try{Test.stopTest();}catch(Exception e){stopException=e.getTypeName()+'|'+e.getMessage();}\n  Map<String,Object> afterStop=snapshot(results);afterStop.put('stopException',stopException);\n  return new Map<String,Object>{'row'=>'PUBLISH60','beforeCall'=>beforeCall,'immediate'=>immediate,'afterStop'=>afterStop};\n }\n}",
+          "sha256": "717cc318d10578123296aa3a5ffefe928f3a6f4b559d502d832324526a9e15d1"
+        },
+        "force-app/main/default/classes/OwnedBoundaryPublish60.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>60.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "f250d93bf3c572045d819c12bd15e08e1219d9631641a123e09eba77a00dc3ce"
+        },
+        "force-app/main/default/classes/OwnedBoundaryTest64.cls": {
+          "source": "@IsTest private class OwnedBoundaryTest64 {\n @IsTest static void observe1(){System.assert(false,'NATIVE_RESULT|INSERT60_USER|'+JSON.serialize(OwnedBoundaryAsync60.observe('INSERT60_USER')));}\n @IsTest static void observe2(){System.assert(false,'NATIVE_RESULT|INSERT60_SYSTEM|'+JSON.serialize(OwnedBoundaryAsync60.observe('INSERT60_SYSTEM')));}\n @IsTest static void observe3(){System.assert(false,'NATIVE_RESULT|PUBLISH60|'+JSON.serialize(OwnedBoundaryPublish60.observe()));}\n}",
+          "sha256": "505d979986d39b62594b09ebc5ce6d7e307c9c24ce3752f45658b3642a369a3d"
+        },
+        "force-app/main/default/classes/OwnedBoundaryTest64.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4"
+        },
+        "sfdx-project.json": {
+          "source": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"64.0\"}\n",
+          "sha256": "73145065356bfbedbf50c0073e9904047e3a8cefa4500f1a984e49665e6335eb"
+        }
+      }
+    }
+  },
+  "nativeFilesSha256": {
+    "ORG-RUN.txt": "8808ba3ef449a4c0f753cdd0a8d3a9a2c6443edf08c236d1c996ef89cd625bcb",
+    "boundary60-deploy.json": "8310301990fe27f95139f45a9fb05fa4978135b608f588c22e29c8e4795cb001",
+    "boundary60-isTest.json": "048a6e2a9d17dced538ae058b3768720b594376f0b5318c7e5ef242dfca22ef3",
+    "cases.json": "06e6128e415612f6412678952a7379c461d64b2610e3938a78bafa12426af1be",
+    "deploy64.json": "49ca790ee26ad413bf3351dd4bf7892f3d09d7f7650b7c03a474e5df9c7b3639",
+    "helper59-test64/force-app/main/default/classes/OwnedLegacyAsync59.cls": "baa879a665b99b8951147f4cb1f6ddad51a5d6fc75b20451e4bc389a56dd2c02",
+    "helper59-test64/force-app/main/default/classes/OwnedLegacyAsync59.cls-meta.xml": "a8105ac01bbc2a3daffc58af3a6a94c7f90724796a45677c121de40796aba306",
+    "helper59-test64/force-app/main/default/classes/OwnedLegacyAsyncTest64.cls": "f86e6e9179d62e720b29ad58f8740c4994a3faf6373ca0b619c66bd5af51ebd2",
+    "helper59-test64/force-app/main/default/classes/OwnedLegacyAsyncTest64.cls-meta.xml": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+    "helper59-test64/force-app/main/default/classes/OwnedLegacyCallback59.cls": "68592bd43cd444482514345e015d4ee9b58819b67915a78afeebb0fa67495723",
+    "helper59-test64/force-app/main/default/classes/OwnedLegacyCallback59.cls-meta.xml": "a8105ac01bbc2a3daffc58af3a6a94c7f90724796a45677c121de40796aba306",
+    "helper59-test64/sfdx-project.json": "73145065356bfbedbf50c0073e9904047e3a8cefa4500f1a984e49665e6335eb",
+    "helper60-test64/force-app/main/default/classes/OwnedBoundaryAsync60.cls": "407b18d833ca1d56ffc0a98a31c88d1fac6a08c0f42e2e95d77e0915c01d4a79",
+    "helper60-test64/force-app/main/default/classes/OwnedBoundaryAsync60.cls-meta.xml": "f250d93bf3c572045d819c12bd15e08e1219d9631641a123e09eba77a00dc3ce",
+    "helper60-test64/force-app/main/default/classes/OwnedBoundaryCallback60.cls": "f82937694fc450208045142edaede9d80e52bfd0cffd626f4b538c76ffa85957",
+    "helper60-test64/force-app/main/default/classes/OwnedBoundaryCallback60.cls-meta.xml": "f250d93bf3c572045d819c12bd15e08e1219d9631641a123e09eba77a00dc3ce",
+    "helper60-test64/force-app/main/default/classes/OwnedBoundaryPublish60.cls": "717cc318d10578123296aa3a5ffefe928f3a6f4b559d502d832324526a9e15d1",
+    "helper60-test64/force-app/main/default/classes/OwnedBoundaryPublish60.cls-meta.xml": "f250d93bf3c572045d819c12bd15e08e1219d9631641a123e09eba77a00dc3ce",
+    "helper60-test64/force-app/main/default/classes/OwnedBoundaryTest64.cls": "505d979986d39b62594b09ebc5ce6d7e307c9c24ce3752f45658b3642a369a3d",
+    "helper60-test64/force-app/main/default/classes/OwnedBoundaryTest64.cls-meta.xml": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+    "helper60-test64/sfdx-project.json": "73145065356bfbedbf50c0073e9904047e3a8cefa4500f1a984e49665e6335eb",
+    "isTest64.json": "35a3bc60dc90cc2ecae53c137f5483ea3f4e3768a1dba4d4b5cc80ff869bd0d6",
+    "org.tsv": "6330a688373101ae5ab9465e15ee532fd842a0edb0ff90a9a58128ca79c1ac72",
+    "publish59-deploy-retry1.json": "4e3699d92ef7e0efc91edc6b8b1e21f0714f995f53073177223c09ea4aa1ed6f",
+    "publish59-isTest-retry1.json": "1e46f69adc1a1a0adc188bcc438359c169ec933339b13dc08310c0998e54aa70",
+    "publish59-retry1/force-app/main/default/classes/OwnedLegacyPublish59.cls": "7b118b7dec8aac1b45ab31becffc277e08faaed90ebacb792b979c45285323f8",
+    "publish59-retry1/force-app/main/default/classes/OwnedLegacyPublish59.cls-meta.xml": "a8105ac01bbc2a3daffc58af3a6a94c7f90724796a45677c121de40796aba306",
+    "publish59-retry1/force-app/main/default/classes/OwnedLegacyPublishTest64.cls": "fff16550a6849628a79f6194eca36670b86c809414e200885c61fdcac2bebb4a",
+    "publish59-retry1/force-app/main/default/classes/OwnedLegacyPublishTest64.cls-meta.xml": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+    "publish59-retry1/sfdx-project.json": "73145065356bfbedbf50c0073e9904047e3a8cefa4500f1a984e49665e6335eb"
+  },
+  "rows": [
+    {
+      "id": "INSERT59_USER",
+      "sourceGroup": "helper59-test64",
+      "helperClass": "OwnedLegacyAsync59",
+      "helperApi": "59.0",
+      "className": "OwnedLegacyAsyncTest64",
+      "methodName": "observe1",
+      "runtimeApi": "68.0",
+      "evidenceSha256": "35a3bc60dc90cc2ecae53c137f5483ea3f4e3768a1dba4d4b5cc80ff869bd0d6",
+      "nativeMessage": "System.AssertException: Assertion Failed: NATIVE_RESULT|INSERT59_USER|{\"afterStop\":{\"stopException\":null,\"dmlRows\":0,\"dmlStatements\":0,\"ownedRows\":0,\"callbacks\":[],\"callbackCount\":0,\"inputIds\":[null],\"results\":[{\"asyncLocator\":null,\"errors\":[{\"fields\":[],\"message\":\"Asynchronous DML not allowed on Account\",\"statusCode\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\"}],\"errorsNull\":false,\"id\":null,\"success\":false,\"raw\":\"{\\\"success\\\":false,\\\"errors\\\":[{\\\"statusCode\\\":\\\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\\\",\\\"message\\\":\\\"Asynchronous DML not allowed on Account\\\",\\\"fields\\\":[]}]}\"}],\"resultCount\":1},\"immediate\":{\"callException\":null,\"dmlRows\":1,\"dmlStatements\":1,\"ownedRows\":0,\"callbacks\":[],\"callbackCount\":0,\"inputIds\":[null],\"results\":[{\"asyncLocator\":null,\"errors\":[{\"fields\":[],\"message\":\"Asynchronous DML not allowed on Account\",\"statusCode\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\"}],\"errorsNull\":false,\"id\":null,\"success\":false,\"raw\":\"{\\\"success\\\":false,\\\"errors\\\":[{\\\"statusCode\\\":\\\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\\\",\\\"message\\\":\\\"Asynchronous DML not allowed on Account\\\",\\\"fields\\\":[]}]}\"}],\"resultCount\":1},\"beforeCall\":{\"dmlRows\":0,\"dmlStatements\":0,\"ownedRows\":0,\"callbacks\":[],\"callbackCount\":0,\"inputIds\":[null],\"results\":[],\"resultCount\":0},\"row\":\"INSERT59_USER\"}",
+      "native": {
+        "afterStop": {
+          "stopException": null,
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "ownedRows": 0,
+          "callbacks": [],
+          "callbackCount": 0,
+          "inputIds": [
+            null
+          ],
+          "results": [
+            {
+              "asyncLocator": null,
+              "errors": [
+                {
+                  "fields": [],
+                  "message": "Asynchronous DML not allowed on Account",
+                  "statusCode": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"
+                }
+              ],
+              "errorsNull": false,
+              "id": null,
+              "success": false,
+              "raw": "{\"success\":false,\"errors\":[{\"statusCode\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\",\"message\":\"Asynchronous DML not allowed on Account\",\"fields\":[]}]}"
+            }
+          ],
+          "resultCount": 1
+        },
+        "immediate": {
+          "callException": null,
+          "dmlRows": 1,
+          "dmlStatements": 1,
+          "ownedRows": 0,
+          "callbacks": [],
+          "callbackCount": 0,
+          "inputIds": [
+            null
+          ],
+          "results": [
+            {
+              "asyncLocator": null,
+              "errors": [
+                {
+                  "fields": [],
+                  "message": "Asynchronous DML not allowed on Account",
+                  "statusCode": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"
+                }
+              ],
+              "errorsNull": false,
+              "id": null,
+              "success": false,
+              "raw": "{\"success\":false,\"errors\":[{\"statusCode\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\",\"message\":\"Asynchronous DML not allowed on Account\",\"fields\":[]}]}"
+            }
+          ],
+          "resultCount": 1
+        },
+        "beforeCall": {
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "ownedRows": 0,
+          "callbacks": [],
+          "callbackCount": 0,
+          "inputIds": [
+            null
+          ],
+          "results": [],
+          "resultCount": 0
+        },
+        "row": "INSERT59_USER"
+      }
+    },
+    {
+      "id": "INSERT59_SYSTEM",
+      "sourceGroup": "helper59-test64",
+      "helperClass": "OwnedLegacyAsync59",
+      "helperApi": "59.0",
+      "className": "OwnedLegacyAsyncTest64",
+      "methodName": "observe2",
+      "runtimeApi": "68.0",
+      "evidenceSha256": "35a3bc60dc90cc2ecae53c137f5483ea3f4e3768a1dba4d4b5cc80ff869bd0d6",
+      "nativeMessage": "System.AssertException: Assertion Failed: NATIVE_RESULT|INSERT59_SYSTEM|{\"afterStop\":{\"stopException\":null,\"dmlRows\":0,\"dmlStatements\":0,\"ownedRows\":0,\"callbacks\":[],\"callbackCount\":0,\"inputIds\":[null],\"results\":[{\"asyncLocator\":null,\"errors\":[{\"fields\":[],\"message\":\"Asynchronous DML not allowed on Account\",\"statusCode\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\"}],\"errorsNull\":false,\"id\":null,\"success\":false,\"raw\":\"{\\\"success\\\":false,\\\"errors\\\":[{\\\"statusCode\\\":\\\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\\\",\\\"message\\\":\\\"Asynchronous DML not allowed on Account\\\",\\\"fields\\\":[]}]}\"}],\"resultCount\":1},\"immediate\":{\"callException\":null,\"dmlRows\":1,\"dmlStatements\":1,\"ownedRows\":0,\"callbacks\":[],\"callbackCount\":0,\"inputIds\":[null],\"results\":[{\"asyncLocator\":null,\"errors\":[{\"fields\":[],\"message\":\"Asynchronous DML not allowed on Account\",\"statusCode\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\"}],\"errorsNull\":false,\"id\":null,\"success\":false,\"raw\":\"{\\\"success\\\":false,\\\"errors\\\":[{\\\"statusCode\\\":\\\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\\\",\\\"message\\\":\\\"Asynchronous DML not allowed on Account\\\",\\\"fields\\\":[]}]}\"}],\"resultCount\":1},\"beforeCall\":{\"dmlRows\":0,\"dmlStatements\":0,\"ownedRows\":0,\"callbacks\":[],\"callbackCount\":0,\"inputIds\":[null],\"results\":[],\"resultCount\":0},\"row\":\"INSERT59_SYSTEM\"}",
+      "native": {
+        "afterStop": {
+          "stopException": null,
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "ownedRows": 0,
+          "callbacks": [],
+          "callbackCount": 0,
+          "inputIds": [
+            null
+          ],
+          "results": [
+            {
+              "asyncLocator": null,
+              "errors": [
+                {
+                  "fields": [],
+                  "message": "Asynchronous DML not allowed on Account",
+                  "statusCode": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"
+                }
+              ],
+              "errorsNull": false,
+              "id": null,
+              "success": false,
+              "raw": "{\"success\":false,\"errors\":[{\"statusCode\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\",\"message\":\"Asynchronous DML not allowed on Account\",\"fields\":[]}]}"
+            }
+          ],
+          "resultCount": 1
+        },
+        "immediate": {
+          "callException": null,
+          "dmlRows": 1,
+          "dmlStatements": 1,
+          "ownedRows": 0,
+          "callbacks": [],
+          "callbackCount": 0,
+          "inputIds": [
+            null
+          ],
+          "results": [
+            {
+              "asyncLocator": null,
+              "errors": [
+                {
+                  "fields": [],
+                  "message": "Asynchronous DML not allowed on Account",
+                  "statusCode": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"
+                }
+              ],
+              "errorsNull": false,
+              "id": null,
+              "success": false,
+              "raw": "{\"success\":false,\"errors\":[{\"statusCode\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\",\"message\":\"Asynchronous DML not allowed on Account\",\"fields\":[]}]}"
+            }
+          ],
+          "resultCount": 1
+        },
+        "beforeCall": {
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "ownedRows": 0,
+          "callbacks": [],
+          "callbackCount": 0,
+          "inputIds": [
+            null
+          ],
+          "results": [],
+          "resultCount": 0
+        },
+        "row": "INSERT59_SYSTEM"
+      }
+    },
+    {
+      "id": "PUBLISH59",
+      "sourceGroup": "publish59-retry1",
+      "helperClass": "OwnedLegacyPublish59",
+      "helperApi": "59.0",
+      "className": "OwnedLegacyPublishTest64",
+      "methodName": "observe",
+      "runtimeApi": "68.0",
+      "evidenceSha256": "1e46f69adc1a1a0adc188bcc438359c169ec933339b13dc08310c0998e54aa70",
+      "nativeMessage": "System.AssertException: Assertion Failed: NATIVE_RESULT|PUBLISH59|{\"afterStop\":{\"stopException\":null,\"dmlRows\":0,\"dmlStatements\":0,\"results\":[{\"raw\":\"{\\\"id\\\":\\\"1QQxx0000000001GAA\\\",\\\"success\\\":true,\\\"errors\\\":[{\\\"statusCode\\\":\\\"OPERATION_ENQUEUED\\\",\\\"message\\\":\\\"030830a8-df84-44fd-9381-0109b2251544\\\",\\\"fields\\\":[]}]}\",\"errors\":[{\"fields\":[],\"message\":\"030830a8-df84-44fd-9381-0109b2251544\",\"statusCode\":\"OPERATION_ENQUEUED\"}],\"errorsNull\":false,\"id\":\"1QQxx0000000001GAA\",\"success\":true}],\"resultCount\":1},\"immediate\":{\"callException\":null,\"dmlRows\":1,\"dmlStatements\":1,\"results\":[{\"raw\":\"{\\\"id\\\":\\\"1QQxx0000000001GAA\\\",\\\"success\\\":true,\\\"errors\\\":[{\\\"statusCode\\\":\\\"OPERATION_ENQUEUED\\\",\\\"message\\\":\\\"030830a8-df84-44fd-9381-0109b2251544\\\",\\\"fields\\\":[]}]}\",\"errors\":[{\"fields\":[],\"message\":\"030830a8-df84-44fd-9381-0109b2251544\",\"statusCode\":\"OPERATION_ENQUEUED\"}],\"errorsNull\":false,\"id\":\"1QQxx0000000001GAA\",\"success\":true}],\"resultCount\":1},\"beforeCall\":{\"dmlRows\":0,\"dmlStatements\":0,\"results\":[],\"resultCount\":0},\"row\":\"PUBLISH59\"}",
+      "native": {
+        "afterStop": {
+          "stopException": null,
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "results": [
+            {
+              "raw": "{\"id\":\"1QQxx0000000001GAA\",\"success\":true,\"errors\":[{\"statusCode\":\"OPERATION_ENQUEUED\",\"message\":\"030830a8-df84-44fd-9381-0109b2251544\",\"fields\":[]}]}",
+              "errors": [
+                {
+                  "fields": [],
+                  "message": "030830a8-df84-44fd-9381-0109b2251544",
+                  "statusCode": "OPERATION_ENQUEUED"
+                }
+              ],
+              "errorsNull": false,
+              "id": "1QQxx0000000001GAA",
+              "success": true
+            }
+          ],
+          "resultCount": 1
+        },
+        "immediate": {
+          "callException": null,
+          "dmlRows": 1,
+          "dmlStatements": 1,
+          "results": [
+            {
+              "raw": "{\"id\":\"1QQxx0000000001GAA\",\"success\":true,\"errors\":[{\"statusCode\":\"OPERATION_ENQUEUED\",\"message\":\"030830a8-df84-44fd-9381-0109b2251544\",\"fields\":[]}]}",
+              "errors": [
+                {
+                  "fields": [],
+                  "message": "030830a8-df84-44fd-9381-0109b2251544",
+                  "statusCode": "OPERATION_ENQUEUED"
+                }
+              ],
+              "errorsNull": false,
+              "id": "1QQxx0000000001GAA",
+              "success": true
+            }
+          ],
+          "resultCount": 1
+        },
+        "beforeCall": {
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "results": [],
+          "resultCount": 0
+        },
+        "row": "PUBLISH59"
+      }
+    },
+    {
+      "id": "INSERT60_USER",
+      "sourceGroup": "helper60-test64",
+      "helperClass": "OwnedBoundaryAsync60",
+      "helperApi": "60.0",
+      "className": "OwnedBoundaryTest64",
+      "methodName": "observe1",
+      "runtimeApi": "68.0",
+      "evidenceSha256": "048a6e2a9d17dced538ae058b3768720b594376f0b5318c7e5ef242dfca22ef3",
+      "nativeMessage": "System.AssertException: Assertion Failed: NATIVE_RESULT|INSERT60_USER|{\"afterStop\":{\"stopException\":null,\"dmlRows\":0,\"dmlStatements\":0,\"ownedRows\":0,\"callbacks\":[],\"callbackCount\":0,\"inputIds\":[null],\"results\":[],\"resultCount\":0},\"immediate\":{\"callException\":\"System.TypeException|Invalid entity type in input for this operation\",\"dmlRows\":0,\"dmlStatements\":0,\"ownedRows\":0,\"callbacks\":[],\"callbackCount\":0,\"inputIds\":[null],\"results\":[],\"resultCount\":0},\"beforeCall\":{\"dmlRows\":0,\"dmlStatements\":0,\"ownedRows\":0,\"callbacks\":[],\"callbackCount\":0,\"inputIds\":[null],\"results\":[],\"resultCount\":0},\"row\":\"INSERT60_USER\"}",
+      "native": {
+        "afterStop": {
+          "stopException": null,
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "ownedRows": 0,
+          "callbacks": [],
+          "callbackCount": 0,
+          "inputIds": [
+            null
+          ],
+          "results": [],
+          "resultCount": 0
+        },
+        "immediate": {
+          "callException": "System.TypeException|Invalid entity type in input for this operation",
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "ownedRows": 0,
+          "callbacks": [],
+          "callbackCount": 0,
+          "inputIds": [
+            null
+          ],
+          "results": [],
+          "resultCount": 0
+        },
+        "beforeCall": {
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "ownedRows": 0,
+          "callbacks": [],
+          "callbackCount": 0,
+          "inputIds": [
+            null
+          ],
+          "results": [],
+          "resultCount": 0
+        },
+        "row": "INSERT60_USER"
+      }
+    },
+    {
+      "id": "INSERT60_SYSTEM",
+      "sourceGroup": "helper60-test64",
+      "helperClass": "OwnedBoundaryAsync60",
+      "helperApi": "60.0",
+      "className": "OwnedBoundaryTest64",
+      "methodName": "observe2",
+      "runtimeApi": "68.0",
+      "evidenceSha256": "048a6e2a9d17dced538ae058b3768720b594376f0b5318c7e5ef242dfca22ef3",
+      "nativeMessage": "System.AssertException: Assertion Failed: NATIVE_RESULT|INSERT60_SYSTEM|{\"afterStop\":{\"stopException\":null,\"dmlRows\":0,\"dmlStatements\":0,\"ownedRows\":0,\"callbacks\":[],\"callbackCount\":0,\"inputIds\":[null],\"results\":[],\"resultCount\":0},\"immediate\":{\"callException\":\"System.TypeException|Invalid entity type in input for this operation\",\"dmlRows\":0,\"dmlStatements\":0,\"ownedRows\":0,\"callbacks\":[],\"callbackCount\":0,\"inputIds\":[null],\"results\":[],\"resultCount\":0},\"beforeCall\":{\"dmlRows\":0,\"dmlStatements\":0,\"ownedRows\":0,\"callbacks\":[],\"callbackCount\":0,\"inputIds\":[null],\"results\":[],\"resultCount\":0},\"row\":\"INSERT60_SYSTEM\"}",
+      "native": {
+        "afterStop": {
+          "stopException": null,
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "ownedRows": 0,
+          "callbacks": [],
+          "callbackCount": 0,
+          "inputIds": [
+            null
+          ],
+          "results": [],
+          "resultCount": 0
+        },
+        "immediate": {
+          "callException": "System.TypeException|Invalid entity type in input for this operation",
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "ownedRows": 0,
+          "callbacks": [],
+          "callbackCount": 0,
+          "inputIds": [
+            null
+          ],
+          "results": [],
+          "resultCount": 0
+        },
+        "beforeCall": {
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "ownedRows": 0,
+          "callbacks": [],
+          "callbackCount": 0,
+          "inputIds": [
+            null
+          ],
+          "results": [],
+          "resultCount": 0
+        },
+        "row": "INSERT60_SYSTEM"
+      }
+    },
+    {
+      "id": "PUBLISH60",
+      "sourceGroup": "helper60-test64",
+      "helperClass": "OwnedBoundaryPublish60",
+      "helperApi": "60.0",
+      "className": "OwnedBoundaryTest64",
+      "methodName": "observe3",
+      "runtimeApi": "68.0",
+      "evidenceSha256": "048a6e2a9d17dced538ae058b3768720b594376f0b5318c7e5ef242dfca22ef3",
+      "nativeMessage": "System.AssertException: Assertion Failed: NATIVE_RESULT|PUBLISH60|{\"afterStop\":{\"stopException\":null,\"dmlRows\":0,\"dmlStatements\":0,\"results\":[{\"raw\":\"{\\\"id\\\":\\\"1QQxx0000000001GAA\\\",\\\"success\\\":true,\\\"errors\\\":[{\\\"statusCode\\\":\\\"OPERATION_ENQUEUED\\\",\\\"message\\\":\\\"016843c4-cce2-433c-b3ce-8a09b50d1fac\\\",\\\"fields\\\":[]}]}\",\"errors\":[{\"fields\":[],\"message\":\"016843c4-cce2-433c-b3ce-8a09b50d1fac\",\"statusCode\":\"OPERATION_ENQUEUED\"}],\"errorsNull\":false,\"id\":\"1QQxx0000000001GAA\",\"success\":true}],\"resultCount\":1},\"immediate\":{\"callException\":null,\"dmlRows\":1,\"dmlStatements\":1,\"results\":[{\"raw\":\"{\\\"id\\\":\\\"1QQxx0000000001GAA\\\",\\\"success\\\":true,\\\"errors\\\":[{\\\"statusCode\\\":\\\"OPERATION_ENQUEUED\\\",\\\"message\\\":\\\"016843c4-cce2-433c-b3ce-8a09b50d1fac\\\",\\\"fields\\\":[]}]}\",\"errors\":[{\"fields\":[],\"message\":\"016843c4-cce2-433c-b3ce-8a09b50d1fac\",\"statusCode\":\"OPERATION_ENQUEUED\"}],\"errorsNull\":false,\"id\":\"1QQxx0000000001GAA\",\"success\":true}],\"resultCount\":1},\"beforeCall\":{\"dmlRows\":0,\"dmlStatements\":0,\"results\":[],\"resultCount\":0},\"row\":\"PUBLISH60\"}",
+      "native": {
+        "afterStop": {
+          "stopException": null,
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "results": [
+            {
+              "raw": "{\"id\":\"1QQxx0000000001GAA\",\"success\":true,\"errors\":[{\"statusCode\":\"OPERATION_ENQUEUED\",\"message\":\"016843c4-cce2-433c-b3ce-8a09b50d1fac\",\"fields\":[]}]}",
+              "errors": [
+                {
+                  "fields": [],
+                  "message": "016843c4-cce2-433c-b3ce-8a09b50d1fac",
+                  "statusCode": "OPERATION_ENQUEUED"
+                }
+              ],
+              "errorsNull": false,
+              "id": "1QQxx0000000001GAA",
+              "success": true
+            }
+          ],
+          "resultCount": 1
+        },
+        "immediate": {
+          "callException": null,
+          "dmlRows": 1,
+          "dmlStatements": 1,
+          "results": [
+            {
+              "raw": "{\"id\":\"1QQxx0000000001GAA\",\"success\":true,\"errors\":[{\"statusCode\":\"OPERATION_ENQUEUED\",\"message\":\"016843c4-cce2-433c-b3ce-8a09b50d1fac\",\"fields\":[]}]}",
+              "errors": [
+                {
+                  "fields": [],
+                  "message": "016843c4-cce2-433c-b3ce-8a09b50d1fac",
+                  "statusCode": "OPERATION_ENQUEUED"
+                }
+              ],
+              "errorsNull": false,
+              "id": "1QQxx0000000001GAA",
+              "success": true
+            }
+          ],
+          "resultCount": 1
+        },
+        "beforeCall": {
+          "dmlRows": 0,
+          "dmlStatements": 0,
+          "results": [],
+          "resultCount": 0
+        },
+        "row": "PUBLISH60"
+      }
+    }
+  ],
+  "carries": [
+    {
+      "scope": "Initial helper59 publication snapshot",
+      "reason": "Snapshot read Id directly from the input BatchApexErrorEvent, which rejected that field before the observation assertion. This fixture error provides no publication lifecycle answer; the corrected result-only retry is asserted independently.",
+      "nativeValue": {
+        "className": "OwnedLegacyAsyncTest64",
+        "methodName": "observe3",
+        "message": "System.SObjectException: Invalid field Id",
+        "evidenceSha256": "35a3bc60dc90cc2ecae53c137f5483ea3f4e3768a1dba4d4b5cc80ff869bd0d6"
+      }
+    },
+    {
+      "scope": "Named publication helpers at APIs61/62/67/68",
+      "reason": "This packet observes publication from API59/60 helpers inside named API64 tests. Existing P006 API62/67/68 rejection captures are anonymous and do not establish a named-test source-API publication boundary. The same named direct List<SObject> shape at helpers61/62/67/68 remains unmeasured.",
+      "nativeValue": null
+    },
+    {
+      "scope": "Anonymous route and other test caller APIs",
+      "reason": "This packet observed named API64 tests calling API59/60 helpers only. Independent anonymous publication rejections do not answer these named lifecycle cells. Async insert59-to60 is observed on the same named route, whereas publication59/60 success is not evidence for a cross-context version boundary.",
+      "nativeValue": null
+    },
+    {
+      "scope": "Other objects, overloads, callbacks and permission contexts",
+      "reason": "Insert used one ordinary Account in named List<SObject>, a recording callback, USER/SYSTEM; publication used one empty BatchApexErrorEvent in named List<SObject> with no callback. Native external objects, empty callbacks, other access paths and namespace contexts were not captured.",
+      "nativeValue": null
+    }
+  ]
+}

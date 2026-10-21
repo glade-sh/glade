@@ -1,0 +1,882 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "route": "isTest",
+  "transportApi": "62.0",
+  "projectApi": "62.0",
+  "namespaceContext": "none",
+  "knownRows": 18,
+  "pendingCoverage": [
+    "Namespace and constructor behavior were not observed.",
+    "Other malformed property values, case-variant null property keys, and unknown-property shapes were not observed.",
+    "Explicit-null field conversion is matched by the separate source-62/67/68 null-isolation observations."
+  ],
+  "captures": [
+    {
+      "context": "api62-named",
+      "sourceApi": "62.0",
+      "testClass": "OwnedHeaderJSONObservation",
+      "marker": "HEADER_JSON_OBSERVATION|",
+      "deployment": {
+        "id": "0AfRu00000hbSHWKA2",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 6,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 6
+      },
+      "rawSHA256": {
+        "org.tsv": "a04f180ed86b0ed2e9ab22d6dcdba2e5fc3f87f0944b308e1db4a3481ee57e58",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "a4a9cc39e62b6455ba6e25ffd80ea67bfdc45624e88c1f54b8f632e4882ec1dd",
+        "deploy.command.json": "d223502a380b788654bebfe4d7d47ba1421f273ecaa4f6ec9995f22bd0f82bad",
+        "ORG-RUN.txt": "4f6901b58d9ff21df6ea1e41983d93408c52c8f0127f548d92fe8151ca4715c0",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "sources": {
+        "force-app/main/default/classes/OwnedHeaderJSONObservation.cls": {
+          "source": "@IsTest\nprivate class OwnedHeaderJSONObservation {\n    public class PlainHeader {\n        public String entityName;\n        public String changeType;\n        public String changeOrigin;\n        public String transactionKey;\n        public Integer sequenceNumber;\n        public Long commitTimestamp;\n        public String commitUser;\n        public Long commitNumber;\n        public List<String> recordIds;\n        public List<String> changedFields;\n        public List<String> nulledFields;\n        public List<String> diffFields;\n    }\n    private static String populated() {\n        return JSON.serialize(new Map<String,Object>{\n            'entityName'=>'Account','changeType'=>'UPDATE','changeOrigin'=>'owned',\n            'transactionKey'=>'owned-tx','sequenceNumber'=>7,'commitTimestamp'=>1700000000123L,\n            'commitUser'=>'005000000000001AAA','commitNumber'=>42L,\n            'recordIds'=>new List<String>{'001000000000001AAA','001000000000002AAA'},\n            'changedFields'=>new List<String>{'Name'},'nulledFields'=>new List<String>{'Industry'},\n            'diffFields'=>new List<String>{'Description'}\n        });\n    }\n    private static List<Object> fields(EventBus.ChangeEventHeader header) {\n        if(header==null) return new List<Object>{'null'};\n        return new List<Object>{'value',header.entityName,header.changeType,header.changeOrigin,\n            header.transactionKey,header.sequenceNumber,header.commitTimestamp,header.commitUser,\n            header.commitNumber,header.recordIds,header.changedFields,header.nulledFields,header.diffFields};\n    }\n    private static void observeHeader(String input,Boolean strict) {\n        Object observed;\n        try {\n            EventBus.ChangeEventHeader header=(EventBus.ChangeEventHeader)(strict\n                ?JSON.deserializeStrict(input,EventBus.ChangeEventHeader.class)\n                :JSON.deserialize(input,EventBus.ChangeEventHeader.class));\n            observed=fields(header);\n        } catch(Exception issue) {\n            observed=new List<Object>{'exception',issue.getTypeName(),issue.getMessage()};\n        }\n        emit(observed);\n    }\n    private static void emit(Object observed) {\n        System.assert(false,'HEADER_JSON_OBSERVATION|'+JSON.serialize(observed));\n    }\n    @IsTest static void populatedHeader() {observeHeader(populated(),false);}\n    @IsTest static void emptyHeader() {observeHeader('{}',false);}\n    @IsTest static void nullHeader() {observeHeader('null',false);}\n    @IsTest static void plainDTOControl() {\n        Object observed;\n        try {\n            PlainHeader header=(PlainHeader)JSON.deserialize(populated(),PlainHeader.class);\n            observed=new List<Object>{'value',header.entityName,header.changeType,header.changeOrigin,\n                header.transactionKey,header.sequenceNumber,header.commitTimestamp,header.commitUser,\n                header.commitNumber,header.recordIds,header.changedFields,header.nulledFields,header.diffFields};\n        } catch(Exception issue) {\n            observed=new List<Object>{'exception',issue.getTypeName(),issue.getMessage()};\n        }\n        emit(observed);\n    }\n    @IsTest static void saveResultControl() {\n        Object observed;\n        try {\n            Database.SaveResult result=(Database.SaveResult)JSON.deserialize(\n                '{\"success\":true,\"id\":\"001000000000001AAA\",\"errors\":[]}',Database.SaveResult.class);\n            observed=new List<Object>{'value',result.isSuccess(),result.getId(),result.getErrors().size()};\n        } catch(Exception issue) {\n            observed=new List<Object>{'exception',issue.getTypeName(),issue.getMessage()};\n        }\n        emit(observed);\n    }\n    @IsTest static void strictUnknownHeader() {observeHeader('{\"ownedUnknownProperty\":1}',true);}\n}\n",
+          "sha256": "3344a6668e2840274a3831ca3cc2eeeadaf0eefef312abc2afdcb8d06bc79fed"
+        },
+        "force-app/main/default/classes/OwnedHeaderJSONObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        }
+      },
+      "rows": [
+        {
+          "method": "emptyHeader",
+          "native": [
+            "value",
+            null,
+            null,
+            null,
+            null,
+            0,
+            0,
+            null,
+            0,
+            [],
+            [],
+            [],
+            []
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"value\",null,null,null,null,0,0,null,0,[],[],[],[]]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.observeHeader: line 43, column 1\nClass.OwnedHeaderJSONObservation.emptyHeader: line 49, column 1"
+          }
+        },
+        {
+          "method": "nullHeader",
+          "native": [
+            "null"
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"null\"]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.observeHeader: line 43, column 1\nClass.OwnedHeaderJSONObservation.nullHeader: line 50, column 1"
+          }
+        },
+        {
+          "method": "plainDTOControl",
+          "native": [
+            "value",
+            "Account",
+            "UPDATE",
+            "owned",
+            "owned-tx",
+            7,
+            1700000000123,
+            "005000000000001AAA",
+            42,
+            [
+              "001000000000001AAA",
+              "001000000000002AAA"
+            ],
+            [
+              "Name"
+            ],
+            [
+              "Industry"
+            ],
+            [
+              "Description"
+            ]
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"value\",\"Account\",\"UPDATE\",\"owned\",\"owned-tx\",7,1700000000123,\"005000000000001AAA\",42,[\"001000000000001AAA\",\"001000000000002AAA\"],[\"Name\"],[\"Industry\"],[\"Description\"]]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.plainDTOControl: line 61, column 1"
+          }
+        },
+        {
+          "method": "populatedHeader",
+          "native": [
+            "value",
+            "Account",
+            "UPDATE",
+            "owned",
+            "owned-tx",
+            7,
+            1700000000123,
+            "005000000000001AAA",
+            42,
+            [
+              "001000000000001AAA",
+              "001000000000002AAA"
+            ],
+            [
+              "Name"
+            ],
+            [
+              "Industry"
+            ],
+            [
+              "Description"
+            ]
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"value\",\"Account\",\"UPDATE\",\"owned\",\"owned-tx\",7,1700000000123,\"005000000000001AAA\",42,[\"001000000000001AAA\",\"001000000000002AAA\"],[\"Name\"],[\"Industry\"],[\"Description\"]]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.observeHeader: line 43, column 1\nClass.OwnedHeaderJSONObservation.populatedHeader: line 48, column 1"
+          }
+        },
+        {
+          "method": "saveResultControl",
+          "native": [
+            "value",
+            true,
+            "001000000000001AAA",
+            0
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"value\",true,\"001000000000001AAA\",0]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.saveResultControl: line 72, column 1"
+          }
+        },
+        {
+          "method": "strictUnknownHeader",
+          "native": [
+            "exception",
+            "System.JSONException",
+            "Unrecognized field \"ownedUnknownProperty\" at [line:1, column:26]"
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"exception\",\"System.JSONException\",\"Unrecognized field \\\"ownedUnknownProperty\\\" at [line:1, column:26]\"]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.observeHeader: line 43, column 1\nClass.OwnedHeaderJSONObservation.strictUnknownHeader: line 74, column 1"
+          }
+        }
+      ]
+    },
+    {
+      "context": "api67-named",
+      "sourceApi": "67.0",
+      "testClass": "OwnedHeaderJSONObservation",
+      "marker": "HEADER_JSON_OBSERVATION|",
+      "deployment": {
+        "id": "0AfRu00000hbmbBKAQ",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 6,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 6
+      },
+      "rawSHA256": {
+        "org.tsv": "a04f180ed86b0ed2e9ab22d6dcdba2e5fc3f87f0944b308e1db4a3481ee57e58",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "fc1d5a83207901778c5c2a88958bf174f27617a48b23ec1d82bffffa74f41cfb",
+        "deploy.command.json": "d223502a380b788654bebfe4d7d47ba1421f273ecaa4f6ec9995f22bd0f82bad",
+        "ORG-RUN.txt": "8deb3c7fed30f601db72459409c418ac34e3ca5a87275d03f0ce79c96bc81d37",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "sources": {
+        "force-app/main/default/classes/OwnedHeaderJSONObservation.cls": {
+          "source": "@IsTest\nprivate class OwnedHeaderJSONObservation {\n    public class PlainHeader {\n        public String entityName;\n        public String changeType;\n        public String changeOrigin;\n        public String transactionKey;\n        public Integer sequenceNumber;\n        public Long commitTimestamp;\n        public String commitUser;\n        public Long commitNumber;\n        public List<String> recordIds;\n        public List<String> changedFields;\n        public List<String> nulledFields;\n        public List<String> diffFields;\n    }\n    private static String populated() {\n        return JSON.serialize(new Map<String,Object>{\n            'entityName'=>'Account','changeType'=>'UPDATE','changeOrigin'=>'owned',\n            'transactionKey'=>'owned-tx','sequenceNumber'=>7,'commitTimestamp'=>1700000000123L,\n            'commitUser'=>'005000000000001AAA','commitNumber'=>42L,\n            'recordIds'=>new List<String>{'001000000000001AAA','001000000000002AAA'},\n            'changedFields'=>new List<String>{'Name'},'nulledFields'=>new List<String>{'Industry'},\n            'diffFields'=>new List<String>{'Description'}\n        });\n    }\n    private static List<Object> fields(EventBus.ChangeEventHeader header) {\n        if(header==null) return new List<Object>{'null'};\n        return new List<Object>{'value',header.entityName,header.changeType,header.changeOrigin,\n            header.transactionKey,header.sequenceNumber,header.commitTimestamp,header.commitUser,\n            header.commitNumber,header.recordIds,header.changedFields,header.nulledFields,header.diffFields};\n    }\n    private static void observeHeader(String input,Boolean strict) {\n        Object observed;\n        try {\n            EventBus.ChangeEventHeader header=(EventBus.ChangeEventHeader)(strict\n                ?JSON.deserializeStrict(input,EventBus.ChangeEventHeader.class)\n                :JSON.deserialize(input,EventBus.ChangeEventHeader.class));\n            observed=fields(header);\n        } catch(Exception issue) {\n            observed=new List<Object>{'exception',issue.getTypeName(),issue.getMessage()};\n        }\n        emit(observed);\n    }\n    private static void emit(Object observed) {\n        System.assert(false,'HEADER_JSON_OBSERVATION|'+JSON.serialize(observed));\n    }\n    @IsTest static void populatedHeader() {observeHeader(populated(),false);}\n    @IsTest static void emptyHeader() {observeHeader('{}',false);}\n    @IsTest static void nullHeader() {observeHeader('null',false);}\n    @IsTest static void plainDTOControl() {\n        Object observed;\n        try {\n            PlainHeader header=(PlainHeader)JSON.deserialize(populated(),PlainHeader.class);\n            observed=new List<Object>{'value',header.entityName,header.changeType,header.changeOrigin,\n                header.transactionKey,header.sequenceNumber,header.commitTimestamp,header.commitUser,\n                header.commitNumber,header.recordIds,header.changedFields,header.nulledFields,header.diffFields};\n        } catch(Exception issue) {\n            observed=new List<Object>{'exception',issue.getTypeName(),issue.getMessage()};\n        }\n        emit(observed);\n    }\n    @IsTest static void saveResultControl() {\n        Object observed;\n        try {\n            Database.SaveResult result=(Database.SaveResult)JSON.deserialize(\n                '{\"success\":true,\"id\":\"001000000000001AAA\",\"errors\":[]}',Database.SaveResult.class);\n            observed=new List<Object>{'value',result.isSuccess(),result.getId(),result.getErrors().size()};\n        } catch(Exception issue) {\n            observed=new List<Object>{'exception',issue.getTypeName(),issue.getMessage()};\n        }\n        emit(observed);\n    }\n    @IsTest static void strictUnknownHeader() {observeHeader('{\"ownedUnknownProperty\":1}',true);}\n}\n",
+          "sha256": "3344a6668e2840274a3831ca3cc2eeeadaf0eefef312abc2afdcb8d06bc79fed"
+        },
+        "force-app/main/default/classes/OwnedHeaderJSONObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        }
+      },
+      "rows": [
+        {
+          "method": "emptyHeader",
+          "native": [
+            "value",
+            null,
+            null,
+            null,
+            null,
+            0,
+            0,
+            null,
+            0,
+            [],
+            [],
+            [],
+            []
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"value\",null,null,null,null,0,0,null,0,[],[],[],[]]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.observeHeader: line 43, column 1\nClass.OwnedHeaderJSONObservation.emptyHeader: line 49, column 1"
+          }
+        },
+        {
+          "method": "nullHeader",
+          "native": [
+            "null"
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"null\"]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.observeHeader: line 43, column 1\nClass.OwnedHeaderJSONObservation.nullHeader: line 50, column 1"
+          }
+        },
+        {
+          "method": "plainDTOControl",
+          "native": [
+            "value",
+            "Account",
+            "UPDATE",
+            "owned",
+            "owned-tx",
+            7,
+            1700000000123,
+            "005000000000001AAA",
+            42,
+            [
+              "001000000000001AAA",
+              "001000000000002AAA"
+            ],
+            [
+              "Name"
+            ],
+            [
+              "Industry"
+            ],
+            [
+              "Description"
+            ]
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"value\",\"Account\",\"UPDATE\",\"owned\",\"owned-tx\",7,1700000000123,\"005000000000001AAA\",42,[\"001000000000001AAA\",\"001000000000002AAA\"],[\"Name\"],[\"Industry\"],[\"Description\"]]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.plainDTOControl: line 61, column 1"
+          }
+        },
+        {
+          "method": "populatedHeader",
+          "native": [
+            "value",
+            "Account",
+            "UPDATE",
+            "owned",
+            "owned-tx",
+            7,
+            1700000000123,
+            "005000000000001AAA",
+            42,
+            [
+              "001000000000001AAA",
+              "001000000000002AAA"
+            ],
+            [
+              "Name"
+            ],
+            [
+              "Industry"
+            ],
+            [
+              "Description"
+            ]
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"value\",\"Account\",\"UPDATE\",\"owned\",\"owned-tx\",7,1700000000123,\"005000000000001AAA\",42,[\"001000000000001AAA\",\"001000000000002AAA\"],[\"Name\"],[\"Industry\"],[\"Description\"]]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.observeHeader: line 43, column 1\nClass.OwnedHeaderJSONObservation.populatedHeader: line 48, column 1"
+          }
+        },
+        {
+          "method": "saveResultControl",
+          "native": [
+            "value",
+            true,
+            "001000000000001AAA",
+            0
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"value\",true,\"001000000000001AAA\",0]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.saveResultControl: line 72, column 1"
+          }
+        },
+        {
+          "method": "strictUnknownHeader",
+          "native": [
+            "exception",
+            "System.JSONException",
+            "Unrecognized field \"ownedUnknownProperty\" at [line:1, column:26]"
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"exception\",\"System.JSONException\",\"Unrecognized field \\\"ownedUnknownProperty\\\" at [line:1, column:26]\"]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.observeHeader: line 43, column 1\nClass.OwnedHeaderJSONObservation.strictUnknownHeader: line 74, column 1"
+          }
+        }
+      ]
+    },
+    {
+      "context": "api68-named",
+      "sourceApi": "68.0",
+      "testClass": "OwnedHeaderJSONObservation",
+      "marker": "HEADER_JSON_OBSERVATION|",
+      "deployment": {
+        "id": "0AfRu00000hbnk9KAA",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 6,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 6
+      },
+      "rawSHA256": {
+        "org.tsv": "a04f180ed86b0ed2e9ab22d6dcdba2e5fc3f87f0944b308e1db4a3481ee57e58",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "52c2b77cf069d6f6fd13434578caf1e25c3b111a6d582d704fca74febc4a5fae",
+        "deploy.command.json": "d223502a380b788654bebfe4d7d47ba1421f273ecaa4f6ec9995f22bd0f82bad",
+        "ORG-RUN.txt": "88e7f05b60a2cd40585b1b992ff7051e98631c123343af623137dc33e5d5ff47",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "sources": {
+        "force-app/main/default/classes/OwnedHeaderJSONObservation.cls": {
+          "source": "@IsTest\nprivate class OwnedHeaderJSONObservation {\n    public class PlainHeader {\n        public String entityName;\n        public String changeType;\n        public String changeOrigin;\n        public String transactionKey;\n        public Integer sequenceNumber;\n        public Long commitTimestamp;\n        public String commitUser;\n        public Long commitNumber;\n        public List<String> recordIds;\n        public List<String> changedFields;\n        public List<String> nulledFields;\n        public List<String> diffFields;\n    }\n    private static String populated() {\n        return JSON.serialize(new Map<String,Object>{\n            'entityName'=>'Account','changeType'=>'UPDATE','changeOrigin'=>'owned',\n            'transactionKey'=>'owned-tx','sequenceNumber'=>7,'commitTimestamp'=>1700000000123L,\n            'commitUser'=>'005000000000001AAA','commitNumber'=>42L,\n            'recordIds'=>new List<String>{'001000000000001AAA','001000000000002AAA'},\n            'changedFields'=>new List<String>{'Name'},'nulledFields'=>new List<String>{'Industry'},\n            'diffFields'=>new List<String>{'Description'}\n        });\n    }\n    private static List<Object> fields(EventBus.ChangeEventHeader header) {\n        if(header==null) return new List<Object>{'null'};\n        return new List<Object>{'value',header.entityName,header.changeType,header.changeOrigin,\n            header.transactionKey,header.sequenceNumber,header.commitTimestamp,header.commitUser,\n            header.commitNumber,header.recordIds,header.changedFields,header.nulledFields,header.diffFields};\n    }\n    private static void observeHeader(String input,Boolean strict) {\n        Object observed;\n        try {\n            EventBus.ChangeEventHeader header=(EventBus.ChangeEventHeader)(strict\n                ?JSON.deserializeStrict(input,EventBus.ChangeEventHeader.class)\n                :JSON.deserialize(input,EventBus.ChangeEventHeader.class));\n            observed=fields(header);\n        } catch(Exception issue) {\n            observed=new List<Object>{'exception',issue.getTypeName(),issue.getMessage()};\n        }\n        emit(observed);\n    }\n    private static void emit(Object observed) {\n        System.assert(false,'HEADER_JSON_OBSERVATION|'+JSON.serialize(observed));\n    }\n    @IsTest static void populatedHeader() {observeHeader(populated(),false);}\n    @IsTest static void emptyHeader() {observeHeader('{}',false);}\n    @IsTest static void nullHeader() {observeHeader('null',false);}\n    @IsTest static void plainDTOControl() {\n        Object observed;\n        try {\n            PlainHeader header=(PlainHeader)JSON.deserialize(populated(),PlainHeader.class);\n            observed=new List<Object>{'value',header.entityName,header.changeType,header.changeOrigin,\n                header.transactionKey,header.sequenceNumber,header.commitTimestamp,header.commitUser,\n                header.commitNumber,header.recordIds,header.changedFields,header.nulledFields,header.diffFields};\n        } catch(Exception issue) {\n            observed=new List<Object>{'exception',issue.getTypeName(),issue.getMessage()};\n        }\n        emit(observed);\n    }\n    @IsTest static void saveResultControl() {\n        Object observed;\n        try {\n            Database.SaveResult result=(Database.SaveResult)JSON.deserialize(\n                '{\"success\":true,\"id\":\"001000000000001AAA\",\"errors\":[]}',Database.SaveResult.class);\n            observed=new List<Object>{'value',result.isSuccess(),result.getId(),result.getErrors().size()};\n        } catch(Exception issue) {\n            observed=new List<Object>{'exception',issue.getTypeName(),issue.getMessage()};\n        }\n        emit(observed);\n    }\n    @IsTest static void strictUnknownHeader() {observeHeader('{\"ownedUnknownProperty\":1}',true);}\n}\n",
+          "sha256": "3344a6668e2840274a3831ca3cc2eeeadaf0eefef312abc2afdcb8d06bc79fed"
+        },
+        "force-app/main/default/classes/OwnedHeaderJSONObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        }
+      },
+      "rows": [
+        {
+          "method": "emptyHeader",
+          "native": [
+            "value",
+            null,
+            null,
+            null,
+            null,
+            0,
+            0,
+            null,
+            0,
+            [],
+            [],
+            [],
+            []
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"value\",null,null,null,null,0,0,null,0,[],[],[],[]]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.observeHeader: line 43, column 1\nClass.OwnedHeaderJSONObservation.emptyHeader: line 49, column 1"
+          }
+        },
+        {
+          "method": "nullHeader",
+          "native": [
+            "null"
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"null\"]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.observeHeader: line 43, column 1\nClass.OwnedHeaderJSONObservation.nullHeader: line 50, column 1"
+          }
+        },
+        {
+          "method": "plainDTOControl",
+          "native": [
+            "value",
+            "Account",
+            "UPDATE",
+            "owned",
+            "owned-tx",
+            7,
+            1700000000123,
+            "005000000000001AAA",
+            42,
+            [
+              "001000000000001AAA",
+              "001000000000002AAA"
+            ],
+            [
+              "Name"
+            ],
+            [
+              "Industry"
+            ],
+            [
+              "Description"
+            ]
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"value\",\"Account\",\"UPDATE\",\"owned\",\"owned-tx\",7,1700000000123,\"005000000000001AAA\",42,[\"001000000000001AAA\",\"001000000000002AAA\"],[\"Name\"],[\"Industry\"],[\"Description\"]]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.plainDTOControl: line 61, column 1"
+          }
+        },
+        {
+          "method": "populatedHeader",
+          "native": [
+            "value",
+            "Account",
+            "UPDATE",
+            "owned",
+            "owned-tx",
+            7,
+            1700000000123,
+            "005000000000001AAA",
+            42,
+            [
+              "001000000000001AAA",
+              "001000000000002AAA"
+            ],
+            [
+              "Name"
+            ],
+            [
+              "Industry"
+            ],
+            [
+              "Description"
+            ]
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"value\",\"Account\",\"UPDATE\",\"owned\",\"owned-tx\",7,1700000000123,\"005000000000001AAA\",42,[\"001000000000001AAA\",\"001000000000002AAA\"],[\"Name\"],[\"Industry\"],[\"Description\"]]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.observeHeader: line 43, column 1\nClass.OwnedHeaderJSONObservation.populatedHeader: line 48, column 1"
+          }
+        },
+        {
+          "method": "saveResultControl",
+          "native": [
+            "value",
+            true,
+            "001000000000001AAA",
+            0
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"value\",true,\"001000000000001AAA\",0]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.saveResultControl: line 72, column 1"
+          }
+        },
+        {
+          "method": "strictUnknownHeader",
+          "native": [
+            "exception",
+            "System.JSONException",
+            "Unrecognized field \"ownedUnknownProperty\" at [line:1, column:26]"
+          ],
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: HEADER_JSON_OBSERVATION|[\"exception\",\"System.JSONException\",\"Unrecognized field \\\"ownedUnknownProperty\\\" at [line:1, column:26]\"]",
+            "stackTrace": "Class.OwnedHeaderJSONObservation.emit: line 46, column 1\nClass.OwnedHeaderJSONObservation.observeHeader: line 43, column 1\nClass.OwnedHeaderJSONObservation.strictUnknownHeader: line 74, column 1"
+          }
+        }
+      ]
+    }
+  ],
+  "anonymousRows": 18,
+  "anonymousMatchedRows": 18,
+  "anonymousCarriedRows": 0,
+  "anonymousCaptures": [
+    {
+      "context": "anonymous-api62",
+      "sourceApi": "62.0",
+      "transportApi": "62.0",
+      "namespace": "none",
+      "marker": "HEADER_JSON_ANONYMOUS|",
+      "execution": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "0cff7e7d8b7820cc4224e0ad85e4402cb74617632a50a22a110e2b65f845dbb5",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "source.apex": "9262d601ca670c66a5f8984b69f67ec5dc0fef167f69bbf3f365c0835e2f1156",
+        "run.json": "7dd4116058906ba88496a67cb1f97fef344d067867a3cb9860bbc36a98e39f66",
+        "ORG-RUN.txt": "95e1336f51c9e3a7dd8807f9653c6f5d86b8d88fa9f721a929db3616ef4b31b1"
+      },
+      "source": {
+        "source": "// Owned anonymous observations only. No expected behavior is asserted.\nString populated = JSON.serialize(new Map<String,Object>{\n    'entityName'=>'Account','changeType'=>'UPDATE','changeOrigin'=>'owned',\n    'transactionKey'=>'owned-tx','sequenceNumber'=>7,'commitTimestamp'=>1700000000123L,\n    'commitUser'=>'005000000000001AAA','commitNumber'=>42L,\n    'recordIds'=>new List<String>{'001000000000001AAA','001000000000002AAA'},\n    'changedFields'=>new List<String>{'Name'},'nulledFields'=>new List<String>{'Industry'},\n    'diffFields'=>new List<String>{'Description'}\n});\nMap<String,String> inputs = new Map<String,String>{\n    'populatedHeader'=>populated,'emptyHeader'=>'{}','nullHeader'=>'null',\n    'strictUnknownHeader'=>'{\"ownedUnknownProperty\":1}',\n    'unknownHeader'=>'{\"ownedUnknownProperty\":1}',\n    'nullFieldsHeader'=>'{\"entityName\":null,\"sequenceNumber\":null,\"commitTimestamp\":null,\"recordIds\":null}'\n};\nfor(String cell:new List<String>{'populatedHeader','emptyHeader','nullHeader','strictUnknownHeader','unknownHeader','nullFieldsHeader'}) {\n    Object observed;\n    try {\n        EventBus.ChangeEventHeader header=(EventBus.ChangeEventHeader)(cell=='strictUnknownHeader'\n            ?JSON.deserializeStrict(inputs.get(cell),EventBus.ChangeEventHeader.class)\n            :JSON.deserialize(inputs.get(cell),EventBus.ChangeEventHeader.class));\n        if(header==null) observed=new List<Object>{'null'};\n        else observed=new List<Object>{'value',header.entityName,header.changeType,header.changeOrigin,\n            header.transactionKey,header.sequenceNumber,header.commitTimestamp,header.commitUser,\n            header.commitNumber,header.recordIds,header.changedFields,header.nulledFields,header.diffFields};\n    } catch(Exception issue) {\n        observed=new List<Object>{'exception',issue.getTypeName(),issue.getMessage()};\n    }\n    System.debug('HEADER_JSON_ANONYMOUS|'+JSON.serialize(new Map<String,Object>{'cell'=>cell,'observed'=>observed}));\n}\n",
+        "sha256": "9262d601ca670c66a5f8984b69f67ec5dc0fef167f69bbf3f365c0835e2f1156"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "native": {
+            "observed": [
+              "value",
+              "Account",
+              "UPDATE",
+              "owned",
+              "owned-tx",
+              7,
+              1700000000123,
+              "005000000000001AAA",
+              42,
+              [
+                "001000000000001AAA",
+                "001000000000002AAA"
+              ],
+              [
+                "Name"
+              ],
+              [
+                "Industry"
+              ],
+              [
+                "Description"
+              ]
+            ],
+            "cell": "populatedHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "1",
+          "native": {
+            "observed": [
+              "value",
+              null,
+              null,
+              null,
+              null,
+              0,
+              0,
+              null,
+              0,
+              [],
+              [],
+              [],
+              []
+            ],
+            "cell": "emptyHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "2",
+          "native": {
+            "observed": [
+              "null"
+            ],
+            "cell": "nullHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "3",
+          "native": {
+            "observed": [
+              "exception",
+              "System.JSONException",
+              "Unrecognized field \"ownedUnknownProperty\" at [line:1, column:26]"
+            ],
+            "cell": "strictUnknownHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "4",
+          "native": {
+            "observed": [
+              "exception",
+              "System.JSONException",
+              "Unrecognized field \"ownedUnknownProperty\" at [line:1, column:26]"
+            ],
+            "cell": "unknownHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "5",
+          "native": {
+            "observed": [
+              "exception",
+              "System.JSONException",
+              "N/A"
+            ],
+            "cell": "nullFieldsHeader"
+          },
+          "classification": "full"
+        }
+      ]
+    },
+    {
+      "context": "anonymous-api67",
+      "sourceApi": "67.0",
+      "transportApi": "67.0",
+      "namespace": "none",
+      "marker": "HEADER_JSON_ANONYMOUS|",
+      "execution": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "0cff7e7d8b7820cc4224e0ad85e4402cb74617632a50a22a110e2b65f845dbb5",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "source.apex": "9262d601ca670c66a5f8984b69f67ec5dc0fef167f69bbf3f365c0835e2f1156",
+        "run.json": "9828900d03c872e2bbc5c77e0449c8e57f5ac3dd9c6653c8f71386712d962a65",
+        "ORG-RUN.txt": "cbd102bf76fd3a264d6d1d1ad2cceca5961c3dc66c6be5a34ffb8ceb0ba98111"
+      },
+      "source": {
+        "source": "// Owned anonymous observations only. No expected behavior is asserted.\nString populated = JSON.serialize(new Map<String,Object>{\n    'entityName'=>'Account','changeType'=>'UPDATE','changeOrigin'=>'owned',\n    'transactionKey'=>'owned-tx','sequenceNumber'=>7,'commitTimestamp'=>1700000000123L,\n    'commitUser'=>'005000000000001AAA','commitNumber'=>42L,\n    'recordIds'=>new List<String>{'001000000000001AAA','001000000000002AAA'},\n    'changedFields'=>new List<String>{'Name'},'nulledFields'=>new List<String>{'Industry'},\n    'diffFields'=>new List<String>{'Description'}\n});\nMap<String,String> inputs = new Map<String,String>{\n    'populatedHeader'=>populated,'emptyHeader'=>'{}','nullHeader'=>'null',\n    'strictUnknownHeader'=>'{\"ownedUnknownProperty\":1}',\n    'unknownHeader'=>'{\"ownedUnknownProperty\":1}',\n    'nullFieldsHeader'=>'{\"entityName\":null,\"sequenceNumber\":null,\"commitTimestamp\":null,\"recordIds\":null}'\n};\nfor(String cell:new List<String>{'populatedHeader','emptyHeader','nullHeader','strictUnknownHeader','unknownHeader','nullFieldsHeader'}) {\n    Object observed;\n    try {\n        EventBus.ChangeEventHeader header=(EventBus.ChangeEventHeader)(cell=='strictUnknownHeader'\n            ?JSON.deserializeStrict(inputs.get(cell),EventBus.ChangeEventHeader.class)\n            :JSON.deserialize(inputs.get(cell),EventBus.ChangeEventHeader.class));\n        if(header==null) observed=new List<Object>{'null'};\n        else observed=new List<Object>{'value',header.entityName,header.changeType,header.changeOrigin,\n            header.transactionKey,header.sequenceNumber,header.commitTimestamp,header.commitUser,\n            header.commitNumber,header.recordIds,header.changedFields,header.nulledFields,header.diffFields};\n    } catch(Exception issue) {\n        observed=new List<Object>{'exception',issue.getTypeName(),issue.getMessage()};\n    }\n    System.debug('HEADER_JSON_ANONYMOUS|'+JSON.serialize(new Map<String,Object>{'cell'=>cell,'observed'=>observed}));\n}\n",
+        "sha256": "9262d601ca670c66a5f8984b69f67ec5dc0fef167f69bbf3f365c0835e2f1156"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "native": {
+            "observed": [
+              "value",
+              "Account",
+              "UPDATE",
+              "owned",
+              "owned-tx",
+              7,
+              1700000000123,
+              "005000000000001AAA",
+              42,
+              [
+                "001000000000001AAA",
+                "001000000000002AAA"
+              ],
+              [
+                "Name"
+              ],
+              [
+                "Industry"
+              ],
+              [
+                "Description"
+              ]
+            ],
+            "cell": "populatedHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "1",
+          "native": {
+            "observed": [
+              "value",
+              null,
+              null,
+              null,
+              null,
+              0,
+              0,
+              null,
+              0,
+              [],
+              [],
+              [],
+              []
+            ],
+            "cell": "emptyHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "2",
+          "native": {
+            "observed": [
+              "null"
+            ],
+            "cell": "nullHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "3",
+          "native": {
+            "observed": [
+              "exception",
+              "System.JSONException",
+              "Unrecognized field \"ownedUnknownProperty\" at [line:1, column:26]"
+            ],
+            "cell": "strictUnknownHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "4",
+          "native": {
+            "observed": [
+              "exception",
+              "System.JSONException",
+              "Unrecognized field \"ownedUnknownProperty\" at [line:1, column:26]"
+            ],
+            "cell": "unknownHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "5",
+          "native": {
+            "observed": [
+              "exception",
+              "System.JSONException",
+              "N/A"
+            ],
+            "cell": "nullFieldsHeader"
+          },
+          "classification": "full"
+        }
+      ]
+    },
+    {
+      "context": "anonymous-api68",
+      "sourceApi": "68.0",
+      "transportApi": "68.0",
+      "namespace": "none",
+      "marker": "HEADER_JSON_ANONYMOUS|",
+      "execution": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "0cff7e7d8b7820cc4224e0ad85e4402cb74617632a50a22a110e2b65f845dbb5",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "source.apex": "9262d601ca670c66a5f8984b69f67ec5dc0fef167f69bbf3f365c0835e2f1156",
+        "run.json": "4155f821c971c3d74a9ebdc3b9f0028c346f733620f7a9c68b750b5e8746a679",
+        "ORG-RUN.txt": "eb9701a1caa75d8b905543f76f950657e9a5df0cd9cf3cb64b81c1590797f009"
+      },
+      "source": {
+        "source": "// Owned anonymous observations only. No expected behavior is asserted.\nString populated = JSON.serialize(new Map<String,Object>{\n    'entityName'=>'Account','changeType'=>'UPDATE','changeOrigin'=>'owned',\n    'transactionKey'=>'owned-tx','sequenceNumber'=>7,'commitTimestamp'=>1700000000123L,\n    'commitUser'=>'005000000000001AAA','commitNumber'=>42L,\n    'recordIds'=>new List<String>{'001000000000001AAA','001000000000002AAA'},\n    'changedFields'=>new List<String>{'Name'},'nulledFields'=>new List<String>{'Industry'},\n    'diffFields'=>new List<String>{'Description'}\n});\nMap<String,String> inputs = new Map<String,String>{\n    'populatedHeader'=>populated,'emptyHeader'=>'{}','nullHeader'=>'null',\n    'strictUnknownHeader'=>'{\"ownedUnknownProperty\":1}',\n    'unknownHeader'=>'{\"ownedUnknownProperty\":1}',\n    'nullFieldsHeader'=>'{\"entityName\":null,\"sequenceNumber\":null,\"commitTimestamp\":null,\"recordIds\":null}'\n};\nfor(String cell:new List<String>{'populatedHeader','emptyHeader','nullHeader','strictUnknownHeader','unknownHeader','nullFieldsHeader'}) {\n    Object observed;\n    try {\n        EventBus.ChangeEventHeader header=(EventBus.ChangeEventHeader)(cell=='strictUnknownHeader'\n            ?JSON.deserializeStrict(inputs.get(cell),EventBus.ChangeEventHeader.class)\n            :JSON.deserialize(inputs.get(cell),EventBus.ChangeEventHeader.class));\n        if(header==null) observed=new List<Object>{'null'};\n        else observed=new List<Object>{'value',header.entityName,header.changeType,header.changeOrigin,\n            header.transactionKey,header.sequenceNumber,header.commitTimestamp,header.commitUser,\n            header.commitNumber,header.recordIds,header.changedFields,header.nulledFields,header.diffFields};\n    } catch(Exception issue) {\n        observed=new List<Object>{'exception',issue.getTypeName(),issue.getMessage()};\n    }\n    System.debug('HEADER_JSON_ANONYMOUS|'+JSON.serialize(new Map<String,Object>{'cell'=>cell,'observed'=>observed}));\n}\n",
+        "sha256": "9262d601ca670c66a5f8984b69f67ec5dc0fef167f69bbf3f365c0835e2f1156"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "native": {
+            "observed": [
+              "value",
+              "Account",
+              "UPDATE",
+              "owned",
+              "owned-tx",
+              7,
+              1700000000123,
+              "005000000000001AAA",
+              42,
+              [
+                "001000000000001AAA",
+                "001000000000002AAA"
+              ],
+              [
+                "Name"
+              ],
+              [
+                "Industry"
+              ],
+              [
+                "Description"
+              ]
+            ],
+            "cell": "populatedHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "1",
+          "native": {
+            "observed": [
+              "value",
+              null,
+              null,
+              null,
+              null,
+              0,
+              0,
+              null,
+              0,
+              [],
+              [],
+              [],
+              []
+            ],
+            "cell": "emptyHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "2",
+          "native": {
+            "observed": [
+              "null"
+            ],
+            "cell": "nullHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "3",
+          "native": {
+            "observed": [
+              "exception",
+              "System.JSONException",
+              "Unrecognized field \"ownedUnknownProperty\" at [line:1, column:26]"
+            ],
+            "cell": "strictUnknownHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "4",
+          "native": {
+            "observed": [
+              "exception",
+              "System.JSONException",
+              "Unrecognized field \"ownedUnknownProperty\" at [line:1, column:26]"
+            ],
+            "cell": "unknownHeader"
+          },
+          "classification": "full"
+        },
+        {
+          "id": "5",
+          "native": {
+            "observed": [
+              "exception",
+              "System.JSONException",
+              "N/A"
+            ],
+            "cell": "nullFieldsHeader"
+          },
+          "classification": "full"
+        }
+      ]
+    }
+  ]
+}

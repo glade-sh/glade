@@ -1,0 +1,150 @@
+{
+  "release": "Winter 27; same-release API 59.0/67.0/68.0 controls, not an API gate",
+  "toolsCommit": "capture-revision-058382103585545706114587577335683447374912017042074732393821118230276883674517",
+  "captureStorage": "Source packet and answers are external capture artifacts. Exact bytes are bound below; answer bytes are not attributed to the tools commit.",
+  "captureRoot": "native-capture",
+  "oracle": "Existing l12_w27_evidence.json and its source-bound expectations remain authoritative for the candidate rows. No expectations changed.",
+  "oracleEvidenceSHA256": "fc53c853b8b73f6456401058f856a598b059c1769eac4770b60d170e5183b3f1",
+  "counts": {
+    "rowsPerAPI": 21,
+    "observations": 63,
+    "fixtureControlsPerAPI": 3,
+    "fixtureControls": 9
+  },
+  "generalizationBoundary": "Changed-seed discriminating controls, not recaptures. Case IDs are explicitly mapped only for corroboration; no additional normalization is added to the harness. Native no-data remains absence within 4000ms with 200ms settle. Other releases, input values, mixed connections, repeated selections, cursor lifecycle and upperBound combinations remain unqualified.",
+  "corroboration": [
+    {
+      "controls": [
+        "L12W_N01",
+        "L12W_N02"
+      ],
+      "candidateRows": [
+        "r_first_negative"
+      ],
+      "apis": [
+        "59.0",
+        "67.0",
+        "68.0"
+      ],
+      "result": "Complete normalized output agrees after explicit case-ID remapping. The remapping is an analysis comparison only, not a harness normalization. Both body.id values are the captured string -1582122214."
+    },
+    {
+      "controls": [
+        "L12W_N03",
+        "L12W_N04",
+        "L12W_N05",
+        "L12W_N06"
+      ],
+      "candidateRows": [],
+      "result": "Negative-first variants corroborate the same transport shape and ID. They are distinct sources, not candidate-row recaptures, and do not supply an ID-generation formula."
+    },
+    {
+      "controls": [
+        "L12W_L01I",
+        "L12W_L01V",
+        "L12W_L02I",
+        "L12W_L02V",
+        "L12W_L03I",
+        "L12W_L03V",
+        "L12W_L04I",
+        "L12W_L04V",
+        "L12W_L05I",
+        "L12W_L05V",
+        "L12W_L06I",
+        "L12W_L06V"
+      ],
+      "candidateRows": [],
+      "result": "Changed-label inline/variable LIKE twins corroborate literal-backslash and wildcard behavior. r_control_filter_like_escaped_underscore was not recaptured."
+    },
+    {
+      "controls": [
+        "L12W_C01"
+      ],
+      "candidateRows": [],
+      "result": "Readback of the changed five-label fixture; no candidate expectation counterpart."
+    },
+    {
+      "controls": [
+        "L12W_C02",
+        "L12W_C03"
+      ],
+      "candidateRows": [
+        "r_first_zero",
+        "r_first_one"
+      ],
+      "result": "Pagination shape agrees; full envelopes differ in Name.value because the seed changed. No byte-for-byte match is claimed."
+    }
+  ],
+  "notRecaptured": [
+    "r_after_number",
+    "r_after_bool",
+    "r_after_array",
+    "r_after_object",
+    "c_metadata_unknown_element",
+    "r_control_filter_like_escaped_underscore"
+  ],
+  "sourceHashes": {
+    "source-packet/CASE-TABLE.md": "937269fdb8e01890e02d6fca15ba6953d5a989c229f5d57765c6afb7855058b1",
+    "source-packet/README.md": "622b461585418c91c4e890cb338d767333ff8446f3bcea6194947db9f6e080f3",
+    "source-packet/case-inputs.json": "5b04278f5870ecc77966cca7f0948e792cce015f6d9de5ee1e0356ab23b57848",
+    "source-packet/fixture/force-app/main/default/objects/FamilyL12Record__c/FamilyL12Record__c.object-meta.xml": "b354bbe41e95cebf2f79f46609430f026d2e197dbf794a01e61cd8e7b5f42ca6",
+    "source-packet/fixture/force-app/main/default/objects/FamilyL12Record__c/fields/Active__c.field-meta.xml": "8857de99e5289abb6c85c59e5cb6737402c7221ceb9d66e930af160a088307ac",
+    "source-packet/fixture/force-app/main/default/objects/FamilyL12Record__c/fields/Amount__c.field-meta.xml": "c5bf2a9d5d29f3b930802e7572c36ac36ffdb735d2616d0b687a04d47cfaf478",
+    "source-packet/fixture/force-app/main/default/objects/FamilyL12Record__c/fields/Day__c.field-meta.xml": "528b8c514879ee847b3195571fce563bb212bc2b5037ca7262ebaa93739fd511",
+    "source-packet/fixture/force-app/main/default/objects/FamilyL12Record__c/fields/Key__c.field-meta.xml": "466ee31c461c4f10cbe6bfce99f97fc3742906ed26d84b151cddb9de13c85dad",
+    "source-packet/fixture/force-app/main/default/objects/FamilyL12Record__c/fields/Label__c.field-meta.xml": "6f1d57b0e41ef0fc88c99b81e3150963ef41948ef1f7df6a7b0885cc4f3a66f3",
+    "source-packet/fixture/force-app/main/default/objects/FamilyL12Record__c/fields/Moment__c.field-meta.xml": "3c93730c24fc206fcf9cf8f3f88114ae3c81df93181a60703a1731a20b1aa923",
+    "source-packet/fixture/force-app/main/default/objects/FamilyL12Record__c/fields/Parent__c.field-meta.xml": "20f1a934b3cd389f67e6c9c0a57f8500043c4a8b1ab5259d8f6af660c957f774",
+    "source-packet/fixture/seed.apex": "d0c1c5bdccfc2ba694f6177dfec17ef29ed51576a29746404247980edf77a396",
+    "source-packet/fixture-labels.json": "45d43e86666af4f00cb13601557d1132274bbdceb9e26520822d32e007c5bc00",
+    "source-packet/run_capture.py": "4b5afeb730be6645d41297ccce8d215b12c87d76c0898e2bea2f5f9dfe8a565b",
+    "source-packet/source-bindings.json": "ab3aaa21dfa484634330c00061f86ee3c317cd6e75f03664f8fa4da4b727e8b7",
+    "answers/api59/org.tsv": "033d3e5ee1df7c3aba944e90133119f2492a190684534ed3e50c204741faba01",
+    "answers/api59/runtime.tsv": "033d3e5ee1df7c3aba944e90133119f2492a190684534ed3e50c204741faba01",
+    "answers/api59/runtime.json": "6ebc2db25209ae004d5720b3f60d9faca4e7f062b75a54d2307ea25c2494dd21",
+    "answers/api59/ORG-RUN.txt": "ad4efe5296630115fd755e5dd01f58419df46dd89ddfc463e8ccad4669969fcb",
+    "answers/api59/DOM-ORG-RUN.txt": "411538b1018bab76965cd2528208cdfbebe5f2f5807ab0b63ab2cc4aa9477deb",
+    "answers/api59/capture-source.json": "db2e6a2bf9b443b288befefd4cc9851d9a89dc5321a736e69f455c4b0af37b50",
+    "answers/api59/capture-status.json": "345c7453b4ee4ca803caa542da5ebd4ea09ca5537521d3b85520ea66262f9117",
+    "answers/api59/runtime-project/browser-specs.json": "5b04278f5870ecc77966cca7f0948e792cce015f6d9de5ee1e0356ab23b57848",
+    "answers/api67/org.tsv": "033d3e5ee1df7c3aba944e90133119f2492a190684534ed3e50c204741faba01",
+    "answers/api67/runtime.tsv": "033d3e5ee1df7c3aba944e90133119f2492a190684534ed3e50c204741faba01",
+    "answers/api67/runtime.json": "aab4c0c3541f5bf8e2b8326d68c63d3ce34637033290bc8177c83f849ab145a0",
+    "answers/api67/ORG-RUN.txt": "c3762a999445f793500752c1298f9ce1ddfd6a9a97a953d37e89c189e2a7bf2c",
+    "answers/api67/DOM-ORG-RUN.txt": "89396b975addc180cf569587419e9991dffa0e5b1eec867cd618754fa8928c64",
+    "answers/api67/capture-source.json": "3a5e322ae4423bbd9367feb84217719cb82921da4a8db45f51e4b993a6f493e4",
+    "answers/api67/capture-status.json": "b25f5a62ab8901f5604295513bad5e89fddf48dcea120bf0021ee2cc380c53cf",
+    "answers/api67/runtime-project/browser-specs.json": "5b04278f5870ecc77966cca7f0948e792cce015f6d9de5ee1e0356ab23b57848",
+    "answers/api68/org.tsv": "033d3e5ee1df7c3aba944e90133119f2492a190684534ed3e50c204741faba01",
+    "answers/api68/runtime.tsv": "033d3e5ee1df7c3aba944e90133119f2492a190684534ed3e50c204741faba01",
+    "answers/api68/runtime.json": "818da73a7fb2d66157b07fb9b0e2cc3463d9e6206027fb6cc4011fa4b4594ac5",
+    "answers/api68/ORG-RUN.txt": "92f5d9bc949ad43583d2f6e8ed17ee28ea729341dea82ab8c3fdfb8ebe3cb01a",
+    "answers/api68/DOM-ORG-RUN.txt": "84d655b8b58f22c968a5ba324109f200485124fce916a1f648c941703ccc49b8",
+    "answers/api68/capture-source.json": "b9afc8c57b56db368195bee318ec1940087c5e112975d3ff6f0ab754458e3a32",
+    "answers/api68/capture-status.json": "252a6a8cd7d058d41689064a8f41587d40cb3f1b7768dd7a775421c3ba64b15e",
+    "answers/api68/runtime-project/browser-specs.json": "5b04278f5870ecc77966cca7f0948e792cce015f6d9de5ee1e0356ab23b57848"
+  },
+  "caseInputHashes": {
+    "L12W_C01": "83bda70cd52aa4c04a008c5931878aa89e4ba22dc5fdda5dcb9791d11122db59",
+    "L12W_L01I": "7cc151dabcffd08b1210bada2a46698c450ad62ec08c7122341cfa9280999ac6",
+    "L12W_L01V": "28375570868d2994ace1a2a13fc9e986a3470cb99677bd2af9406968599c713f",
+    "L12W_L02I": "8d26f5e8f2dc9c2f7cb2922fac55bbc3cd226dc02c7f455a7ed88632e59c6f33",
+    "L12W_L02V": "39977157c80a3a47bb7a5f175b0566752ef39e04b26d5616e612f6700c1fd415",
+    "L12W_L03I": "f30a065c90ba52cea9ab74171996dee8097597c7171df8d3b330cb36e7eaed55",
+    "L12W_L03V": "a4c807a9447af49ff3fd539a561150f0b82e362163ea021f8a30ec85d69653af",
+    "L12W_L04I": "aa739e2e02b357749c599d7ef73a6f25fe7e5beb633e17ce37b954b91377d013",
+    "L12W_L04V": "ce798e8f28c4c3298acbc4c3ba798783a2aa98a705c79d789099f753a5761101",
+    "L12W_L05I": "52c5fc619ec5b4104778393aa76652db404cabc1ef5460682513e01d17cb5378",
+    "L12W_L05V": "4adace55f4a72526307f4aa8c0b55b6ecb9bbc00edfadcf2f5f7ba4c28460f84",
+    "L12W_L06I": "a420dc31e4db0927bea9d7a0e10b9c258e64706d05fe6d715671e6fbb5b4b517",
+    "L12W_L06V": "69166723fddc63c0cf3097d889c784cba38070a8f1aadc19a103374c1fe3d6c1",
+    "L12W_N01": "292e50874cd9794275df1030fca36d4bb24a1fd33d5f7d2626aa96ccf86316be",
+    "L12W_N02": "b1ef273655b217e28778e7294ef72eb399a32b5c9cdd639f34e8f9cc099b501b",
+    "L12W_N03": "da95f9b6f2d223186cae3213f47cacb103f5c89afcf14243e52b89088f8d03e2",
+    "L12W_N04": "3ca05675a49457dd1489523ce3b4d48728fe20ac669b4f24fd5bcdfacb9e18d3",
+    "L12W_N05": "77824a9016295e2ca02c4d39b7901fd482dc29bec6ad1fa814f23b5885516718",
+    "L12W_N06": "0da4e631f499340b4ed83e1a5abf3aa4e810fafa7063e65992c5a9b16cdfe098",
+    "L12W_C02": "2d8202f2ba88fb40b46fc3733d26f6da41e14623f6beb8b7433df823764562af",
+    "L12W_C03": "61b1b5c274e9f505ccfb35629fb23c8a30d073631453038fe51ed5daf5d39f73"
+  }
+}

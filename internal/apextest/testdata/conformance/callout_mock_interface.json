@@ -1,0 +1,807 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 7,
+  "nativeObservationCount": 42,
+  "packetRowsSha256": "bdb07c4592ca774891f1569ddbb47b04d8979873883901e5e60ab5a6c6092167",
+  "nativeJsonSha256": "4ea174bf42c7fcf1cdd34a6b45f2232d1313484f90b0d79926ea759ee2e914e3",
+  "sourceManifestSha256": "af4d7c498b85003536813731611d0195b34454cd55719dd98b0ecdfe18f88b32",
+  "rows": [
+    {
+      "id": "C126MOCK_001",
+      "question": "StaticResourceCalloutMock assigned to HttpCalloutMock",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126MOCK_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "ad44e886e1e1422a36bbc1d8efe15c81e101ffe662efe1a2ae9eda6a361ee9c7"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "75fd0504e953faab6471987a3e4243d3435a67c84bfeab42de20f7b4773fd331",
+            "67.0": "a904e37c50aeab38b0b9aa9ac54be7a4b2b728c91ee4a142b804a0df2e6ec3d4",
+            "68.0": "4749cda5a25beb74352c00de332c1100f762a138372c4f4ce6263921a40a0075"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nHttpCalloutMock m=new StaticResourceCalloutMock();o.put('nonNull',m!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126MOCK_001|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126MOCK_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "2f3f42090a48f90933c0c6e49b79ce7b9a139b63cfd202d21251ec3c518dc148"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "cac1d3b2948379858495b339bdd4f4148b9e20aa43929d3d4b635a74bd9f0f13",
+            "67.0": "6520f9effe6ff68b7176c9d915d526040f299d482bad7cc15571e548c3fbf66c",
+            "68.0": "f86684768fdf30e2d2951879754cd0417d87d36a976d5c10f8efcd3433d42c07"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nHttpCalloutMock m=new StaticResourceCalloutMock();o.put('nonNull',m!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126MOCK_001|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126MOCK_002",
+      "question": "StaticResourceCalloutMock constructor argument and chained receiver",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126MOCK_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "a5da4bb36748d0edc1c3369e02f11be81113788bff38043db9306e2554180817"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "55bdcce8bdfd51a3423a21ededdcc114ebf8dcd7e1493a5a338c72386a1093ff",
+            "67.0": "1160cfaf6640d125a54880de8b435440f148d3a4682f44dee2f4a7fa12e7ff19",
+            "68.0": "87deccc3db06e467794a43873327fcfa9cf0b7164588e2cdb0f95597359d602d"
+          },
+          "anonymous": "class C126Builder {public C126Builder(HttpCalloutMock m){} public C126Builder self(){return this;}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('nonNull',new C126Builder(new StaticResourceCalloutMock()).self()!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126MOCK_002|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126MOCK_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Builder": "882f84eb8343623331f495ed08c9614dd6b0379d92e471ac43d3286157a6e642",
+            "class:C126Test": "108282ad91e23a9332f197e978c1a9bc64a89b17ff088d76332f68d9654831c9"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "34a9d46a498ec0689066d49357b6bc130507639b2fbfaa3f5e6abfd90a94e0ac",
+            "67.0": "00562814cbab30d2606e02a1ec6b2529c0f2c452a753de76a2cac44c5d1f8f97",
+            "68.0": "dfc6e3fbf74c7fe8367503f24dbb724db9a9af981babbb57514ea816fb63dc20"
+          },
+          "classes": {
+            "C126Builder": "public class C126Builder {public C126Builder(HttpCalloutMock m){} public C126Builder self(){return this;}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('nonNull',new C126Builder(new StaticResourceCalloutMock()).self()!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126MOCK_002|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126MOCK_003",
+      "question": "MultiStaticResourceCalloutMock assigned to HttpCalloutMock",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126MOCK_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "fa742fdf8bc33e4cb0e5db022999af499c2cc13ca9130b21fe55ac9b0cea24e9"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "f34b70062640ab9d3fa57b6d84bd65075b455abab797495a32539679db9d7e00",
+            "67.0": "b02e63d569f7248a683a5c786a96e0dc90f76f7c6e25c071d79d8133459a0b0c",
+            "68.0": "44653b47f2c8be55cc5c73b1443b6cd9974fd20a668b14798d6d37a003eb1654"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nHttpCalloutMock m=new MultiStaticResourceCalloutMock();o.put('nonNull',m!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126MOCK_003|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126MOCK_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "01056dbdaa1a21a9d81c78a36f8c21a9654231e1cca401cf63e962f9eb5b5777"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "3bb577e4b36ddb47c743fb9fec67753b4eef770010af52252e5aca54117ad112",
+            "67.0": "0165eb8330a05c9036ad203fb26bf0175019c1145c0541fb194d955ae53a82bd",
+            "68.0": "3f6f942c65daabb33a83ef4b9b3bae0da9010e4cc39c97a7d91a4b46d4cd8673"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nHttpCalloutMock m=new MultiStaticResourceCalloutMock();o.put('nonNull',m!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126MOCK_003|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126MOCK_004",
+      "question": "MultiStaticResourceCalloutMock constructor argument and chained receiver",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126MOCK_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "30ab710b36f53036f24ad4968e8ee11f8487e42a8a1b92cd1c18045602ada3dc"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "1af513aab9ef4d94572ad4ca8bdd8829f89112edeb6fbff329e0b7283960f1a6",
+            "67.0": "f9dd447077c73c2254e5ab72e076f5cfb3b24b756ea42c505a483ae69e4cff71",
+            "68.0": "e1229a18d9c9f3671f21e361372afd1375abedddee7fb10d4065ffcf0badfabd"
+          },
+          "anonymous": "class C126Builder {public C126Builder(HttpCalloutMock m){} public C126Builder self(){return this;}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('nonNull',new C126Builder(new MultiStaticResourceCalloutMock()).self()!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126MOCK_004|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126MOCK_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Builder": "882f84eb8343623331f495ed08c9614dd6b0379d92e471ac43d3286157a6e642",
+            "class:C126Test": "8f56b6efc401c83fc30c8798501be081f052e9de1fae58ff67092fb35ec6451c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "980c353beaf1f8f3d5afaae09847536b77adddabe352106d3ac1978c9c7db1b1",
+            "67.0": "dd30c50c43b87b2d490cf3e9b580e1e54fbd32690c572522ea82d408e4272672",
+            "68.0": "a22a1bfe1d994e1f4b3f4157b8bcdb1202f8dc6be9a0d736dd526fb1875a102d"
+          },
+          "classes": {
+            "C126Builder": "public class C126Builder {public C126Builder(HttpCalloutMock m){} public C126Builder self(){return this;}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('nonNull',new C126Builder(new MultiStaticResourceCalloutMock()).self()!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126MOCK_004|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126MOCK_005",
+      "question": "Owned interface implementation constructor argument",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126MOCK_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "dc77adf4bb39174b87d04dce348ea0ff8ab9737f092bade132be09fecce154d2"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "df92f27b226744c84408c94b36d154462f7b19406162ebe01342d55cfebd8ada",
+            "67.0": "e586532683c68ca0e6f720ca7a046a6ff1d271ceaf8890ecdb77f19ff7ba6bbe",
+            "68.0": "b966a87abb12013d11af24cac4574c448430d429bc678db6736789b6eb63d539"
+          },
+          "anonymous": "class C126Mock implements HttpCalloutMock {public HTTPResponse respond(HTTPRequest r){return new HTTPResponse();}}\nclass C126Builder {public C126Builder(HttpCalloutMock m){}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('nonNull',new C126Builder(new C126Mock())!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126MOCK_005|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126MOCK_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Mock": "5556c27bdd795b7a329bbccdca90331e8bf5d48916d6653ae4cadf66e7f736fd",
+            "class:C126Builder": "67ece01bb7c015a3f7a9fde0853a5e30ec149ba148ef61c3c72e2ce13a864c45",
+            "class:C126Test": "215f09581e60d2cc5afde85f41d3475a1f424b1292b8f5acd3414db2753c603a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "nonNull": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "b1e858850c3f72768d75fa89d7ea2ffa504e12de6d3b6cfa2bc520573523441f",
+            "67.0": "f5b33d4176dc5d4caeb552cf25a784d08b6a1efba1d1a0dc3e2581e2e2020e73",
+            "68.0": "bd4023e3559b06104787a950825b457d2c2b16655a5c984efcdcfae63df4750a"
+          },
+          "classes": {
+            "C126Mock": "public class C126Mock implements HttpCalloutMock {public HTTPResponse respond(HTTPRequest r){return new HTTPResponse();}}",
+            "C126Builder": "public class C126Builder {public C126Builder(HttpCalloutMock m){}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('nonNull',new C126Builder(new C126Mock())!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126MOCK_005|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126MOCK_006",
+      "question": "Object is not an interface argument",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126MOCK_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "4154b6bc58931b2fde0184452259b966d71f6d643749b8899ddd3c82d68bfb4c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Constructor not defined: [C126Builder].<Constructor>(Object)",
+                "line": 4,
+                "column": 58,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Constructor not defined: [C126Builder].<Constructor>(Object)",
+                "line": 4,
+                "column": 58,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Constructor not defined: [C126Builder].<Constructor>(Object)",
+                "line": 4,
+                "column": 58,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Constructor not defined: [C126Builder].<Constructor>(Object)",
+                "line": 4,
+                "column": 58
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Constructor not defined: [C126Builder].<Constructor>(Object)",
+                "line": 4,
+                "column": 58
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Constructor not defined: [C126Builder].<Constructor>(Object)",
+                "line": 4,
+                "column": 58
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "3f1d932e295813c7479c6c05327eeef023f5da70c1a847cfc295347ea8050054",
+            "67.0": "3604b3a6a13cdfede1791b51ed48eb3b1cb99528d16dd5aed9d558557765b7e3",
+            "68.0": "d7992e3f64195915c4da3a5b8cbacab6ae3fd124797bde55ce2d672d7c3f0eea"
+          },
+          "anonymous": "class C126Builder {public C126Builder(HttpCalloutMock m){}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nObject m=new StaticResourceCalloutMock();o.put('nonNull',new C126Builder(m)!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126MOCK_006|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126MOCK_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Builder": "67ece01bb7c015a3f7a9fde0853a5e30ec149ba148ef61c3c72e2ce13a864c45",
+            "class:C126Test": "d849e0c9e8febd2f5239d59cf7b1ab64f5d2a9ee51b600745dc16eb050c88b46"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Constructor not defined: [C126Builder].<Constructor>(Object)"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Constructor not defined: [C126Builder].<Constructor>(Object)"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Constructor not defined: [C126Builder].<Constructor>(Object)"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Constructor not defined: [C126Builder].<Constructor>(Object)"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Constructor not defined: [C126Builder].<Constructor>(Object)"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Constructor not defined: [C126Builder].<Constructor>(Object)"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "99e19994bb63fbd151bf364ab600a950e22a839f213fb639ee96fb77933a5d71",
+            "67.0": "122388935e3231ecb26c00a75b4f3a3c40ac46919a72ded45a34848e2880cce6",
+            "68.0": "302d270ef5a0eb9479d38cbd44fbf9418d1250e42f0b33a7cbc9ce208236fa67"
+          },
+          "classes": {
+            "C126Builder": "public class C126Builder {public C126Builder(HttpCalloutMock m){}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nObject m=new StaticResourceCalloutMock();o.put('nonNull',new C126Builder(m)!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126MOCK_006|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126MOCK_007",
+      "question": "Unrelated String constructor argument",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126MOCK_007",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "1557aeefdc9eb4bff8465e81c01f1a6935e2a5589ef8f8562e9d81f033f03932"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Constructor not defined: [C126Builder].<Constructor>(String)",
+                "line": 4,
+                "column": 17,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Constructor not defined: [C126Builder].<Constructor>(String)",
+                "line": 4,
+                "column": 17,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Constructor not defined: [C126Builder].<Constructor>(String)",
+                "line": 4,
+                "column": 17,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Constructor not defined: [C126Builder].<Constructor>(String)",
+                "line": 4,
+                "column": 17
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Constructor not defined: [C126Builder].<Constructor>(String)",
+                "line": 4,
+                "column": 17
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Constructor not defined: [C126Builder].<Constructor>(String)",
+                "line": 4,
+                "column": 17
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "6d70ef2be14824ebb255365de54e03a393d69b0803030b7c0bf08426927c45e8",
+            "67.0": "1043b3d5472264c8b15174822a15ed40e4a49897608ec998afa171a366d1d5dd",
+            "68.0": "4e2a7f117dd05bcbb6e2ceb06d334c69acbcf9bf3c414f623c1d385b5408eabb"
+          },
+          "anonymous": "class C126Builder {public C126Builder(HttpCalloutMock m){}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('nonNull',new C126Builder('synthetic')!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126MOCK_007|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126MOCK_007",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Builder": "67ece01bb7c015a3f7a9fde0853a5e30ec149ba148ef61c3c72e2ce13a864c45",
+            "class:C126Test": "a46eb2ae2d3c96550695e693fb6ce738762f68a4e345051f649bdb4dfe8103f5"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Constructor not defined: [C126Builder].<Constructor>(String)"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Constructor not defined: [C126Builder].<Constructor>(String)"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Constructor not defined: [C126Builder].<Constructor>(String)"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Constructor not defined: [C126Builder].<Constructor>(String)"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Constructor not defined: [C126Builder].<Constructor>(String)"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Constructor not defined: [C126Builder].<Constructor>(String)"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "713acbd2e50e00442c1f727358c3a98422a9a7bb3caec5df892a292f2e601430",
+            "67.0": "bfea23fea214a7c639716a420f009ade00ced744e4a2bf7d756b43e370a31985",
+            "68.0": "e57ae00cef7c737b909e48ba917614fc9574bf28728e6d00ac936493e98fd1bf"
+          },
+          "classes": {
+            "C126Builder": "public class C126Builder {public C126Builder(HttpCalloutMock m){}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('nonNull',new C126Builder('synthetic')!=null);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126MOCK_007|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    }
+  ]
+}

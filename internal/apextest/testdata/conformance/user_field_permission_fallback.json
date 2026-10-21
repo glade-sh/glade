@@ -1,0 +1,1426 @@
+{
+  "captureStatus": "OBSERVED",
+  "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+  "fieldFacets": [
+    "isAccessible",
+    "isCreateable",
+    "isUpdateable",
+    "isPermissionable",
+    "isNillable",
+    "isDefaultedOnCreate"
+  ],
+  "objectFacets": [
+    "isAccessible",
+    "isCreateable",
+    "isUpdateable",
+    "isDeletable"
+  ],
+  "sources": [
+    {
+      "path": "force-app/main/default/classes/FieldFallback62.cls",
+      "sha256": "712774c811712633d87939e8167bd88b3842002f41309c002a3d34af1e954875",
+      "text": "@IsTest private class FieldFallback62 {\n @IsTest static void capture() {\n User actor=[SELECT Id FROM User WHERE LastName='FieldFallbackProbe' LIMIT 1];\n System.runAs(actor) {\nMap<String,Object> observed=new Map<String,Object>();\nSchema.DescribeSObjectResult objectInfo=FallbackProbe__c.SObjectType.getDescribe();\nobserved.put('object',new List<Boolean>{objectInfo.isAccessible(),objectInfo.isCreateable(),objectInfo.isUpdateable(),objectInfo.isDeletable()});\nMap<String,Schema.SObjectField> fields=objectInfo.fields.getMap();\nfor(String fieldName:new List<String>{'UnlistedField__c','GrantedField__c','DeniedField__c','RecordTypeId','RequiredChoice__c'}) {\n Schema.DescribeFieldResult info=fields.get(fieldName).getDescribe();\n observed.put(fieldName,new List<Boolean>{info.isAccessible(),info.isCreateable(),info.isUpdateable(),info.isPermissionable(),info.isNillable(),info.isDefaultedOnCreate()});\n}\nMap<String,Object> recordTypes=new Map<String,Object>();\nfor(Schema.RecordTypeInfo recordType:objectInfo.getRecordTypeInfos()) {\n recordTypes.put(recordType.getDeveloperName(),new List<Boolean>{recordType.isAvailable(),recordType.isDefaultRecordTypeMapping(),recordType.isMaster()});\n}\nobserved.put('recordTypes',recordTypes);\nMap<String,Id> recordTypeIds=new Map<String,Id>();\nfor(Schema.RecordTypeInfo rt:objectInfo.getRecordTypeInfos()) { recordTypeIds.put(rt.getDeveloperName(),rt.getRecordTypeId()); }\nobserved.put('recordTypeIds',recordTypeIds);\nSystem.assert(false,'UF|'+JSON.serialize(observed));\n }\n }\n}\n"
+    },
+    {
+      "path": "force-app/main/default/classes/FieldFallback62.cls-meta.xml",
+      "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    {
+      "path": "force-app/main/default/classes/FieldFallback67.cls",
+      "sha256": "aa82b36e16843e2e31ff62a7dd25776484f8a51f1946eced80f78034977472cc",
+      "text": "@IsTest private class FieldFallback67 {\n @IsTest static void capture() {\n User actor=[SELECT Id FROM User WHERE LastName='FieldFallbackProbe' LIMIT 1];\n System.runAs(actor) {\nMap<String,Object> observed=new Map<String,Object>();\nSchema.DescribeSObjectResult objectInfo=FallbackProbe__c.SObjectType.getDescribe();\nobserved.put('object',new List<Boolean>{objectInfo.isAccessible(),objectInfo.isCreateable(),objectInfo.isUpdateable(),objectInfo.isDeletable()});\nMap<String,Schema.SObjectField> fields=objectInfo.fields.getMap();\nfor(String fieldName:new List<String>{'UnlistedField__c','GrantedField__c','DeniedField__c','RecordTypeId','RequiredChoice__c'}) {\n Schema.DescribeFieldResult info=fields.get(fieldName).getDescribe();\n observed.put(fieldName,new List<Boolean>{info.isAccessible(),info.isCreateable(),info.isUpdateable(),info.isPermissionable(),info.isNillable(),info.isDefaultedOnCreate()});\n}\nMap<String,Object> recordTypes=new Map<String,Object>();\nfor(Schema.RecordTypeInfo recordType:objectInfo.getRecordTypeInfos()) {\n recordTypes.put(recordType.getDeveloperName(),new List<Boolean>{recordType.isAvailable(),recordType.isDefaultRecordTypeMapping(),recordType.isMaster()});\n}\nobserved.put('recordTypes',recordTypes);\nMap<String,Id> recordTypeIds=new Map<String,Id>();\nfor(Schema.RecordTypeInfo rt:objectInfo.getRecordTypeInfos()) { recordTypeIds.put(rt.getDeveloperName(),rt.getRecordTypeId()); }\nobserved.put('recordTypeIds',recordTypeIds);\nSystem.assert(false,'UF|'+JSON.serialize(observed));\n }\n }\n}\n"
+    },
+    {
+      "path": "force-app/main/default/classes/FieldFallback67.cls-meta.xml",
+      "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    {
+      "path": "force-app/main/default/classes/FieldFallback68.cls",
+      "sha256": "519b4a82ffe6810c65826748c4581423dcb30eb8ef488c7ef54d59e7265bfb2f",
+      "text": "@IsTest private class FieldFallback68 {\n @IsTest static void capture() {\n User actor=[SELECT Id FROM User WHERE LastName='FieldFallbackProbe' LIMIT 1];\n System.runAs(actor) {\nMap<String,Object> observed=new Map<String,Object>();\nSchema.DescribeSObjectResult objectInfo=FallbackProbe__c.SObjectType.getDescribe();\nobserved.put('object',new List<Boolean>{objectInfo.isAccessible(),objectInfo.isCreateable(),objectInfo.isUpdateable(),objectInfo.isDeletable()});\nMap<String,Schema.SObjectField> fields=objectInfo.fields.getMap();\nfor(String fieldName:new List<String>{'UnlistedField__c','GrantedField__c','DeniedField__c','RecordTypeId','RequiredChoice__c'}) {\n Schema.DescribeFieldResult info=fields.get(fieldName).getDescribe();\n observed.put(fieldName,new List<Boolean>{info.isAccessible(),info.isCreateable(),info.isUpdateable(),info.isPermissionable(),info.isNillable(),info.isDefaultedOnCreate()});\n}\nMap<String,Object> recordTypes=new Map<String,Object>();\nfor(Schema.RecordTypeInfo recordType:objectInfo.getRecordTypeInfos()) {\n recordTypes.put(recordType.getDeveloperName(),new List<Boolean>{recordType.isAvailable(),recordType.isDefaultRecordTypeMapping(),recordType.isMaster()});\n}\nobserved.put('recordTypes',recordTypes);\nMap<String,Id> recordTypeIds=new Map<String,Id>();\nfor(Schema.RecordTypeInfo rt:objectInfo.getRecordTypeInfos()) { recordTypeIds.put(rt.getDeveloperName(),rt.getRecordTypeId()); }\nobserved.put('recordTypeIds',recordTypeIds);\nSystem.assert(false,'UF|'+JSON.serialize(observed));\n }\n }\n}\n"
+    },
+    {
+      "path": "force-app/main/default/classes/FieldFallback68.cls-meta.xml",
+      "sha256": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    {
+      "path": "force-app/main/default/classes/FieldFallbackObserve62.cls",
+      "sha256": "51030aa152dfef0efa7029730b1a1a72446eab417e7fde913293047c49b9ddbd",
+      "text": "public class FieldFallbackObserve62 { public static String snapshot() {\nMap<String,Object> observed=new Map<String,Object>();\nSchema.DescribeSObjectResult objectInfo=FallbackProbe__c.SObjectType.getDescribe();\nobserved.put('object',new List<Boolean>{objectInfo.isAccessible(),objectInfo.isCreateable(),objectInfo.isUpdateable(),objectInfo.isDeletable()});\nMap<String,Schema.SObjectField> fields=objectInfo.fields.getMap();\nfor(String fieldName:new List<String>{'UnlistedField__c','GrantedField__c','DeniedField__c','RecordTypeId','RequiredChoice__c'}) {\n Schema.DescribeFieldResult info=fields.get(fieldName).getDescribe();\n observed.put(fieldName,new List<Boolean>{info.isAccessible(),info.isCreateable(),info.isUpdateable(),info.isPermissionable(),info.isNillable(),info.isDefaultedOnCreate()});\n}\nMap<String,Object> recordTypes=new Map<String,Object>();\nfor(Schema.RecordTypeInfo recordType:objectInfo.getRecordTypeInfos()) {\n recordTypes.put(recordType.getDeveloperName(),new List<Boolean>{recordType.isAvailable(),recordType.isDefaultRecordTypeMapping(),recordType.isMaster()});\n}\nobserved.put('recordTypes',recordTypes);\nMap<String,Id> recordTypeIds=new Map<String,Id>();\nfor(Schema.RecordTypeInfo rt:objectInfo.getRecordTypeInfos()) { recordTypeIds.put(rt.getDeveloperName(),rt.getRecordTypeId()); }\nobserved.put('recordTypeIds',recordTypeIds);\nreturn JSON.serialize(observed);\n} }\n"
+    },
+    {
+      "path": "force-app/main/default/classes/FieldFallbackObserve62.cls-meta.xml",
+      "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    {
+      "path": "force-app/main/default/classes/FieldFallbackObserve67.cls",
+      "sha256": "2bb0ce76b257e2c4a23366395474442016f9ceb6b22df61bc3e9f14136ee706d",
+      "text": "public class FieldFallbackObserve67 { public static String snapshot() {\nMap<String,Object> observed=new Map<String,Object>();\nSchema.DescribeSObjectResult objectInfo=FallbackProbe__c.SObjectType.getDescribe();\nobserved.put('object',new List<Boolean>{objectInfo.isAccessible(),objectInfo.isCreateable(),objectInfo.isUpdateable(),objectInfo.isDeletable()});\nMap<String,Schema.SObjectField> fields=objectInfo.fields.getMap();\nfor(String fieldName:new List<String>{'UnlistedField__c','GrantedField__c','DeniedField__c','RecordTypeId','RequiredChoice__c'}) {\n Schema.DescribeFieldResult info=fields.get(fieldName).getDescribe();\n observed.put(fieldName,new List<Boolean>{info.isAccessible(),info.isCreateable(),info.isUpdateable(),info.isPermissionable(),info.isNillable(),info.isDefaultedOnCreate()});\n}\nMap<String,Object> recordTypes=new Map<String,Object>();\nfor(Schema.RecordTypeInfo recordType:objectInfo.getRecordTypeInfos()) {\n recordTypes.put(recordType.getDeveloperName(),new List<Boolean>{recordType.isAvailable(),recordType.isDefaultRecordTypeMapping(),recordType.isMaster()});\n}\nobserved.put('recordTypes',recordTypes);\nMap<String,Id> recordTypeIds=new Map<String,Id>();\nfor(Schema.RecordTypeInfo rt:objectInfo.getRecordTypeInfos()) { recordTypeIds.put(rt.getDeveloperName(),rt.getRecordTypeId()); }\nobserved.put('recordTypeIds',recordTypeIds);\nreturn JSON.serialize(observed);\n} }\n"
+    },
+    {
+      "path": "force-app/main/default/classes/FieldFallbackObserve67.cls-meta.xml",
+      "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    {
+      "path": "force-app/main/default/classes/FieldFallbackObserve68.cls",
+      "sha256": "b97d13fdc7c1604a1fc8629fac4ff6ad5779ea5c084a7fa46f86568ff1b82c82",
+      "text": "public class FieldFallbackObserve68 { public static String snapshot() {\nMap<String,Object> observed=new Map<String,Object>();\nSchema.DescribeSObjectResult objectInfo=FallbackProbe__c.SObjectType.getDescribe();\nobserved.put('object',new List<Boolean>{objectInfo.isAccessible(),objectInfo.isCreateable(),objectInfo.isUpdateable(),objectInfo.isDeletable()});\nMap<String,Schema.SObjectField> fields=objectInfo.fields.getMap();\nfor(String fieldName:new List<String>{'UnlistedField__c','GrantedField__c','DeniedField__c','RecordTypeId','RequiredChoice__c'}) {\n Schema.DescribeFieldResult info=fields.get(fieldName).getDescribe();\n observed.put(fieldName,new List<Boolean>{info.isAccessible(),info.isCreateable(),info.isUpdateable(),info.isPermissionable(),info.isNillable(),info.isDefaultedOnCreate()});\n}\nMap<String,Object> recordTypes=new Map<String,Object>();\nfor(Schema.RecordTypeInfo recordType:objectInfo.getRecordTypeInfos()) {\n recordTypes.put(recordType.getDeveloperName(),new List<Boolean>{recordType.isAvailable(),recordType.isDefaultRecordTypeMapping(),recordType.isMaster()});\n}\nobserved.put('recordTypes',recordTypes);\nMap<String,Id> recordTypeIds=new Map<String,Id>();\nfor(Schema.RecordTypeInfo rt:objectInfo.getRecordTypeInfos()) { recordTypeIds.put(rt.getDeveloperName(),rt.getRecordTypeId()); }\nobserved.put('recordTypeIds',recordTypeIds);\nreturn JSON.serialize(observed);\n} }\n"
+    },
+    {
+      "path": "force-app/main/default/classes/FieldFallbackObserve68.cls-meta.xml",
+      "sha256": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    {
+      "path": "force-app/main/default/objects/FallbackProbe__c/FallbackProbe__c.object-meta.xml",
+      "sha256": "ff0744119bc4f8618d7861ec563748a1344de21bd2b5cade9b6f242bbe714842",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Fallback Probe</label><nameField><displayFormat>FP-{0000}</displayFormat><label>Probe Number</label><type>AutoNumber</type></nameField><pluralLabel>Fallback Probes</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>\n"
+    },
+    {
+      "path": "force-app/main/default/objects/FallbackProbe__c/fields/DeniedField__c.field-meta.xml",
+      "sha256": "015aa784aa4c929b7874fd0f25d6741ba26d7ed803f99464abc7f5b2d823cd16",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DeniedField__c</fullName><label>DeniedField</label><length>80</length><required>false</required><type>Text</type></CustomField>\n"
+    },
+    {
+      "path": "force-app/main/default/objects/FallbackProbe__c/fields/GrantedField__c.field-meta.xml",
+      "sha256": "3063381d144b96e394ffd905d6b4010cdd019c4b5b023262567b286bda3ad376",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>GrantedField__c</fullName><label>GrantedField</label><length>80</length><required>false</required><type>Text</type></CustomField>\n"
+    },
+    {
+      "path": "force-app/main/default/objects/FallbackProbe__c/fields/RequiredChoice__c.field-meta.xml",
+      "sha256": "187210fd313b3f6bb65f39c69be2083c0c360ba21c64f35a39f1fea38797bcb6",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>RequiredChoice__c</fullName><label>Required Choice</label><required>true</required><type>Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition><sorted>false</sorted><value><fullName>First</fullName><default>false</default><label>First</label></value><value><fullName>Second</fullName><default>false</default><label>Second</label></value></valueSetDefinition></valueSet></CustomField>\n"
+    },
+    {
+      "path": "force-app/main/default/objects/FallbackProbe__c/fields/UnlistedField__c.field-meta.xml",
+      "sha256": "f0ec9330ddb14f8ddb30d9a7b5c0898cca2d4e43dedcd8176669186239c709f0",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>UnlistedField__c</fullName><label>UnlistedField</label><length>80</length><required>false</required><type>Text</type></CustomField>\n"
+    },
+    {
+      "path": "force-app/main/default/objects/FallbackProbe__c/recordTypes/Available.recordType-meta.xml",
+      "sha256": "0f10d4f7425eff762066ac0bdbab40d6eab6c9d079f7d32fb26f294856465f25",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<RecordType xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Available</fullName><active>true</active><label>Available</label><picklistValues><picklist>RequiredChoice__c</picklist><values><fullName>First</fullName><default>false</default></values><values><fullName>Second</fullName><default>false</default></values></picklistValues></RecordType>\n"
+    },
+    {
+      "path": "force-app/main/default/objects/FallbackProbe__c/recordTypes/Unavailable.recordType-meta.xml",
+      "sha256": "79acda6561a4690d8f8db453d9e453c0c5b51cb1051549aa1149cd64e183abd6",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<RecordType xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Unavailable</fullName><active>true</active><label>Unavailable</label><picklistValues><picklist>RequiredChoice__c</picklist><values><fullName>First</fullName><default>false</default></values><values><fullName>Second</fullName><default>false</default></values></picklistValues></RecordType>\n"
+    },
+    {
+      "path": "force-app/main/default/permissionsets/FallbackProbeAccess.permissionset-meta.xml",
+      "sha256": "38d529ab9a331502c3d0556b4bb4812a43d53bf43a6b2582f9152b7937672b57",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>true</editable><field>FallbackProbe__c.GrantedField__c</field><readable>true</readable></fieldPermissions><label>Fallback Probe Access</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>FallbackProbe__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>\n"
+    },
+    {
+      "path": "force-app/main/default/permissionsets/FallbackProbeClasses.permissionset-meta.xml",
+      "sha256": "82d06bfa3d68f637bd5f60c06d07083c00c9bd7fbf53e9310d4ff5316453697d",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><classAccesses><apexClass>FieldFallbackObserve62</apexClass><enabled>true</enabled></classAccesses><classAccesses><apexClass>FieldFallbackObserve67</apexClass><enabled>true</enabled></classAccesses><classAccesses><apexClass>FieldFallbackObserve68</apexClass><enabled>true</enabled></classAccesses><label>Fallback Probe Classes</label><userPermissions><enabled>true</enabled><name>AuthorApex</name></userPermissions><userPermissions><enabled>true</enabled><name>ViewSetup</name></userPermissions><userPermissions><enabled>true</enabled><name>ModifyMetadata</name></userPermissions><userPermissions><enabled>true</enabled><name>ViewRoles</name></userPermissions></PermissionSet>\n"
+    },
+    {
+      "path": "force-app/main/default/profiles/Standard.profile-meta.xml",
+      "sha256": "8eeaa8fcc6cd4939a968a006703931afbfc8616bd363d20317fa30d929bee5ab",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Profile xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>false</editable><field>FallbackProbe__c.DeniedField__c</field><readable>false</readable></fieldPermissions><recordTypeVisibilities><default>true</default><recordType>FallbackProbe__c.Available</recordType><visible>true</visible></recordTypeVisibilities><recordTypeVisibilities><default>false</default><recordType>FallbackProbe__c.Unavailable</recordType><visible>false</visible></recordTypeVisibilities></Profile>\n"
+    }
+  ],
+  "orgTSV": "apiVersion\tcontext\tconfiguration\trow\tnative\torgIdSHA256\n62.0\tanonymous\tgranted\tUnlistedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tgranted\tGrantedField__c\t[true,true,true,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tgranted\tDeniedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tgranted\tRecordTypeId\t[true,true,true,false,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tgranted\tRequiredChoice__c\t[true,true,true,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tgranted\tobject\t[true,true,true,true]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tgranted\trecordTypes\t{\"Master\":[true,false,true],\"Unavailable\":[false,false,false],\"Available\":[true,true,false]}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tgranted\trecordTypeIds\t{\"Master\":\"012000000000000AAA\",\"Unavailable\":\"012000000000mgsAAA\",\"Available\":\"012000000000aexAAA\"}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tgranted\tUnlistedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tgranted\tGrantedField__c\t[true,true,true,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tgranted\tDeniedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tgranted\tRecordTypeId\t[true,true,true,false,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tgranted\tRequiredChoice__c\t[true,true,true,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tgranted\tobject\t[true,true,true,true]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tgranted\trecordTypes\t{\"Master\":[true,false,true],\"Unavailable\":[false,false,false],\"Available\":[true,true,false]}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tgranted\trecordTypeIds\t{\"Master\":\"012000000000000AAA\",\"Unavailable\":\"012000000000mgsAAA\",\"Available\":\"012000000000aexAAA\"}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tgranted\tUnlistedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tgranted\tGrantedField__c\t[true,true,true,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tgranted\tDeniedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tgranted\tRecordTypeId\t[true,true,true,false,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tgranted\tRequiredChoice__c\t[true,true,true,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tgranted\tobject\t[true,true,true,true]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tgranted\trecordTypes\t{\"Master\":[true,false,true],\"Unavailable\":[false,false,false],\"Available\":[true,true,false]}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tgranted\trecordTypeIds\t{\"Master\":\"012000000000000AAA\",\"Unavailable\":\"012000000000mgsAAA\",\"Available\":\"012000000000aexAAA\"}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tgranted\tUnlistedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tgranted\tGrantedField__c\t[true,true,true,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tgranted\tDeniedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tgranted\tRecordTypeId\t[true,true,true,false,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tgranted\tRequiredChoice__c\t[true,true,true,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tgranted\tobject\t[true,true,true,true]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tgranted\trecordTypes\t{\"Master\":[true,false,true],\"Unavailable\":[false,false,false],\"Available\":[true,true,false]}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tgranted\trecordTypeIds\t{\"Master\":\"012000000000000AAA\",\"Unavailable\":\"012000000000mgsAAA\",\"Available\":\"012000000000aexAAA\"}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tgranted\tUnlistedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tgranted\tGrantedField__c\t[true,true,true,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tgranted\tDeniedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tgranted\tRecordTypeId\t[true,true,true,false,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tgranted\tRequiredChoice__c\t[true,true,true,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tgranted\tobject\t[true,true,true,true]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tgranted\trecordTypes\t{\"Master\":[true,false,true],\"Unavailable\":[false,false,false],\"Available\":[true,true,false]}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tgranted\trecordTypeIds\t{\"Master\":\"012000000000000AAA\",\"Unavailable\":\"012000000000mgsAAA\",\"Available\":\"012000000000aexAAA\"}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tgranted\tUnlistedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tgranted\tGrantedField__c\t[true,true,true,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tgranted\tDeniedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tgranted\tRecordTypeId\t[true,true,true,false,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tgranted\tRequiredChoice__c\t[true,true,true,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tgranted\tobject\t[true,true,true,true]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tgranted\trecordTypes\t{\"Master\":[true,false,true],\"Unavailable\":[false,false,false],\"Available\":[true,true,false]}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tgranted\trecordTypeIds\t{\"Master\":\"012000000000000AAA\",\"Unavailable\":\"012000000000mgsAAA\",\"Available\":\"012000000000aexAAA\"}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tprofile-only\tUnlistedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tprofile-only\tGrantedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tprofile-only\tDeniedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tprofile-only\tRecordTypeId\t[false,false,false,false,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tprofile-only\tRequiredChoice__c\t[false,false,false,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tprofile-only\tobject\t[false,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tprofile-only\trecordTypes\t{\"Master\":[true,false,true],\"Unavailable\":[false,false,false],\"Available\":[true,true,false]}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tanonymous\tprofile-only\trecordTypeIds\t{\"Master\":\"012000000000000AAA\",\"Unavailable\":\"012000000000mgsAAA\",\"Available\":\"012000000000aexAAA\"}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tprofile-only\tUnlistedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tprofile-only\tGrantedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tprofile-only\tDeniedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tprofile-only\tRecordTypeId\t[false,false,false,false,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tprofile-only\tRequiredChoice__c\t[false,false,false,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tprofile-only\tobject\t[false,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tprofile-only\trecordTypes\t{\"Master\":[true,false,true],\"Unavailable\":[false,false,false],\"Available\":[true,true,false]}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n62.0\tistest\tprofile-only\trecordTypeIds\t{\"Master\":\"012000000000000AAA\",\"Unavailable\":\"012000000000mgsAAA\",\"Available\":\"012000000000aexAAA\"}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tprofile-only\tUnlistedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tprofile-only\tGrantedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tprofile-only\tDeniedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tprofile-only\tRecordTypeId\t[false,false,false,false,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tprofile-only\tRequiredChoice__c\t[false,false,false,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tprofile-only\tobject\t[false,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tprofile-only\trecordTypes\t{\"Master\":[true,false,true],\"Unavailable\":[false,false,false],\"Available\":[true,true,false]}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tanonymous\tprofile-only\trecordTypeIds\t{\"Master\":\"012000000000000AAA\",\"Unavailable\":\"012000000000mgsAAA\",\"Available\":\"012000000000aexAAA\"}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tprofile-only\tUnlistedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tprofile-only\tGrantedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tprofile-only\tDeniedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tprofile-only\tRecordTypeId\t[false,false,false,false,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tprofile-only\tRequiredChoice__c\t[false,false,false,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tprofile-only\tobject\t[false,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tprofile-only\trecordTypes\t{\"Master\":[true,false,true],\"Unavailable\":[false,false,false],\"Available\":[true,true,false]}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n67.0\tistest\tprofile-only\trecordTypeIds\t{\"Master\":\"012000000000000AAA\",\"Unavailable\":\"012000000000mgsAAA\",\"Available\":\"012000000000aexAAA\"}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tprofile-only\tUnlistedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tprofile-only\tGrantedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tprofile-only\tDeniedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tprofile-only\tRecordTypeId\t[false,false,false,false,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tprofile-only\tRequiredChoice__c\t[false,false,false,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tprofile-only\tobject\t[false,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tprofile-only\trecordTypes\t{\"Master\":[true,false,true],\"Unavailable\":[false,false,false],\"Available\":[true,true,false]}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tanonymous\tprofile-only\trecordTypeIds\t{\"Master\":\"012000000000000AAA\",\"Unavailable\":\"012000000000mgsAAA\",\"Available\":\"012000000000aexAAA\"}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tprofile-only\tUnlistedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tprofile-only\tGrantedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tprofile-only\tDeniedField__c\t[false,false,false,true,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tprofile-only\tRecordTypeId\t[false,false,false,false,true,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tprofile-only\tRequiredChoice__c\t[false,false,false,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tprofile-only\tobject\t[false,false,false,false]\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tprofile-only\trecordTypes\t{\"Master\":[true,false,true],\"Unavailable\":[false,false,false],\"Available\":[true,true,false]}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n68.0\tistest\tprofile-only\trecordTypeIds\t{\"Master\":\"012000000000000AAA\",\"Unavailable\":\"012000000000mgsAAA\",\"Available\":\"012000000000aexAAA\"}\tbd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\n",
+  "orgRunText": "Owned field-permission fallback observations\nUTC export: 2026-10-15T14:50:13.795274+00:00\nOrg id SHA256: bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814\nAPIs: 62.0,67.0,68.0\nContexts: anonymous invoking owned same-version helper as the Standard User; @IsTest System.runAs the same Standard User.\nMatrix: 12 answered snapshots, 60 field rows, 12 object-CRUD rows.\nNative assertion failure transport is intentional for @IsTest; UF| payload contains observed values.\nProfile false FLS deployment serializes as no FieldPermissions row; no persisted false row is claimed.\nAnonymous initially failed class access/security preconditions. Synthetic class-access plus AuthorApex/ViewSetup/ModifyMetadata/ViewRoles were granted only in this disposable org. ModifyAllData and ViewAllData remain false; named pre-AuthorApex API67 describes match final granted describes.\nNo object or field grants are supplied by the class-execution permission set.\nCommands use HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true. own-standard-user-same-org resolves the created synthetic scratch user, not another org.\n\nSetup commands (source XML records exact object/profile/PS fields):\nsf org create scratch --target-dev-hub scratch-org --alias scratch-org --duration-days 3 --edition developer --wait 15 --json\nsf project deploy start --target-org scratch-org --source-dir force-app --wait 10 --json\nsf org create user --target-org scratch-org --definition-file <synthetic-user-definition.json> --json\nsf org assign permset --target-org scratch-org --name FallbackProbeClasses --on-behalf-of own-standard-user-same-org --json\nsf data update record --target-org scratch-org --sobject PermissionSet --where \"Name='FallbackProbeClasses'\" --values \"PermissionsAuthorApex=true PermissionsViewSetup=true PermissionsModifyMetadata=true PermissionsViewRoles=true\" --json\n\nCapture commands:\nsf apex run --target-org own-standard-user-same-org --api-version 62.0 --file <probe-worktree>/probe/field_permission_fallback/anonymous-62.apex --json\nsf apex run test --target-org scratch-org --api-version 62.0 --class-names FieldFallback62 --synchronous --json\nsf apex run --target-org own-standard-user-same-org --api-version 67.0 --file <probe-worktree>/probe/field_permission_fallback/anonymous-67.apex --json\nsf apex run test --target-org scratch-org --api-version 67.0 --class-names FieldFallback67 --synchronous --json\nsf apex run --target-org own-standard-user-same-org --api-version 68.0 --file <probe-worktree>/probe/field_permission_fallback/anonymous-68.apex --json\nsf apex run test --target-org scratch-org --api-version 68.0 --class-names FieldFallback68 --synchronous --json\nsf apex run --target-org own-standard-user-same-org --api-version 62.0 --file <probe-worktree>/probe/field_permission_fallback/anonymous-62.apex --json\nsf apex run test --target-org scratch-org --api-version 62.0 --class-names FieldFallback62 --synchronous --json\nsf apex run --target-org own-standard-user-same-org --api-version 67.0 --file <probe-worktree>/probe/field_permission_fallback/anonymous-67.apex --json\nsf apex run test --target-org scratch-org --api-version 67.0 --class-names FieldFallback67 --synchronous --json\nsf apex run --target-org own-standard-user-same-org --api-version 68.0 --file <probe-worktree>/probe/field_permission_fallback/anonymous-68.apex --json\nsf apex run test --target-org scratch-org --api-version 68.0 --class-names FieldFallback68 --synchronous --json\n\nBetween configurations: delete only the synthetic FallbackProbeAccess PermissionSetAssignment; verify remaining assignment rows.\n\nEffective configuration query commands:\nsf data query --target-org scratch-org --api-version 67.0 --query \"SELECT Id,ProfileId,UserType,Profile.Name,Profile.UserType,Profile.UserLicense.Name FROM User WHERE LastName='FieldFallbackProbe'\" --json\nsf data query --target-org scratch-org --api-version 67.0 --query \"SELECT Id,Name,IsOwnedByProfile,ProfileId,Profile.Name,PermissionsModifyAllData,PermissionsViewAllData,PermissionsAuthorApex FROM PermissionSet WHERE IsOwnedByProfile=true AND Profile.Name='Standard User'\" --json\nsf data query --target-org scratch-org --api-version 67.0 --query \"SELECT Id,ParentId,SobjectType,Field,PermissionsRead,PermissionsEdit FROM FieldPermissions WHERE SobjectType='FallbackProbe__c'\" --json\nsf data query --target-org scratch-org --api-version 67.0 --query \"SELECT Id,ParentId,SobjectType,PermissionsRead,PermissionsCreate,PermissionsEdit,PermissionsDelete,PermissionsViewAllRecords,PermissionsModifyAllRecords FROM ObjectPermissions WHERE SobjectType='FallbackProbe__c'\" --json\nsf data query --target-org scratch-org --api-version 67.0 --query \"SELECT Id,AssigneeId,PermissionSetId,PermissionSet.Name FROM PermissionSetAssignment WHERE Assignee.LastName='FieldFallbackProbe'\" --json\n\nAll committed sources are owned synthetic metadata/classes. No corpus source was deployed.\n\nCleanup commands:\nsf org delete scratch --target-org scratch-org --no-prompt --json\nsf org logout --target-org own-standard-user-same-org --no-prompt --json\nsf alias list --json (assert scratch-org absent without printing aliases)\nCleanup result: scratch delete status 0; own alias absence verified.\nSynthetic user auth check: logout returned NoAuthFoundForTargetOrgError; deletion had already removed that authentication.\n",
+  "effectiveConfiguration": {
+    "beforeClassExecutionGrant": [
+      {
+        "query": "SELECT Id,ProfileId,UserType,Profile.Name,Profile.UserType,Profile.UserLicense.Name FROM User WHERE LastName='FieldFallbackProbe'",
+        "records": [
+          {
+            "attributes": {
+              "type": "User",
+              "url": "/services/data/v67.0/sobjects/User/005iz000002HSj5AAG"
+            },
+            "Id": "005iz000002HSj5AAG",
+            "ProfileId": "00eiz000000V89xAAC",
+            "UserType": "Standard",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v67.0/sobjects/Profile/00eiz000000V89xAAC"
+              },
+              "Name": "Standard User",
+              "UserType": "Standard",
+              "UserLicense": {
+                "attributes": {
+                  "type": "UserLicense",
+                  "url": "/services/data/v67.0/sobjects/UserLicense/100iz000002uVRUAA2"
+                },
+                "Name": "Salesforce"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "query": "SELECT Id,Name,IsOwnedByProfile,ProfileId,Profile.Name,PermissionsModifyAllData,PermissionsViewAllData,PermissionsAuthorApex FROM PermissionSet WHERE IsOwnedByProfile=true AND Profile.Name='Standard User'",
+        "records": [
+          {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v67.0/sobjects/PermissionSet/0PSiz000000arkIGAQ"
+            },
+            "Id": "0PSiz000000arkIGAQ",
+            "Name": "X00ex00000018ozq_128_09_04_12_10",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eiz000000V89xAAC",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v67.0/sobjects/Profile/00eiz000000V89xAAC"
+              },
+              "Name": "Standard User"
+            },
+            "PermissionsModifyAllData": false,
+            "PermissionsViewAllData": false,
+            "PermissionsAuthorApex": false
+          }
+        ]
+      },
+      {
+        "query": "SELECT Id,ParentId,SobjectType,Field,PermissionsRead,PermissionsEdit FROM FieldPermissions WHERE SobjectType='FallbackProbe__c'",
+        "records": [
+          {
+            "attributes": {
+              "type": "FieldPermissions",
+              "url": "/services/data/v67.0/sobjects/FieldPermissions/01kiz0000195XtwAAE"
+            },
+            "Id": "01kiz0000195XtwAAE",
+            "ParentId": "0PSiz000000bDXoGAM",
+            "SobjectType": "FallbackProbe__c",
+            "Field": "FallbackProbe__c.GrantedField__c",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          }
+        ]
+      },
+      {
+        "query": "SELECT Id,ParentId,SobjectType,PermissionsRead,PermissionsCreate,PermissionsEdit,PermissionsDelete,PermissionsViewAllRecords,PermissionsModifyAllRecords FROM ObjectPermissions WHERE SobjectType='FallbackProbe__c'",
+        "records": [
+          {
+            "attributes": {
+              "type": "ObjectPermissions",
+              "url": "/services/data/v67.0/sobjects/ObjectPermissions/110iz00000K0YMdAAN"
+            },
+            "Id": "110iz00000K0YMdAAN",
+            "ParentId": "0PSiz000000arkhGAA",
+            "SobjectType": "FallbackProbe__c",
+            "PermissionsRead": true,
+            "PermissionsCreate": false,
+            "PermissionsEdit": false,
+            "PermissionsDelete": false,
+            "PermissionsViewAllRecords": true,
+            "PermissionsModifyAllRecords": false
+          },
+          {
+            "attributes": {
+              "type": "ObjectPermissions",
+              "url": "/services/data/v67.0/sobjects/ObjectPermissions/110iz00000K0YMeAAN"
+            },
+            "Id": "110iz00000K0YMeAAN",
+            "ParentId": "0PSiz000000bDXoGAM",
+            "SobjectType": "FallbackProbe__c",
+            "PermissionsRead": true,
+            "PermissionsCreate": true,
+            "PermissionsEdit": true,
+            "PermissionsDelete": true,
+            "PermissionsViewAllRecords": false,
+            "PermissionsModifyAllRecords": false
+          },
+          {
+            "attributes": {
+              "type": "ObjectPermissions",
+              "url": "/services/data/v67.0/sobjects/ObjectPermissions/00000000arkHa00AAC"
+            },
+            "Id": "00000000arkHa00AAC",
+            "ParentId": "0PSiz000000arkHGAQ",
+            "SobjectType": "FallbackProbe__c",
+            "PermissionsRead": true,
+            "PermissionsCreate": true,
+            "PermissionsEdit": true,
+            "PermissionsDelete": true,
+            "PermissionsViewAllRecords": true,
+            "PermissionsModifyAllRecords": true
+          }
+        ]
+      },
+      {
+        "query": "SELECT Id,AssigneeId,PermissionSetId,PermissionSet.Name FROM PermissionSetAssignment WHERE Assignee.LastName='FieldFallbackProbe'",
+        "records": [
+          {
+            "attributes": {
+              "type": "PermissionSetAssignment",
+              "url": "/services/data/v67.0/sobjects/PermissionSetAssignment/0Paiz000001PMm3CAG"
+            },
+            "Id": "0Paiz000001PMm3CAG",
+            "AssigneeId": "005iz000002HSj5AAG",
+            "PermissionSetId": "0PSiz000000arkIGAQ",
+            "PermissionSet": {
+              "attributes": {
+                "type": "PermissionSet",
+                "url": "/services/data/v67.0/sobjects/PermissionSet/0PSiz000000arkIGAQ"
+              },
+              "Name": "X00ex00000018ozq_128_09_04_12_10"
+            }
+          },
+          {
+            "attributes": {
+              "type": "PermissionSetAssignment",
+              "url": "/services/data/v67.0/sobjects/PermissionSetAssignment/0Paiz000001PUEMCA4"
+            },
+            "Id": "0Paiz000001PUEMCA4",
+            "AssigneeId": "005iz000002HSj5AAG",
+            "PermissionSetId": "0PSiz000000bDXoGAM",
+            "PermissionSet": {
+              "attributes": {
+                "type": "PermissionSet",
+                "url": "/services/data/v67.0/sobjects/PermissionSet/0PSiz000000bDXoGAM"
+              },
+              "Name": "FallbackProbeAccess"
+            }
+          }
+        ]
+      }
+    ],
+    "finalGrantedPermissionSets": {
+      "query": "SELECT Id,AssigneeId,PermissionSetId,PermissionSet.Name,PermissionSet.IsOwnedByProfile,PermissionSet.PermissionsAuthorApex,PermissionSet.PermissionsViewSetup,PermissionSet.PermissionsModifyMetadata,PermissionSet.PermissionsViewRoles,PermissionSet.PermissionsModifyAllData,PermissionSet.PermissionsViewAllData FROM PermissionSetAssignment WHERE Assignee.LastName='FieldFallbackProbe'",
+      "records": [
+        {
+          "attributes": {
+            "type": "PermissionSetAssignment",
+            "url": "/services/data/v68.0/sobjects/PermissionSetAssignment/0Paiz000001PMm3CAG"
+          },
+          "Id": "0Paiz000001PMm3CAG",
+          "AssigneeId": "005iz000002HSj5AAG",
+          "PermissionSetId": "0PSiz000000arkIGAQ",
+          "PermissionSet": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSiz000000arkIGAQ"
+            },
+            "Name": "X00ex00000018ozq_128_09_04_12_10",
+            "IsOwnedByProfile": true,
+            "PermissionsAuthorApex": false,
+            "PermissionsViewSetup": true,
+            "PermissionsModifyMetadata": false,
+            "PermissionsViewRoles": true,
+            "PermissionsModifyAllData": false,
+            "PermissionsViewAllData": false
+          }
+        },
+        {
+          "attributes": {
+            "type": "PermissionSetAssignment",
+            "url": "/services/data/v68.0/sobjects/PermissionSetAssignment/0Paiz000001PUEMCA4"
+          },
+          "Id": "0Paiz000001PUEMCA4",
+          "AssigneeId": "005iz000002HSj5AAG",
+          "PermissionSetId": "0PSiz000000bDXoGAM",
+          "PermissionSet": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSiz000000bDXoGAM"
+            },
+            "Name": "FallbackProbeAccess",
+            "IsOwnedByProfile": false,
+            "PermissionsAuthorApex": false,
+            "PermissionsViewSetup": false,
+            "PermissionsModifyMetadata": false,
+            "PermissionsViewRoles": false,
+            "PermissionsModifyAllData": false,
+            "PermissionsViewAllData": false
+          }
+        },
+        {
+          "attributes": {
+            "type": "PermissionSetAssignment",
+            "url": "/services/data/v68.0/sobjects/PermissionSetAssignment/0Paiz000001PUZGCA4"
+          },
+          "Id": "0Paiz000001PUZGCA4",
+          "AssigneeId": "005iz000002HSj5AAG",
+          "PermissionSetId": "0PSiz000000bMMcGAM",
+          "PermissionSet": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSiz000000bMMcGAM"
+            },
+            "Name": "FallbackProbeClasses",
+            "IsOwnedByProfile": false,
+            "PermissionsAuthorApex": true,
+            "PermissionsViewSetup": true,
+            "PermissionsModifyMetadata": true,
+            "PermissionsViewRoles": true,
+            "PermissionsModifyAllData": false,
+            "PermissionsViewAllData": false
+          }
+        }
+      ]
+    },
+    "profileOnlyAssignments": [
+      {
+        "attributes": {
+          "type": "PermissionSetAssignment",
+          "url": "/services/data/v67.0/sobjects/PermissionSetAssignment/0Paiz000001PMm3CAG"
+        },
+        "Id": "0Paiz000001PMm3CAG",
+        "AssigneeId": "005iz000002HSj5AAG",
+        "PermissionSetId": "0PSiz000000arkIGAQ",
+        "PermissionSet": {
+          "attributes": {
+            "type": "PermissionSet",
+            "url": "/services/data/v67.0/sobjects/PermissionSet/0PSiz000000arkIGAQ"
+          },
+          "Name": "X00ex00000018ozq_128_09_04_12_10"
+        }
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetAssignment",
+          "url": "/services/data/v67.0/sobjects/PermissionSetAssignment/0Paiz000001PUZGCA4"
+        },
+        "Id": "0Paiz000001PUZGCA4",
+        "AssigneeId": "005iz000002HSj5AAG",
+        "PermissionSetId": "0PSiz000000bMMcGAM",
+        "PermissionSet": {
+          "attributes": {
+            "type": "PermissionSet",
+            "url": "/services/data/v67.0/sobjects/PermissionSet/0PSiz000000bMMcGAM"
+          },
+          "Name": "FallbackProbeClasses"
+        }
+      }
+    ]
+  },
+  "minimalBeforeClassExecutionGrant": {
+    "apiVersion": "67.0",
+    "route": "istest",
+    "rawSHA256": "49c12c0f75e4af1f61f5a3fbf05ccb3b9cac58fccf2f2fbefcd23a9c9da9bf74",
+    "native": {
+      "recordTypes": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "RequiredChoice__c": [
+        true,
+        true,
+        true,
+        false,
+        false,
+        false
+      ],
+      "RecordTypeId": [
+        true,
+        true,
+        true,
+        false,
+        true,
+        false
+      ],
+      "DeniedField__c": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false
+      ],
+      "GrantedField__c": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        false
+      ],
+      "UnlistedField__c": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false
+      ],
+      "object": [
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  },
+  "cells": [
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "configuration": "granted",
+      "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+      "rawSHA256": "040d8d44f3da4e69dfcf99c351d2d3eb25803c0f2cc8a2d35c436d82e3caf7ba",
+      "fields": {
+        "UnlistedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "GrantedField__c": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          false
+        ],
+        "DeniedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "RecordTypeId": [
+          true,
+          true,
+          true,
+          false,
+          true,
+          false
+        ],
+        "RequiredChoice__c": [
+          true,
+          true,
+          true,
+          false,
+          false,
+          false
+        ]
+      },
+      "object": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "recordTypesConfiguration": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "recordTypeIdsProvenance": {
+        "Master": "012000000000000AAA",
+        "Unavailable": "012000000000mgsAAA",
+        "Available": "012000000000aexAAA"
+      }
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "istest",
+      "configuration": "granted",
+      "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+      "rawSHA256": "baef0aee34d549c1dc27bea421d7dac49d0449e31d8f6720d9a60edd616a0231",
+      "fields": {
+        "UnlistedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "GrantedField__c": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          false
+        ],
+        "DeniedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "RecordTypeId": [
+          true,
+          true,
+          true,
+          false,
+          true,
+          false
+        ],
+        "RequiredChoice__c": [
+          true,
+          true,
+          true,
+          false,
+          false,
+          false
+        ]
+      },
+      "object": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "recordTypesConfiguration": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "recordTypeIdsProvenance": {
+        "Master": "012000000000000AAA",
+        "Unavailable": "012000000000mgsAAA",
+        "Available": "012000000000aexAAA"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "configuration": "granted",
+      "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+      "rawSHA256": "4476be7dc507e547c5a22e7ac97f167660fada58b40c5b268c3f23d57156521e",
+      "fields": {
+        "UnlistedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "GrantedField__c": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          false
+        ],
+        "DeniedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "RecordTypeId": [
+          true,
+          true,
+          true,
+          false,
+          true,
+          false
+        ],
+        "RequiredChoice__c": [
+          true,
+          true,
+          true,
+          false,
+          false,
+          false
+        ]
+      },
+      "object": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "recordTypesConfiguration": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "recordTypeIdsProvenance": {
+        "Master": "012000000000000AAA",
+        "Unavailable": "012000000000mgsAAA",
+        "Available": "012000000000aexAAA"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "istest",
+      "configuration": "granted",
+      "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+      "rawSHA256": "d5481345765b7e902844b65647be59392cd03defbf03b6b174d5dcf053172078",
+      "fields": {
+        "UnlistedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "GrantedField__c": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          false
+        ],
+        "DeniedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "RecordTypeId": [
+          true,
+          true,
+          true,
+          false,
+          true,
+          false
+        ],
+        "RequiredChoice__c": [
+          true,
+          true,
+          true,
+          false,
+          false,
+          false
+        ]
+      },
+      "object": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "recordTypesConfiguration": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "recordTypeIdsProvenance": {
+        "Master": "012000000000000AAA",
+        "Unavailable": "012000000000mgsAAA",
+        "Available": "012000000000aexAAA"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "anonymous",
+      "configuration": "granted",
+      "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+      "rawSHA256": "1ed4abf6462cc404c85f6893d01f72e41715dc1fcbd3e699ea169869ba96f068",
+      "fields": {
+        "UnlistedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "GrantedField__c": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          false
+        ],
+        "DeniedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "RecordTypeId": [
+          true,
+          true,
+          true,
+          false,
+          true,
+          false
+        ],
+        "RequiredChoice__c": [
+          true,
+          true,
+          true,
+          false,
+          false,
+          false
+        ]
+      },
+      "object": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "recordTypesConfiguration": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "recordTypeIdsProvenance": {
+        "Master": "012000000000000AAA",
+        "Unavailable": "012000000000mgsAAA",
+        "Available": "012000000000aexAAA"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "istest",
+      "configuration": "granted",
+      "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+      "rawSHA256": "d5c1486c58d8a8b66bd3f4d90250502770fe0ea8fdeba7169518c7dec86d8f76",
+      "fields": {
+        "UnlistedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "GrantedField__c": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          false
+        ],
+        "DeniedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "RecordTypeId": [
+          true,
+          true,
+          true,
+          false,
+          true,
+          false
+        ],
+        "RequiredChoice__c": [
+          true,
+          true,
+          true,
+          false,
+          false,
+          false
+        ]
+      },
+      "object": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "recordTypesConfiguration": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "recordTypeIdsProvenance": {
+        "Master": "012000000000000AAA",
+        "Unavailable": "012000000000mgsAAA",
+        "Available": "012000000000aexAAA"
+      }
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "configuration": "profile-only",
+      "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+      "rawSHA256": "9935642cf668d7258e682ab2c1f17029ef962c41aea58e6ba8c68d0d68b19303",
+      "fields": {
+        "UnlistedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "GrantedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "DeniedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "RecordTypeId": [
+          false,
+          false,
+          false,
+          false,
+          true,
+          false
+        ],
+        "RequiredChoice__c": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "object": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "recordTypesConfiguration": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "recordTypeIdsProvenance": {
+        "Master": "012000000000000AAA",
+        "Unavailable": "012000000000mgsAAA",
+        "Available": "012000000000aexAAA"
+      }
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "istest",
+      "configuration": "profile-only",
+      "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+      "rawSHA256": "6b02358149f5e62667e224f4378a2588af6251730a794ba1c3c81b2e0ba2dc28",
+      "fields": {
+        "UnlistedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "GrantedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "DeniedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "RecordTypeId": [
+          false,
+          false,
+          false,
+          false,
+          true,
+          false
+        ],
+        "RequiredChoice__c": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "object": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "recordTypesConfiguration": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "recordTypeIdsProvenance": {
+        "Master": "012000000000000AAA",
+        "Unavailable": "012000000000mgsAAA",
+        "Available": "012000000000aexAAA"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "configuration": "profile-only",
+      "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+      "rawSHA256": "9c99a6d99a29e415f4b8ce2c864fbc88ae037c1fc07ad013ba61c482b3353264",
+      "fields": {
+        "UnlistedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "GrantedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "DeniedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "RecordTypeId": [
+          false,
+          false,
+          false,
+          false,
+          true,
+          false
+        ],
+        "RequiredChoice__c": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "object": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "recordTypesConfiguration": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "recordTypeIdsProvenance": {
+        "Master": "012000000000000AAA",
+        "Unavailable": "012000000000mgsAAA",
+        "Available": "012000000000aexAAA"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "istest",
+      "configuration": "profile-only",
+      "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+      "rawSHA256": "83de14f8239adcb0b772ff5f42932901400325e20d08d9afdbd5907643a4a96c",
+      "fields": {
+        "UnlistedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "GrantedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "DeniedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "RecordTypeId": [
+          false,
+          false,
+          false,
+          false,
+          true,
+          false
+        ],
+        "RequiredChoice__c": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "object": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "recordTypesConfiguration": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "recordTypeIdsProvenance": {
+        "Master": "012000000000000AAA",
+        "Unavailable": "012000000000mgsAAA",
+        "Available": "012000000000aexAAA"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "anonymous",
+      "configuration": "profile-only",
+      "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+      "rawSHA256": "e92ef8ad23375f8f6c5f355753971fc759df911906597e21a0c4ba9dd170a05e",
+      "fields": {
+        "UnlistedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "GrantedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "DeniedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "RecordTypeId": [
+          false,
+          false,
+          false,
+          false,
+          true,
+          false
+        ],
+        "RequiredChoice__c": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "object": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "recordTypesConfiguration": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "recordTypeIdsProvenance": {
+        "Master": "012000000000000AAA",
+        "Unavailable": "012000000000mgsAAA",
+        "Available": "012000000000aexAAA"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "istest",
+      "configuration": "profile-only",
+      "orgIdSHA256": "bd231d0ab0be0f8f6f7632c591d6c03396784db82a5c0b835836e55b77713814",
+      "rawSHA256": "dd4ecb7eaae6008004116a97258c796a744c8d11b8da7907a571235acfb006c7",
+      "fields": {
+        "UnlistedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "GrantedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "DeniedField__c": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ],
+        "RecordTypeId": [
+          false,
+          false,
+          false,
+          false,
+          true,
+          false
+        ],
+        "RequiredChoice__c": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "object": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "recordTypesConfiguration": {
+        "Master": [
+          true,
+          false,
+          true
+        ],
+        "Unavailable": [
+          false,
+          false,
+          false
+        ],
+        "Available": [
+          true,
+          true,
+          false
+        ]
+      },
+      "recordTypeIdsProvenance": {
+        "Master": "012000000000000AAA",
+        "Unavailable": "012000000000mgsAAA",
+        "Available": "012000000000aexAAA"
+      }
+    }
+  ],
+  "boundaries": [
+    "UF03 is an explicit false profile metadata configuration; Salesforce stores no false FieldPermissions row for it. Its observed describe denial is asserted; existence of a persisted false row is not asserted.",
+    "Record-type IDs and available/unavailable flags are recorded as configuration provenance. These observations do not establish DML acceptance for an unavailable record type.",
+    "Anonymous execution uses an owned same-source-version helper and a synthetic Apex-execution permission set; ModifyAllData/ViewAllData remain false. The direct anonymous hidden-field token and missing class-execution-permission failures are retained in probe evidence, not generalized into the runtime."
+  ],
+  "userDefinition": {
+    "LastName": "FieldFallbackProbe",
+    "Alias": "ufprobe",
+    "profileName": "Standard User",
+    "permsets": [
+      "FallbackProbeAccess"
+    ]
+  },
+  "cleanup": {
+    "scratchDeletionStatus": 0,
+    "aliasAbsent": true,
+    "standardUserAuthLogoutStatus": 1,
+    "standardUserAuthAbsent": true,
+    "standardUserAuthLogoutOutcome": "NoAuthFoundForTargetOrgError: scratch deletion already removed the synthetic user authentication"
+  },
+  "documentation": [
+    {
+      "url": "https://help.salesforce.com/s/articleView?id=platform.customize_fieldaccess.htm&language=en_US&type=5",
+      "supports": "Universally required custom fields override field-level security."
+    }
+  ],
+  "rawOrgRunTextSHA256": "f1fc6ead757b5617be6cb99f1705109f99bcbe60b56479efc605acfc7004fb6a",
+  "orgRunPathNormalization": "Only machine-local invocation paths are replaced with symbolic paths; the raw run is retained outside the product tree with the recorded SHA256. Native values, effective configuration, and deployed source bytes remain unchanged."
+}

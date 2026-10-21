@@ -1,0 +1,373 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 3,
+  "nativeObservationCount": 18,
+  "packetRowsSha256": "bdb07c4592ca774891f1569ddbb47b04d8979873883901e5e60ab5a6c6092167",
+  "nativeJsonSha256": "3371b4658cc7034d1461a6b1e24ebf443dbdfb588c66ae393a06296feaa30e65",
+  "sourceManifestSha256": "cd86500b7b47c95e1fe5992615a7f7169c90dd9d903e6776516d2162a3219255",
+  "rows": [
+    {
+      "id": "C126CONTROL_001",
+      "question": "Integer observation through owned class transport",
+      "role": "positive",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126CONTROL_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "8a5afa3f29075e8e975b49717cd7c4ad68f2639b1ac5726fe08b688223a6081e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "7ebd8c4ce7545b56fb8c619e6f4e769bb27bc228ec03a136edccac280da5257a",
+            "67.0": "5afc82c0aa59ab622fe9d21028755195f4ac515f4ed6f3bd8710666f0bf1c005",
+            "68.0": "1bf6c54ef0cea4f1d240d976a6c3dc1e43f0f069e38704fda60df847a774ab5f"
+          },
+          "anonymous": "class C126Control {public Integer read(){return 7;}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Control().read());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126CONTROL_001|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126CONTROL_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Control": "b0268b9f64a268ea1b307996b0cd113d63ab744d753234d1d5c7b0822a9839b6",
+            "class:C126Test": "e7aebc758ea031be5ff85c93be5ea2f47e63e16e0c6b8c5e63ba66d6dd968b83"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "49dddb14fc915c7bda7a908d3df8edfe9e13676ab814b6e0666f70ed7f28b500",
+            "67.0": "91b0fe2f11d59485fb0fcfffeeb8c1a8258b107334b416db50c4ebdc993d2c35",
+            "68.0": "f191f44b5b57889da2d0b3c79cfec1a947e1f5eeba3296cf17a225c0909950be"
+          },
+          "classes": {
+            "C126Control": "public class C126Control {public Integer read(){return 7;}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Control().read());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126CONTROL_001|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126CONTROL_002",
+      "question": "Unknown member compile transport",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126CONTROL_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "d483a689c6df4bb9dcd39e7b49ea16bc094e3d756a021ed644dd0049c193201e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void c126Missing() from the type Integer",
+                "line": 4,
+                "column": 15,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void c126Missing() from the type Integer",
+                "line": 4,
+                "column": 15,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void c126Missing() from the type Integer",
+                "line": 4,
+                "column": 15,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Method does not exist or incorrect signature: void c126Missing() from the type Integer",
+                "line": 4,
+                "column": 15
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Method does not exist or incorrect signature: void c126Missing() from the type Integer",
+                "line": 4,
+                "column": 15
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Method does not exist or incorrect signature: void c126Missing() from the type Integer",
+                "line": 4,
+                "column": 15
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "f4a795d6d2c7a6e3ea495f8fd7771b944a813edc0f36bc22573dd96742c35385",
+            "67.0": "1566693f06309644b15435f5e478679516eb25526c30e2c9a4cf6e889512fabc",
+            "68.0": "a5209c8c1f3123bcaec111aad978cb37a832e8fcb078ce6037be88f57e764c53"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nInteger n=1;n.c126Missing();\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126CONTROL_002|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126CONTROL_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "28ea7ce6926e3d8d5dc67fcad8e78749d005b12a5d04f2ea43bd987462849dd4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Method does not exist or incorrect signature: void c126Missing() from the type Integer"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Method does not exist or incorrect signature: void c126Missing() from the type Integer"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Method does not exist or incorrect signature: void c126Missing() from the type Integer"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Method does not exist or incorrect signature: void c126Missing() from the type Integer"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Method does not exist or incorrect signature: void c126Missing() from the type Integer"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Method does not exist or incorrect signature: void c126Missing() from the type Integer"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "1fc0508094e8a8cb0dee36eadaee1c5aac7c5abef0bbf2a9a4f700f25ba36343",
+            "67.0": "0fe4e41e275f3f70066ffd524b7efc4aecd246a325f4dc9b242a5c13371b5454",
+            "68.0": "4cdbe453a3a6a680670b2c77fb467582909ce8c2491cd162d308a7d82bb7769d"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nInteger n=1;n.c126Missing();\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126CONTROL_002|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126CONTROL_003",
+      "question": "Caught runtime exception transport",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126CONTROL_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "de215f34c96f68b50c79860efc51dad223712d7d2fa566b42cf6fe9a918bef22"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "List index out of bounds: 1",
+                "exceptionType": "System.ListException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "List index out of bounds: 1",
+                "exceptionType": "System.ListException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "List index out of bounds: 1",
+                "exceptionType": "System.ListException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "82fef5d3a56336ef6f86c5abcdcba3187254089040c4b5fb279bbbf70030733d",
+            "67.0": "caf333147b97f34fae58d39cc50da6f516aa7b9e473f685b910118c0bc25e57d",
+            "68.0": "ea6cb06e0d8c489240f427016ffb090910e23b83579a4ddcd2d763b14ceba384"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<Integer> a=new List<Integer>();o.put('value',a[1]);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126CONTROL_003|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126CONTROL_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "99ed139a95cb405ab8bb67e0b937e393b7b71637953ef56faff0fd4d4f878db3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "List index out of bounds: 1",
+                "exceptionType": "System.ListException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "List index out of bounds: 1",
+                "exceptionType": "System.ListException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "List index out of bounds: 1",
+                "exceptionType": "System.ListException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "dcc6caf2ad04af587124e4db767a72b56cec858247f16196f1b7a23f3ae64a88",
+            "67.0": "8bf546c0ee4bb65d5185036be18b550613fb213fc540abbccecd7ad6fd77ae7b",
+            "68.0": "1c62b3d9af274fb0f321f968b86a7dc2caf50202b6e60bb139cfdf0a381d1054"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nList<Integer> a=new List<Integer>();o.put('value',a[1]);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126CONTROL_003|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    }
+  ]
+}

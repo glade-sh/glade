@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Function__c</fullName><defaultValue>UPPER("leaf")</defaultValue><label>Function__c</label><length>10</length><type>Text</type></CustomField>

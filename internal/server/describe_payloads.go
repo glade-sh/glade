@@ -575,7 +575,14 @@ func (s *Server) layoutMetadataItemPayload(def storage.ObjectDefinition, version
 	return item
 }
 
-func objectResourcePayload(def storage.ObjectDefinition, version string) map[string]any {
+func objectResourcePayload(object storage.ObjectState, version string) map[string]any {
+	return map[string]any{
+		"objectDescribe": objectSummaryPayload(object.Definition, version),
+		"recentItems":    recentPayload(object, version, defaultRecentLimit),
+	}
+}
+
+func objectSummaryPayload(def storage.ObjectDefinition, version string) map[string]any {
 	name := def.APIName
 	label := def.Label
 	if label == "" {
@@ -583,21 +590,16 @@ func objectResourcePayload(def storage.ObjectDefinition, version string) map[str
 	}
 	base := "/services/data/" + version + "/sobjects/" + name
 	describe := base + "/describe"
-	recent := base + "/recent"
 	return map[string]any{
-		"name":           name,
-		"label":          label,
-		"keyPrefix":      def.KeyPrefix,
-		"custom":         strings.HasSuffix(name, "__c"),
-		"objectDescribe": describe,
-		"recentItems":    recent,
-		"describe":       describe,
-		"url":            base,
+		"name":      name,
+		"label":     label,
+		"keyPrefix": def.KeyPrefix,
+		"custom":    strings.HasSuffix(name, "__c"),
 		"urls": map[string]string{
 			"rowTemplate":     base + "/{ID}",
 			"defaultValues":   base + "/defaultValues?recordTypeId&fields",
 			"describe":        describe,
-			"recent":          recent,
+			"recent":          base + "/recent",
 			"updated":         base + "/updated",
 			"deleted":         base + "/deleted",
 			"items":           base,

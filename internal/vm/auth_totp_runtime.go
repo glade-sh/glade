@@ -6,6 +6,8 @@ import (
 	binaryencoding "encoding/binary"
 	"fmt"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 // validateAuthTotpForKey implements the admitted supplied-key argument and
@@ -46,7 +48,7 @@ func (vm *VM) validateAuthTotpForKey(args []Value) (value Value, err error) {
 	// validations neither consume nor reset the user's failed-return count.
 	fallbackID := "system"
 	if vm.Org != nil {
-		fallbackID = "005000000000001"
+		fallbackID = storage.DefaultUserID
 	}
 	userID := displayIDText(vm.currentUserInfoField("Id", fallbackID))
 	if vm.authTotpFailures[userID] >= 10 {

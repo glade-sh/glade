@@ -314,9 +314,11 @@ func TestAliasEscapeJSONConstructorChildren(t *testing.T) {
 		},
 	}
 	for _, childType := range []string{"AliasEscapeChild", "Account"} {
-		// The user-class fixture exercises real constructor-created children.
-		// A synthetic Account constructor also covers this VM branch with native
-		// SObject.put; this shim is not a Salesforce custom Account constructor.
+		// JSON_ALIAS_LIST/SET/MAP/FIELD at APIs 62/67/68, anonymous route,
+		// pin skipped source constructors and shared child mutations in
+		// internal/apextest/testdata/conformance/json_alias_allocation.
+		// The synthetic Account constructor is a VM shim for SObject.put
+		// coverage, not a Salesforce custom Account constructor.
 		childClass := Class{
 			Name:   childType,
 			Fields: map[string]Field{"Name": {Name: "Name", Type: "String"}},
@@ -342,12 +344,15 @@ func TestAliasEscapeJSONConstructorChildren(t *testing.T) {
 String expected;
 `, method, typeName, tc.json, childType), childClass, envelopeClass)
 					local := machine.Globals["local"]
-					if !machine.localOnlyObjectRefs[local.Ref] || local.Fields["Name"].Text != "constructor" {
-						t.Fatal("standalone constructor-created root must remain local-only")
+					if !machine.localOnlyObjectRefs[local.Ref] {
+						t.Fatal("standalone JSON root must remain local-only")
+					}
+					if !local.Fields["Name"].Equal(Null) {
+						t.Fatal("JSON root must skip the source constructor")
 					}
 					child := tc.child(machine.Globals["holder"])
-					if child.Fields["Name"].Text != "constructor" || child.Ref == local.Ref {
-						t.Fatal("nested child must have run its own constructor")
+					if !child.Fields["Name"].Equal(Null) || child.Ref == 0 || child.Ref == local.Ref {
+						t.Fatal("nested JSON child must be fresh and skip the source constructor")
 					}
 					// Inspect the child immediately after JSON publishes it, before
 					// binding an Apex variable or accessing any container member.
@@ -398,13 +403,15 @@ System.debug('B|second=' + second.Name);
 `, "B|first=source\nB|original=read\nB|second=read"},
 		// This ordinary Apex probe is a control, not a claimed observable
 		// baseline failure: shared backing can mask C's wrong locality flag.
+		// JSON_ALIAS_LIST (62/67/68, anonymous) pins skipped construction;
+		// the constructor-only marker therefore remains null.
 		{"C", `
 List<AliasEscapeChild> rows = (List<AliasEscapeChild>)JSON.deserialize('[{"Name":"before"}]', List<AliasEscapeChild>.class);
 AliasEscapeChild child = rows[0];
 System.debug('C|ctor=' + String.valueOf(child.ctorRan));
 child.Name = 'after';
 System.debug('C|alias=' + rows[0].Name);
-`, "C|ctor=true\nC|alias=after"},
+`, "C|ctor=null\nC|alias=after"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			machine, _ := runDynamicObjectAliasProgram(t, "", childClass)
@@ -429,7 +436,7 @@ List<AliasEscapeChild> rows = (List<AliasEscapeChild>)JSON.deserialize('[{"Name"
 AliasEscapeChild child = rows[0];
 `, childClass)
 		// This is an explicit white-box snapshot boundary, not an Apex action.
-		machine.Globals["rows"] = cloneValuePreserveRefs(machine.Globals["rows"])
+		machine.Globals["rows"] = machine.cloneValuePreserveRefs(machine.Globals["rows"])
 		program, err := CompileAnonymous(`
 child.Name = 'after';
 System.debug('C|detached-alias=' + rows[0].Name);
@@ -482,7 +489,7 @@ func checkAliasEscapeMutations(t *testing.T, machine *VM, retained func() map[st
 		// Preserve Apex identities but detach holder storage before each write.
 		for name, value := range machine.Globals {
 			if name != "original" {
-				machine.Globals[name] = cloneValuePreserveRefs(value)
+				machine.Globals[name] = machine.cloneValuePreserveRefs(value)
 			}
 		}
 		executeAliasEscapeProgram(t, machine, mutation)

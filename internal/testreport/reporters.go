@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"path/filepath"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/cliui"
@@ -48,6 +49,9 @@ func WriteConsoleWithOptions(w io.Writer, run Run, opts ConsoleOptions) error {
 	if summary.Errors > 0 {
 		fmt.Fprintf(&out, "Errors:   %d\n", summary.Errors)
 	}
+	if summary.ExcludedClasses > 0 {
+		fmt.Fprintf(&out, "Excluded: %d\n", summary.ExcludedClasses)
+	}
 	fmt.Fprintf(&out, "Runtime:  %s\n", cliui.FormatDurationMS(summary.DurationMS))
 	out.WriteString("\n")
 
@@ -69,6 +73,7 @@ func WriteConsoleWithOptions(w io.Writer, run Run, opts ConsoleOptions) error {
 			}
 		}
 	}
+	writeConsoleExcludedClasses(&out, run.ExcludedClasses)
 	if problemCase, ok := firstProblemCase(run); ok {
 		writeStyledConsoleProblem(&out, problemCase.suiteName, problemCase.testCase)
 	}
@@ -86,9 +91,53 @@ func WriteConsoleWithOptions(w io.Writer, run Run, opts ConsoleOptions) error {
 	return err
 }
 
+// writeConsoleExcludedClasses lists the classes the compile gate kept from
+// running. A class with its own error shows that error; a dependent shows the
+// excluded class it references and, when different, the root invalid class.
+func writeConsoleExcludedClasses(out *strings.Builder, excluded []CompileExclusion) {
+	if len(excluded) == 0 {
+		return
+	}
+	noun := "classes"
+	if len(excluded) == 1 {
+		noun = "class"
+	}
+	fmt.Fprintf(out, "\nCompile errors excluded %d %s:\n", len(excluded), noun)
+	width := 0
+	for _, entry := range excluded {
+		width = max(width, len(entry.ClassName))
+	}
+	for _, entry := range excluded {
+		if entry.DependsOn != "" {
+			fmt.Fprintf(out, "  %s  %s\n", cliui.PadVisible(entry.ClassName, width), excludedClassDetail(entry))
+			continue
+		}
+		for i, problem := range entry.rootProblems() {
+			name := entry.ClassName
+			if i > 0 {
+				name = ""
+			}
+			detail, _, _ := strings.Cut(problem.Message, "\n")
+			if entry.File != "" && problem.Line > 0 {
+				detail += fmt.Sprintf(" (%s:%d)", filepath.Base(entry.File), problem.Line)
+			}
+			fmt.Fprintf(out, "  %s  %s\n", cliui.PadVisible(name, width), detail)
+		}
+	}
+}
+
+// rootProblems returns every problem of a root entry: Problems when it lists
+// more than one, otherwise Line and Message.
+func (entry CompileExclusion) rootProblems() []CompileProblem {
+	if len(entry.Problems) > 0 {
+		return entry.Problems
+	}
+	return []CompileProblem{{Line: entry.Line, Message: entry.Message}}
+}
+
 func NextCommands(summary Summary) []string {
 	commands := []string{"glade test --watch"}
-	if summary.Failed > 0 || summary.Errors > 0 {
+	if !summary.OK() {
 		commands = append(commands, "glade test failed")
 	}
 	return commands
@@ -240,12 +289,12 @@ func WriteJUnitXML(w io.Writer, run Run) error {
 	summary := run.Summary()
 	testSuites := junitTestSuites{
 		Name:     run.Name,
-		Tests:    summary.Total,
+		Tests:    summary.Total + len(run.ExcludedClasses),
 		Failures: summary.Failed,
-		Errors:   summary.Errors,
+		Errors:   summary.Errors + len(run.ExcludedClasses),
 		Skipped:  summary.Skipped,
 		Time:     seconds(summary.DurationMS),
-		Suites:   make([]junitTestSuite, 0, len(run.Suites)),
+		Suites:   make([]junitTestSuite, 0, len(run.Suites)+1),
 	}
 	for _, suite := range run.Suites {
 		suiteSummary := suite.Summary()
@@ -262,6 +311,9 @@ func WriteJUnitXML(w io.Writer, run Run) error {
 			outSuite.Cases = append(outSuite.Cases, makeJUnitCase(suite.Name, testCase))
 		}
 		testSuites.Suites = append(testSuites.Suites, outSuite)
+	}
+	if len(run.ExcludedClasses) > 0 {
+		testSuites.Suites = append(testSuites.Suites, junitExcludedClassesSuite(run.ExcludedClasses))
 	}
 
 	data, err := xml.MarshalIndent(testSuites, "", "  ")
@@ -374,6 +426,57 @@ func makeJUnitProblem(testCase Case, fallbackType string) *junitProblem {
 		Message: problem.Message,
 		Text:    text,
 	}
+}
+
+// junitExcludedClassesSuite reports each class the compile gate excluded as
+// an errored <ClassName>.compile case, so a run that excludes a class without
+// a selected test still fails in JUnit consumers.
+func junitExcludedClassesSuite(excluded []CompileExclusion) junitTestSuite {
+	suite := junitTestSuite{
+		Name:   "compile",
+		Tests:  len(excluded),
+		Errors: len(excluded),
+		Time:   seconds(0),
+		Cases:  make([]junitTestCase, 0, len(excluded)),
+	}
+	for _, entry := range excluded {
+		suite.Cases = append(suite.Cases, junitTestCase{
+			Name:      "compile",
+			ClassName: entry.ClassName,
+			Time:      seconds(0),
+			Error: &junitProblem{
+				Type:    "CompileError",
+				Message: entry.Message,
+				Text:    excludedClassDetail(entry),
+			},
+		})
+	}
+	return suite
+}
+
+// excludedClassDetail describes an excluded class in plain text: the root's
+// problems with their locations, or the class a dependent depends on.
+func excludedClassDetail(entry CompileExclusion) string {
+	if entry.DependsOn != "" {
+		detail := "depends on " + entry.DependsOn
+		if entry.Root != "" && !strings.EqualFold(entry.Root, entry.DependsOn) {
+			detail += " (root " + entry.Root + ")"
+		}
+		return detail
+	}
+	var lines []string
+	for _, problem := range entry.rootProblems() {
+		line := problem.Message
+		if entry.File != "" {
+			location := entry.File
+			if problem.Line > 0 {
+				location = fmt.Sprintf("%s:%d", entry.File, problem.Line)
+			}
+			line = location + ": " + line
+		}
+		lines = append(lines, line)
+	}
+	return strings.Join(lines, "\n")
 }
 
 func seconds(ms int64) string {

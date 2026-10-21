@@ -1,0 +1,1465 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "source": "Owned plain Developer scratch-org observations, 2026-10-14.",
+  "notes": [
+    "Synthetic fixture names are renamed consistently. Native field values and incomplete cells are retained.",
+    "The opaque deployed page identity is compared by its observed 15-character 066 prefix; local identity linkage has a separate unit regression.",
+    "Standard tab name and inventory cardinality facets are carried explicitly, including the Chatter route difference."
+  ],
+  "files": {
+    "pages/PanelPage.page": "<apex:page>Panel view</apex:page>",
+    "pages/PanelPage.page-meta.xml": "<ApexPage><apiVersion>62.0</apiVersion><label>Panel Page</label></ApexPage>",
+    "tabs/PanelView.tab-meta.xml": "<CustomTab><label>Panel View</label><page>PanelPage</page><motif>Custom53: Bell</motif></CustomTab>",
+    "tabs/PanelLink.tab-meta.xml": "<CustomTab><label>Panel Link</label><url>https://example.invalid/panel</url><frameHeight>600</frameHeight><motif>Custom53: Bell</motif></CustomTab>",
+    "objects/Panel__c/Panel__c.object-meta.xml": "<CustomObject><deploymentStatus>Deployed</deploymentStatus><label>Panel</label><pluralLabel>Panels</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>",
+    "tabs/Panel__c.tab-meta.xml": "<CustomTab><customObject>true</customObject><motif>Custom53: Bell</motif></CustomTab>",
+    "applications/PanelConsole.app-meta.xml": "<CustomApplication><label>Panel Console</label><tabs>PanelView</tabs><tabs>PanelLink</tabs><tabs>Panel__c</tabs></CustomApplication>"
+  },
+  "counts": {
+    "runtime": 48,
+    "carried": 18,
+    "excluded": 0,
+    "metadata": 0
+  },
+  "rows": [
+    {
+      "id": "page",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "PanelView",
+            "readBackComplete": true,
+            "sObjectName": "066h9000000J6eP"
+          },
+          "expected": {
+            "sObjectName": "<PAGE_ID>",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "PanelView",
+            "found": 1
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "PanelView",
+            "readBackComplete": true,
+            "sObjectName": "066h9000000J6eP"
+          },
+          "expected": {
+            "sObjectName": "<PAGE_ID>",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "PanelView",
+            "found": 1
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "PanelView",
+            "readBackComplete": true,
+            "sObjectName": "066h9000000J6eP"
+          },
+          "expected": {
+            "sObjectName": "<PAGE_ID>",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "PanelView",
+            "found": 1
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "PanelView",
+            "readBackComplete": true,
+            "sObjectName": "066h9000000J6eP"
+          },
+          "expected": {
+            "sObjectName": "<PAGE_ID>",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "PanelView",
+            "found": 1
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "PanelView",
+            "readBackComplete": true,
+            "sObjectName": "066h9000000J6eP"
+          },
+          "expected": {
+            "sObjectName": "<PAGE_ID>",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "PanelView",
+            "found": 1
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "PanelView",
+            "readBackComplete": true,
+            "sObjectName": "066h9000000J6eP"
+          },
+          "expected": {
+            "sObjectName": "<PAGE_ID>",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "PanelView",
+            "found": 1
+          }
+        }
+      },
+      "code": "Integer found=0;for(Schema.DescribeTabSetResult ts:Schema.describeTabs()){for(Schema.DescribeTabResult t:ts.getTabs()){if(t.getName()=='PanelView'){found++;String n=t.getSObjectName();p.put('name',t.getName());p.put('sObjectName',n);p.put('isNull',n==null);p.put('isEmpty',n=='');p.put('custom',t.isCustom());}}}p.put('found',found);"
+    },
+    {
+      "id": "web",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "PanelLink",
+            "readBackComplete": true,
+            "sObjectName": "000000000000000"
+          },
+          "expected": {
+            "sObjectName": "000000000000000",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "PanelLink",
+            "found": 1
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "PanelLink",
+            "readBackComplete": true,
+            "sObjectName": "000000000000000"
+          },
+          "expected": {
+            "sObjectName": "000000000000000",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "PanelLink",
+            "found": 1
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "PanelLink",
+            "readBackComplete": true,
+            "sObjectName": "000000000000000"
+          },
+          "expected": {
+            "sObjectName": "000000000000000",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "PanelLink",
+            "found": 1
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "PanelLink",
+            "readBackComplete": true,
+            "sObjectName": "000000000000000"
+          },
+          "expected": {
+            "sObjectName": "000000000000000",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "PanelLink",
+            "found": 1
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "PanelLink",
+            "readBackComplete": true,
+            "sObjectName": "000000000000000"
+          },
+          "expected": {
+            "sObjectName": "000000000000000",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "PanelLink",
+            "found": 1
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "PanelLink",
+            "readBackComplete": true,
+            "sObjectName": "000000000000000"
+          },
+          "expected": {
+            "sObjectName": "000000000000000",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "PanelLink",
+            "found": 1
+          }
+        }
+      },
+      "code": "Integer found=0;for(Schema.DescribeTabSetResult ts:Schema.describeTabs()){for(Schema.DescribeTabResult t:ts.getTabs()){if(t.getName()=='PanelLink'){found++;String n=t.getSObjectName();p.put('name',t.getName());p.put('sObjectName',n);p.put('isNull',n==null);p.put('isEmpty',n=='');p.put('custom',t.isCustom());}}}p.put('found',found);"
+    },
+    {
+      "id": "lightning",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "native": {
+            "problem": "Template flexipage:appHomeTemplate doesn't exist.",
+            "status": "NOT_RUN"
+          },
+          "reason": "No getSObjectName answer: Template flexipage:appHomeTemplate doesn't exist."
+        },
+        "62.0/istest": {
+          "status": "NOT_RUN",
+          "native": {
+            "problem": "Template flexipage:appHomeTemplate doesn't exist.",
+            "status": "NOT_RUN"
+          },
+          "reason": "No getSObjectName answer: Template flexipage:appHomeTemplate doesn't exist."
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "native": {
+            "problem": "Template flexipage:appHomeTemplate doesn't exist.",
+            "status": "NOT_RUN"
+          },
+          "reason": "No getSObjectName answer: Template flexipage:appHomeTemplate doesn't exist."
+        },
+        "67.0/istest": {
+          "status": "NOT_RUN",
+          "native": {
+            "problem": "Template flexipage:appHomeTemplate doesn't exist.",
+            "status": "NOT_RUN"
+          },
+          "reason": "No getSObjectName answer: Template flexipage:appHomeTemplate doesn't exist."
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "native": {
+            "problem": "Template flexipage:appHomeTemplate doesn't exist.",
+            "status": "NOT_RUN"
+          },
+          "reason": "No getSObjectName answer: Template flexipage:appHomeTemplate doesn't exist."
+        },
+        "68.0/istest": {
+          "status": "NOT_RUN",
+          "native": {
+            "problem": "Template flexipage:appHomeTemplate doesn't exist.",
+            "status": "NOT_RUN"
+          },
+          "reason": "No getSObjectName answer: Template flexipage:appHomeTemplate doesn't exist."
+        }
+      }
+    },
+    {
+      "id": "lwc",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "FIXTURE_ERROR",
+          "native": {
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "fixtureError": "tab not returned by describeTabs",
+            "found": 0,
+            "readBackComplete": true
+          },
+          "reason": "No getSObjectName answer: tab not returned by describeTabs"
+        },
+        "62.0/istest": {
+          "status": "FIXTURE_ERROR",
+          "native": {
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "fixtureError": "tab not returned by describeTabs",
+            "found": 0,
+            "readBackComplete": true
+          },
+          "reason": "No getSObjectName answer: tab not returned by describeTabs"
+        },
+        "67.0/anonymous": {
+          "status": "FIXTURE_ERROR",
+          "native": {
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "fixtureError": "tab not returned by describeTabs",
+            "found": 0,
+            "readBackComplete": true
+          },
+          "reason": "No getSObjectName answer: tab not returned by describeTabs"
+        },
+        "67.0/istest": {
+          "status": "FIXTURE_ERROR",
+          "native": {
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "fixtureError": "tab not returned by describeTabs",
+            "found": 0,
+            "readBackComplete": true
+          },
+          "reason": "No getSObjectName answer: tab not returned by describeTabs"
+        },
+        "68.0/anonymous": {
+          "status": "FIXTURE_ERROR",
+          "native": {
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "fixtureError": "tab not returned by describeTabs",
+            "found": 0,
+            "readBackComplete": true
+          },
+          "reason": "No getSObjectName answer: tab not returned by describeTabs"
+        },
+        "68.0/istest": {
+          "status": "FIXTURE_ERROR",
+          "native": {
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "fixtureError": "tab not returned by describeTabs",
+            "found": 0,
+            "readBackComplete": true
+          },
+          "reason": "No getSObjectName answer: tab not returned by describeTabs"
+        }
+      }
+    },
+    {
+      "id": "aura",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "FIXTURE_ERROR",
+          "native": {
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "fixtureError": "tab not returned by describeTabs",
+            "found": 0,
+            "readBackComplete": true
+          },
+          "reason": "No getSObjectName answer: tab not returned by describeTabs"
+        },
+        "62.0/istest": {
+          "status": "FIXTURE_ERROR",
+          "native": {
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "fixtureError": "tab not returned by describeTabs",
+            "found": 0,
+            "readBackComplete": true
+          },
+          "reason": "No getSObjectName answer: tab not returned by describeTabs"
+        },
+        "67.0/anonymous": {
+          "status": "FIXTURE_ERROR",
+          "native": {
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "fixtureError": "tab not returned by describeTabs",
+            "found": 0,
+            "readBackComplete": true
+          },
+          "reason": "No getSObjectName answer: tab not returned by describeTabs"
+        },
+        "67.0/istest": {
+          "status": "FIXTURE_ERROR",
+          "native": {
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "fixtureError": "tab not returned by describeTabs",
+            "found": 0,
+            "readBackComplete": true
+          },
+          "reason": "No getSObjectName answer: tab not returned by describeTabs"
+        },
+        "68.0/anonymous": {
+          "status": "FIXTURE_ERROR",
+          "native": {
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "fixtureError": "tab not returned by describeTabs",
+            "found": 0,
+            "readBackComplete": true
+          },
+          "reason": "No getSObjectName answer: tab not returned by describeTabs"
+        },
+        "68.0/istest": {
+          "status": "FIXTURE_ERROR",
+          "native": {
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "fixtureError": "tab not returned by describeTabs",
+            "found": 0,
+            "readBackComplete": true
+          },
+          "reason": "No getSObjectName answer: tab not returned by describeTabs"
+        }
+      }
+    },
+    {
+      "id": "home",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 11,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-home",
+            "readBackComplete": true,
+            "sObjectName": "Home"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Home",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 11,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-home",
+            "readBackComplete": true,
+            "sObjectName": "Home"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Home",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 11,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-home",
+            "readBackComplete": true,
+            "sObjectName": "Home"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Home",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 11,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-home",
+            "readBackComplete": true,
+            "sObjectName": "Home"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Home",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 11,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-home",
+            "readBackComplete": true,
+            "sObjectName": "Home"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Home",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 11,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-home",
+            "readBackComplete": true,
+            "sObjectName": "Home"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Home",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        }
+      },
+      "code": "Integer found=0;for(Schema.DescribeTabSetResult ts:Schema.describeTabs()){for(Schema.DescribeTabResult t:ts.getTabs()){if(t.getSObjectName()=='Home'){found++;String n=t.getSObjectName();p.put('name',t.getName());p.put('sObjectName',n);p.put('isNull',n==null);p.put('isEmpty',n=='');p.put('custom',t.isCustom());}}}p.put('found',found);"
+    },
+    {
+      "id": "reports",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 4,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-report",
+            "readBackComplete": true,
+            "sObjectName": "Report"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Report",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 4,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-report",
+            "readBackComplete": true,
+            "sObjectName": "Report"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Report",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 4,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-report",
+            "readBackComplete": true,
+            "sObjectName": "Report"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Report",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 4,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-report",
+            "readBackComplete": true,
+            "sObjectName": "Report"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Report",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 4,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-report",
+            "readBackComplete": true,
+            "sObjectName": "Report"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Report",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 4,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-report",
+            "readBackComplete": true,
+            "sObjectName": "Report"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Report",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        }
+      },
+      "code": "Integer found=0;for(Schema.DescribeTabSetResult ts:Schema.describeTabs()){for(Schema.DescribeTabResult t:ts.getTabs()){if(t.getSObjectName()=='Report'){found++;String n=t.getSObjectName();p.put('name',t.getName());p.put('sObjectName',n);p.put('isNull',n==null);p.put('isEmpty',n=='');p.put('custom',t.isCustom());}}}p.put('found',found);"
+    },
+    {
+      "id": "dashboards",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 4,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Dashboard",
+            "readBackComplete": true,
+            "sObjectName": "Dashboard"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Dashboard",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 4,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Dashboard",
+            "readBackComplete": true,
+            "sObjectName": "Dashboard"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Dashboard",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 4,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Dashboard",
+            "readBackComplete": true,
+            "sObjectName": "Dashboard"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Dashboard",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 4,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Dashboard",
+            "readBackComplete": true,
+            "sObjectName": "Dashboard"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Dashboard",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 4,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Dashboard",
+            "readBackComplete": true,
+            "sObjectName": "Dashboard"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Dashboard",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 4,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Dashboard",
+            "readBackComplete": true,
+            "sObjectName": "Dashboard"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Dashboard",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        }
+      },
+      "code": "Integer found=0;for(Schema.DescribeTabSetResult ts:Schema.describeTabs()){for(Schema.DescribeTabResult t:ts.getTabs()){if(t.getSObjectName()=='Dashboard'){found++;String n=t.getSObjectName();p.put('name',t.getName());p.put('sObjectName',n);p.put('isNull',n==null);p.put('isEmpty',n=='');p.put('custom',t.isCustom());}}}p.put('found',found);"
+    },
+    {
+      "id": "chatter",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 7,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Chatter",
+            "readBackComplete": true,
+            "sObjectName": "Chatter"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Chatter",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 8,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Chatter",
+            "readBackComplete": true,
+            "sObjectName": "Chatter"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Chatter",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 7,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Chatter",
+            "readBackComplete": true,
+            "sObjectName": "Chatter"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Chatter",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 8,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Chatter",
+            "readBackComplete": true,
+            "sObjectName": "Chatter"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Chatter",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 7,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Chatter",
+            "readBackComplete": true,
+            "sObjectName": "Chatter"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Chatter",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 8,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Chatter",
+            "readBackComplete": true,
+            "sObjectName": "Chatter"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Chatter",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        }
+      },
+      "code": "Integer found=0;for(Schema.DescribeTabSetResult ts:Schema.describeTabs()){for(Schema.DescribeTabResult t:ts.getTabs()){if(t.getSObjectName()=='Chatter'){found++;String n=t.getSObjectName();p.put('name',t.getName());p.put('sObjectName',n);p.put('isNull',n==null);p.put('isEmpty',n=='');p.put('custom',t.isCustom());}}}p.put('found',found);"
+    },
+    {
+      "id": "custom-object",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "Panel__c",
+            "readBackComplete": true,
+            "sObjectName": "Panel__c"
+          },
+          "expected": {
+            "sObjectName": "Panel__c",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "Panel__c"
+          },
+          "carriedFields": {
+            "found": "Native fixture exposes one visible application occurrence; local synthetic All Tabs also includes this object. Application inventory cardinality is outside the page/web naming correction."
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "Panel__c",
+            "readBackComplete": true,
+            "sObjectName": "Panel__c"
+          },
+          "expected": {
+            "sObjectName": "Panel__c",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "Panel__c"
+          },
+          "carriedFields": {
+            "found": "Native fixture exposes one visible application occurrence; local synthetic All Tabs also includes this object. Application inventory cardinality is outside the page/web naming correction."
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "Panel__c",
+            "readBackComplete": true,
+            "sObjectName": "Panel__c"
+          },
+          "expected": {
+            "sObjectName": "Panel__c",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "Panel__c"
+          },
+          "carriedFields": {
+            "found": "Native fixture exposes one visible application occurrence; local synthetic All Tabs also includes this object. Application inventory cardinality is outside the page/web naming correction."
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "Panel__c",
+            "readBackComplete": true,
+            "sObjectName": "Panel__c"
+          },
+          "expected": {
+            "sObjectName": "Panel__c",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "Panel__c"
+          },
+          "carriedFields": {
+            "found": "Native fixture exposes one visible application occurrence; local synthetic All Tabs also includes this object. Application inventory cardinality is outside the page/web naming correction."
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "Panel__c",
+            "readBackComplete": true,
+            "sObjectName": "Panel__c"
+          },
+          "expected": {
+            "sObjectName": "Panel__c",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "Panel__c"
+          },
+          "carriedFields": {
+            "found": "Native fixture exposes one visible application occurrence; local synthetic All Tabs also includes this object. Application inventory cardinality is outside the page/web naming correction."
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": true,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 1,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "Panel__c",
+            "readBackComplete": true,
+            "sObjectName": "Panel__c"
+          },
+          "expected": {
+            "sObjectName": "Panel__c",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": true,
+            "name": "Panel__c"
+          },
+          "carriedFields": {
+            "found": "Native fixture exposes one visible application occurrence; local synthetic All Tabs also includes this object. Application inventory cardinality is outside the page/web naming correction."
+          }
+        }
+      },
+      "code": "Integer found=0;for(Schema.DescribeTabSetResult ts:Schema.describeTabs()){for(Schema.DescribeTabResult t:ts.getTabs()){if(t.getName()=='Panel__c'){found++;String n=t.getSObjectName();p.put('name',t.getName());p.put('sObjectName',n);p.put('isNull',n==null);p.put('isEmpty',n=='');p.put('custom',t.isCustom());}}}p.put('found',found);"
+    },
+    {
+      "id": "standard-object",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 3,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Account",
+            "readBackComplete": true,
+            "sObjectName": "Account"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Account",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 3,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Account",
+            "readBackComplete": true,
+            "sObjectName": "Account"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Account",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 3,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Account",
+            "readBackComplete": true,
+            "sObjectName": "Account"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Account",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 3,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Account",
+            "readBackComplete": true,
+            "sObjectName": "Account"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Account",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 3,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Account",
+            "readBackComplete": true,
+            "sObjectName": "Account"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Account",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "custom": false,
+            "effectAttempted": true,
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "found": 3,
+            "isEmpty": false,
+            "isNull": false,
+            "name": "standard-Account",
+            "readBackComplete": true,
+            "sObjectName": "Account"
+          },
+          "carriedFields": {
+            "found": "Org application visibility controls inventory cardinality; this fixture tests the observed tab value, not org inventory.",
+            "name": "Standard tab identity spelling is outside the page/web naming correction."
+          },
+          "expected": {
+            "sObjectName": "Account",
+            "isNull": false,
+            "isEmpty": false,
+            "custom": false
+          }
+        }
+      },
+      "code": "Integer found=0;for(Schema.DescribeTabSetResult ts:Schema.describeTabs()){for(Schema.DescribeTabResult t:ts.getTabs()){if(t.getSObjectName()=='Account'){found++;String n=t.getSObjectName();p.put('name',t.getName());p.put('sObjectName',n);p.put('isNull',n==null);p.put('isEmpty',n=='');p.put('custom',t.isCustom());}}}p.put('found',found);"
+    }
+  ]
+}

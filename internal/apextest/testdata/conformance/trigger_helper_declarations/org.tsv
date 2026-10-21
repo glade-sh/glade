@@ -1,0 +1,13 @@
+source_api	variant	observation
+62.0	ordinary	{"description":"ordinary","exceptionMessage":null,"exceptionType":null,"hasId":true}
+62.0	unused	{"description":"unused","exceptionMessage":null,"exceptionType":null,"hasId":true}
+62.0	invoked	{"description":"helper","exceptionMessage":null,"exceptionType":null,"hasId":true}
+62.0	nested	{"description":"nested","exceptionMessage":null,"exceptionType":null,"hasId":true}
+67.0	ordinary	{"description":"ordinary","exceptionMessage":null,"exceptionType":null,"hasId":true}
+67.0	unused	{"description":"unused","exceptionMessage":null,"exceptionType":null,"hasId":true}
+67.0	invoked	{"description":"helper","exceptionMessage":null,"exceptionType":null,"hasId":true}
+67.0	nested	{"description":"nested","exceptionMessage":null,"exceptionType":null,"hasId":true}
+68.0	ordinary	{"description":"ordinary","exceptionMessage":null,"exceptionType":null,"hasId":true}
+68.0	unused	{"description":"unused","exceptionMessage":null,"exceptionType":null,"hasId":true}
+68.0	invoked	{"description":"helper","exceptionMessage":null,"exceptionType":null,"hasId":true}
+68.0	nested	{"description":"nested","exceptionMessage":null,"exceptionType":null,"hasId":true}

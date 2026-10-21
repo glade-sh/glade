@@ -1,9 +1,10 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
-  "source": "Owned XML observations at API 62.0 and 67.0; floor and ceiling identical. Malformed QName controls Q001-Q015 and null-argument controls N001-N015 were observed at both APIs with identical results.",
+  "source": "Owned XML observations at API 62.0 and 67.0; floor and ceiling identical. Malformed QName controls Q001-Q015 and null-argument controls N001-N015 were observed at both APIs with identical results. API68: repaired entity-transport observations plus direct R107/R108 uncaught captures; anonymous native evidence only.",
   "declarations": {},
   "cases": [
     {
@@ -2482,5 +2483,120 @@
       "compile": true,
       "remainingReason": "type system: constructor applicability in semantic analysis admits Dom.XmlNode although Salesforce rejects construction."
     }
-  ]
+  ],
+  "ceilingOracle": {
+    "apiVersion": "68.0",
+    "route": "anonymous",
+    "rows": 279,
+    "observed": 279,
+    "asserted": 278,
+    "carried": [
+      "C004"
+    ],
+    "controlsUnobserved": [
+      "Q001",
+      "Q002",
+      "Q003",
+      "Q004",
+      "Q005",
+      "Q006",
+      "Q007",
+      "Q008",
+      "Q009",
+      "Q010",
+      "Q011",
+      "Q012",
+      "Q013",
+      "Q014",
+      "Q015",
+      "N001",
+      "N002",
+      "N003",
+      "N004",
+      "N005",
+      "N006",
+      "N007",
+      "N008",
+      "N009",
+      "N010",
+      "N011",
+      "N012",
+      "N013",
+      "N014",
+      "N015"
+    ],
+    "orgTSV": "native-capture",
+    "orgRowsSHA256": "8c844c14af0fec34bf44cbb46f96547e768659413060998ed5cdfded8c1ad5a2",
+    "initialObserved": 277,
+    "supersededUnobserved": [
+      "R107",
+      "R108"
+    ],
+    "entityTransportRepairs": [
+      {
+        "source": "native-capture",
+        "sha256": "3eb4157f8a2def47149cbeff5bdfc067b49c1891cec25fe10b7ff55b6068cafb",
+        "runtimeSHA256": "ba62f6bddbbe8fc156e84494dd6db9a143d7f9e7ac025bf8a5b36ebceb201619"
+      },
+      {
+        "source": "native-capture",
+        "sha256": "3eb4157f8a2def47149cbeff5bdfc067b49c1891cec25fe10b7ff55b6068cafb",
+        "runtimeSHA256": "ba62f6bddbbe8fc156e84494dd6db9a143d7f9e7ac025bf8a5b36ebceb201619"
+      },
+      {
+        "source": "native-capture",
+        "sha256": "3eb4157f8a2def47149cbeff5bdfc067b49c1891cec25fe10b7ff55b6068cafb",
+        "runtimeSHA256": "ba62f6bddbbe8fc156e84494dd6db9a143d7f9e7ac025bf8a5b36ebceb201619"
+      },
+      {
+        "source": "native-capture",
+        "sha256": "3eb4157f8a2def47149cbeff5bdfc067b49c1891cec25fe10b7ff55b6068cafb",
+        "runtimeSHA256": "ba62f6bddbbe8fc156e84494dd6db9a143d7f9e7ac025bf8a5b36ebceb201619"
+      },
+      {
+        "source": "native-capture",
+        "sha256": "3eb4157f8a2def47149cbeff5bdfc067b49c1891cec25fe10b7ff55b6068cafb",
+        "runtimeSHA256": "ba62f6bddbbe8fc156e84494dd6db9a143d7f9e7ac025bf8a5b36ebceb201619"
+      },
+      {
+        "source": "native-capture",
+        "sha256": "3eb4157f8a2def47149cbeff5bdfc067b49c1891cec25fe10b7ff55b6068cafb",
+        "runtimeSHA256": "ba62f6bddbbe8fc156e84494dd6db9a143d7f9e7ac025bf8a5b36ebceb201619"
+      }
+    ],
+    "directNativeObservations": [
+      {
+        "id": "R107",
+        "route": "anonymous",
+        "compiled": true,
+        "success": false,
+        "exceptionMessage": "System.UnexpectedException: Got an unexpected error in callout : Index -1 out of bounds for length 1.",
+        "normalization": "Existing XML recapture rule removes only the volatile \" Contact support with error ID: \" suffix; complete native messages remain private.",
+        "normalizationSource": "native-capture",
+        "normalizationSourceSHA256": "bd7c0b4bae1bbfe40e65be446f4a08c5f308d92a691acb3d726bbcea8cf47c7c",
+        "source": "native-capture",
+        "resultKey": "A19-R107@68.0",
+        "nativeSHA256": "1bc8b8f835729d211a6bd0e94062fa6be2508466e59437f8025e8bbbe1deb599",
+        "rowsSHA256": "4b271fce42a3d3eff35b5c50ec602959138195c53375c75a1f28e613060eb74f",
+        "anonymousSHA256": "ee20bf6de19a8a5b3e93f44ffce2bc2f7b3f7da004820f5d8d26cc663a6946d8",
+        "codeSHA256": "bcd7fc4f731d5faa21bd3dd30975a74167b89275cb83491ba43b96337e9435de"
+      },
+      {
+        "id": "R108",
+        "route": "anonymous",
+        "compiled": true,
+        "success": false,
+        "exceptionMessage": "System.UnexpectedException: Got an unexpected error in callout : Index -1 out of bounds for length 1.",
+        "normalization": "Existing XML recapture rule removes only the volatile \" Contact support with error ID: \" suffix; complete native messages remain private.",
+        "normalizationSource": "native-capture",
+        "normalizationSourceSHA256": "bd7c0b4bae1bbfe40e65be446f4a08c5f308d92a691acb3d726bbcea8cf47c7c",
+        "source": "native-capture",
+        "resultKey": "A19-R108@68.0",
+        "nativeSHA256": "1bc8b8f835729d211a6bd0e94062fa6be2508466e59437f8025e8bbbe1deb599",
+        "rowsSHA256": "4b271fce42a3d3eff35b5c50ec602959138195c53375c75a1f28e613060eb74f",
+        "anonymousSHA256": "c31dbabf8d498e320d67334a03337b7f50876bcc22de56531c023bfc4a030d3b",
+        "codeSHA256": "ac97bd74c663103654ec6b1867686eb22a21333b5d7faec5942189bd79a48491"
+      }
+    ]
+  }
 }

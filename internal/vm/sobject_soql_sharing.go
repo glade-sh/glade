@@ -17,14 +17,68 @@ func (vm *VM) currentUserCanSeeSharedRecord(objectName string, record storage.Re
 		return storage.IDsEqual(record.ID, storage.ID(vm.currentUserContactAccountID())) ||
 			vm.currentUserHasDirectAccountShare(record.ID, userID)
 	}
-	return false
+	return vm.currentUserHasDirectCustomShare(objectName, record.ID, userID, false)
 }
 
 func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, userID string) bool {
 	if vm == nil || vm.soqlObjectHasPublicReadSharing(objectName) || vm.currentUserBypassesRecordSharing() || vm.currentUserObjectRecordGrant(objectName, "PermissionsViewAllRecords", "PermissionsModifyAllRecords") || userID == "" {
 		return true
 	}
-	return record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID)
+	return vm.controlledParentHasPublicReadSharing(objectName, record) || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID)
+}
+
+// A controlled detail inherits read access from its master, including the
+// standard Contact-to-Account relationship. Keep this grant limited to one
+// live master whose object has unconditional public read access; ordinary
+// lookups and record-specific parent shares do not establish it.
+func (vm *VM) controlledParentHasPublicReadSharing(objectName string, record storage.Record) bool {
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	canonical, ok := vm.resolveObjectName(objectName)
+	if !ok {
+		return false
+	}
+	definition := vm.Org.Objects[canonical].Definition
+	model := strings.TrimSpace(definition.SharingModel)
+	if model == "" {
+		model = standardObjectDefaultSharingModel(canonical)
+	}
+	if !strings.EqualFold(model, "ControlledByParent") {
+		return false
+	}
+	masterField, parentObject := "", ""
+	if strings.EqualFold(canonical, "Contact") {
+		masterField, parentObject = "AccountId", "Account"
+	} else {
+		for name, field := range definition.Fields {
+			if !field.MasterDetail {
+				continue
+			}
+			if masterField != "" || field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 {
+				return false
+			}
+			masterField, parentObject = name, field.ReferenceTo[0]
+		}
+	}
+	if masterField == "" || !vm.soqlObjectHasPublicReadSharing(parentObject) {
+		return false
+	}
+	parentObject, ok = vm.resolveObjectName(parentObject)
+	if !ok {
+		return false
+	}
+	// SOQL may have projected the master field out of its result. Sharing uses
+	// the stored relationship without adding it to the caller's projection.
+	if stored, found := vm.findOrgRecord(canonical, record.ID); found {
+		record = stored
+	}
+	foreignKey, ok := record.GetField(masterField)
+	if !ok {
+		return false
+	}
+	_, parent, ok := storage.LookupRecordByID(vm.Org.Objects[parentObject].Records, storage.ID(storageValueIDText(foreignKey)))
+	return ok && !parent.System.IsDeleted
 }
 
 func (vm *VM) currentUserHasDirectAccountShare(accountID storage.ID, userID string) bool {
@@ -212,10 +266,43 @@ func (vm *VM) currentUserContactAccountID() string {
 	return string(value.ID)
 }
 
-func standardObjectDefaultsToPublicRead(objectName string) bool {
+// standard_object_sharing.json records these Developer scratch defaults
+// separately from imported object metadata. Explicit models take precedence.
+func standardObjectDefaultSharingModel(objectName string) string {
 	name := strings.TrimSpace(objectName)
 	switch {
-	case strings.EqualFold(name, "Campaign"):
+	case strings.EqualFold(name, "Account"), strings.EqualFold(name, "Opportunity"):
+		return "ReadWrite"
+	case strings.EqualFold(name, "Case"):
+		return "ReadWriteTransfer"
+	case strings.EqualFold(name, "Contact"):
+		return "ControlledByParent"
+	default:
+		return ""
+	}
+}
+
+func standardObjectDefaultsToPublicRead(objectName string) bool {
+	// Preserve the existing Campaign read fallback without deriving a write
+	// model for a standard object absent from the captured default table.
+	if strings.EqualFold(strings.TrimSpace(objectName), "Campaign") {
+		return true
+	}
+	// group_user_default_read.json GU04 records User Read and Group/GroupMember
+	// ReadWrite Developer defaults; GU01..GU03 confirm their query visibility.
+	// This read-only fallback does not infer a write model from those queries.
+	switch strings.ToLower(strings.TrimSpace(objectName)) {
+	case "user", "group", "groupmember":
+		return true
+	case "product2":
+		return true
+	case "permissionset":
+		// Setup definitions remain queryable by an unassigned Standard User;
+		// their creator is not a record-sharing boundary.
+		return true
+	}
+	switch standardObjectDefaultSharingModel(objectName) {
+	case "ReadWrite", "ReadWriteTransfer":
 		return true
 	default:
 		return false
@@ -266,8 +353,17 @@ func (vm *VM) currentUserCanWriteRecord(objectName string, record storage.Record
 	}
 	// Public read/write grants edits, but does not grant deletion or undeletion.
 	if operation == "update" || operation == "upsert" {
+		if vm.currentUserHasDirectCustomShare(objectName, record.ID, userID, true) {
+			return true
+		}
 		if canonical, ok := vm.resolveObjectName(objectName); ok && vm.Org != nil {
 			model := strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel)
+			if model == "" {
+				switch standardObjectDefaultSharingModel(canonical) {
+				case "ReadWrite", "ReadWriteTransfer":
+					return true
+				}
+			}
 			if strings.EqualFold(model, "ReadWrite") || strings.EqualFold(model, "PublicReadWrite") {
 				return true
 			}

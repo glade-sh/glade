@@ -108,7 +108,7 @@ temporary file and activated atomically.
 ## Freshness: how the cache stays up to date
 
 Each cache entry carries a schema-versioned **manifest** of fingerprints
-recorded at write time. The current cache version is **10** and the current
+recorded at write time. The current cache version is **14** and the current
 manifest schema is **1**. On load, `Fresh()` requires:
 
 - Cache version, manifest schema, and platform ABI match the running Glade
@@ -240,6 +240,21 @@ run pays the cold cost.
 
 Use `--connect` to require the server. Use `--no-serve` to force a local build
 even when a server is running.
+
+## Upgrading a test server
+
+The persistent test server uses daemon protocol **3**. Stop a server started by
+an older binary before upgrading, then restart it with the new binary:
+
+```bash
+glade test daemon stop --project .
+glade test serve --project .
+```
+
+If the new client reports a protocol mismatch, stop the old foreground server
+with Ctrl-C (or use its original binary's stop command), then start the new
+server. A newer client's stop command may only remove stale socket/PID files
+when it cannot speak the old protocol; that does not prove the old process exited.
 
 ## In-process warm (`--daemon`)
 

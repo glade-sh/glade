@@ -1,0 +1,574 @@
+{
+  "provenance": "Owned synthetic role-group observations on a default Developer scratch org. Complete API62/67/68 anonymous and named matrix. No feature/settings changes; org deleted after captures.",
+  "rowCount": 18,
+  "scalarObservationCount": 228,
+  "orgIdSHA256": "439a6ae24c7c4f8711b5ec95face2208636fc94ff81d4c573e0c57841ede77af",
+  "orgContext": {
+    "requestedEdition": "Developer",
+    "featuresRequested": [],
+    "enableNetworksEnabled": false,
+    "settingsTransportAPI": "68.0",
+    "settingsSHA256": "4787b329afdcc7b1b89c8fc860882cc26067f2e2b4e996070579b74874756d41",
+    "otherFeaturesAndReleaseUpdates": "UNCAPTURED"
+  },
+  "orgTSVSHA256": "65a72259de820e5c29de671815587fde90a4d28df81fe0214906ff98aa212a52",
+  "orgRunSHA256": "ead4be414a845d2f142b9be23b3418789a1181b79345fa0106136e2ae6ae7535",
+  "anonymousSources": {
+    "RG01": "String token = 'OwnedRgOne' + String.valueOf(Datetime.now().getTime());\nMap<String, Object> result = new Map<String, Object>();\nUserRole role = new UserRole(Name=token, DeveloperName=token);\nresult.put('beforeRoleIdNull', role.Id == null);\nresult.put('beforeRoleCount', [SELECT COUNT() FROM UserRole WHERE DeveloperName=:token]);\ninsert role;\nList<Map<String, Object>> groups = new List<Map<String, Object>>();\nfor (Group row : [SELECT Type, RelatedId FROM Group WHERE RelatedId=:role.Id]) {\n    groups.add(new Map<String, Object>{'type'=>row.Type, 'relatedMatchesRole'=>row.RelatedId == role.Id});\n}\nresult.put('afterRoleIdNull', role.Id == null);\nresult.put('afterGroups', groups);\nSystem.debug(LoggingLevel.ERROR, 'RG01|' + JSON.serialize(result));\n",
+    "RG02": "String token = 'OwnedRgTwo' + String.valueOf(Datetime.now().getTime());\nUserRole parent = new UserRole(Name=token+'P', DeveloperName=token+'P');\ninsert parent;\nList<String> parentBeforeTypes = new List<String>();\nfor (Group row : [SELECT Type FROM Group WHERE RelatedId=:parent.Id]) parentBeforeTypes.add(row.Type);\nUserRole child = new UserRole(Name=token+'C', DeveloperName=token+'C', ParentRoleId=parent.Id);\ninsert child;\nSet<Id> roles = new Set<Id>{parent.Id, child.Id};\nList<Map<String, Object>> groups = new List<Map<String, Object>>();\nfor (Group row : [SELECT Type, RelatedId FROM Group WHERE RelatedId IN :roles]) {\n    groups.add(new Map<String, Object>{'type'=>row.Type, 'parent'=>row.RelatedId==parent.Id, 'child'=>row.RelatedId==child.Id});\n}\nSystem.debug(LoggingLevel.ERROR, 'RG02|' + JSON.serialize(new Map<String,Object>{'parentBeforeTypes'=>parentBeforeTypes,'afterGroups'=>groups}));\n",
+    "RG03": "String token = 'OwnedRgThree' + String.valueOf(Datetime.now().getTime());\nUserRole first = new UserRole(Name=token+'A', DeveloperName=token+'A');\nUserRole second = new UserRole(Name=token+'B', DeveloperName=token+'B');\ninsert new List<UserRole>{first, second};\nSet<Id> roles = new Set<Id>{first.Id, second.Id};\nMap<Id, Group> beforeRows = new Map<Id, Group>([SELECT Id, Type, RelatedId FROM Group WHERE RelatedId IN :roles]);\nfirst.Name = token+'Updated';\nupdate first;\nupdate first;\nList<Map<String, Object>> groups = new List<Map<String, Object>>();\nfor (Group row : [SELECT Id, Type, RelatedId FROM Group WHERE RelatedId IN :roles]) {\n    groups.add(new Map<String, Object>{'type'=>row.Type, 'first'=>row.RelatedId==first.Id, 'second'=>row.RelatedId==second.Id, 'sameGroupIdentity'=>beforeRows.containsKey(row.Id)});\n}\nSystem.debug(LoggingLevel.ERROR, 'RG03|' + JSON.serialize(new Map<String,Object>{'beforeCount'=>beforeRows.size(),'afterGroups'=>groups}));\n"
+  },
+  "anonymousSourceSHA256": {
+    "RG01": "634b2d4730a84084af54dce904e089820e753abdff4aa172175ca1bb88c6a368",
+    "RG02": "62872680398b45d32c83b437d63647d8263af204a30c56074b6479da4cd2eb26",
+    "RG03": "0474e61ee6f4cb441c4bbfcb7b85a0d85eb19701028d832b1683919150103f3b"
+  },
+  "testClass": "OwnedRoleGroupProbe",
+  "testClassSource": "@IsTest private class OwnedRoleGroupProbe {\n    @IsTest static void rg01() {\n        String token = 'OwnedRgOne' + String.valueOf(Datetime.now().getTime());\n        Map<String, Object> result = new Map<String, Object>();\n        UserRole role = new UserRole(Name=token, DeveloperName=token);\n        result.put('beforeRoleIdNull', role.Id == null);\n        result.put('beforeRoleCount', [SELECT COUNT() FROM UserRole WHERE DeveloperName=:token]);\n        insert role;\n        List<Map<String, Object>> groups = new List<Map<String, Object>>();\n        for (Group row : [SELECT Type, RelatedId FROM Group WHERE RelatedId=:role.Id]) {\n            groups.add(new Map<String, Object>{'type'=>row.Type, 'relatedMatchesRole'=>row.RelatedId == role.Id});\n        }\n        result.put('afterRoleIdNull', role.Id == null);\n        result.put('afterGroups', groups);\n        System.assert(false, 'ROLE_GROUP_RESULT|RG01|' + JSON.serialize(result));\n    }\n    @IsTest static void rg02() {\n        String token = 'OwnedRgTwo' + String.valueOf(Datetime.now().getTime());\n        UserRole parent = new UserRole(Name=token+'P', DeveloperName=token+'P');\n        insert parent;\n        List<String> parentBeforeTypes = new List<String>();\n        for (Group row : [SELECT Type FROM Group WHERE RelatedId=:parent.Id]) parentBeforeTypes.add(row.Type);\n        UserRole child = new UserRole(Name=token+'C', DeveloperName=token+'C', ParentRoleId=parent.Id);\n        insert child;\n        Set<Id> roles = new Set<Id>{parent.Id, child.Id};\n        List<Map<String, Object>> groups = new List<Map<String, Object>>();\n        for (Group row : [SELECT Type, RelatedId FROM Group WHERE RelatedId IN :roles]) {\n            groups.add(new Map<String, Object>{'type'=>row.Type, 'parent'=>row.RelatedId==parent.Id, 'child'=>row.RelatedId==child.Id});\n        }\n        System.assert(false, 'ROLE_GROUP_RESULT|RG02|' + JSON.serialize(new Map<String,Object>{'parentBeforeTypes'=>parentBeforeTypes,'afterGroups'=>groups}));\n    }\n    @IsTest static void rg03() {\n        String token = 'OwnedRgThree' + String.valueOf(Datetime.now().getTime());\n        UserRole first = new UserRole(Name=token+'A', DeveloperName=token+'A');\n        UserRole second = new UserRole(Name=token+'B', DeveloperName=token+'B');\n        insert new List<UserRole>{first, second};\n        Set<Id> roles = new Set<Id>{first.Id, second.Id};\n        Map<Id, Group> beforeRows = new Map<Id, Group>([SELECT Id, Type, RelatedId FROM Group WHERE RelatedId IN :roles]);\n        first.Name = token+'Updated';\n        update first;\n        update first;\n        List<Map<String, Object>> groups = new List<Map<String, Object>>();\n        for (Group row : [SELECT Id, Type, RelatedId FROM Group WHERE RelatedId IN :roles]) {\n            groups.add(new Map<String, Object>{'type'=>row.Type, 'first'=>row.RelatedId==first.Id, 'second'=>row.RelatedId==second.Id, 'sameGroupIdentity'=>beforeRows.containsKey(row.Id)});\n        }\n        System.assert(false, 'ROLE_GROUP_RESULT|RG03|' + JSON.serialize(new Map<String,Object>{'beforeCount'=>beforeRows.size(),'afterGroups'=>groups}));\n    }\n}\n",
+  "testClassSourceSHA256": "640f225e7e4d0ecd20ee4026a430aab44859aacf7789a2e34b8586cbe12e0584",
+  "metadataByAPI": {
+    "62.0": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+    "67.0": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+    "68.0": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+  },
+  "metadataSHA256ByAPI": {
+    "62.0": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+    "67.0": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+    "68.0": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+  },
+  "captures": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "observations": {
+        "RG01": {
+          "afterGroups": [
+            {
+              "relatedMatchesRole": true,
+              "type": "Role"
+            },
+            {
+              "relatedMatchesRole": true,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "afterRoleIdNull": false,
+          "beforeRoleCount": 0,
+          "beforeRoleIdNull": true
+        },
+        "RG02": {
+          "afterGroups": [
+            {
+              "child": false,
+              "parent": true,
+              "type": "Role"
+            },
+            {
+              "child": false,
+              "parent": true,
+              "type": "RoleAndSubordinatesInternal"
+            },
+            {
+              "child": true,
+              "parent": false,
+              "type": "Role"
+            },
+            {
+              "child": true,
+              "parent": false,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "parentBeforeTypes": [
+            "Role",
+            "RoleAndSubordinatesInternal"
+          ]
+        },
+        "RG03": {
+          "afterGroups": [
+            {
+              "sameGroupIdentity": true,
+              "second": false,
+              "first": true,
+              "type": "Role"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": false,
+              "first": true,
+              "type": "RoleAndSubordinatesInternal"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": true,
+              "first": false,
+              "type": "Role"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": true,
+              "first": false,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "beforeCount": 4
+        }
+      },
+      "receiptSHA256": {
+        "RG01": "395e5918f068770e40bb59cc27ba4d362877c6caa6cc27551486ea53ebaba2a2",
+        "RG02": "32f2b8815cc9af72f8d5abbb862d7f8021475e9de2a16bc33eac0652a25977c0",
+        "RG03": "e80076f910b6631839e8bc7d42296e8f02836983693e5570989f8ddcd3ae6173"
+      },
+      "nativeOutcome": "success"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "observations": {
+        "RG01": {
+          "afterGroups": [
+            {
+              "relatedMatchesRole": true,
+              "type": "Role"
+            },
+            {
+              "relatedMatchesRole": true,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "afterRoleIdNull": false,
+          "beforeRoleCount": 0,
+          "beforeRoleIdNull": true
+        },
+        "RG02": {
+          "afterGroups": [
+            {
+              "child": false,
+              "parent": true,
+              "type": "Role"
+            },
+            {
+              "child": false,
+              "parent": true,
+              "type": "RoleAndSubordinatesInternal"
+            },
+            {
+              "child": true,
+              "parent": false,
+              "type": "Role"
+            },
+            {
+              "child": true,
+              "parent": false,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "parentBeforeTypes": [
+            "Role",
+            "RoleAndSubordinatesInternal"
+          ]
+        },
+        "RG03": {
+          "afterGroups": [
+            {
+              "sameGroupIdentity": true,
+              "second": false,
+              "first": true,
+              "type": "Role"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": false,
+              "first": true,
+              "type": "RoleAndSubordinatesInternal"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": true,
+              "first": false,
+              "type": "Role"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": true,
+              "first": false,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "beforeCount": 4
+        }
+      },
+      "receiptSHA256": {
+        "RG01": "d07aa7265276c2a20d127b6575df5beeb6ec2b6b49a23b4b53e4f340f7d5bb7c",
+        "RG02": "d07aa7265276c2a20d127b6575df5beeb6ec2b6b49a23b4b53e4f340f7d5bb7c",
+        "RG03": "d07aa7265276c2a20d127b6575df5beeb6ec2b6b49a23b4b53e4f340f7d5bb7c"
+      },
+      "deploymentID": "0AfRK00000uoNFh0AM",
+      "testRunID": "",
+      "nativeOutcome": "Failed",
+      "checkOnly": false
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "observations": {
+        "RG01": {
+          "afterGroups": [
+            {
+              "relatedMatchesRole": true,
+              "type": "Role"
+            },
+            {
+              "relatedMatchesRole": true,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "afterRoleIdNull": false,
+          "beforeRoleCount": 0,
+          "beforeRoleIdNull": true
+        },
+        "RG02": {
+          "afterGroups": [
+            {
+              "child": false,
+              "parent": true,
+              "type": "Role"
+            },
+            {
+              "child": false,
+              "parent": true,
+              "type": "RoleAndSubordinatesInternal"
+            },
+            {
+              "child": true,
+              "parent": false,
+              "type": "Role"
+            },
+            {
+              "child": true,
+              "parent": false,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "parentBeforeTypes": [
+            "Role",
+            "RoleAndSubordinatesInternal"
+          ]
+        },
+        "RG03": {
+          "afterGroups": [
+            {
+              "sameGroupIdentity": true,
+              "second": false,
+              "first": true,
+              "type": "Role"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": false,
+              "first": true,
+              "type": "RoleAndSubordinatesInternal"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": true,
+              "first": false,
+              "type": "Role"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": true,
+              "first": false,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "beforeCount": 4
+        }
+      },
+      "receiptSHA256": {
+        "RG01": "e1c6585c50f85fc37f391f14e9e5ebb6449aad7b453ba9291027154cd9c678d6",
+        "RG02": "dbaaf9ffc3ef9c1cd656c1c76193b1cf80b8290b9c663b3aa8d0791c059eddf6",
+        "RG03": "1c1adfa8aa13e73767148e87d7f3b4fc74c7c1620641ee0de89618c1af40d77a"
+      },
+      "nativeOutcome": "success"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "observations": {
+        "RG01": {
+          "afterGroups": [
+            {
+              "relatedMatchesRole": true,
+              "type": "Role"
+            },
+            {
+              "relatedMatchesRole": true,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "afterRoleIdNull": false,
+          "beforeRoleCount": 0,
+          "beforeRoleIdNull": true
+        },
+        "RG02": {
+          "afterGroups": [
+            {
+              "child": false,
+              "parent": true,
+              "type": "Role"
+            },
+            {
+              "child": false,
+              "parent": true,
+              "type": "RoleAndSubordinatesInternal"
+            },
+            {
+              "child": true,
+              "parent": false,
+              "type": "Role"
+            },
+            {
+              "child": true,
+              "parent": false,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "parentBeforeTypes": [
+            "Role",
+            "RoleAndSubordinatesInternal"
+          ]
+        },
+        "RG03": {
+          "afterGroups": [
+            {
+              "sameGroupIdentity": true,
+              "second": false,
+              "first": true,
+              "type": "Role"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": false,
+              "first": true,
+              "type": "RoleAndSubordinatesInternal"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": true,
+              "first": false,
+              "type": "Role"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": true,
+              "first": false,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "beforeCount": 4
+        }
+      },
+      "receiptSHA256": {
+        "RG01": "41c1bd9b7f926c0db3d7f2ad1f785d913ee7e4da574aa24bfae08a1495f61dee",
+        "RG02": "41c1bd9b7f926c0db3d7f2ad1f785d913ee7e4da574aa24bfae08a1495f61dee",
+        "RG03": "41c1bd9b7f926c0db3d7f2ad1f785d913ee7e4da574aa24bfae08a1495f61dee"
+      },
+      "deploymentID": "0AfRK00000uoJfA0AU",
+      "testRunID": "",
+      "nativeOutcome": "Failed",
+      "checkOnly": false
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "observations": {
+        "RG01": {
+          "afterGroups": [
+            {
+              "relatedMatchesRole": true,
+              "type": "Role"
+            },
+            {
+              "relatedMatchesRole": true,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "afterRoleIdNull": false,
+          "beforeRoleCount": 0,
+          "beforeRoleIdNull": true
+        },
+        "RG02": {
+          "afterGroups": [
+            {
+              "child": false,
+              "parent": true,
+              "type": "Role"
+            },
+            {
+              "child": false,
+              "parent": true,
+              "type": "RoleAndSubordinatesInternal"
+            },
+            {
+              "child": true,
+              "parent": false,
+              "type": "Role"
+            },
+            {
+              "child": true,
+              "parent": false,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "parentBeforeTypes": [
+            "Role",
+            "RoleAndSubordinatesInternal"
+          ]
+        },
+        "RG03": {
+          "afterGroups": [
+            {
+              "sameGroupIdentity": true,
+              "second": false,
+              "first": true,
+              "type": "Role"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": false,
+              "first": true,
+              "type": "RoleAndSubordinatesInternal"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": true,
+              "first": false,
+              "type": "Role"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": true,
+              "first": false,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "beforeCount": 4
+        }
+      },
+      "receiptSHA256": {
+        "RG01": "9c3e625d3070e23a4fc7ecbbdecb5496466e10ce1c00ba166e5a61dfba775ad2",
+        "RG02": "ef114758d6a70ea5fcb198127578d3fa431070134ca13221a971c497dead26d7",
+        "RG03": "3095c5f0dd02c3b902a41a6796a14899a7985f29d35c84e282e14bea2ad162da"
+      },
+      "nativeOutcome": "success"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "observations": {
+        "RG01": {
+          "afterGroups": [
+            {
+              "relatedMatchesRole": true,
+              "type": "Role"
+            },
+            {
+              "relatedMatchesRole": true,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "afterRoleIdNull": false,
+          "beforeRoleCount": 0,
+          "beforeRoleIdNull": true
+        },
+        "RG02": {
+          "afterGroups": [
+            {
+              "child": false,
+              "parent": true,
+              "type": "Role"
+            },
+            {
+              "child": false,
+              "parent": true,
+              "type": "RoleAndSubordinatesInternal"
+            },
+            {
+              "child": true,
+              "parent": false,
+              "type": "Role"
+            },
+            {
+              "child": true,
+              "parent": false,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "parentBeforeTypes": [
+            "Role",
+            "RoleAndSubordinatesInternal"
+          ]
+        },
+        "RG03": {
+          "afterGroups": [
+            {
+              "sameGroupIdentity": true,
+              "second": false,
+              "first": true,
+              "type": "Role"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": false,
+              "first": true,
+              "type": "RoleAndSubordinatesInternal"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": true,
+              "first": false,
+              "type": "Role"
+            },
+            {
+              "sameGroupIdentity": true,
+              "second": true,
+              "first": false,
+              "type": "RoleAndSubordinatesInternal"
+            }
+          ],
+          "beforeCount": 4
+        }
+      },
+      "receiptSHA256": {
+        "RG01": "8072658fa6271a1ba5156305d83f453c4796962850a7b10fbc1e34343f9ffbb7",
+        "RG02": "8072658fa6271a1ba5156305d83f453c4796962850a7b10fbc1e34343f9ffbb7",
+        "RG03": "8072658fa6271a1ba5156305d83f453c4796962850a7b10fbc1e34343f9ffbb7"
+      },
+      "deploymentID": "0AfRK00000uoI1W0AU",
+      "testRunID": "",
+      "nativeOutcome": "Failed",
+      "checkOnly": false
+    }
+  ],
+  "uncaptured": [
+    {
+      "scope": "Experience Cloud enabled orgs and other feature/security/release-update configurations",
+      "reason": "Only the owned default Developer org with retrieved enableNetworksEnabled=false was captured."
+    },
+    {
+      "scope": "Group Name/DeveloperName values, memberships and sharing recalculation",
+      "reason": "Sources query only Type/RelatedId and group identity/count; no additional field or authorization behavior is inferred."
+    },
+    {
+      "scope": "Role deletion, parent reassignment and external-user roles",
+      "reason": "Not executed by RG01-RG03."
+    }
+  ]
+}

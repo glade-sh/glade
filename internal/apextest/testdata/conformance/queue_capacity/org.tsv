@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	asyncCapacity	{"capacity":{"beforeLimit":1,"beforeCount":0,"isQueueable":true,"afterLimit":1,"afterCount":1,"hasCapacity":false},"rows":1}
+62.0	syncCapacity	{"afterCount":1,"afterLimit":50,"isQueueable":false,"beforeCount":0,"beforeLimit":50}
+67.0	asyncCapacity	{"capacity":{"beforeLimit":1,"beforeCount":0,"isQueueable":true,"afterLimit":1,"afterCount":1,"hasCapacity":false},"rows":1}
+67.0	syncCapacity	{"afterCount":1,"afterLimit":50,"isQueueable":false,"beforeCount":0,"beforeLimit":50}

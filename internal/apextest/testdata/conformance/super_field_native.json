@@ -1,0 +1,57 @@
+{
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "named"
+  ],
+  "observed": [
+    "base",
+    "child",
+    "base",
+    "changed",
+    "child",
+    "base",
+    "child",
+    "base",
+    "changed",
+    "child",
+    "same-base",
+    "same-child",
+    "same-base",
+    "shared-base",
+    "shared-child",
+    "base",
+    "child",
+    "base",
+    "changed",
+    "child",
+    "base",
+    "child",
+    "base",
+    "shared-base",
+    "shared-child",
+    "shared-base",
+    "null",
+    "shared-child",
+    "null"
+  ],
+  "sources": {
+    "SuperFieldBoundary17": "public class SuperFieldBoundary17 {\n public virtual class Box { public String label; public Box(String label){this.label=label;} }\n public class FancyBox extends Box { public FancyBox(String label){super(label);} }\n public virtual class Base {\n  protected Box state;\n  public String readBase(){return state==null?'null':state.label;}\n }\n public virtual class Child extends Base {\n  private FancyBox state;\n  public Child(){super.state=new Box('base');this.state=new FancyBox('child');}\n  public String readChild(){return state==null?'null':state.label;}\n  public String readSuper(){return super.state==null?'null':super.state.label;}\n  public void rewrite(){super.state=new Box('changed');}\n }\n public class Grand extends Child { public Grand(){super();} }\n public virtual class SameChild extends Base {\n  private Box state;\n  public SameChild(){super.state=new Box('same-base');this.state=new Box('same-child');}\n  public String readChild(){return state==null?'null':state.label;}\n  public String readSuper(){return super.state==null?'null':super.state.label;}\n }\n public class SharedChild extends Base {\n  protected FancyBox state;\n  public SharedChild(){super.state=new Box('shared-base');this.state=new FancyBox('shared-child');}\n  public String readChild(){return state==null?'null':state.label;}\n }\n public static List<String> capture(){\n  List<String> out=new List<String>();\n  Child a=new Child();out.add(a.readBase());out.add(a.readChild());out.add(a.readSuper());a.rewrite();out.add(a.readBase());out.add(a.readChild());\n  Grand b=new Grand();out.add(b.readBase());out.add(b.readChild());out.add(b.readSuper());b.rewrite();out.add(b.readBase());out.add(b.readChild());\n  SameChild c=new SameChild();out.add(c.readBase());out.add(c.readChild());out.add(c.readSuper());\n  SharedChild d=new SharedChild();out.add(d.readBase());out.add(d.readChild());\n  BoundaryPrivate17 top=new BoundaryPrivate17();out.add(top.readBase());out.add(top.readChild());out.add(top.readSuper());top.rewrite();out.add(top.readBase());out.add(top.readChild());\n  BoundaryGrand17 grand=new BoundaryGrand17();out.add(grand.readBase());out.add(grand.readChild());out.add(grand.readSuper());\n  BoundaryShared17 shared=new BoundaryShared17(true);out.add(shared.readBase());out.add(shared.readChild());out.add(shared.readSuper());\n  BoundaryShared17 only=new BoundaryShared17(false);out.add(only.readBase());out.add(only.readChild());out.add(only.readSuper());\n  return out;\n }\n}\n",
+    "BoundaryPrivate17": "public virtual class BoundaryPrivate17 extends BoundaryBase17 {\n private SuperFieldBoundary17.FancyBox state;\n public BoundaryPrivate17(){super.state=new SuperFieldBoundary17.Box('base');this.state=new SuperFieldBoundary17.FancyBox('child');}\n public String readChild(){return state==null?'null':state.label;}\n public String readSuper(){return super.state==null?'null':super.state.label;}\n public void rewrite(){super.state=new SuperFieldBoundary17.Box('changed');}\n}\n",
+    "BoundaryBase17": "public virtual class BoundaryBase17 {\n protected SuperFieldBoundary17.Box state;\n public String readBase(){return state==null?'null':state.label;}\n}\n",
+    "BoundaryShared17": "public class BoundaryShared17 extends BoundaryBase17 {\n protected SuperFieldBoundary17.FancyBox state;\n public BoundaryShared17(Boolean setBase){if(setBase){super.state=new SuperFieldBoundary17.Box('shared-base');}this.state=new SuperFieldBoundary17.FancyBox('shared-child');}\n public String readChild(){return state==null?'null':state.label;}\n public String readSuper(){return super.state==null?'null':super.state.label;}\n}\n",
+    "BoundaryGrand17": "public class BoundaryGrand17 extends BoundaryPrivate17 { public BoundaryGrand17(){super();} }\n"
+  },
+  "sourceSHA256": {
+    "SuperFieldBoundary17": "3863c6c610175ba40981dadd51ab5062565a1133a93e24240cc3735e018d3412",
+    "BoundaryPrivate17": "0e24237be1cd65371b4da88d6f9736a316632b8b99e28cbb49b03032585645a9",
+    "BoundaryBase17": "70b5d1e820b26ad6f406b5b35f918ac2294eb73f4b964be54cf18efb199757db",
+    "BoundaryShared17": "ed847182b75588bf99ab6f8eaca60aecc0f39ed6f48d28c18d520053457b85c9",
+    "BoundaryGrand17": "ed2f8686adaec74a124817e5fc063567b38bac63ef231ed484df55b1f6591efb"
+  },
+  "captureNote": "2026-10-17 authorized scratch org; named capture deliberately fails one assertion to return the same payload as anonymous debug."
+}

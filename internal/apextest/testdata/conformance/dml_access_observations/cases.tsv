@@ -1,0 +1,6 @@
+method	question
+userUpsert	What exception does a Minimum Access user receive for USER_MODE Case upsert?
+userUndelete	What exception does that user receive for USER_MODE Case undelete?
+systemUpdate	Does SYSTEM_MODE Contact update retain with-sharing restrictions?
+systemUpsert	Does SYSTEM_MODE Contact upsert retain with-sharing restrictions?
+systemUndelete	Does SYSTEM_MODE Case undelete retain with-sharing restrictions?

@@ -1,0 +1,4 @@
+case	input	observation
+B01	omitted	Boolean true/false/null defaults and true/false literal assignments
+B02	defaultTrue=false	explicit false overrides true default
+B03	defaultTrue=null	explicit null overrides true default

@@ -1,0 +1,7 @@
+@IsTest private class F4F6053Observe { @IsTest static void observe() {
+String unitName='N3_053'; Map<String,Object> payload=new Map<String,Object>();
+FlowCoreN3Record__c equalOnly=new FlowCoreN3Record__c(Name='subject',Unit__c=unitName,Gate__c=true,Day__c=Date.newInstance(2026,10,1), OtherDay__c=Date.newInstance(2020,1,1)); insert equalOnly; payload.put('equalOnly',[SELECT COUNT() FROM FlowCoreN3Record__c WHERE Unit__c=:unitName AND Name='log']);
+FlowCoreN3Record__c greaterOnly=new FlowCoreN3Record__c(Name='subject',Unit__c=unitName,Gate__c=true,Day__c=Date.newInstance(2020,1,1), OtherDay__c=Date.newInstance(2026,10,1)); insert greaterOnly; payload.put('greaterOnly',[SELECT COUNT() FROM FlowCoreN3Record__c WHERE Unit__c=:unitName AND Name='log']);
+FlowCoreN3Record__c neither=new FlowCoreN3Record__c(Name='subject',Unit__c=unitName,Gate__c=true,Day__c=Date.newInstance(2020,1,1), OtherDay__c=Date.newInstance(2020,1,1)); insert neither; payload.put('neither',[SELECT COUNT() FROM FlowCoreN3Record__c WHERE Unit__c=:unitName AND Name='log']);
+System.assert(false,'FLOW_CORE_RESULT|F4F6_053|'+JSON.serialize(payload));
+} }

@@ -294,6 +294,10 @@ func semaAPI67RejectedPlatformCallArgs(version, receiverType, method string, arg
 		if len(argTypes) != 2 {
 			return true
 		}
+		if argTypes[0] == "" {
+			// An argument whose type inference found nothing is not a rejection.
+			return false
+		}
 		base, _ := semaGenericBaseAndArgs(argTypes[0])
 		return !strings.EqualFold(base, "List") && !strings.EqualFold(base, "Set") && !strings.EqualFold(base, "Iterable")
 	}
@@ -352,7 +356,7 @@ func semaRejectedDataWeaveResultField(receiver, field string) bool {
 	return strings.EqualFold(semaCanonicalPlatformAlias(receiver), "DataWeave.Result") && strings.EqualFold(field, "valueAsString")
 }
 
-func semaStandardFieldAssignmentReadOnly(model *semaTypeMemberView, receiver, field string) bool {
+func semaStandardFieldAssignmentReadOnly(model *semaTypeMemberView, receiver, field string, anonymous bool) bool {
 	// Location's readonly coordinates belong to the System class. Resolve the
 	// receiver through the member model so Schema.Location and project classes
 	// retain their own field rules, including when a member owner is Location.
@@ -376,5 +380,11 @@ func semaStandardFieldAssignmentReadOnly(model *semaTypeMemberView, receiver, fi
 	if members, found := model.lookup(normalizeName(receiver)); found && !members.sobject && !members.platform {
 		return false
 	}
-	return storage.StandardFieldAssignmentReadOnly(receiver, field)
+	// Owned API 52/62/67/68 deployments allow the concrete article setter even
+	// when describe reports no create/update permission. The base
+	// KnowledgeArticleVersion view retains its read-only Language contract.
+	if strings.EqualFold(receiver, "Knowledge__kav") && strings.EqualFold(field, "Language") {
+		return false
+	}
+	return storage.StandardFieldAssignmentReadOnly(receiver, field) || anonymous && storage.StandardFieldAssignmentRequiresNamedCode(receiver, field)
 }

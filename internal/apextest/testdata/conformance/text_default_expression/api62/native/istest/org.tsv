@@ -1,0 +1,9 @@
+id	group	route	status	value
+explicitNull	TEXT_DEFAULT	istest	runtime	null
+fresh	TEXT_DEFAULT	istest	runtime	true
+function	TEXT_DEFAULT	istest	runtime	"LEAF"
+generated	TEXT_DEFAULT	istest	runtime	{"dateShape":true,"length":30,"prefix":true,"userSuffix":true}
+literal	TEXT_DEFAULT	istest	runtime	"a & b (text)"
+pair	TEXT_DEFAULT	istest	runtime	"leftright"
+stable	TEXT_DEFAULT	istest	runtime	true
+supplied	TEXT_DEFAULT	istest	runtime	"manual"

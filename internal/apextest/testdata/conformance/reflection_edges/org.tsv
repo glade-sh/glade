@@ -1,0 +1,7 @@
+api	route	method	observed
+62.0	istest	datetimeError	System.JSONException|false
+62.0	istest	metadataIdentity	true|true
+62.0	istest	tokenText	List<ReflectionEdgeObservation.Parcel>|List<ReflectionEdgeObservation.Parcel>|true
+67.0	istest	datetimeError	System.JSONException|false
+67.0	istest	metadataIdentity	true|true
+67.0	istest	tokenText	List<ReflectionEdgeObservation.Parcel>|List<ReflectionEdgeObservation.Parcel>|true

@@ -1,0 +1,425 @@
+{
+  "62.0@anonymous": {
+    "orgTSVSHA256": "852686152441ce65bb108b6e2f991c214e80144f82a7afd2587c6c278ab1a6ab",
+    "run": {
+      "started_at": "2026-10-13T02:55:26.762302+00:00",
+      "orgIdSha256": "aa88d407527866ea3199a087c77ce42bee905e4f72cd70f88e567da77fb0dc13",
+      "api": "62.0",
+      "route": "anonymous",
+      "rows_expected": 5,
+      "rows_observed": 5,
+      "nonanswers": 0,
+      "complete": true,
+      "capture_finished": true,
+      "fixture_cleanup_verified": false,
+      "teardown_failed_steps": [
+        "flow-cleanup-Fault@62.0",
+        "flow-cleanup-NoOutput@62.0",
+        "flow-cleanup-Success@62.0"
+      ],
+      "manifest_sha256": "a244e17a4315d239c88c6792f2720450835b04cc204c835949cadba73655ac44",
+      "answer_source": "native Salesforce",
+      "release_drift": "Same release 62/67/68; API59 additionally required before an API68-only claim."
+    }
+  },
+  "62.0@istest": {
+    "orgTSVSHA256": "420a869a2121053a0213cc1a4038c320f1aff421923875c5f5fe4ae26742bbe7",
+    "run": {
+      "started_at": "2026-10-13T02:55:26.762302+00:00",
+      "orgIdSha256": "aa88d407527866ea3199a087c77ce42bee905e4f72cd70f88e567da77fb0dc13",
+      "api": "62.0",
+      "route": "istest",
+      "rows_expected": 9,
+      "rows_observed": 9,
+      "nonanswers": 0,
+      "complete": true,
+      "capture_finished": true,
+      "fixture_cleanup_verified": false,
+      "teardown_failed_steps": [
+        "flow-cleanup-Fault@62.0",
+        "flow-cleanup-NoOutput@62.0",
+        "flow-cleanup-Success@62.0"
+      ],
+      "manifest_sha256": "a244e17a4315d239c88c6792f2720450835b04cc204c835949cadba73655ac44",
+      "answer_source": "native Salesforce",
+      "release_drift": "Same release 62/67/68; API59 additionally required before an API68-only claim."
+    }
+  },
+  "67.0@anonymous": {
+    "orgTSVSHA256": "4e185bd600305ee14ebd9c9a6d05e997775ceda7195cdf2e663f0be04bd46867",
+    "run": {
+      "started_at": "2026-10-13T02:55:26.762302+00:00",
+      "orgIdSha256": "aa88d407527866ea3199a087c77ce42bee905e4f72cd70f88e567da77fb0dc13",
+      "api": "67.0",
+      "route": "anonymous",
+      "rows_expected": 7,
+      "rows_observed": 7,
+      "nonanswers": 0,
+      "complete": true,
+      "capture_finished": true,
+      "fixture_cleanup_verified": false,
+      "teardown_failed_steps": [
+        "flow-cleanup-Fault@67.0",
+        "flow-cleanup-NoOutput@67.0",
+        "flow-cleanup-Success@67.0"
+      ],
+      "manifest_sha256": "a244e17a4315d239c88c6792f2720450835b04cc204c835949cadba73655ac44",
+      "answer_source": "native Salesforce",
+      "release_drift": "Same release 62/67/68; API59 additionally required before an API68-only claim."
+    }
+  },
+  "67.0@istest": {
+    "orgTSVSHA256": "21d2c38972439c0e56fd2bec4f4b65bd917b1170457024176efed8385fe58e39",
+    "run": {
+      "started_at": "2026-10-13T02:55:26.762302+00:00",
+      "orgIdSha256": "aa88d407527866ea3199a087c77ce42bee905e4f72cd70f88e567da77fb0dc13",
+      "api": "67.0",
+      "route": "istest",
+      "rows_expected": 10,
+      "rows_observed": 10,
+      "nonanswers": 0,
+      "complete": true,
+      "capture_finished": true,
+      "fixture_cleanup_verified": false,
+      "teardown_failed_steps": [
+        "flow-cleanup-Fault@67.0",
+        "flow-cleanup-NoOutput@67.0",
+        "flow-cleanup-Success@67.0"
+      ],
+      "manifest_sha256": "a244e17a4315d239c88c6792f2720450835b04cc204c835949cadba73655ac44",
+      "answer_source": "native Salesforce",
+      "release_drift": "Same release 62/67/68; API59 additionally required before an API68-only claim."
+    }
+  },
+  "68.0@anonymous": {
+    "orgTSVSHA256": "852686152441ce65bb108b6e2f991c214e80144f82a7afd2587c6c278ab1a6ab",
+    "run": {
+      "started_at": "2026-10-13T02:55:26.762302+00:00",
+      "orgIdSha256": "aa88d407527866ea3199a087c77ce42bee905e4f72cd70f88e567da77fb0dc13",
+      "api": "68.0",
+      "route": "anonymous",
+      "rows_expected": 5,
+      "rows_observed": 5,
+      "nonanswers": 0,
+      "complete": true,
+      "capture_finished": true,
+      "fixture_cleanup_verified": false,
+      "teardown_failed_steps": [
+        "flow-cleanup-Fault@68.0",
+        "flow-cleanup-NoOutput@68.0",
+        "flow-cleanup-Success@68.0"
+      ],
+      "manifest_sha256": "a244e17a4315d239c88c6792f2720450835b04cc204c835949cadba73655ac44",
+      "answer_source": "native Salesforce",
+      "release_drift": "Same release 62/67/68; API59 additionally required before an API68-only claim."
+    }
+  },
+  "68.0@istest": {
+    "orgTSVSHA256": "57243ecb965a462b83637b372726f22db83eecd4af922c479a98214470f6ae50",
+    "run": {
+      "started_at": "2026-10-13T02:55:26.762302+00:00",
+      "orgIdSha256": "aa88d407527866ea3199a087c77ce42bee905e4f72cd70f88e567da77fb0dc13",
+      "api": "68.0",
+      "route": "istest",
+      "rows_expected": 9,
+      "rows_observed": 9,
+      "nonanswers": 0,
+      "complete": true,
+      "capture_finished": true,
+      "fixture_cleanup_verified": false,
+      "teardown_failed_steps": [
+        "flow-cleanup-Fault@68.0",
+        "flow-cleanup-NoOutput@68.0",
+        "flow-cleanup-Success@68.0"
+      ],
+      "manifest_sha256": "a244e17a4315d239c88c6792f2720450835b04cc204c835949cadba73655ac44",
+      "answer_source": "native Salesforce",
+      "release_drift": "Same release 62/67/68; API59 additionally required before an API68-only claim."
+    }
+  },
+  "native.jsonSHA256": "32ef94b75924916ecd48ba06c7c7aedf0080c9c47b0bd53f475a50d7734ee9cb",
+  "capture-completion.jsonSHA256": "1fdfc4718d1483d02b62bcbc3dfe7e35401713eb4d1174c50bc13529b4eede88",
+  "completion": {
+    "planned_observations": 45,
+    "rows_recorded": 45,
+    "observations": 45,
+    "fully_observed": true,
+    "teardown_unverified": [
+      {
+        "api": "62.0",
+        "failed_steps": [
+          "flow-cleanup-Fault@62.0",
+          "flow-cleanup-NoOutput@62.0",
+          "flow-cleanup-Success@62.0"
+        ]
+      },
+      {
+        "api": "67.0",
+        "failed_steps": [
+          "flow-cleanup-Fault@67.0",
+          "flow-cleanup-NoOutput@67.0",
+          "flow-cleanup-Success@67.0"
+        ]
+      },
+      {
+        "api": "68.0",
+        "failed_steps": [
+          "flow-cleanup-Fault@68.0",
+          "flow-cleanup-NoOutput@68.0",
+          "flow-cleanup-Success@68.0"
+        ]
+      }
+    ],
+    "cleanup_verified": true,
+    "partial_completion": false,
+    "run": "2"
+  },
+  "merge": {
+    "priorObserved": 243,
+    "retryAdmitted": 21,
+    "mergedObserved": 264,
+    "existingObservedReplaced": 0,
+    "admittedCells": [
+      "C187IA_011@67.0@istest",
+      "C187IA_014@67.0@anonymous",
+      "C187IA_015@62.0@anonymous",
+      "C187IA_015@62.0@istest",
+      "C187IA_015@67.0@anonymous",
+      "C187IA_015@67.0@istest",
+      "C187IA_015@68.0@anonymous",
+      "C187IA_015@68.0@istest",
+      "C187IA_022@67.0@anonymous",
+      "C187IA_041@62.0@istest",
+      "C187IA_041@67.0@istest",
+      "C187IA_041@68.0@istest",
+      "C187IA_042@62.0@istest",
+      "C187IA_042@67.0@istest",
+      "C187IA_042@68.0@istest",
+      "C187IA_043@62.0@istest",
+      "C187IA_043@67.0@istest",
+      "C187IA_043@68.0@istest",
+      "C187IA_044@62.0@istest",
+      "C187IA_044@67.0@istest",
+      "C187IA_044@68.0@istest"
+    ]
+  },
+  "reassembly": {
+    "C187IA_043@67.0@istest": {
+      "protocol": "questions",
+      "count": 4,
+      "payloadLength": 826,
+      "sha256": "eec0dd02d24b88cf1f72fd532d23322b32bd57a8d8d6f0cfcd288bb5156fb774",
+      "identityQuestionCounts": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "reassembled": true
+    },
+    "C187IA_042@62.0@istest": {
+      "protocol": "questions",
+      "count": 4,
+      "payloadLength": 826,
+      "sha256": "d7ef303863c4c82b2c66ff3ba236bbaca94e2d7bcaeafbacfaa0d18b9639772f",
+      "identityQuestionCounts": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "reassembled": true
+    },
+    "C187IA_044@68.0@istest": {
+      "protocol": "questions",
+      "count": 7,
+      "payloadLength": 1819,
+      "sha256": "c1acc8c982d66c3bd05c2cd1252fb3262dbdca5ca0139473bbbf1b418b901e32",
+      "identityQuestionCounts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reassembled": true
+    },
+    "C187IA_011@67.0@istest": {
+      "protocol": "segments",
+      "count": 4,
+      "payloadLength": 1120,
+      "sha256": "988c9a5e595cefa9edb2e2f3d22d8405ad34516c1cf2e8dfaa087c74ed621c8f",
+      "identityQuestionCounts": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "reassembled": true
+    },
+    "C187IA_041@67.0@istest": {
+      "protocol": "questions",
+      "count": 6,
+      "payloadLength": 1376,
+      "sha256": "b5d96fb48d18829d28ce042fea3c70891df42df744fe235db8bff7d56d0ebb60",
+      "identityQuestionCounts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reassembled": true
+    },
+    "C187IA_015@67.0@istest": {
+      "protocol": "segments",
+      "count": 2,
+      "payloadLength": 624,
+      "sha256": "3b0e3613150509ffa9b4b1b8184e06647553d86c9d9a85f4be9d86a53a4c199f",
+      "identityQuestionCounts": [
+        0,
+        0
+      ],
+      "reassembled": true
+    },
+    "C187IA_015@68.0@istest": {
+      "protocol": "segments",
+      "count": 2,
+      "payloadLength": 624,
+      "sha256": "3b0e3613150509ffa9b4b1b8184e06647553d86c9d9a85f4be9d86a53a4c199f",
+      "identityQuestionCounts": [
+        0,
+        0
+      ],
+      "reassembled": true
+    },
+    "C187IA_041@68.0@istest": {
+      "protocol": "questions",
+      "count": 6,
+      "payloadLength": 1376,
+      "sha256": "7f33e5236b82fab4ef6153df972c2e5633324e5f7a6d140485f228e62a5516d0",
+      "identityQuestionCounts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reassembled": true
+    },
+    "C187IA_044@67.0@istest": {
+      "protocol": "questions",
+      "count": 7,
+      "payloadLength": 1819,
+      "sha256": "c4b540fe92ccb69c2086ea2878e737099a82e3f369eb982775db9c15822bae94",
+      "identityQuestionCounts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reassembled": true
+    },
+    "C187IA_041@62.0@istest": {
+      "protocol": "questions",
+      "count": 6,
+      "payloadLength": 1376,
+      "sha256": "bcad749064d676ad37d7f5adcdcc26f781b2d62f8355ee1adcdb3fe34451a5b6",
+      "identityQuestionCounts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reassembled": true
+    },
+    "C187IA_042@67.0@istest": {
+      "protocol": "questions",
+      "count": 4,
+      "payloadLength": 826,
+      "sha256": "eec0dd02d24b88cf1f72fd532d23322b32bd57a8d8d6f0cfcd288bb5156fb774",
+      "identityQuestionCounts": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "reassembled": true
+    },
+    "C187IA_043@62.0@istest": {
+      "protocol": "questions",
+      "count": 4,
+      "payloadLength": 826,
+      "sha256": "d7ef303863c4c82b2c66ff3ba236bbaca94e2d7bcaeafbacfaa0d18b9639772f",
+      "identityQuestionCounts": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "reassembled": true
+    },
+    "C187IA_044@62.0@istest": {
+      "protocol": "questions",
+      "count": 7,
+      "payloadLength": 1819,
+      "sha256": "51972c87961c14f32608b4f78323616b87c4aea40065eb263467dd9ec8032f32",
+      "identityQuestionCounts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "reassembled": true
+    },
+    "C187IA_043@68.0@istest": {
+      "protocol": "questions",
+      "count": 4,
+      "payloadLength": 826,
+      "sha256": "cad61405fc1d6ab8b7b3d68aa8ad0e698a24b04b3fc9330fc09f67456d1a0356",
+      "identityQuestionCounts": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "reassembled": true
+    },
+    "C187IA_015@62.0@istest": {
+      "protocol": "segments",
+      "count": 2,
+      "payloadLength": 624,
+      "sha256": "3b0e3613150509ffa9b4b1b8184e06647553d86c9d9a85f4be9d86a53a4c199f",
+      "identityQuestionCounts": [
+        0,
+        0
+      ],
+      "reassembled": true
+    },
+    "C187IA_042@68.0@istest": {
+      "protocol": "questions",
+      "count": 4,
+      "payloadLength": 826,
+      "sha256": "cad61405fc1d6ab8b7b3d68aa8ad0e698a24b04b3fc9330fc09f67456d1a0356",
+      "identityQuestionCounts": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "reassembled": true
+    }
+  }
+}

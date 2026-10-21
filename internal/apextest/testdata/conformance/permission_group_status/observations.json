@@ -1,0 +1,354 @@
+{
+  "contexts": [
+    {
+      "callerApi": "67.0",
+      "id": "source67-istest-transport62",
+      "route": "istest",
+      "rows": {
+        "componentCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 1,
+          "dmlRowsDelta": 1,
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "componentInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Outdated"
+        },
+        "emptyCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 0,
+          "dmlRowsDelta": 0,
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "emptyInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Updated"
+        },
+        "listCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 0,
+          "dmlRowsDelta": 0,
+          "emptyStatus": "Updated",
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "mixedListCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 1,
+          "dmlRowsDelta": 1,
+          "emptyStatus": "Updated",
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "outdatedListCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 1,
+          "dmlRowsDelta": 2,
+          "emptyStatus": "Updated",
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "repeatCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 0,
+          "dmlRowsDelta": 0,
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "source67-anonymous-transport62",
+      "route": "anonymous",
+      "rows": {
+        "componentInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Outdated"
+        },
+        "emptyInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Updated"
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "source62-istest-transport62",
+      "route": "istest",
+      "rows": {
+        "componentCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 1,
+          "dmlRowsDelta": 1,
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "componentInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Outdated"
+        },
+        "emptyCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 0,
+          "dmlRowsDelta": 0,
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "emptyInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Updated"
+        },
+        "listCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 0,
+          "dmlRowsDelta": 0,
+          "emptyStatus": "Updated",
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "mixedListCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 1,
+          "dmlRowsDelta": 1,
+          "emptyStatus": "Updated",
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "outdatedListCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 1,
+          "dmlRowsDelta": 2,
+          "emptyStatus": "Updated",
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "repeatCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 0,
+          "dmlRowsDelta": 0,
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        }
+      },
+      "sourceApi": "62.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "source62-anonymous-transport62",
+      "route": "anonymous",
+      "rows": {
+        "componentInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Outdated"
+        },
+        "emptyInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Updated"
+        }
+      },
+      "sourceApi": "62.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "67.0",
+      "id": "source67-istest-transport67",
+      "route": "istest",
+      "rows": {
+        "componentCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 1,
+          "dmlRowsDelta": 1,
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "componentInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Outdated"
+        },
+        "emptyCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 0,
+          "dmlRowsDelta": 0,
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "emptyInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Updated"
+        },
+        "listCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 0,
+          "dmlRowsDelta": 0,
+          "emptyStatus": "Updated",
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "mixedListCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 1,
+          "dmlRowsDelta": 1,
+          "emptyStatus": "Updated",
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "outdatedListCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 1,
+          "dmlRowsDelta": 2,
+          "emptyStatus": "Updated",
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "repeatCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 0,
+          "dmlRowsDelta": 0,
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "67.0"
+    },
+    {
+      "callerApi": "67.0",
+      "id": "source67-anonymous-transport67",
+      "route": "anonymous",
+      "rows": {
+        "componentInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Outdated"
+        },
+        "emptyInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Updated"
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "67.0"
+    },
+    {
+      "callerApi": "68.0",
+      "id": "source68-istest-transport68",
+      "route": "istest",
+      "rows": {
+        "componentCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 1,
+          "dmlRowsDelta": 1,
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "componentInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Outdated"
+        },
+        "emptyCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 0,
+          "dmlRowsDelta": 0,
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "emptyInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Updated"
+        },
+        "listCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 0,
+          "dmlRowsDelta": 0,
+          "emptyStatus": "Updated",
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "mixedListCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 1,
+          "dmlRowsDelta": 1,
+          "emptyStatus": "Updated",
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "outdatedListCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 1,
+          "dmlRowsDelta": 2,
+          "emptyStatus": "Updated",
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        },
+        "repeatCalculated": {
+          "callerStatus": null,
+          "dmlDelta": 0,
+          "dmlRowsDelta": 0,
+          "queriedStatus": "Updated",
+          "queryDelta": 0,
+          "succeeded": true
+        }
+      },
+      "sourceApi": "68.0",
+      "transportApi": "68.0"
+    },
+    {
+      "callerApi": "68.0",
+      "id": "source68-anonymous-transport68",
+      "route": "anonymous",
+      "rows": {
+        "componentInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Outdated"
+        },
+        "emptyInserted": {
+          "callerStatus": null,
+          "queriedStatus": "Updated"
+        }
+      },
+      "sourceApi": "68.0",
+      "transportApi": "68.0"
+    }
+  ],
+  "files": [
+    {
+      "path": "setup/GroupStatusObservation.cls",
+      "sha256": "e12bf3e378ef204bdc8eb0bf1b526b2803204f24be43bfaa39d99ed6ea1d96e0"
+    },
+    {
+      "path": "setup/GroupStatusObservationTest.cls",
+      "sha256": "41407d9d4135ee4f71a616a5f5d1a1acce1f9feac6594d6ca391db14fbcf2c55"
+    }
+  ]
+}

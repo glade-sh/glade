@@ -1,0 +1,41 @@
+id	api	route	type	message	line
+ascii_max	62.0	anonymous			0
+ascii_over	62.0	anonymous	System.LimitException	String is too long.	3
+bmp_max	62.0	anonymous			0
+bmp_over	62.0	anonymous	System.LimitException	String is too long.	3
+supplementary_max	62.0	anonymous			0
+supplementary_over	62.0	anonymous	System.LimitException	String is too long.	3
+concat_max	62.0	anonymous			0
+concat_over	62.0	anonymous	System.AssertException	Assertion Failed: CAUGHT|System.StringException|String length exceeds maximum: 10000000	5
+separator_below	62.0	anonymous			0
+separator_over	62.0	anonymous			0
+ascii_max	62.0	isTest			0
+ascii_over	62.0	isTest	System.LimitException	String is too long.	5
+bmp_max	62.0	isTest			0
+bmp_over	62.0	isTest	System.LimitException	String is too long.	5
+supplementary_max	62.0	isTest			0
+supplementary_over	62.0	isTest	System.LimitException	String is too long.	5
+concat_max	62.0	isTest			0
+concat_over	62.0	isTest	System.AssertException	Assertion Failed: CAUGHT|System.StringException|String length exceeds maximum: 10000000	7
+separator_below	62.0	isTest			0
+separator_over	62.0	isTest			0
+ascii_max	67.0	anonymous			0
+ascii_over	67.0	anonymous	System.LimitException	String is too long.	3
+bmp_max	67.0	anonymous			0
+bmp_over	67.0	anonymous	System.LimitException	String is too long.	3
+supplementary_max	67.0	anonymous			0
+supplementary_over	67.0	anonymous	System.LimitException	String is too long.	3
+concat_max	67.0	anonymous			0
+concat_over	67.0	anonymous	System.AssertException	Assertion Failed: CAUGHT|System.StringException|String length exceeds maximum: 10000000	5
+separator_below	67.0	anonymous			0
+separator_over	67.0	anonymous			0
+ascii_max	67.0	isTest			0
+ascii_over	67.0	isTest	System.LimitException	String is too long.	5
+bmp_max	67.0	isTest			0
+bmp_over	67.0	isTest	System.LimitException	String is too long.	5
+supplementary_max	67.0	isTest			0
+supplementary_over	67.0	isTest	System.LimitException	String is too long.	5
+concat_max	67.0	isTest			0
+concat_over	67.0	isTest	System.AssertException	Assertion Failed: CAUGHT|System.StringException|String length exceeds maximum: 10000000	7
+separator_below	67.0	isTest			0
+separator_over	67.0	isTest			0

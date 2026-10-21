@@ -74,8 +74,9 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 	if err != nil {
 		return nil, newRegexSyntaxError(exceptionType, source, err)
 	}
-	// Keep original capture numbering, including the private grapheme groups.
-	publicGroups := regexp2PublicGroupNumbers(re, internal)
+	// Public numbering follows the original Apex pattern, before private
+	// grapheme and end-observer captures are introduced.
+	publicGroups := regexp2PublicGroupNumbers(re, internal, source)
 	markedSource, endGroups := instrumentRegexp2EndAssertions(regexp2Source, re)
 	if len(endGroups) > 0 {
 		re, err = regexp2.Compile(markedSource, regexp2.None)
@@ -188,7 +189,7 @@ func graphemeClusterAlternation(table *graphemeBoundaryTable) string {
 	return `(?:` + strings.Join(quoted, "|") + `)`
 }
 
-func regexp2PublicGroupNumbers(re *regexp2.Regexp, internal map[string]bool) []int {
+func regexp2PublicGroupNumbers(re *regexp2.Regexp, internal map[string]bool, source string) []int {
 	numbers := re.GetGroupNumbers()
 	out := make([]int, 0, len(numbers))
 	for _, number := range numbers {
@@ -197,6 +198,9 @@ func regexp2PublicGroupNumbers(re *regexp2.Regexp, internal map[string]bool) []i
 			continue
 		}
 		out = append(out, number)
+	}
+	if ordered, ok := regexp2OpeningGroupNumbers(source, re, len(out)); ok {
+		return ordered
 	}
 	return out
 }

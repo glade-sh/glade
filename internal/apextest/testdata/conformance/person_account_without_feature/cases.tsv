@@ -1,0 +1,23 @@
+case_id	api	native_route	native_source	glade_source	operation
+FEATURE_ABSENT	62.0	anonymous	native/anonymous/feature_absent.apex	native/anonymous/feature_absent.apex	Check Account describe for Person Account fields
+FEATURE_ABSENT	67.0	anonymous	native/anonymous/feature_absent.apex	native/anonymous/feature_absent.apex	Check Account describe for Person Account fields
+ACCOUNT_CTOR	62.0	anonymous	native/anonymous/person_account_constructor.apex	native/anonymous/glade_dml.apex	Compile a Person Account constructor and compare insert behavior
+ACCOUNT_CTOR	67.0	anonymous	native/anonymous/person_account_constructor.apex	native/anonymous/glade_dml.apex	Compile a Person Account constructor and compare insert behavior
+ACCOUNT_CTOR_CLASS	62.0	deploy	native/project/force-app/main/default/classes/AccountPersonConstructorProbe.cls	-	Compile a Person Account constructor class
+ACCOUNT_CTOR_CLASS	67.0	deploy	native/project/force-app/main/default/classes/AccountPersonConstructorProbe.cls	-	Compile a Person Account constructor class
+PERSONEMAIL_DOT	62.0	deploy	native/project/force-app/main/default/classes/PersonEmailFieldProbe.cls	-	Compile Account.PersonEmail field access
+PERSONEMAIL_DOT	67.0	deploy	native/project/force-app/main/default/classes/PersonEmailFieldProbe.cls	-	Compile Account.PersonEmail field access
+ISPERSON_DOT	62.0	deploy	native/project/force-app/main/default/classes/IsPersonAccountFieldProbe.cls	-	Compile Account.IsPersonAccount field access
+ISPERSON_DOT	67.0	deploy	native/project/force-app/main/default/classes/IsPersonAccountFieldProbe.cls	-	Compile Account.IsPersonAccount field access
+PERSONEMAIL_SOQL	62.0	deploy	native/project/force-app/main/default/classes/PersonEmailSoqlProbe.cls	-	Compile static SOQL selecting PersonEmail
+PERSONEMAIL_SOQL	67.0	deploy	native/project/force-app/main/default/classes/PersonEmailSoqlProbe.cls	-	Compile static SOQL selecting PersonEmail
+ISPERSON_SOQL	62.0	deploy	native/project/force-app/main/default/classes/IsPersonAccountSoqlProbe.cls	-	Compile static SOQL selecting IsPersonAccount
+ISPERSON_SOQL	67.0	deploy	native/project/force-app/main/default/classes/IsPersonAccountSoqlProbe.cls	-	Compile static SOQL selecting IsPersonAccount
+PERSONEMAIL_DYNAMIC	62.0	anonymous	native/anonymous/dynamic_soql.apex	native/anonymous/dynamic_soql.apex	Run dynamic SOQL selecting PersonEmail
+PERSONEMAIL_DYNAMIC	67.0	anonymous	native/anonymous/dynamic_soql.apex	native/anonymous/dynamic_soql.apex	Run dynamic SOQL selecting PersonEmail
+ISPERSON_DYNAMIC	62.0	anonymous	native/anonymous/dynamic_soql.apex	native/anonymous/dynamic_soql.apex	Run dynamic SOQL selecting IsPersonAccount
+ISPERSON_DYNAMIC	67.0	anonymous	native/anonymous/dynamic_soql.apex	native/anonymous/dynamic_soql.apex	Run dynamic SOQL selecting IsPersonAccount
+PERSON_RECORDTYPE	62.0	anonymous	native/anonymous/person_recordtype.apex	native/anonymous/person_recordtype.apex	Query RecordType.IsPersonType for Account
+PERSON_RECORDTYPE	67.0	anonymous	native/anonymous/person_recordtype.apex	native/anonymous/person_recordtype.apex	Query RecordType.IsPersonType for Account
+DYNAMIC_DML	62.0	anonymous	native/anonymous/dynamic_dml.apex	native/anonymous/dynamic_dml.apex	Put Person Account fields then insert Account
+DYNAMIC_DML	67.0	anonymous	native/anonymous/dynamic_dml.apex	native/anonymous/dynamic_dml.apex	Put Person Account fields then insert Account

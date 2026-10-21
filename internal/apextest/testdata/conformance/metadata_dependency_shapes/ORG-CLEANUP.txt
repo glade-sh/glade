@@ -1,0 +1,4 @@
+Owned one-day scratch org deleted after API 62/67 captures, 2026-10-19.
+Deletion command succeeded. Targeted Dev Hub query for the created ScratchOrgInfo: Status=Deleted.
+Targeted ActiveScratchOrg count for the created org: 0. Local alias is absent.
+No other scratch org was used.

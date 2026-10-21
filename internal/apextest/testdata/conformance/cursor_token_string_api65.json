@@ -1,0 +1,205 @@
+{
+  "apiVersion": "65.0",
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "observationCount": 10,
+  "source": {
+    "id": "string-token-api65",
+    "anonymous": "Map<String,Object> result;\nSavepoint mark=Database.setSavepoint();\ntry {\n    Account seed=new Account(Name='owned cursor token seed');\n    insert seed;\n    Id seedId=seed.Id;\n    Database.Cursor original=Database.getCursor('SELECT Id,Name FROM Account WHERE Id = :seedId');\n    result=CursorTokenProbe.observe(original,seed);\n} finally {\n    Database.rollback(mark);\n}\nSystem.assert(false,'CURSOR_CELL|'+JSON.serialize(result));\n",
+    "classes": {
+      "CursorTokenProbe": "public class CursorTokenProbe {\n    public static Map<String,Object> inspect(String payload) {\n        Map<String,Object> answer=new Map<String,Object>{\n            'admitted'=>false, 'value'=>null, 'serialized'=>null,\n            'exceptionType'=>null, 'exceptionMessage'=>null\n        };\n        try {\n            Database.Cursor handle=(Database.Cursor)JSON.deserialize(payload,Database.Cursor.class);\n            answer.put('admitted',true);\n            answer.put('value',handle==null?'null':'nonnull');\n            answer.put('serialized',JSON.serialize(handle));\n        } catch (Exception issue) {\n            answer.put('exceptionType',issue.getTypeName());\n            answer.put('exceptionMessage',issue.getMessage());\n        }\n        return answer;\n    }\n\n    public static Map<String,Object> observe(Database.Cursor original, Account seed) {\n        Map<String,Object> result=new Map<String,Object>();\n        String originalJSON=JSON.serialize(original);\n        Map<String,Object> originalData=(Map<String,Object>)JSON.deserializeUntyped(originalJSON);\n        String originalToken=(String)originalData.get('queryId');\n        result.put('malformed',inspect(JSON.serialize(new Map<String,Object>{'queryId'=>'UnusableCursor67890'})));\n        result.put('renewed',inspect(JSON.serialize(new Map<String,Object>{'queryId'=>originalToken+'-renewed'})));\n        result.put('empty',inspect('{}'));\n        result.put('null',inspect('null'));\n        Map<String,Object> roundtrip=new Map<String,Object>{\n            'admitted'=>false, 'count'=>null, 'fetched'=>null, 'sameId'=>null, 'sameName'=>null,\n            'exceptionType'=>null, 'exceptionMessage'=>null\n        };\n        try {\n            Database.Cursor restored=(Database.Cursor)JSON.deserialize(originalJSON,Database.Cursor.class);\n            roundtrip.put('admitted',restored!=null);\n            roundtrip.put('count',restored.getNumRecords());\n            List<SObject> rows=restored.fetch(0,1);\n            roundtrip.put('fetched',rows.size());\n            roundtrip.put('sameId',rows.isEmpty()?false:rows[0].Id==seed.Id);\n            roundtrip.put('sameName',rows.isEmpty()?false:rows[0].get('Name')==seed.Name);\n        } catch (Exception issue) {\n            roundtrip.put('exceptionType',issue.getTypeName());\n            roundtrip.put('exceptionMessage',issue.getMessage());\n        }\n        result.put('roundtrip',roundtrip);\n        return result;\n    }\n}\n",
+      "CursorTokenProbeTest": "@IsTest private class CursorTokenProbeTest {\n    @IsTest static void observe() {\n        Map<String,Object> result;\n        Savepoint mark=Database.setSavepoint();\n        try {\n            Account seed=new Account(Name='owned cursor token seed');\n            insert seed;\n            Id seedId=seed.Id;\n            Database.Cursor original=Database.getCursor('SELECT Id,Name FROM Account WHERE Id = :seedId');\n            result=CursorTokenProbe.observe(original,seed);\n        } finally {\n            Database.rollback(mark);\n        }\n        System.assert(false,'CURSOR_CELL|'+JSON.serialize(result));\n    }\n}\n"
+    },
+    "tests": [
+      "CursorTokenProbeTest"
+    ],
+    "stage": "runtime",
+    "sourceSha256": {
+      "anonymous": "15a545c6b548760fcda99e8daa8611f0c3d68ef4cd3fa2c6e6fe6977975c1d10",
+      "class:CursorTokenProbe": "b24518382a0ea1e7a0a01eb03382e9bddfcb26dd65b952a024eb6c86e3d7c358",
+      "class:CursorTokenProbeTest": "e406a5ae6326a997040c8f0f2ae77d8ba1c0975817b9662f2b38536becf73b05"
+    }
+  },
+  "native": {
+    "anonymous": {
+      "roundtrip": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "sameName": true,
+        "sameId": true,
+        "fetched": 1,
+        "count": 1,
+        "admitted": true
+      },
+      "null": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "null",
+        "value": "null",
+        "admitted": true
+      },
+      "empty": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "{\"queryId\":null}",
+        "value": "nonnull",
+        "admitted": true
+      },
+      "renewed": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "{\"queryId\":\"0r8xx5zVk45fvZi-renewed\"}",
+        "value": "nonnull",
+        "admitted": true
+      },
+      "malformed": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "{\"queryId\":\"UnusableCursor67890\"}",
+        "value": "nonnull",
+        "admitted": true
+      }
+    },
+    "istest": {
+      "roundtrip": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "sameName": true,
+        "sameId": true,
+        "fetched": 1,
+        "count": 1,
+        "admitted": true
+      },
+      "null": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "null",
+        "value": "null",
+        "admitted": true
+      },
+      "empty": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "{\"queryId\":null}",
+        "value": "nonnull",
+        "admitted": true
+      },
+      "renewed": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "{\"queryId\":\"01gzz00B400053m-renewed\"}",
+        "value": "nonnull",
+        "admitted": true
+      },
+      "malformed": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "{\"queryId\":\"UnusableCursor67890\"}",
+        "value": "nonnull",
+        "admitted": true
+      }
+    }
+  },
+  "expected": {
+    "anonymous": {
+      "roundtrip": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "sameName": true,
+        "sameId": true,
+        "fetched": 1,
+        "count": 1,
+        "admitted": true
+      },
+      "null": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "null",
+        "value": "null",
+        "admitted": true
+      },
+      "empty": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "{\"queryId\":null}",
+        "value": "nonnull",
+        "admitted": true
+      },
+      "renewed": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "value": "nonnull",
+        "admitted": true,
+        "serializedSuffixRetained": true,
+        "serializedPrefixNonempty": true
+      },
+      "malformed": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "{\"queryId\":\"UnusableCursor67890\"}",
+        "value": "nonnull",
+        "admitted": true
+      }
+    },
+    "istest": {
+      "roundtrip": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "sameName": true,
+        "sameId": true,
+        "fetched": 1,
+        "count": 1,
+        "admitted": true
+      },
+      "null": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "null",
+        "value": "null",
+        "admitted": true
+      },
+      "empty": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "{\"queryId\":null}",
+        "value": "nonnull",
+        "admitted": true
+      },
+      "renewed": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "value": "nonnull",
+        "admitted": true,
+        "serializedSuffixRetained": true,
+        "serializedPrefixNonempty": true
+      },
+      "malformed": {
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "serialized": "{\"queryId\":\"UnusableCursor67890\"}",
+        "value": "nonnull",
+        "admitted": true
+      }
+    }
+  },
+  "carriedFields": [
+    {
+      "route": "anonymous",
+      "field": "renewed.serialized",
+      "native": "{\"queryId\":\"0r8xx5zVk45fvZi-renewed\"}",
+      "reason": "The exact queryId prefix is generated by the native transaction. Preserve its raw serialized value as evidence; assert only the nonempty prefix and the suffix retained from this transaction. Local tokens are not required to match the native nonce."
+    },
+    {
+      "route": "istest",
+      "field": "renewed.serialized",
+      "native": "{\"queryId\":\"01gzz00B400053m-renewed\"}",
+      "reason": "The exact queryId prefix is generated by the native transaction. Preserve its raw serialized value as evidence; assert only the nonempty prefix and the suffix retained from this transaction. Local tokens are not required to match the native nonce."
+    }
+  ],
+  "notes": [
+    "Only ordinary deserialization of the two observed String shapes is covered. Fake-token fetch/count, strict deserialization, other token kinds and other API versions remain outside these observations.",
+    "The retained registered-cursor roundtrip uses a genuine current-transaction handle and is the only row that invokes cursor methods."
+  ]
+}

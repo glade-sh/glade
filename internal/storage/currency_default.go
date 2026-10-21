@@ -8,12 +8,7 @@ func CurrencyDefaultForField(org *OrgState, userID ID, field Field) (Value, bool
 	if org == nil || !strings.EqualFold(field.APIName, "CurrencyIsoCode") {
 		return Value{}, false
 	}
-	enabled := false
-	for _, record := range org.Objects["Organization"].Records {
-		value, _ := record.GetField("IsMultiCurrencyEnabled")
-		enabled = enabled || value.Kind == ValueBoolean && value.Boolean
-	}
-	if !enabled {
+	if !org.HasFeature("MultiCurrency") {
 		return Value{}, false
 	}
 	if _, user, ok := LookupRecordByID(org.Objects["User"].Records, userID); ok {

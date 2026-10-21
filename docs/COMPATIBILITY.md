@@ -14,6 +14,12 @@ with one of these statuses:
 Silent wrong behavior is a release blocker for any feature marked `supported`.
 Unsupported behavior should fail loudly and predictably.
 
+The v0.3.0 support window is Apex 62.0-68.0, LWC and Visualforce 59.0-68.0.
+Apex source API below 62.0 is unsupported. DataWeave, ConnectApi, and Slack
+are excluded and unsupported. See [release policy](RELEASE_POLICY.md#salesforce-api-versions)
+for the separate endpoint and Execute Anonymous version contracts, and
+[release notes](RELEASE_NOTES.md#v030) for known issues.
+
 ## Public Support Map
 
 `glade` publishes product commands and plugin management. Maintenance scanners,
@@ -56,6 +62,13 @@ Release promotion, upgrade, and API-version compatibility policy are documented
 in [`docs/RELEASE_POLICY.md`](RELEASE_POLICY.md), with ongoing notes in
 [`docs/RELEASE_NOTES.md`](RELEASE_NOTES.md).
 
+## Reading generated inventories
+
+The generated capability and method inventories are snapshots maintained by the
+compat plugin. A row marked `supported` describes its checked local scope;
+it does not establish complete Salesforce parity or fresh release qualification.
+The local behaviors below include features beyond those older inventories.
+
 ## Initial Matrix
 
 | Area | Status | Notes |
@@ -77,6 +90,11 @@ in [`docs/RELEASE_POLICY.md`](RELEASE_POLICY.md), with ongoing notes in
 | DML/transactions/triggers | supported | `internal/dml` and the VM support Apex insert/update/delete/upsert/undelete/merge syntax, `Database.*` allOrNone results, `SaveResult`/`UpsertResult`/`MergeResult` objects with structured single and multi-entry `Database.Error` values, required/unknown field validation, deterministic IDs, common system field stamping, soft delete/undelete query visibility, implicit and explicit external-ID upsert, ID/object mismatch checks, unique fields, lookup reference validation, simple Metadata API validation rules, merge loser soft-delete with child lookup reparenting, upsert insert/update trigger contexts, merge master update hooks, merge duplicate delete hooks, cascade soft delete from relationship metadata, rollback snapshots including failed flow record-create effects, and before/after trigger invocation with operation flags, size, new/old lists, nullable unavailable contexts, newMap/oldMap, after-undelete context, bulk partial-success row alignment, deterministic recursion guard rollback, and object-level and field-level `addError` row failures. |
 | Governor limits | supported | The VM tracks SOQL queries/rows including projected child relationship rows and query-locator rows, DML statements/rows including cascade-delete child rows, deterministic live heap approximation across locals and mutated collections, deterministic CPU cost from statements plus SOQL/DML row work, callouts, aggregate async jobs, future calls, queueable jobs, batch jobs, scheduled jobs, email invocations, runAs calls, savepoints, and savepoint rollbacks. Supported `Limits` getters expose current and max counters for the tracked families. Strict/permissive limit modes and configurable local profiles are available through CLI exec/test/server surfaces and compatibility exec/test fixtures. Exact hosted Salesforce accounting remains an explicit unsupported row. |
 | Storage/fixtures/persistence | supported | SQLite-backed org storage persists object definitions, records, ID sequences, schema migrations/versioning, fixture seed/export/reset/inspect, object-aware alias and relationship-reference resolution, qualified object aliases, ambiguity checks, reference-target validation, deterministic platform data, local org settings, DB lifecycle and export re-import coverage, server persistence, scoped fixture reset endpoints, transaction-scoped prepared inserts, storage performance pragmas, large-fixture save/load coverage, cloned-org commit boundaries for mutating server requests and Tooling executeAnonymous, and serialized server request handling. |
+| Record-triggered Flow | partial | Active project Flows run in supported local DML phases with record-trigger selection, entry filters, current/prior record values, decisions, assignments, supported record operations, loops, subflows, and Apex actions. Local `Invocable.Action` Flow calls return result/error objects. Screen/wait nodes and hosted scheduling remain unsupported. Invalid supported definitions report errors; unsupported paths and unreadable files report diagnostics. |
+| Platform Cache | partial | `Cache.Org` and `Cache.Session` model local partition/key operations, TTL, removal, and checked cache-builder behavior. Partition metadata supplies local defaults. This is a local cache model, not the hosted cache service or its eviction guarantees. |
+| Formula evaluation | partial | Local formula builders, evaluation and recalculation use supported expressions and field contexts. Unknown fields and unsupported expressions report errors; arbitrary hosted formula behavior is not implied. |
+| Files | partial | Local ContentVersion/ContentDocument/ContentDocumentLink behavior includes first-publish links and `ContentDocumentLinks` child queries. Rich describe shape alone does not implement the hosted Files service. |
+| Platform events | partial | Local publish/delivery and checked ReplayId/checkpoint behavior run through the local test event queue. ReplayId remains read-only. Ordinary subscriber Apex exceptions during `Test.stopTest()` leave prior writes visible and do not fail the enclosing test; retries and internal VM errors remain separate. Live event streaming is outside this contract. |
 | DAP | supported | local DAP support covers DAP framing, setBreakpoints, continue/pause/next/stepIn/stepOut/disconnect, stackTrace with trace-provided line/column positions, scopes, variables, evaluate, VM debug pause hooks, live statement breakpoint stops with stack/locals/static snapshots, stack-depth live stepping, Locals/Statics/Trigger scopes, collection/object/SObject children, paused-context watch expressions, `glade exec --debug` / `glade test --debug` snapshot sessions, VS Code launch aliases, debug profile wiring, and local glade exec/test DAP sessions. |
 | LSP | supported | `glade lsp` runs a stdio LSP transport for initialize/shutdown, shared `glade check` diagnostics, open-buffer parse overlays, test-result diagnostics, incremental document sync, symbols, semantic tokens, definition, references, rename, hover, Apex/SObject/member/field/keyword completion from the project index, and context-aware SOQL `SELECT` projection completion ranking that puts SObject fields ahead of top-level names. |
 | Watch mode | supported | `glade test --watch` and `--watch-once` support native `fsnotify` watching with polling fallback, debounce, versioned newline-delimited JSON events with stable run IDs and test class arrays, incremental Apex-only re-indexing, dependency-graph affected-test selection, cancellable in-flight VM/test reruns, stale run-result suppression, and profile/trace report events. |

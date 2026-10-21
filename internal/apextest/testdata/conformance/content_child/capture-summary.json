@@ -1,0 +1,95 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "nativeObservationCount": 162,
+  "carriedObservationCount": 0,
+  "manifestSHA256": "9bfa94d24d508eb8bd26de0805c775b0ecf9391d3ae6396395986632862a8d34",
+  "fixturesByAPI": {
+    "62.0": {
+      "objects/Cdl6290c06315__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Cdl6290c06315</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Cdl6290c06315 Records</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "objects/Cdl6290c06315Child__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>Parent__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>Parent</label><referenceTo>Cdl6290c06315__c</referenceTo><relationshipLabel>Children</relationshipLabel><relationshipName>Children</relationshipName><required>false</required><type>Lookup</type></fields><label>Cdl6290c06315Child</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Cdl6290c06315Child Records</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "objects/Cdl6290c06315Private__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Cdl6290c06315Private</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Cdl6290c06315Private Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>"
+    },
+    "67.0": {
+      "objects/Cdl67b2270d69__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Cdl67b2270d69</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Cdl67b2270d69 Records</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "objects/Cdl67b2270d69Child__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>Parent__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>Parent</label><referenceTo>Cdl67b2270d69__c</referenceTo><relationshipLabel>Children</relationshipLabel><relationshipName>Children</relationshipName><required>false</required><type>Lookup</type></fields><label>Cdl67b2270d69Child</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Cdl67b2270d69Child Records</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "objects/Cdl67b2270d69Private__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Cdl67b2270d69Private</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Cdl67b2270d69Private Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>"
+    },
+    "68.0": {
+      "objects/Cdl68e2e44e96__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Cdl68e2e44e96</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Cdl68e2e44e96 Records</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "objects/Cdl68e2e44e96Child__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>Parent__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>Parent</label><referenceTo>Cdl68e2e44e96__c</referenceTo><relationshipLabel>Children</relationshipLabel><relationshipName>Children</relationshipName><required>false</required><type>Lookup</type></fields><label>Cdl68e2e44e96Child</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Cdl68e2e44e96Child Records</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "objects/Cdl68e2e44e96Private__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Cdl68e2e44e96Private</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Cdl68e2e44e96Private Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>"
+    }
+  },
+  "orgRuns": {
+    "62.0/anonymous": {
+      "started_at": "2026-10-13T03:49:26.103598+00:00",
+      "api": "62.0",
+      "route": "anonymous",
+      "rows_expected": 27,
+      "rows_observed": 27,
+      "complete": true,
+      "capture_finished": true,
+      "manifest_sha256": "9bfa94d24d508eb8bd26de0805c775b0ecf9391d3ae6396395986632862a8d34",
+      "release_drift": "Same-release 62/67/68; API59 capture required before an API68-only claim."
+    },
+    "62.0/istest": {
+      "started_at": "2026-10-13T03:49:26.103598+00:00",
+      "api": "62.0",
+      "route": "istest",
+      "rows_expected": 27,
+      "rows_observed": 27,
+      "complete": true,
+      "capture_finished": true,
+      "manifest_sha256": "9bfa94d24d508eb8bd26de0805c775b0ecf9391d3ae6396395986632862a8d34",
+      "release_drift": "Same-release 62/67/68; API59 capture required before an API68-only claim."
+    },
+    "67.0/anonymous": {
+      "started_at": "2026-10-13T03:49:26.103598+00:00",
+      "api": "67.0",
+      "route": "anonymous",
+      "rows_expected": 27,
+      "rows_observed": 27,
+      "complete": true,
+      "capture_finished": true,
+      "manifest_sha256": "9bfa94d24d508eb8bd26de0805c775b0ecf9391d3ae6396395986632862a8d34",
+      "release_drift": "Same-release 62/67/68; API59 capture required before an API68-only claim."
+    },
+    "67.0/istest": {
+      "started_at": "2026-10-13T03:49:26.103598+00:00",
+      "api": "67.0",
+      "route": "istest",
+      "rows_expected": 27,
+      "rows_observed": 27,
+      "complete": true,
+      "capture_finished": true,
+      "manifest_sha256": "9bfa94d24d508eb8bd26de0805c775b0ecf9391d3ae6396395986632862a8d34",
+      "release_drift": "Same-release 62/67/68; API59 capture required before an API68-only claim."
+    },
+    "68.0/anonymous": {
+      "started_at": "2026-10-13T03:49:26.103598+00:00",
+      "api": "68.0",
+      "route": "anonymous",
+      "rows_expected": 27,
+      "rows_observed": 27,
+      "complete": true,
+      "capture_finished": true,
+      "manifest_sha256": "9bfa94d24d508eb8bd26de0805c775b0ecf9391d3ae6396395986632862a8d34",
+      "release_drift": "Same-release 62/67/68; API59 capture required before an API68-only claim."
+    },
+    "68.0/istest": {
+      "started_at": "2026-10-13T03:49:26.103598+00:00",
+      "api": "68.0",
+      "route": "istest",
+      "rows_expected": 27,
+      "rows_observed": 27,
+      "complete": true,
+      "capture_finished": true,
+      "manifest_sha256": "9bfa94d24d508eb8bd26de0805c775b0ecf9391d3ae6396395986632862a8d34",
+      "release_drift": "Same-release 62/67/68; API59 capture required before an API68-only claim."
+    }
+  }
+}

@@ -1,0 +1,535 @@
+{
+  "family": "NullParentGroupNative",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "nativeObservationCount": 6,
+  "orgIdSha256": "3349b406302f468ac181def25ec205d1710529415bff4a28747eb3721c41a0bd",
+  "configuration": "Own Developer scratch existing administrator; synthetic Account/Contact; explicit anonymous rollback and automatic named rollback; no grants/settings changes.",
+  "captureProtocol": "Each API redeploys all classes and trigger at matching source version, then both routes capture before the next API deploy.",
+  "sourcesByAPI": {
+    "62.0": {
+      "classes": {
+        "ContactAccountTotals": "public class ContactAccountTotals {\n public static void recompute(List<Contact> currentRows, List<Contact> previousRows) {\n  Set<Id> parentIds=new Set<Id>();\n  for(Contact row:currentRows) if(row.AccountId!=null) parentIds.add(row.AccountId);\n  if(previousRows!=null) {\n   for(Contact row:previousRows) if(row.AccountId!=null) parentIds.add(row.AccountId);\n  }\n  if(parentIds.isEmpty()) return;\n  Map<Id,Integer> totals=new Map<Id,Integer>();\n  for(Id parentId:parentIds) totals.put(parentId,0);\n  for(AggregateResult grouped:[SELECT AccountId parentId,COUNT(Id) total FROM Contact WHERE AccountId IN :parentIds GROUP BY AccountId]) {\n   totals.put((Id)grouped.get('parentId'),(Integer)grouped.get('total'));\n  }\n  List<Account> changes=new List<Account>();\n  for(Id parentId:parentIds) changes.add(new Account(Id=parentId,NumberOfEmployees=totals.get(parentId)));\n  update changes;\n }\n}\n",
+        "ParentTallyNativeTest": "@IsTest private class ParentTallyNativeTest {@IsTest static void capture(){System.assert(false,'OBS|'+ParentTallySnapshot.snapshot());}}\n",
+        "ParentTallySnapshot": "public class ParentTallySnapshot {\n public static Map<String,Object> view(Id parentId,Set<Id> children) {\n  List<AggregateResult> groups=[SELECT AccountId parentId,COUNT(Id) total FROM Contact WHERE AccountId=:parentId GROUP BY AccountId];\n  List<Integer> counts=new List<Integer>(); for(AggregateResult groupRow:groups) counts.add((Integer)groupRow.get('total'));\n  counts.sort();\n  Account stored=[SELECT NumberOfEmployees FROM Account WHERE Id=:parentId];\n  return new Map<String,Object>{'flat'=>[SELECT COUNT() FROM Contact WHERE AccountId=:parentId],'groups'=>groups.size(),'counts'=>counts,'stored'=>stored.NumberOfEmployees};\n }\n public static String snapshot() {\n  Savepoint point=Test.isRunningTest()?null:Database.setSavepoint();\n  Map<String,Object> out=new Map<String,Object>();\n  try {\n   Account first=new Account(Name='Tally parent one'),second=new Account(Name='Tally parent two');insert new List<Account>{first,second};\n   String shortId=String.valueOf(first.Id).substring(0,15),longId=JSON.serialize(first.Id).replace('\"','');\n   List<Contact> rows=new List<Contact>();\n   for(Integer i=0;i<3;i++) rows.add((Contact)JSON.deserialize(JSON.serialize(new Map<String,Object>{'LastName'=>'Child '+i,'AccountId'=>longId}),Contact.class));\n   rows[0].AccountId=null;insert rows;\n   Set<Id> children=new Map<Id,Contact>(rows).keySet();\n   out.put('initial',view(first.Id,children));\n   if(Test.isRunningTest()) Test.startTest();\n   rows[0].AccountId=(Id)shortId;update rows[0];\n   if(Test.isRunningTest()) Test.stopTest();\n   out.put('assigned',view(first.Id,children));\n   rows[0].AccountId=second.Id;update rows[0];\n   out.put('transferOld',view(first.Id,children));out.put('transferNew',view(second.Id,children));\n   rows[0].AccountId=null;update rows[0];out.put('clearOld',view(second.Id,children));\n   rows[0].LastName='Still null';update rows[0];out.put('unchanged',view(first.Id,children));\n   List<AggregateResult> nullGroups=[SELECT AccountId,COUNT(Id) total FROM Contact WHERE Id IN :children GROUP BY AccountId];\n   List<Integer> nullCounts=new List<Integer>();for(AggregateResult groupRow:nullGroups)nullCounts.add((Integer)groupRow.get('total'));nullCounts.sort();out.put('nullCounts',nullCounts);\n   List<Contact> textRows=new List<Contact>{new Contact(LastName='Text short',Department=shortId),new Contact(LastName='Text long',Department=longId)};insert textRows;\n   Set<Id> textIds=new Map<Id,Contact>(textRows).keySet();\n   List<AggregateResult> textGroups=[SELECT Department,COUNT(Id) total FROM Contact WHERE Id IN :textIds GROUP BY Department];\n   out.put('textGroups',textGroups.size());out.put('textWidths',new List<Integer>{shortId.length(),longId.length()});\n   return JSON.serialize(out);\n  } finally {if(point!=null) Database.rollback(point);}\n }\n}\n"
+      },
+      "classMetadata": {
+        "ContactAccountTotals": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "ParentTallyNativeTest": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "ParentTallySnapshot": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "triggers": {
+        "ContactAccountTotalsTrigger": "trigger ContactAccountTotalsTrigger on Contact (after insert,after update) {ContactAccountTotals.recompute(Trigger.new,Trigger.old);}\n"
+      },
+      "triggerMetadata": {
+        "ContactAccountTotalsTrigger": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>\n"
+      },
+      "anonymous": "System.debug('OBS|'+ParentTallySnapshot.snapshot());\n",
+      "testClass": "ParentTallyNativeTest",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "fe34427b013a1413506556d98acfb57987bf5d01a28852e9175805d50a795a0f",
+        "class:ContactAccountTotals": "e5c03f1b8fde58e8b171573edc281165bc959846909f785e07c666aeb97a989d",
+        "class:ParentTallyNativeTest": "1a01c6098e171ba19fd666c7be93c43c17b2a3b5bbadc196b46f779ad9288426",
+        "class:ParentTallySnapshot": "d4549cdf6749e447feabca02e1f22b787b43bbfb0a0be58124dae29f3db1e3ff",
+        "classMetadata:ContactAccountTotals": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classMetadata:ParentTallyNativeTest": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classMetadata:ParentTallySnapshot": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "trigger:ContactAccountTotalsTrigger": "5c9133a9f0ea2f9e3412d8dd26d4f29001ada06cc07f4c979be2a11b8e8de2a9",
+        "triggerMetadata:ContactAccountTotalsTrigger": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96"
+      }
+    },
+    "67.0": {
+      "classes": {
+        "ContactAccountTotals": "public class ContactAccountTotals {\n public static void recompute(List<Contact> currentRows, List<Contact> previousRows) {\n  Set<Id> parentIds=new Set<Id>();\n  for(Contact row:currentRows) if(row.AccountId!=null) parentIds.add(row.AccountId);\n  if(previousRows!=null) {\n   for(Contact row:previousRows) if(row.AccountId!=null) parentIds.add(row.AccountId);\n  }\n  if(parentIds.isEmpty()) return;\n  Map<Id,Integer> totals=new Map<Id,Integer>();\n  for(Id parentId:parentIds) totals.put(parentId,0);\n  for(AggregateResult grouped:[SELECT AccountId parentId,COUNT(Id) total FROM Contact WHERE AccountId IN :parentIds GROUP BY AccountId]) {\n   totals.put((Id)grouped.get('parentId'),(Integer)grouped.get('total'));\n  }\n  List<Account> changes=new List<Account>();\n  for(Id parentId:parentIds) changes.add(new Account(Id=parentId,NumberOfEmployees=totals.get(parentId)));\n  update changes;\n }\n}\n",
+        "ParentTallyNativeTest": "@IsTest private class ParentTallyNativeTest {@IsTest static void capture(){System.assert(false,'OBS|'+ParentTallySnapshot.snapshot());}}\n",
+        "ParentTallySnapshot": "public class ParentTallySnapshot {\n public static Map<String,Object> view(Id parentId,Set<Id> children) {\n  List<AggregateResult> groups=[SELECT AccountId parentId,COUNT(Id) total FROM Contact WHERE AccountId=:parentId GROUP BY AccountId];\n  List<Integer> counts=new List<Integer>(); for(AggregateResult groupRow:groups) counts.add((Integer)groupRow.get('total'));\n  counts.sort();\n  Account stored=[SELECT NumberOfEmployees FROM Account WHERE Id=:parentId];\n  return new Map<String,Object>{'flat'=>[SELECT COUNT() FROM Contact WHERE AccountId=:parentId],'groups'=>groups.size(),'counts'=>counts,'stored'=>stored.NumberOfEmployees};\n }\n public static String snapshot() {\n  Savepoint point=Test.isRunningTest()?null:Database.setSavepoint();\n  Map<String,Object> out=new Map<String,Object>();\n  try {\n   Account first=new Account(Name='Tally parent one'),second=new Account(Name='Tally parent two');insert new List<Account>{first,second};\n   String shortId=String.valueOf(first.Id).substring(0,15),longId=JSON.serialize(first.Id).replace('\"','');\n   List<Contact> rows=new List<Contact>();\n   for(Integer i=0;i<3;i++) rows.add((Contact)JSON.deserialize(JSON.serialize(new Map<String,Object>{'LastName'=>'Child '+i,'AccountId'=>longId}),Contact.class));\n   rows[0].AccountId=null;insert rows;\n   Set<Id> children=new Map<Id,Contact>(rows).keySet();\n   out.put('initial',view(first.Id,children));\n   if(Test.isRunningTest()) Test.startTest();\n   rows[0].AccountId=(Id)shortId;update rows[0];\n   if(Test.isRunningTest()) Test.stopTest();\n   out.put('assigned',view(first.Id,children));\n   rows[0].AccountId=second.Id;update rows[0];\n   out.put('transferOld',view(first.Id,children));out.put('transferNew',view(second.Id,children));\n   rows[0].AccountId=null;update rows[0];out.put('clearOld',view(second.Id,children));\n   rows[0].LastName='Still null';update rows[0];out.put('unchanged',view(first.Id,children));\n   List<AggregateResult> nullGroups=[SELECT AccountId,COUNT(Id) total FROM Contact WHERE Id IN :children GROUP BY AccountId];\n   List<Integer> nullCounts=new List<Integer>();for(AggregateResult groupRow:nullGroups)nullCounts.add((Integer)groupRow.get('total'));nullCounts.sort();out.put('nullCounts',nullCounts);\n   List<Contact> textRows=new List<Contact>{new Contact(LastName='Text short',Department=shortId),new Contact(LastName='Text long',Department=longId)};insert textRows;\n   Set<Id> textIds=new Map<Id,Contact>(textRows).keySet();\n   List<AggregateResult> textGroups=[SELECT Department,COUNT(Id) total FROM Contact WHERE Id IN :textIds GROUP BY Department];\n   out.put('textGroups',textGroups.size());out.put('textWidths',new List<Integer>{shortId.length(),longId.length()});\n   return JSON.serialize(out);\n  } finally {if(point!=null) Database.rollback(point);}\n }\n}\n"
+      },
+      "classMetadata": {
+        "ContactAccountTotals": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "ParentTallyNativeTest": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "ParentTallySnapshot": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "triggers": {
+        "ContactAccountTotalsTrigger": "trigger ContactAccountTotalsTrigger on Contact (after insert,after update) {ContactAccountTotals.recompute(Trigger.new,Trigger.old);}\n"
+      },
+      "triggerMetadata": {
+        "ContactAccountTotalsTrigger": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexTrigger>\n"
+      },
+      "anonymous": "System.debug('OBS|'+ParentTallySnapshot.snapshot());\n",
+      "testClass": "ParentTallyNativeTest",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "fe34427b013a1413506556d98acfb57987bf5d01a28852e9175805d50a795a0f",
+        "class:ContactAccountTotals": "e5c03f1b8fde58e8b171573edc281165bc959846909f785e07c666aeb97a989d",
+        "class:ParentTallyNativeTest": "1a01c6098e171ba19fd666c7be93c43c17b2a3b5bbadc196b46f779ad9288426",
+        "class:ParentTallySnapshot": "d4549cdf6749e447feabca02e1f22b787b43bbfb0a0be58124dae29f3db1e3ff",
+        "classMetadata:ContactAccountTotals": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classMetadata:ParentTallyNativeTest": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classMetadata:ParentTallySnapshot": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "trigger:ContactAccountTotalsTrigger": "5c9133a9f0ea2f9e3412d8dd26d4f29001ada06cc07f4c979be2a11b8e8de2a9",
+        "triggerMetadata:ContactAccountTotalsTrigger": "14ea83a9ae4d9213280344a2f60a06fbc2c2888c4f63029ebc6d1487970cba40"
+      }
+    },
+    "68.0": {
+      "classes": {
+        "ContactAccountTotals": "public class ContactAccountTotals {\n public static void recompute(List<Contact> currentRows, List<Contact> previousRows) {\n  Set<Id> parentIds=new Set<Id>();\n  for(Contact row:currentRows) if(row.AccountId!=null) parentIds.add(row.AccountId);\n  if(previousRows!=null) {\n   for(Contact row:previousRows) if(row.AccountId!=null) parentIds.add(row.AccountId);\n  }\n  if(parentIds.isEmpty()) return;\n  Map<Id,Integer> totals=new Map<Id,Integer>();\n  for(Id parentId:parentIds) totals.put(parentId,0);\n  for(AggregateResult grouped:[SELECT AccountId parentId,COUNT(Id) total FROM Contact WHERE AccountId IN :parentIds GROUP BY AccountId]) {\n   totals.put((Id)grouped.get('parentId'),(Integer)grouped.get('total'));\n  }\n  List<Account> changes=new List<Account>();\n  for(Id parentId:parentIds) changes.add(new Account(Id=parentId,NumberOfEmployees=totals.get(parentId)));\n  update changes;\n }\n}\n",
+        "ParentTallyNativeTest": "@IsTest private class ParentTallyNativeTest {@IsTest static void capture(){System.assert(false,'OBS|'+ParentTallySnapshot.snapshot());}}\n",
+        "ParentTallySnapshot": "public class ParentTallySnapshot {\n public static Map<String,Object> view(Id parentId,Set<Id> children) {\n  List<AggregateResult> groups=[SELECT AccountId parentId,COUNT(Id) total FROM Contact WHERE AccountId=:parentId GROUP BY AccountId];\n  List<Integer> counts=new List<Integer>(); for(AggregateResult groupRow:groups) counts.add((Integer)groupRow.get('total'));\n  counts.sort();\n  Account stored=[SELECT NumberOfEmployees FROM Account WHERE Id=:parentId];\n  return new Map<String,Object>{'flat'=>[SELECT COUNT() FROM Contact WHERE AccountId=:parentId],'groups'=>groups.size(),'counts'=>counts,'stored'=>stored.NumberOfEmployees};\n }\n public static String snapshot() {\n  Savepoint point=Test.isRunningTest()?null:Database.setSavepoint();\n  Map<String,Object> out=new Map<String,Object>();\n  try {\n   Account first=new Account(Name='Tally parent one'),second=new Account(Name='Tally parent two');insert new List<Account>{first,second};\n   String shortId=String.valueOf(first.Id).substring(0,15),longId=JSON.serialize(first.Id).replace('\"','');\n   List<Contact> rows=new List<Contact>();\n   for(Integer i=0;i<3;i++) rows.add((Contact)JSON.deserialize(JSON.serialize(new Map<String,Object>{'LastName'=>'Child '+i,'AccountId'=>longId}),Contact.class));\n   rows[0].AccountId=null;insert rows;\n   Set<Id> children=new Map<Id,Contact>(rows).keySet();\n   out.put('initial',view(first.Id,children));\n   if(Test.isRunningTest()) Test.startTest();\n   rows[0].AccountId=(Id)shortId;update rows[0];\n   if(Test.isRunningTest()) Test.stopTest();\n   out.put('assigned',view(first.Id,children));\n   rows[0].AccountId=second.Id;update rows[0];\n   out.put('transferOld',view(first.Id,children));out.put('transferNew',view(second.Id,children));\n   rows[0].AccountId=null;update rows[0];out.put('clearOld',view(second.Id,children));\n   rows[0].LastName='Still null';update rows[0];out.put('unchanged',view(first.Id,children));\n   List<AggregateResult> nullGroups=[SELECT AccountId,COUNT(Id) total FROM Contact WHERE Id IN :children GROUP BY AccountId];\n   List<Integer> nullCounts=new List<Integer>();for(AggregateResult groupRow:nullGroups)nullCounts.add((Integer)groupRow.get('total'));nullCounts.sort();out.put('nullCounts',nullCounts);\n   List<Contact> textRows=new List<Contact>{new Contact(LastName='Text short',Department=shortId),new Contact(LastName='Text long',Department=longId)};insert textRows;\n   Set<Id> textIds=new Map<Id,Contact>(textRows).keySet();\n   List<AggregateResult> textGroups=[SELECT Department,COUNT(Id) total FROM Contact WHERE Id IN :textIds GROUP BY Department];\n   out.put('textGroups',textGroups.size());out.put('textWidths',new List<Integer>{shortId.length(),longId.length()});\n   return JSON.serialize(out);\n  } finally {if(point!=null) Database.rollback(point);}\n }\n}\n"
+      },
+      "classMetadata": {
+        "ContactAccountTotals": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "ParentTallyNativeTest": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "ParentTallySnapshot": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "triggers": {
+        "ContactAccountTotalsTrigger": "trigger ContactAccountTotalsTrigger on Contact (after insert,after update) {ContactAccountTotals.recompute(Trigger.new,Trigger.old);}\n"
+      },
+      "triggerMetadata": {
+        "ContactAccountTotalsTrigger": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexTrigger>\n"
+      },
+      "anonymous": "System.debug('OBS|'+ParentTallySnapshot.snapshot());\n",
+      "testClass": "ParentTallyNativeTest",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "fe34427b013a1413506556d98acfb57987bf5d01a28852e9175805d50a795a0f",
+        "class:ContactAccountTotals": "e5c03f1b8fde58e8b171573edc281165bc959846909f785e07c666aeb97a989d",
+        "class:ParentTallyNativeTest": "1a01c6098e171ba19fd666c7be93c43c17b2a3b5bbadc196b46f779ad9288426",
+        "class:ParentTallySnapshot": "d4549cdf6749e447feabca02e1f22b787b43bbfb0a0be58124dae29f3db1e3ff",
+        "classMetadata:ContactAccountTotals": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classMetadata:ParentTallyNativeTest": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classMetadata:ParentTallySnapshot": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "trigger:ContactAccountTotalsTrigger": "5c9133a9f0ea2f9e3412d8dd26d4f29001ada06cc07f4c979be2a11b8e8de2a9",
+        "triggerMetadata:ContactAccountTotalsTrigger": "4ca1e91afff50904e7f32dac6f67bc8668f3c8a554ba333c07feb751f82bef9d"
+      }
+    }
+  },
+  "cells": [
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "observation": {
+        "textWidths": [
+          15,
+          18
+        ],
+        "textGroups": 2,
+        "nullCounts": [
+          1,
+          2
+        ],
+        "unchanged": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        },
+        "clearOld": {
+          "stored": 0,
+          "counts": [],
+          "groups": 0,
+          "flat": 0
+        },
+        "transferNew": {
+          "stored": 1,
+          "counts": [
+            1
+          ],
+          "groups": 1,
+          "flat": 1
+        },
+        "transferOld": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        },
+        "assigned": {
+          "stored": 3,
+          "counts": [
+            3
+          ],
+          "groups": 1,
+          "flat": 3
+        },
+        "initial": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        }
+      },
+      "evidenceSha256": "425f30eaa968430b9923bf05d276d8e9a41de22e2b41c50511a00468e6746777",
+      "command": "apex run --target-org scratch-org --api-version 62.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "observation": {
+        "textWidths": [
+          15,
+          18
+        ],
+        "textGroups": 2,
+        "nullCounts": [
+          1,
+          2
+        ],
+        "unchanged": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        },
+        "clearOld": {
+          "stored": 0,
+          "counts": [],
+          "groups": 0,
+          "flat": 0
+        },
+        "transferNew": {
+          "stored": 1,
+          "counts": [
+            1
+          ],
+          "groups": 1,
+          "flat": 1
+        },
+        "transferOld": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        },
+        "assigned": {
+          "stored": 3,
+          "counts": [
+            3
+          ],
+          "groups": 1,
+          "flat": 3
+        },
+        "initial": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        }
+      },
+      "evidenceSha256": "e026d2fca41f05cf0e8cabc3b2d7202ae6eae874258f5ae4b1ac64817ffd690b",
+      "command": "apex run test --target-org scratch-org --api-version 62.0 --class-names ParentTallyNativeTest --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "transport": "intentional OBS assertion"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "observation": {
+        "textWidths": [
+          15,
+          18
+        ],
+        "textGroups": 2,
+        "nullCounts": [
+          1,
+          2
+        ],
+        "unchanged": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        },
+        "clearOld": {
+          "stored": 0,
+          "counts": [],
+          "groups": 0,
+          "flat": 0
+        },
+        "transferNew": {
+          "stored": 1,
+          "counts": [
+            1
+          ],
+          "groups": 1,
+          "flat": 1
+        },
+        "transferOld": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        },
+        "assigned": {
+          "stored": 3,
+          "counts": [
+            3
+          ],
+          "groups": 1,
+          "flat": 3
+        },
+        "initial": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        }
+      },
+      "evidenceSha256": "16841da2faaaf35cf121657f3024d87adb3d68e97650e2f901a7a25c46d5e658",
+      "command": "apex run --target-org scratch-org --api-version 67.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "observation": {
+        "textWidths": [
+          15,
+          18
+        ],
+        "textGroups": 2,
+        "nullCounts": [
+          1,
+          2
+        ],
+        "unchanged": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        },
+        "clearOld": {
+          "stored": 0,
+          "counts": [],
+          "groups": 0,
+          "flat": 0
+        },
+        "transferNew": {
+          "stored": 1,
+          "counts": [
+            1
+          ],
+          "groups": 1,
+          "flat": 1
+        },
+        "transferOld": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        },
+        "assigned": {
+          "stored": 3,
+          "counts": [
+            3
+          ],
+          "groups": 1,
+          "flat": 3
+        },
+        "initial": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        }
+      },
+      "evidenceSha256": "9a1b1b336b35432d27448f7dc7a7631f9cb1638de45f55cfbd048ee0626d3f9f",
+      "command": "apex run test --target-org scratch-org --api-version 67.0 --class-names ParentTallyNativeTest --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "transport": "intentional OBS assertion"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "anonymous",
+      "observation": {
+        "textWidths": [
+          15,
+          18
+        ],
+        "textGroups": 2,
+        "nullCounts": [
+          1,
+          2
+        ],
+        "unchanged": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        },
+        "clearOld": {
+          "stored": 0,
+          "counts": [],
+          "groups": 0,
+          "flat": 0
+        },
+        "transferNew": {
+          "stored": 1,
+          "counts": [
+            1
+          ],
+          "groups": 1,
+          "flat": 1
+        },
+        "transferOld": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        },
+        "assigned": {
+          "stored": 3,
+          "counts": [
+            3
+          ],
+          "groups": 1,
+          "flat": 3
+        },
+        "initial": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        }
+      },
+      "evidenceSha256": "a99d4fdf164eab8df4010d96e7404c4fa471da4be34104f2a2f3a165b9bfbdce",
+      "command": "apex run --target-org scratch-org --api-version 68.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "isTest",
+      "observation": {
+        "textWidths": [
+          15,
+          18
+        ],
+        "textGroups": 2,
+        "nullCounts": [
+          1,
+          2
+        ],
+        "unchanged": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        },
+        "clearOld": {
+          "stored": 0,
+          "counts": [],
+          "groups": 0,
+          "flat": 0
+        },
+        "transferNew": {
+          "stored": 1,
+          "counts": [
+            1
+          ],
+          "groups": 1,
+          "flat": 1
+        },
+        "transferOld": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        },
+        "assigned": {
+          "stored": 3,
+          "counts": [
+            3
+          ],
+          "groups": 1,
+          "flat": 3
+        },
+        "initial": {
+          "stored": 2,
+          "counts": [
+            2
+          ],
+          "groups": 1,
+          "flat": 2
+        }
+      },
+      "evidenceSha256": "ee68b615230dcbce0542152099eae3204d0998f4be3a9edddbfa35cdede95a2a",
+      "command": "apex run test --target-org scratch-org --api-version 68.0 --class-names ParentTallyNativeTest --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "transport": "intentional OBS assertion"
+      }
+    }
+  ],
+  "d7Evidence": {
+    "observationsTsv": "row\tapi\tcontext\tvalue\nNPG_62_anon\t62\tanonymous\t{\"textWidths\":[15,18],\"textGroups\":2,\"nullCounts\":[1,2],\"unchanged\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"clearOld\":{\"stored\":0,\"counts\":[],\"groups\":0,\"flat\":0},\"transferNew\":{\"stored\":1,\"counts\":[1],\"groups\":1,\"flat\":1},\"transferOld\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"assigned\":{\"stored\":3,\"counts\":[3],\"groups\":1,\"flat\":3},\"initial\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2}}\nNPG_62_test\t62\tistest\t{\"textWidths\":[15,18],\"textGroups\":2,\"nullCounts\":[1,2],\"unchanged\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"clearOld\":{\"stored\":0,\"counts\":[],\"groups\":0,\"flat\":0},\"transferNew\":{\"stored\":1,\"counts\":[1],\"groups\":1,\"flat\":1},\"transferOld\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"assigned\":{\"stored\":3,\"counts\":[3],\"groups\":1,\"flat\":3},\"initial\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2}}\nNPG_67_anon\t67\tanonymous\t{\"textWidths\":[15,18],\"textGroups\":2,\"nullCounts\":[1,2],\"unchanged\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"clearOld\":{\"stored\":0,\"counts\":[],\"groups\":0,\"flat\":0},\"transferNew\":{\"stored\":1,\"counts\":[1],\"groups\":1,\"flat\":1},\"transferOld\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"assigned\":{\"stored\":3,\"counts\":[3],\"groups\":1,\"flat\":3},\"initial\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2}}\nNPG_67_test\t67\tistest\t{\"textWidths\":[15,18],\"textGroups\":2,\"nullCounts\":[1,2],\"unchanged\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"clearOld\":{\"stored\":0,\"counts\":[],\"groups\":0,\"flat\":0},\"transferNew\":{\"stored\":1,\"counts\":[1],\"groups\":1,\"flat\":1},\"transferOld\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"assigned\":{\"stored\":3,\"counts\":[3],\"groups\":1,\"flat\":3},\"initial\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2}}\nNPG_68_anon\t68\tanonymous\t{\"textWidths\":[15,18],\"textGroups\":2,\"nullCounts\":[1,2],\"unchanged\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"clearOld\":{\"stored\":0,\"counts\":[],\"groups\":0,\"flat\":0},\"transferNew\":{\"stored\":1,\"counts\":[1],\"groups\":1,\"flat\":1},\"transferOld\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"assigned\":{\"stored\":3,\"counts\":[3],\"groups\":1,\"flat\":3},\"initial\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2}}\nNPG_68_test\t68\tistest\t{\"textWidths\":[15,18],\"textGroups\":2,\"nullCounts\":[1,2],\"unchanged\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"clearOld\":{\"stored\":0,\"counts\":[],\"groups\":0,\"flat\":0},\"transferNew\":{\"stored\":1,\"counts\":[1],\"groups\":1,\"flat\":1},\"transferOld\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"assigned\":{\"stored\":3,\"counts\":[3],\"groups\":1,\"flat\":3},\"initial\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2}}\n",
+    "orgTsvSha256": "fbe490210d6e3bf56de5e04329485f9ef8a9034f26fb4160517fc0461ebfd3c6",
+    "runMetadata": "Owned Developer scratch scratch-org from scratch-org, duration3days, existing administrator. Every sf command prefixed HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true. Only synthetic classes+trigger/Account/Contact data; no namespace/package/grant/sharing/settings changes.\nOrg id SHA256 3349b406302f468ac181def25ec205d1710529415bff4a28747eb3721c41a0bd\nCreate: sf org create scratch --target-dev-hub scratch-org --alias scratch-org --duration-days 3 --edition developer --wait 15 --json; status0.\nPerAPI deploy exact owned classes+trigger with all metadata set to cellAPI, then anonymous and named captures before next redeploy. Ignore-conflicts affects only this owned scratch/component set. Anonymous data rollback uses savepoint; named uses automatic test rollback. Earlier named savepoint-crossing-startTest setup failed and is excluded; raw-savepoint-context-failure retained.\ncwd=<worktree>/probe/null_parent_group/source62 sf project deploy start --source-dir force-app --target-org scratch-org --wait 15 --ignore-conflicts --json; status0; raw deploy62.json SHA256 e3005d8f97d0400315de2b45834f376d6f866849f26a9681a3ffb416d148c721\nsf apex run --target-org scratch-org --api-version 62.0 --file native-capture --json; observedstatus 0\nsf apex run test --target-org scratch-org --api-version 62.0 --class-names ParentTallyNativeTest --synchronous --json; observedstatus 100\ncwd=<worktree>/probe/null_parent_group/source67 sf project deploy start --source-dir force-app --target-org scratch-org --wait 15 --ignore-conflicts --json; status0; raw deploy67.json SHA256 52aa5bbf577796ff613541d4e7a8b75fd6024063a17eaf0e6d4ac8bffa52ab26\nsf apex run --target-org scratch-org --api-version 67.0 --file native-capture --json; observedstatus 0\nsf apex run test --target-org scratch-org --api-version 67.0 --class-names ParentTallyNativeTest --synchronous --json; observedstatus 100\ncwd=<worktree>/probe/null_parent_group/source68 sf project deploy start --source-dir force-app --target-org scratch-org --wait 15 --ignore-conflicts --json; status0; raw deploy68.json SHA256 024d1e8c7830d04a0c2dcccfe0fc54984a5b5d59bd5f2717101f02a50bd8afcc\nsf apex run --target-org scratch-org --api-version 68.0 --file native-capture --json; observedstatus 0\nsf apex run test --target-org scratch-org --api-version 68.0 --class-names ParentTallyNativeTest --synchronous --json; observedstatus 100\nCleanup: sf org delete scratch --target-org scratch-org --no-prompt --json status0; sf alias list --json status0, ownalias absent. Raw delete SHA256 c4ca9b86ce0601e1fe6c0bcdacdd4f6fe081faafdc1af1d16e0d8ebccf8fcc7f; aliases SHA256 09da5ad5958103cef81f6aa8748f047ce475516564f59cacbdcf0bb31323cae7\n",
+    "orgRunSha256": "fafa0e622a08121e6cabbf715878d61a1d7f664892f9bb7bed43b18437f04931",
+    "rawOrgRunSha256": "7f757e5851948e3d0e48567b340e74992f0cc90d957c20fa9255b0b8f499713f",
+    "normalization": "Only authentication HOME/worktree paths replaced by stable placeholders; raw D7 digest retained."
+  }
+}

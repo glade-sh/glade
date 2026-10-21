@@ -1,0 +1,73 @@
+{
+  "status": 100,
+  "result": {
+    "summary": {
+      "failRate": "100%",
+      "failing": 3,
+      "hostname": "https://schema-org-e5f34edf.example.com",
+      "orgId": "ed2a63259685b54221751f21c017c9d87a7d77be13fdfe9ab1fa12344f1b6be0",
+      "outcome": "Failed",
+      "passRate": "0%",
+      "passing": 0,
+      "skipped": 0,
+      "testRunId": "",
+      "testStartTime": "2026-10-16T00:38:08.704Z",
+      "testsRan": 3,
+      "username": "[REDACTED]",
+      "commandTime": "0 ms",
+      "testExecutionTime": "74 ms",
+      "testTotalTime": "74 ms"
+    },
+    "tests": [
+      {
+        "Id": "",
+        "QueueItemId": "",
+        "StackTrace": "Class.PcConstructorCountsA62Test.chain: line 3, column 1",
+        "Message": "System.AssertException: Assertion Failed: NATIVE_RESULT|CHAIN|{\"size\":1,\"marks\":[\"list\",\"chain\"]}",
+        "AsyncApexJobId": "",
+        "MethodName": "chain",
+        "Outcome": "Fail",
+        "ApexClass": {
+          "Id": "01p000000000hWEAAY",
+          "Name": "PcConstructorCountsA62Test",
+          "NamespacePrefix": null
+        },
+        "RunTime": 33,
+        "FullName": "PcConstructorCountsA62Test.chain"
+      },
+      {
+        "Id": "",
+        "QueueItemId": "",
+        "StackTrace": "Class.PcConstructorCountsA62Test.single: line 2, column 1",
+        "Message": "System.AssertException: Assertion Failed: NATIVE_RESULT|SINGLE|{\"size\":2,\"marks\":[\"list\"]}",
+        "AsyncApexJobId": "",
+        "MethodName": "single",
+        "Outcome": "Fail",
+        "ApexClass": {
+          "Id": "01p000000000hWEAAY",
+          "Name": "PcConstructorCountsA62Test",
+          "NamespacePrefix": null
+        },
+        "RunTime": 21,
+        "FullName": "PcConstructorCountsA62Test.single"
+      },
+      {
+        "Id": "",
+        "QueueItemId": "",
+        "StackTrace": "Class.PcConstructorCountsA62Test.wrapper: line 4, column 1",
+        "Message": "System.AssertException: Assertion Failed: NATIVE_RESULT|WRAPPER|{\"secondSame\":true,\"firstSame\":true,\"inputSize\":2,\"size\":2,\"marks\":[\"list\"]}",
+        "AsyncApexJobId": "",
+        "MethodName": "wrapper",
+        "Outcome": "Fail",
+        "ApexClass": {
+          "Id": "01p000000000hWEAAY",
+          "Name": "PcConstructorCountsA62Test",
+          "NamespacePrefix": null
+        },
+        "RunTime": 12,
+        "FullName": "PcConstructorCountsA62Test.wrapper"
+      }
+    ]
+  },
+  "warnings": []
+}

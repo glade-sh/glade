@@ -28,6 +28,22 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 	knownTypes := knownTypeNames(index.Types)
 	sourceMembers := sourceBackedRuntimeMemberSignatures(index.Types)
 	methodsByClass := projectMethodsByClass(methods)
+	initializerUnits := make(map[string]string)
+	separateInitializers := make(map[string]bool)
+	for _, typ := range index.Types {
+		if typ.Kind != apexast.DeclarationClass || !typ.HasSourceSnapshot() {
+			continue
+		}
+		key := strings.ToLower(typ.Namespace + "\x00" + typ.Name)
+		unit := sources.runtimeSourceUnit(typ.File)
+		if unit == "" {
+			continue
+		}
+		if previous, exists := initializerUnits[key]; exists && previous != unit {
+			separateInitializers[key] = true
+		}
+		initializerUnits[key] = unit
+	}
 	for _, typ := range index.Types {
 		if include != nil && !include(typ) {
 			continue
@@ -70,6 +86,7 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 		}
 		apiVersion := runtimeTypeAPIVersion(typ, sources)
 		class := vm.Class{
+			SourceUnit:   sources.runtimeSourceUnit(typ.File),
 			Name:         typ.Name,
 			Namespace:    typ.Namespace,
 			APIVersion:   apiVersion,
@@ -100,6 +117,7 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 		for _, method := range methodsByClass[projectMethodOwnerKey(typ.Name, typ.File)] {
 			class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
 		}
+		sourceBoundLiterals := separateInitializers[strings.ToLower(typ.Namespace+"\x00"+typ.Name)]
 		for _, member := range typ.Members {
 			switch member.Kind {
 			case apexast.DeclarationField, apexast.DeclarationProperty:
@@ -116,7 +134,15 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 				if member.Kind == apexast.DeclarationProperty {
 					attachPropertyAccessors(&field, typ.Name, typ.File, member, source, apiVersion)
 				}
-				if value, ok := compileFieldInitializer(member.Type, member.Name, member.Range, source); ok {
+				// Merged classes retain only one field definition. Keep literal
+				// assignments in source-bound bodies when distinct source units
+				// declare the same class, preserving each unit's values and order.
+				var value vm.Value
+				var folded bool
+				if field.Static || !sourceBoundLiterals {
+					value, folded = compileFieldInitializer(member.Type, member.Name, member.Range, source)
+				}
+				if folded {
 					field.Value = value
 					field.InitialValue = value
 					if !field.Static {
@@ -143,6 +169,8 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 			case apexast.DeclarationConstructor:
 				ctor, err := compileProjectConstructor(typ.Name, typ.File, member.Range, member.BodyRange, source, apiVersion)
 				if err == nil {
+					ctor.Access = accessModifier(member.Modifiers)
+					ctor.Modifiers = append([]string(nil), member.Modifiers...)
 					class.Constructors = append(class.Constructors, ctor)
 				}
 			case apexast.DeclarationInitializer:
@@ -170,6 +198,7 @@ func compileProjectMethods(index typesys.Index, caches ...*sourceCache) map[stri
 func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSymbol) bool, caches ...*sourceCache) map[string]vm.Method {
 	type methodCompileJob struct {
 		ClassName  string
+		TypeAccess string
 		Kind       apexast.DeclarationKind
 		Member     typesys.MemberSymbol
 		File       string
@@ -213,6 +242,9 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 					Dependency:  true,
 					Unsupported: capturedPackageNoLocalBody,
 				}
+				if typ.Kind == apexast.DeclarationInterface {
+					method.Access = accessModifier(typ.Modifiers)
+				}
 				syntheticResults = append(syntheticResults, methodCompileResult{Key: projectMethodMapKey(method), Method: method})
 			}
 			continue
@@ -220,7 +252,10 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 		source := ""
 		sourceLoaded := false
 		for _, member := range typ.Members {
-			if member.Kind != apexast.DeclarationMethod || isTestSetup(member.Modifiers) || (member.IsTest && strings.EqualFold(member.Type, "void")) {
+			// Setup methods are also callable helpers, including from a selected
+			// test class whose helper owner is not selected. Automatic setup
+			// execution remains scoped by compileTestSetupMethodsForClasses.
+			if member.Kind != apexast.DeclarationMethod || (member.IsTest && strings.EqualFold(member.Type, "void") && !isTestSetup(member.Modifiers)) {
 				continue
 			}
 			if !sourceLoaded {
@@ -233,6 +268,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 			}
 			jobs = append(jobs, methodCompileJob{
 				ClassName:  typ.Name,
+				TypeAccess: accessModifier(typ.Modifiers),
 				Kind:       typ.Kind,
 				Member:     member,
 				File:       typ.File,
@@ -250,6 +286,9 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 		if job.Kind == apexast.DeclarationInterface {
 			method, err := compileProjectMethodSignature(job.ClassName, member.Name, member.Type, append(member.Modifiers, "abstract"), job.File, member.Range, job.Source)
 			if err == nil {
+				// Apex interface signatures inherit the interface's public/global
+				// access; source signatures do not declare their own modifier.
+				method.Access = job.TypeAccess
 				method.Dependency = job.Dependency
 				method.APIVersion = job.APIVersion
 				results[i] = methodCompileResult{Key: projectMethodMapKey(method), Method: method}
@@ -303,6 +342,10 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 		if result.Key != "" {
 			out[result.Key] = result.Method
 		}
+	}
+	for key, method := range out {
+		method.SourceUnit = sources.runtimeSourceUnit(method.File)
+		out[key] = method
 	}
 	return out
 }
@@ -450,7 +493,12 @@ func compileProjectTriggers(index typesys.Index, caches ...*sourceCache) ([]vm.T
 			errs = append(errs, err)
 			continue
 		}
-		body, err := extractMethodBody(source, trigger.BodyRange)
+		executable, localMethods, err := triggerExecutableSource(source, trigger)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		body, err := extractMethodBody(executable, trigger.BodyRange)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -466,16 +514,17 @@ func compileProjectTriggers(index typesys.Index, caches ...*sourceCache) ([]vm.T
 				continue
 			}
 			out = append(out, vm.Trigger{
-				Name:       trigger.Name,
-				Namespace:  trigger.Namespace,
-				Object:     trigger.ObjectName,
-				Timing:     timing,
-				Operation:  op,
-				APIVersion: trigger.EffectiveAPIVersion,
-				Program:    program,
-				File:       trigger.File,
-				Line:       trigger.Range.Start.Line,
-				Column:     trigger.Range.Start.Column,
+				Name:         trigger.Name,
+				Namespace:    trigger.Namespace,
+				Object:       trigger.ObjectName,
+				Timing:       timing,
+				Operation:    op,
+				APIVersion:   trigger.EffectiveAPIVersion,
+				Program:      program,
+				LocalMethods: localMethods,
+				File:         trigger.File,
+				Line:         trigger.Range.Start.Line,
+				Column:       trigger.Range.Start.Column,
 			})
 		}
 	}
@@ -492,9 +541,6 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 	if cacheKey != "" {
 		if cached, ok := projectReferencedStandardFieldCache.Load(cacheKey); ok {
 			fieldSet := cached.(projectReferencedStandardFieldSet)
-			if len(fieldSet.Features) > 0 {
-				storage.ApplyOrgShape(org, fieldSet.Features)
-			}
 			applyReferencedStandardFieldSet(org, fieldSet.Fields, childRelationshipLookup)
 			return
 		}
@@ -509,12 +555,10 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 	inferred := scan.Inferred
 	childRelationshipRefs := scan.ChildRelationshipRefs
 	applyProjectReferencedSourceChildRelationships(org, inferred, childRelationshipRefs, childRelationshipLookup)
-	features := projectReferencedOrgShapeFeatures(inferred)
-	if len(features) > 0 {
-		storage.ApplyOrgShape(org, features)
-	}
+	// Source references can supply compatibility tokens, but do not enable
+	// org features. Feature selection comes from the project configuration.
 	if cacheKey != "" {
-		projectReferencedStandardFieldCache.Store(cacheKey, projectReferencedStandardFieldSet{Fields: inferred, Features: features})
+		projectReferencedStandardFieldCache.Store(cacheKey, projectReferencedStandardFieldSet{Fields: inferred})
 	}
 	applyReferencedStandardFieldSet(org, inferred, childRelationshipLookup)
 }
@@ -548,30 +592,6 @@ func projectReferencedStandardFieldCacheKey(index typesys.Index, cache *sourceCa
 	return fmt.Sprintf("%s|%016x", index.Project.Root, h.Sum64())
 }
 
-func projectReferencedOrgShapeFeatures(fields map[string]map[string]storage.Field) []string {
-	accountFields := fields["Account"]
-	if len(accountFields) == 0 {
-		return nil
-	}
-	for fieldName := range accountFields {
-		if projectReferencedAccountPersonField(fieldName) {
-			return []string{"PersonAccounts"}
-		}
-	}
-	return nil
-}
-
-func projectReferencedAccountPersonField(fieldName string) bool {
-	fieldName = strings.TrimSpace(fieldName)
-	return hasPrefixFold(fieldName, "Person") ||
-		strings.EqualFold(fieldName, "FirstName") ||
-		strings.EqualFold(fieldName, "LastName") ||
-		strings.EqualFold(fieldName, "MiddleName") ||
-		strings.EqualFold(fieldName, "Suffix") ||
-		strings.EqualFold(fieldName, "Salutation") ||
-		strings.EqualFold(fieldName, "IsPersonAccount")
-}
-
 func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project, caches ...*sourceCache) {
 	if org == nil {
 		return
@@ -582,7 +602,8 @@ func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project,
 			continue
 		}
 		state := org.Objects[canonicalObject]
-		if updateRecordTypeFromProjectReference(state.Definition.RecordTypes, ref.DeveloperName, ref.Name) {
+		state.Definition = state.Definition.Clone()
+		if updateRecordTypeFromProjectReference(state.Definition.RecordTypes, ref.DeveloperName, ref.Name, ref.NameDerived) {
 			org.Objects[canonicalObject] = state
 			continue
 		}
@@ -611,13 +632,16 @@ func applyManagedDependencyReferencedRecordTypes(org *storage.OrgState, p projec
 	}
 }
 
-func updateRecordTypeFromProjectReference(recordTypes []storage.RecordTypeInfo, developerName, name string) bool {
+func updateRecordTypeFromProjectReference(recordTypes []storage.RecordTypeInfo, developerName, name string, nameDerived bool) bool {
 	for i := range recordTypes {
 		recordType := &recordTypes[i]
 		if !strings.EqualFold(recordType.DeveloperName, developerName) {
 			continue
 		}
 		changed := false
+		if nameDerived && strings.TrimSpace(recordType.Name) != "" {
+			name = ""
+		}
 		if strings.TrimSpace(name) != "" && (strings.TrimSpace(recordType.Name) == "" || !strings.EqualFold(name, developerName)) && !strings.EqualFold(recordType.Name, name) {
 			recordType.Name = name
 			changed = true
@@ -664,6 +688,7 @@ func applyProjectProfileRecordTypes(org *storage.OrgState, p project.Project) bo
 			if profileRecordTypeExists(state.Definition.RecordTypes, visibility.DeveloperName) {
 				continue
 			}
+			state.Definition = state.Definition.Clone()
 			state.Definition.RecordTypes = append(state.Definition.RecordTypes, storage.RecordTypeInfo{
 				DeveloperName: visibility.DeveloperName,
 				Name:          visibility.Name,
@@ -688,6 +713,7 @@ func applyProjectProfileRecordTypeDefaults(org *storage.OrgState, p project.Proj
 			continue
 		}
 		state := org.Objects[canonicalObject]
+		state.Definition = state.Definition.Clone()
 		changed := false
 		for i := range state.Definition.RecordTypes {
 			recordType := &state.Definition.RecordTypes[i]
@@ -743,9 +769,108 @@ func applyProjectProfileRecords(org *storage.OrgState, p project.Project, permis
 		if !ok {
 			continue
 		}
+		if metadata, ok := readPermissionSetMetadata(file, permissionSetMetadataCache); ok {
+			applyProjectProfileLicense(org, profileID, metadata.UserLicense, &generator)
+			applyProjectProfileUserPermissions(org, profileID, metadata.UserPermissions)
+		}
 		applyProjectPermissionSetMetadataPermissions(org, file, string(profileID), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
 	}
 	org.IDSequences = generator.Sequences
+}
+
+// setUserPermissionFields records enabled <userPermissions> as Permissions<Name>
+// booleans on a Profile or PermissionSet row, for the permissions the setup
+// object models (native rows: ViewAllData and ModifyAllData lift record sharing).
+func setUserPermissionFields(definition storage.ObjectDefinition, fields map[string]storage.Value, permissions []permissionSetCustomPermission) {
+	for _, permission := range permissions {
+		name := strings.TrimSpace(permission.Name)
+		if name == "" || !permission.Enabled {
+			continue
+		}
+		field := "Permissions" + name
+		if _, modeled := definition.Fields[field]; !modeled {
+			continue
+		}
+		fields[field] = storage.BooleanValue(true)
+	}
+}
+
+func applyProjectProfileUserPermissions(org *storage.OrgState, profileID storage.ID, permissions []permissionSetCustomPermission) {
+	if org == nil || len(permissions) == 0 {
+		return
+	}
+	setOnRecord := func(objectName string, matches func(storage.Record) bool) {
+		state, ok := org.Objects[objectName]
+		if !ok {
+			return
+		}
+		for id, record := range state.Records {
+			if !matches(record) {
+				continue
+			}
+			if record.Fields == nil {
+				record.Fields = make(map[string]storage.Value)
+			}
+			setUserPermissionFields(org.Objects["PermissionSet"].Definition, record.Fields, permissions)
+			state.Records[id] = record
+		}
+	}
+	setOnRecord("Profile", func(record storage.Record) bool { return storage.IDsEqual(record.ID, profileID) })
+	setOnRecord("PermissionSet", func(record storage.Record) bool {
+		owned := record.Fields["IsOwnedByProfile"]
+		return owned.Kind == storage.ValueBoolean && owned.Boolean && storage.IDsEqual(storage.ID(record.Fields["ProfileId"].ID), profileID)
+	})
+}
+
+func applyProjectProfileLicense(org *storage.OrgState, profileID storage.ID, licenseName string, generator *storage.IDGenerator) {
+	licenseName = strings.TrimSpace(licenseName)
+	if licenseName == "" {
+		return
+	}
+	// License identities determine user type independently of profile names.
+	// The standard and Chatter rows are captured with the project-profile fixture;
+	// guest identities share the existing Sites fixture's captured license keys.
+	var key, userType string
+	switch {
+	case strings.EqualFold(licenseName, "Salesforce"):
+		key, userType = "SFDC", "Standard"
+	case strings.EqualFold(licenseName, "Salesforce Platform"):
+		key, userType = "AUL", "Standard"
+	case strings.EqualFold(licenseName, "Chatter Free"):
+		key, userType = "CSN_User", "CsnOnly"
+	case strings.EqualFold(licenseName, "Guest User License"):
+		key, userType = "PID_Guest_User", "Guest"
+	case strings.EqualFold(licenseName, "Guest"):
+		key, userType = "GUEST", "Guest"
+	}
+	storage.EnsureStandardObject(org, "UserLicense")
+	licenses := org.Objects["UserLicense"]
+	licenseID, exists := recordFieldID(licenses, "Name", licenseName)
+	if !exists {
+		if key == "" {
+			return
+		}
+		var err error
+		licenseID, err = generator.Next("UserLicense")
+		if err != nil {
+			return
+		}
+		if licenses.Records == nil {
+			licenses.Records = make(map[storage.ID]storage.Record)
+		}
+		licenses.Records[licenseID] = storage.Record{ID: licenseID, Object: "UserLicense", Fields: map[string]storage.Value{
+			"Name": storage.StringValue(licenseName), "LicenseDefinitionKey": storage.StringValue(key),
+		}}
+		org.Objects["UserLicense"] = licenses
+	}
+	profiles := org.Objects["Profile"]
+	profile := profiles.Records[profileID]
+	profile.Fields["UserLicenseId"] = storage.IDValue(licenseID)
+	if userType != "" {
+		profile.Fields["UserType"] = storage.StringValue(userType)
+	}
+	profiles.Records[profileID] = profile
+	org.Objects["Profile"] = profiles
 }
 
 func addProjectProfileRecord(org *storage.OrgState, state *storage.ObjectState, generator *storage.IDGenerator, name string) {
@@ -845,6 +970,9 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 		}
 		metadata, metadataOK := readPermissionSetMetadata(file, permissionSetMetadataCache)
 		if metadataOK {
+			if p.Namespace == "" {
+				applyProjectApexClassGrants(org, id, metadata.ClassAccesses, &generator)
+			}
 			customPermissions := permissionSetCustomPermissionValues(metadata)
 			if len(customPermissions) > 0 {
 				record := state.Records[id]
@@ -853,7 +981,16 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 				}
 				record.Fields["CustomPermissions"] = storage.ListValue(customPermissions...)
 				state.Records[id] = record
+				applyProjectCustomPermissionGrants(org, id, customPermissions, &generator)
 			}
+		}
+		if metadataOK {
+			record := state.Records[id]
+			if record.Fields == nil {
+				record.Fields = make(map[string]storage.Value)
+			}
+			setUserPermissionFields(state.Definition, record.Fields, metadata.UserPermissions)
+			state.Records[id] = record
 		}
 		applyProjectPermissionSetMetadataPermissions(org, file, string(id), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
 		if assignGuestFixtures {
@@ -993,7 +1130,7 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 			Object: "ObjectPermissions",
 			Fields: map[string]storage.Value{
 				"ParentId":                    storage.IDValue(storage.ID(parentID)),
-				"SObjectType":                 storage.StringValue(objectName),
+				"SobjectType":                 storage.StringValue(objectName),
 				"PermissionsRead":             storage.BooleanValue(permission.AllowRead),
 				"PermissionsCreate":           storage.BooleanValue(permission.AllowCreate),
 				"PermissionsEdit":             storage.BooleanValue(permission.AllowEdit),
@@ -1024,7 +1161,7 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 			Object: "FieldPermissions",
 			Fields: map[string]storage.Value{
 				"ParentId":        storage.IDValue(storage.ID(parentID)),
-				"SObjectType":     storage.StringValue(objectName),
+				"SobjectType":     storage.StringValue(objectName),
 				"Field":           storage.StringValue(fieldName),
 				"PermissionsRead": storage.BooleanValue(permission.Readable),
 				"PermissionsEdit": storage.BooleanValue(permission.Editable),
@@ -1050,6 +1187,7 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 		if profileRecordTypeExists(state.Definition.RecordTypes, developerName) {
 			continue
 		}
+		state.Definition = state.Definition.Clone()
 		state.Definition.RecordTypes = append(state.Definition.RecordTypes, storage.RecordTypeInfo{
 			DeveloperName: developerName,
 			Name:          recordTypeLabelFromDeveloperName(developerName),
@@ -1067,9 +1205,14 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 		return
 	}
 	storage.EnsureStandardObject(org, "PermissionSetGroup")
+	storage.EnsureStandardObject(org, "PermissionSet")
 	state := org.Objects["PermissionSetGroup"]
+	permissionSets := org.Objects["PermissionSet"]
 	if state.Records == nil {
 		state.Records = make(map[storage.ID]storage.Record)
+	}
+	if permissionSets.Records == nil {
+		permissionSets.Records = make(map[storage.ID]storage.Record)
 	}
 	if org.IDSequences == nil {
 		org.IDSequences = make(map[string]uint64)
@@ -1078,32 +1221,55 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 	generator.Sequences = org.IDSequences
 	for _, file := range p.PermissionSetGroupFiles {
 		name := metadataNameFromPath(file, ".permissionsetgroup-meta.xml", ".permissionsetgroup")
-		if name == "" || recordFieldExists(state, "DeveloperName", name) {
+		if name == "" {
 			continue
 		}
-		id, err := generator.Next("PermissionSetGroup")
+		id, exists := recordFieldID(state, "DeveloperName", name)
+		if !exists {
+			var err error
+			id, err = generator.Next("PermissionSetGroup")
+			if err != nil {
+				continue
+			}
+			state.Records[id] = storage.Record{
+				ID:     id,
+				Object: "PermissionSetGroup",
+				Fields: map[string]storage.Value{
+					"DeveloperName": storage.StringValue(name),
+					"MasterLabel":   storage.StringValue(strings.ReplaceAll(name, "_", " ")),
+					"Status":        storage.StringValue("Updated"),
+				},
+			}
+		}
+		if recordFieldExists(permissionSets, "PermissionSetGroupId", string(id)) {
+			continue
+		}
+		permissionSetID, err := generator.Next("PermissionSet")
 		if err != nil {
 			continue
 		}
-		state.Records[id] = storage.Record{
-			ID:     id,
-			Object: "PermissionSetGroup",
+		permissionSets.Records[permissionSetID] = storage.Record{
+			ID:     permissionSetID,
+			Object: "PermissionSet",
 			Fields: map[string]storage.Value{
-				"DeveloperName": storage.StringValue(name),
-				"MasterLabel":   storage.StringValue(strings.ReplaceAll(name, "_", " ")),
-				"Status":        storage.StringValue("Updated"),
+				"Name":                 storage.StringValue(name),
+				"Type":                 storage.StringValue("Group"),
+				"PermissionSetGroupId": storage.IDValue(id),
+				"IsCustom":             storage.BooleanValue(true),
+				"IsOwnedByProfile":     storage.BooleanValue(false),
 			},
 		}
 	}
 	org.IDSequences = generator.Sequences
 	org.Objects["PermissionSetGroup"] = state
+	org.Objects["PermissionSet"] = permissionSets
 }
 
 // namedPrefixApprovals asks semantic analysis which ++/-- prefix candidates in
-// a class method a captured named rule covers. Methods of classes declared in
-// execute-anonymous Apex keep the name path.
+// a class method a captured rule covers, including transient
+// parameter and final-field samples. Uncaptured statements keep the name path.
 func namedPrefixApprovals(index typesys.Index, typ typesys.TypeSymbol, member typesys.MemberSymbol, source string) func() map[int]bool {
-	if typ.Kind != apexast.DeclarationClass || hasModifier(typ.Modifiers, vm.AnonymousClassModifier) {
+	if typ.Kind != apexast.DeclarationClass {
 		return nil
 	}
 	return func() map[int]bool { return sema.ApprovedPrefixStatements(index, typ, member, source) }

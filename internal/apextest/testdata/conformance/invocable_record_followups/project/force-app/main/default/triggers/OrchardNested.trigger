@@ -1,0 +1,1 @@
+trigger OrchardNested on Case (after insert, after update) { if(OrchardMoreTest.nested) { if(Trigger.isInsert){ for(Case c:Trigger.new) OrchardMoreTest.action('OrchardUpdate',c,null); } else { OrchardMoreTest.reentries++; } } }

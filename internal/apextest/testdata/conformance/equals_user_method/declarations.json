@@ -1,0 +1,366 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "declarations",
+  "shapeCount": 8,
+  "nativeObservationCount": 24,
+  "packetRowsSha256": "8c737726ee2d9f757a59656fe1c063b99190b30c1bc5db6d269f837c3041db33",
+  "rows": [
+    {
+      "id": "E23E021",
+      "label": "EqResult named declaration and implicit return",
+      "role": "compile-positive-or-rejection",
+      "routes": {
+        "named": {
+          "sourceSha256": {
+            "class:EqFixture": "a0b2281c0778fc3944c75ed9dcd8eba10f789603fe727ada915442ac14668f2f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}}}"
+          }
+        }
+      }
+    },
+    {
+      "id": "E23E022",
+      "label": "Integer named declaration and implicit return",
+      "role": "compile-positive-or-rejection",
+      "routes": {
+        "named": {
+          "sourceSha256": {
+            "class:EqFixture": "fc83508ef0ef7943e375641a2fb9a156a87ddf2e5deb3bae3ee35cb25b224698"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Integer equals(Object v){calls++;return 41;}public Integer eq(Object v){return equals(v);}}}"
+          }
+        }
+      }
+    },
+    {
+      "id": "E23E023",
+      "label": "String named declaration and implicit return",
+      "role": "compile-positive-or-rejection",
+      "routes": {
+        "named": {
+          "sourceSha256": {
+            "class:EqFixture": "0b96a990c93d527db898633b85c22874def77c38ce7b2b71d348173787942f2e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public String equals(Object v){calls++;return 'user-equals';}public String eq(Object v){return equals(v);}}}"
+          }
+        }
+      }
+    },
+    {
+      "id": "E23E024",
+      "label": "Boolean named declaration and implicit return",
+      "role": "compile-positive-or-rejection",
+      "routes": {
+        "named": {
+          "sourceSha256": {
+            "class:EqFixture": "7c044c8f7be8661dac6884213cc11d9b5083a0c19592746b9e46f4bbee160cf0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Boolean equals(Object v){calls++;return true;}public Boolean eq(Object v){return equals(v);}}}"
+          }
+        }
+      }
+    },
+    {
+      "id": "E23E025",
+      "label": "String non-Integer hashCode declaration",
+      "role": "rejection-twin",
+      "routes": {
+        "named": {
+          "sourceSha256": {
+            "class:EqFixture": "302699ad3d4d6af28a1b8c65fa3c2e4726ac5916442213a3b248c2094976de54"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}public String hashCode(){hashCalls++;return 'hash-value';}}}"
+          }
+        }
+      }
+    },
+    {
+      "id": "E23E026",
+      "label": "EqResult non-Integer hashCode declaration",
+      "role": "rejection-twin",
+      "routes": {
+        "named": {
+          "sourceSha256": {
+            "class:EqFixture": "ee12bcfb2c7101e2d884885d79520aaddc44893f6b816aa64f1aea441c479db8"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}public EqResult hashCode(){hashCalls++;return new EqResult();}}}"
+          }
+        }
+      }
+    },
+    {
+      "id": "E23E030",
+      "label": "wrong implicit return rejection twin",
+      "role": "rejection-twin",
+      "routes": {
+        "named": {
+          "sourceSha256": {
+            "class:EqFixture": "1b70952a831d2dc02f10ca297ef54f461016b147c7b4dd63136206f5bc64b68c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "diagnostics": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "PE23E030V62EqFixture",
+                      "problem": "Illegal conversion from Integer to String",
+                      "problemType": "Error",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "coverageWarnings": [],
+                  "done": true,
+                  "errorMessage": null,
+                  "numberComponentErrors": 1,
+                  "status": "Failed",
+                  "success": false,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Illegal conversion from Integer to String",
+              "rejectedUnit": "EqFixture.cls"
+            },
+            "67.0": {
+              "native": {
+                "diagnostics": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "PE23E030V67EqFixture",
+                      "problem": "Illegal conversion from Integer to String",
+                      "problemType": "Error",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "coverageWarnings": [],
+                  "done": true,
+                  "errorMessage": null,
+                  "numberComponentErrors": 1,
+                  "status": "Failed",
+                  "success": false,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Illegal conversion from Integer to String",
+              "rejectedUnit": "EqFixture.cls"
+            },
+            "68.0": {
+              "native": {
+                "diagnostics": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "PE23E030V68EqFixture",
+                      "problem": "Illegal conversion from Integer to String",
+                      "problemType": "Error",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "coverageWarnings": [],
+                  "done": true,
+                  "errorMessage": null,
+                  "numberComponentErrors": 1,
+                  "status": "Failed",
+                  "success": false,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Illegal conversion from Integer to String",
+              "rejectedUnit": "EqFixture.cls"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public Integer equals(Object v){return 41;}public String eq(Object v){return equals(v);}}"
+          }
+        }
+      }
+    },
+    {
+      "id": "E23E031",
+      "label": "top-level equals and dependent declaration together",
+      "role": "compile-positive-or-rejection",
+      "routes": {
+        "named": {
+          "sourceSha256": {
+            "class:EqTopResult": "525eb333bb16acfd240d6490036d768db673b61089c38ca14dfc2553c3f4288f",
+            "class:EqTop": "c6f5f3cca34dfd5493eaca149bda6ebfd0d3699828dd4143e5a57a98c7fd8e41",
+            "class:EqTopDependent": "4d87ca5d1536ad1ee4f86af13d35fc954f7b9bb848a491d263b4e9f04e25c111"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            }
+          },
+          "classes": {
+            "EqTopResult": "public class EqTopResult {public Integer value=41;}",
+            "EqTop": "public class EqTop {public Integer calls=0;public EqTopResult equals(Object v){calls++;return new EqTopResult();}public EqTopResult eq(Object v){return equals(v);}}",
+            "EqTopDependent": "public class EqTopDependent {public Integer call(Object v){return new EqTop().eq(v).value;}}"
+          }
+        }
+      }
+    }
+  ]
+}

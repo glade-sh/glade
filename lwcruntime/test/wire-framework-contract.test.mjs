@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
-import path from "node:path";
 import test from "node:test";
-import { pathToFileURL } from "node:url";
+import { chromium } from "./shared-playwright.mjs";
 import {
   startWireFrameworkHarness,
   wireFrameworkDeniedRecordId,
@@ -10,11 +9,6 @@ import {
 
 test("compiled wire function renders immutable data and reactive error outcomes", async () => {
   const browserExecutable = process.env.GLADE_LWC_BROWSER_EXECUTABLE;
-  const playwrightDir = process.env.GLADE_LWC_PLAYWRIGHT_MODULE;
-  const { chromium } = playwrightDir
-    ? await import(pathToFileURL(path.join(playwrightDir, "index.mjs")).href)
-    : await import("playwright");
-
   const harness = await startWireFrameworkHarness();
   let browser;
   try {

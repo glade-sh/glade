@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	cart_fixture	{"loadedIdentity":true,"storeName":"My WebStore","accountName":"My Account","hasStore":true,"hasAccount":true,"currency":"USD","status":"Active","name":"My Cart","stored":1,"hasId":true}
+62.0	distinct_carts	{"stored":2,"distinct":true,"sameStore":false,"sameAccount":false}
+67.0	cart_fixture	{"loadedIdentity":true,"storeName":"My WebStore","accountName":"My Account","hasStore":true,"hasAccount":true,"currency":"USD","status":"Active","name":"My Cart","stored":1,"hasId":true}
+67.0	distinct_carts	{"stored":2,"distinct":true,"sameStore":false,"sameAccount":false}

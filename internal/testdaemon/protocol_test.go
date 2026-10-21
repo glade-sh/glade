@@ -168,7 +168,7 @@ func TestProtocolV1DecodeRejectsUnknownFields(t *testing.T) {
 	}{
 		{
 			name:  "request envelope",
-			frame: `{"version":1,"op":"run","unknownEnvelope":true}` + "\n",
+			frame: `{"version":3,"op":"run","unknownEnvelope":true}` + "\n",
 			decode: func(r io.Reader) error {
 				_, err := DecodeRequestV1(r)
 				return err
@@ -176,7 +176,7 @@ func TestProtocolV1DecodeRejectsUnknownFields(t *testing.T) {
 		},
 		{
 			name:  "request run policy",
-			frame: `{"version":1,"op":"run","run":{"unknownRunPolicy":true}}` + "\n",
+			frame: `{"version":3,"op":"run","run":{"unknownRunPolicy":true}}` + "\n",
 			decode: func(r io.Reader) error {
 				_, err := DecodeRequestV1(r)
 				return err
@@ -184,7 +184,7 @@ func TestProtocolV1DecodeRejectsUnknownFields(t *testing.T) {
 		},
 		{
 			name:  "request limit caps",
-			frame: `{"version":1,"op":"run","run":{"limitCaps":{"unknownLimit":1}}}` + "\n",
+			frame: `{"version":3,"op":"run","run":{"limitCaps":{"unknownLimit":1}}}` + "\n",
 			decode: func(r io.Reader) error {
 				_, err := DecodeRequestV1(r)
 				return err
@@ -192,7 +192,7 @@ func TestProtocolV1DecodeRejectsUnknownFields(t *testing.T) {
 		},
 		{
 			name:  "response envelope",
-			frame: `{"version":1,"op":"run_result","ok":false,"ready":false,"warming":false,"unknownEnvelope":true}` + "\n",
+			frame: `{"version":3,"op":"run_result","ok":false,"ready":false,"warming":false,"unknownEnvelope":true}` + "\n",
 			decode: func(r io.Reader) error {
 				_, err := DecodeResponseV1(r)
 				return err
@@ -200,7 +200,7 @@ func TestProtocolV1DecodeRejectsUnknownFields(t *testing.T) {
 		},
 		{
 			name:  "response run",
-			frame: `{"version":1,"op":"run_result","ok":false,"ready":false,"warming":false,"run":{"summary":{},"suites":[],"unknownRun":true}}` + "\n",
+			frame: `{"version":3,"op":"run_result","ok":false,"ready":false,"warming":false,"run":{"summary":{},"suites":[],"unknownRun":true}}` + "\n",
 			decode: func(r io.Reader) error {
 				_, err := DecodeResponseV1(r)
 				return err
@@ -208,7 +208,7 @@ func TestProtocolV1DecodeRejectsUnknownFields(t *testing.T) {
 		},
 		{
 			name:  "response run summary",
-			frame: `{"version":1,"op":"run_result","ok":false,"ready":false,"warming":false,"run":{"summary":{"unknownSummary":true},"suites":[]}}` + "\n",
+			frame: `{"version":3,"op":"run_result","ok":false,"ready":false,"warming":false,"run":{"summary":{"unknownSummary":true},"suites":[]}}` + "\n",
 			decode: func(r io.Reader) error {
 				_, err := DecodeResponseV1(r)
 				return err
@@ -216,7 +216,7 @@ func TestProtocolV1DecodeRejectsUnknownFields(t *testing.T) {
 		},
 		{
 			name:  "response run suite",
-			frame: `{"version":1,"op":"run_result","ok":false,"ready":false,"warming":false,"run":{"summary":{},"suites":[{"name":"InvoiceTest","cases":[],"unknownSuite":true}]}}` + "\n",
+			frame: `{"version":3,"op":"run_result","ok":false,"ready":false,"warming":false,"run":{"summary":{},"suites":[{"name":"InvoiceTest","cases":[],"unknownSuite":true}]}}` + "\n",
 			decode: func(r io.Reader) error {
 				_, err := DecodeResponseV1(r)
 				return err
@@ -224,7 +224,7 @@ func TestProtocolV1DecodeRejectsUnknownFields(t *testing.T) {
 		},
 		{
 			name:  "response run case",
-			frame: `{"version":1,"op":"run_result","ok":false,"ready":false,"warming":false,"run":{"summary":{"total":1,"passed":1},"suites":[{"name":"InvoiceTest","cases":[{"status":"pass","unknownCase":true}]}]}}` + "\n",
+			frame: `{"version":3,"op":"run_result","ok":false,"ready":false,"warming":false,"run":{"summary":{"total":1,"passed":1},"suites":[{"name":"InvoiceTest","cases":[{"status":"pass","unknownCase":true}]}]}}` + "\n",
 			decode: func(r io.Reader) error {
 				_, err := DecodeResponseV1(r)
 				return err
@@ -232,7 +232,7 @@ func TestProtocolV1DecodeRejectsUnknownFields(t *testing.T) {
 		},
 		{
 			name:  "response shard plan",
-			frame: `{"version":1,"op":"run_result","ok":false,"ready":false,"warming":false,"shardPlan":{"shards":[],"unknownPlan":true}}` + "\n",
+			frame: `{"version":3,"op":"run_result","ok":false,"ready":false,"warming":false,"shardPlan":{"shards":[],"unknownPlan":true}}` + "\n",
 			decode: func(r io.Reader) error {
 				_, err := DecodeResponseV1(r)
 				return err
@@ -240,7 +240,7 @@ func TestProtocolV1DecodeRejectsUnknownFields(t *testing.T) {
 		},
 		{
 			name:  "response class shard",
-			frame: `{"version":1,"op":"run_result","ok":false,"ready":false,"warming":false,"shardPlan":{"shards":[{"index":0,"totalDurationMs":0,"classes":[],"unknownShard":true}]}}` + "\n",
+			frame: `{"version":3,"op":"run_result","ok":false,"ready":false,"warming":false,"shardPlan":{"shards":[{"index":0,"totalDurationMs":0,"classes":[],"unknownShard":true}]}}` + "\n",
 			decode: func(r io.Reader) error {
 				_, err := DecodeResponseV1(r)
 				return err
@@ -261,8 +261,63 @@ func TestProtocolV1DecodeRejectsUnknownFields(t *testing.T) {
 	}
 }
 
+// Version 2 carries the classes the dependency-scoped compile gate excluded.
+// They round-trip with their summary count, and a version 1 peer, whose
+// strict decoder rejects excludedClasses, is refused by version before any
+// run instead of failing only on runs that exclude a class.
+func TestProtocolV2RoundTripsExcludedClassesAndRejectsVersion1(t *testing.T) {
+	want := ResponseV1{
+		Version: ProtocolVersionV1,
+		Op:      OpRunResult,
+		OK:      true,
+		Ready:   true,
+		Run: &testreport.Run{
+			Name: "glade test",
+			Suites: []testreport.Suite{{
+				Name: "UsesBadTest",
+				Cases: []testreport.Case{{
+					ClassName:  "UsesBadTest",
+					MethodName: "observe",
+					Status:     testreport.StatusCompileError,
+					Problem:    &testreport.Problem{Type: "CompileError", Message: "Dependent class is invalid and needs recompilation:\n Class UsesBad : x"},
+				}},
+			}},
+			ExcludedClasses: []testreport.CompileExclusion{
+				{ClassName: "Bad", File: "classes/Bad.cls", Line: 3, Root: "Bad", Message: "first", Problems: []testreport.CompileProblem{{Line: 3, Message: "first"}, {Line: 4, Message: "second"}}},
+				{ClassName: "UsesBad", File: "classes/UsesBad.cls", Line: 3, Root: "Bad", DependsOn: "Bad", Message: "Dependent class is invalid and needs recompilation:\n Class Bad : first"},
+			},
+		},
+	}
+	var encoded bytes.Buffer
+	if err := EncodeResponseV1(&encoded, want); err != nil {
+		t.Fatalf("EncodeResponseV1: %v", err)
+	}
+	if !strings.Contains(encoded.String(), `"version":3,`) || !strings.Contains(encoded.String(), `"excludedClasses":2`) {
+		t.Fatalf("encoded frame = %s", encoded.String())
+	}
+	got, err := DecodeResponseV1(bufio.NewReader(&encoded))
+	if err != nil {
+		t.Fatalf("DecodeResponseV1: %v", err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("response round trip mismatch:\n got: %#v\nwant: %#v", got, want)
+	}
+	if got.Run.Summary().ExcludedClasses != 2 || got.Run.Summary().OK() {
+		t.Fatalf("decoded summary = %#v", got.Run.Summary())
+	}
+	for _, frame := range []string{`{"version":1,"op":"ping"}`, `{"version":1,"op":"pong","ok":true,"ready":true,"warming":false}`} {
+		var err error
+		if strings.Contains(frame, "pong") {
+			_, err = DecodeResponseV1(strings.NewReader(frame + "\n"))
+		} else {
+			_, err = DecodeRequestV1(strings.NewReader(frame + "\n"))
+		}
+		requireProtocolV1VersionError(t, err, 1)
+	}
+}
+
 func TestProtocolV1ResponseRejectsInconsistentRunSummary(t *testing.T) {
-	frame := `{"version":1,"op":"run_result","ok":true,"ready":true,"warming":false,"run":{"summary":{"total":2,"passed":2},"suites":[{"name":"InvoiceTest","cases":[{"status":"pass"}]}]}}` + "\n"
+	frame := `{"version":3,"op":"run_result","ok":true,"ready":true,"warming":false,"run":{"summary":{"total":2,"passed":2},"suites":[{"name":"InvoiceTest","cases":[{"status":"pass"}]}]}}` + "\n"
 	_, err := DecodeResponseV1(strings.NewReader(frame))
 	if err == nil {
 		t.Fatal("DecodeResponseV1 accepted a run summary that disagrees with the decoded suites")
@@ -273,8 +328,8 @@ func TestProtocolV1ResponseRejectsInconsistentRunSummary(t *testing.T) {
 }
 
 func TestProtocolV1DecodeRejectsTrailingJSON(t *testing.T) {
-	requestJSON := `{"version":1,"op":"ping"}`
-	responseJSON := `{"version":1,"op":"pong","ok":true,"ready":true,"warming":false}`
+	requestJSON := `{"version":3,"op":"ping"}`
+	responseJSON := `{"version":3,"op":"pong","ok":true,"ready":true,"warming":false}`
 	tests := []struct {
 		name   string
 		frame  string
@@ -358,7 +413,9 @@ func TestProtocolV1RejectsInvalidVersion(t *testing.T) {
 		{name: "missing", version: 0, json: ""},
 		{name: "zero", version: 0, json: `"version":0,`},
 		{name: "negative", version: -1, json: `"version":-1,`},
-		{name: "unsupported", version: 2, json: `"version":2,`},
+		{name: "legacy", version: 1, json: `"version":1,`},
+		{name: "previous", version: 2, json: `"version":2,`},
+		{name: "unsupported", version: 4, json: `"version":4,`},
 	}
 
 	for _, tt := range versions {
@@ -571,7 +628,7 @@ func TestProtocolV1DecodeRequiresPersistentByteReader(t *testing.T) {
 	}{
 		{
 			name:  "request",
-			frame: `{"version":1,"op":"ping"}` + "\n",
+			frame: `{"version":3,"op":"ping"}` + "\n",
 			decode: func(r io.Reader) error {
 				_, err := DecodeRequestV1(r)
 				return err
@@ -579,7 +636,7 @@ func TestProtocolV1DecodeRequiresPersistentByteReader(t *testing.T) {
 		},
 		{
 			name:  "response",
-			frame: `{"version":1,"op":"pong","ok":true,"ready":true,"warming":false}` + "\n",
+			frame: `{"version":3,"op":"pong","ok":true,"ready":true,"warming":false}` + "\n",
 			decode: func(r io.Reader) error {
 				_, err := DecodeResponseV1(r)
 				return err
@@ -719,6 +776,7 @@ func representativeProtocolV1Request() RequestV1 {
 			TraceAll:            true,
 			SlowTestThresholdMS: 250,
 			TimeoutMS:           300000,
+			TimeoutSource:       "flag",
 			Parallelism:         4,
 			ParallelMethods:     true,
 			NoDiskCache:         true,

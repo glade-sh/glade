@@ -1,9 +1,12 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
-  "source": "Owned SOSL/Search observations and inline controls at API 62.0 and 67.0. Nonempty RETURNING controls Q001-Q048 use an owned project that seeds four Account records.",
+  "controlApiVersions": ["62.0", "67.0", "68.0"],
+  "shadowControlApiVersions": ["62.0", "67.0", "68.0"],
+  "source": "Owned SOSL/Search observations and inline controls at API 62.0 and 67.0. Nonempty RETURNING controls Q001-Q048 use an owned project that seeds four Account records. API 68 anonymous captures cover the primary rows, a separate inline R100 diagnostic, L/N controls, and Q/S controls. The 79 additional R100/L/N/Q/S observations match the stored rows exactly; Q/S used API 62 helper classes and API 68 anonymous execution.",
   "captureLimitations": {
     "R100": "Dynamic RETURNING filter with an undeclared bind: no transport row; inline compiler diagnostic captured instead.",
     "R101": "Dynamic RETURNING Name filter with a Boolean bind: no transport row; inline compiler diagnostic captured instead.",

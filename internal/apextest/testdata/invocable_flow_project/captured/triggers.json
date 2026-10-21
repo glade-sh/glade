@@ -1,0 +1,4630 @@
+{
+  "group": "triggers",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "shapeCount": 10,
+  "nativeObservationCount": 60,
+  "recoveredObservationCount": 0,
+  "notes": [
+    "Synthetic source-only project metadata, helper classes and triggers use the ordinary project loader.",
+    "Both independently captured routes compare complete reassembled payloads; named chunk envelopes are transport only.",
+    "Same-release APIs62/67/68; API59 has no rows.",
+    "API67/68 SOAP guide anchors compare by stable message parts; no org URL is produced or compared.",
+    "Rejected global-null metadata compares loader rejection plus the accepted modern runtime twin."
+  ],
+  "rows": [
+    {
+      "id": "C187TRIGGER_001",
+      "label": "beforeInsert actual triggering input",
+      "config": {
+        "stage": "beforeInsert",
+        "clone": false,
+        "flow": "Name"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeInsert','E32BA62Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_001|'+encoded);",
+              "operationSHA256": "87c10e7db411aaf3461f5c98ee0239634f7749fed26a27969f032d6f2536f07f",
+              "captureSourceSHA256": {
+                "anonymous": "87c10e7db411aaf3461f5c98ee0239634f7749fed26a27969f032d6f2536f07f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "null",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "null",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeInsert','E32BA62Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_001|'+encoded);",
+              "operationSHA256": "87c10e7db411aaf3461f5c98ee0239634f7749fed26a27969f032d6f2536f07f",
+              "captureSourceSHA256": {
+                "E32BA62C187TRIGGER001": "7b4f6d1a7bad334d80cb66b8dd2309cbdf7ef1d795cc665791f893e3c65e2f9b"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "null",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "null",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeInsert','E32BA67Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_001|'+encoded);",
+              "operationSHA256": "4774dc0c3eb81cd47a650ac6fa5a351df7201d4164453b85c640e09433680b8c",
+              "captureSourceSHA256": {
+                "anonymous": "4774dc0c3eb81cd47a650ac6fa5a351df7201d4164453b85c640e09433680b8c"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "null",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "null",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeInsert','E32BA67Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_001|'+encoded);",
+              "operationSHA256": "4774dc0c3eb81cd47a650ac6fa5a351df7201d4164453b85c640e09433680b8c",
+              "captureSourceSHA256": {
+                "E32BA67C187TRIGGER001": "9bd172d8de55d8c1f2c8216282b29ef73e7110c47294087a523ace33d2bb5408"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "null",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "null",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeInsert','E32BA68Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_001|'+encoded);",
+              "operationSHA256": "0debbfe087adfea70077ef72dbbfff15a91119ea145e9124d68c8a450596211f",
+              "captureSourceSHA256": {
+                "anonymous": "0debbfe087adfea70077ef72dbbfff15a91119ea145e9124d68c8a450596211f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "null",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "null",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeInsert','E32BA68Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_001|'+encoded);",
+              "operationSHA256": "0debbfe087adfea70077ef72dbbfff15a91119ea145e9124d68c8a450596211f",
+              "captureSourceSHA256": {
+                "E32BA68C187TRIGGER001": "aac5dfcdfd240d9c0cc3192f5b97f6f66b89b2cb7f0b76fc75cfd8a06a25ca6e"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "null",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "null",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187TRIGGER_002",
+      "label": "afterInsert actual triggering input",
+      "config": {
+        "stage": "afterInsert",
+        "clone": false,
+        "flow": "Name"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('afterInsert','E32BA62Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_002|'+encoded);",
+              "operationSHA256": "ea5e417554cbd1e90007283c7297ca4a889e24e8421f3102d46778a5b2639fcd",
+              "captureSourceSHA256": {
+                "anonymous": "ea5e417554cbd1e90007283c7297ca4a889e24e8421f3102d46778a5b2639fcd"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('afterInsert','E32BA62Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_002|'+encoded);",
+              "operationSHA256": "ea5e417554cbd1e90007283c7297ca4a889e24e8421f3102d46778a5b2639fcd",
+              "captureSourceSHA256": {
+                "E32BA62C187TRIGGER002": "d40f7d4db0cc617357e06ae47a5a25c0aba0dbf0774a7a659aae5ed22c5e98fd"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('afterInsert','E32BA67Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_002|'+encoded);",
+              "operationSHA256": "6ddbc52bd3f50e565e36d71b1963b70201b3fc188c7179f5278f5bde74431d37",
+              "captureSourceSHA256": {
+                "anonymous": "6ddbc52bd3f50e565e36d71b1963b70201b3fc188c7179f5278f5bde74431d37"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('afterInsert','E32BA67Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_002|'+encoded);",
+              "operationSHA256": "6ddbc52bd3f50e565e36d71b1963b70201b3fc188c7179f5278f5bde74431d37",
+              "captureSourceSHA256": {
+                "E32BA67C187TRIGGER002": "856e93f3cb3cbe72fd308eea2335b8e0c944fb1b41490dfdefc0aa090205d655"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('afterInsert','E32BA68Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_002|'+encoded);",
+              "operationSHA256": "abd674a6b251e789cd348fd1519db2fbd910d1935ceef95c4a86e37fd799913d",
+              "captureSourceSHA256": {
+                "anonymous": "abd674a6b251e789cd348fd1519db2fbd910d1935ceef95c4a86e37fd799913d"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('afterInsert','E32BA68Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_002|'+encoded);",
+              "operationSHA256": "abd674a6b251e789cd348fd1519db2fbd910d1935ceef95c4a86e37fd799913d",
+              "captureSourceSHA256": {
+                "E32BA68C187TRIGGER002": "7eda90aea81252487f5add2ad512e092b6f76e17691b0cd46c3f703e93e0584f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187TRIGGER_003",
+      "label": "beforeUpdate actual triggering input",
+      "config": {
+        "stage": "beforeUpdate",
+        "clone": false,
+        "flow": "Name"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeUpdate','E32BA62Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_003|'+encoded);",
+              "operationSHA256": "cbc0d35e0f2e11ebdf706e6802cefc7e07a03d2cbdd082086bac6fe39b59ea38",
+              "captureSourceSHA256": {
+                "anonymous": "cbc0d35e0f2e11ebdf706e6802cefc7e07a03d2cbdd082086bac6fe39b59ea38"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeUpdate','E32BA62Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_003|'+encoded);",
+              "operationSHA256": "cbc0d35e0f2e11ebdf706e6802cefc7e07a03d2cbdd082086bac6fe39b59ea38",
+              "captureSourceSHA256": {
+                "E32BA62C187TRIGGER003": "3dd99a7ee4f31719e8923247c655540b243371f93369725592dbb5a34d2fc1ff"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeUpdate','E32BA67Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_003|'+encoded);",
+              "operationSHA256": "ba701bc5ac62a1e863dd3ff2b2a55b315b738a708369ad1c695ff1375bf34aaf",
+              "captureSourceSHA256": {
+                "anonymous": "ba701bc5ac62a1e863dd3ff2b2a55b315b738a708369ad1c695ff1375bf34aaf"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeUpdate','E32BA67Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_003|'+encoded);",
+              "operationSHA256": "ba701bc5ac62a1e863dd3ff2b2a55b315b738a708369ad1c695ff1375bf34aaf",
+              "captureSourceSHA256": {
+                "E32BA67C187TRIGGER003": "f9984dd279c6691a88ea180074b4969c9ae3bfc1fcab6d578eea1c5f61d5b080"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeUpdate','E32BA68Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_003|'+encoded);",
+              "operationSHA256": "a13d8421952d09d52ee2ff2f6be853ad0a791bf3d8eb87df8328e62912672e7c",
+              "captureSourceSHA256": {
+                "anonymous": "a13d8421952d09d52ee2ff2f6be853ad0a791bf3d8eb87df8328e62912672e7c"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeUpdate','E32BA68Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_003|'+encoded);",
+              "operationSHA256": "a13d8421952d09d52ee2ff2f6be853ad0a791bf3d8eb87df8328e62912672e7c",
+              "captureSourceSHA256": {
+                "E32BA68C187TRIGGER003": "0dbdc1248287bfbf4e327f18c1bd5791ada91223f7c4965a1f0e4d1ae74bca02"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187TRIGGER_004",
+      "label": "afterUpdate actual triggering input",
+      "config": {
+        "stage": "afterUpdate",
+        "clone": false,
+        "flow": "Name"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('afterUpdate','E32BA62Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_004|'+encoded);",
+              "operationSHA256": "d6a78906808fd89941fddcda855eda6caee17c030e8c8ba21c729007c80a569f",
+              "captureSourceSHA256": {
+                "anonymous": "d6a78906808fd89941fddcda855eda6caee17c030e8c8ba21c729007c80a569f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('afterUpdate','E32BA62Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_004|'+encoded);",
+              "operationSHA256": "d6a78906808fd89941fddcda855eda6caee17c030e8c8ba21c729007c80a569f",
+              "captureSourceSHA256": {
+                "E32BA62C187TRIGGER004": "5fed14e1889d424c2ba40382f5d571f294bfdb33bb7e376b93ccf1d692ec98d5"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('afterUpdate','E32BA67Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_004|'+encoded);",
+              "operationSHA256": "14661b815ae84c6b4baf3145ddb1758730d0214d28534c746222ce5f0f633571",
+              "captureSourceSHA256": {
+                "anonymous": "14661b815ae84c6b4baf3145ddb1758730d0214d28534c746222ce5f0f633571"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('afterUpdate','E32BA67Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_004|'+encoded);",
+              "operationSHA256": "14661b815ae84c6b4baf3145ddb1758730d0214d28534c746222ce5f0f633571",
+              "captureSourceSHA256": {
+                "E32BA67C187TRIGGER004": "8927042140dbf6378379cfacb25d2be42dbfd1ced067ff9497643d8fa58cdf83"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('afterUpdate','E32BA68Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_004|'+encoded);",
+              "operationSHA256": "1056c924055b5a64f7334d63d3605b1bfa6940dc8069179041617f12cc150efa",
+              "captureSourceSHA256": {
+                "anonymous": "1056c924055b5a64f7334d63d3605b1bfa6940dc8069179041617f12cc150efa"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('afterUpdate','E32BA68Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_004|'+encoded);",
+              "operationSHA256": "1056c924055b5a64f7334d63d3605b1bfa6940dc8069179041617f12cc150efa",
+              "captureSourceSHA256": {
+                "E32BA68C187TRIGGER004": "2b4757404cca8a83ee627869f4038138c5ccda8554d347a07c5d1cf74e679b39"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187TRIGGER_005",
+      "label": "beforeDelete actual triggering input",
+      "config": {
+        "stage": "beforeDelete",
+        "clone": false,
+        "flow": "Name"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeDelete','E32BA62Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_005|'+encoded);",
+              "operationSHA256": "304a9f086b6f34e836501a39624a145db209d629605625c9066de989d6655870",
+              "captureSourceSHA256": {
+                "anonymous": "304a9f086b6f34e836501a39624a145db209d629605625c9066de989d6655870"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeDelete','E32BA62Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_005|'+encoded);",
+              "operationSHA256": "304a9f086b6f34e836501a39624a145db209d629605625c9066de989d6655870",
+              "captureSourceSHA256": {
+                "E32BA62C187TRIGGER005": "118193a1b1a82eaac7ad3f6fe2546e01610c41b2c9748a656bd060533f3d74d4"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeDelete','E32BA67Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_005|'+encoded);",
+              "operationSHA256": "1c7353d11553545a2dd11d3dbc9923a4f02b04b38e774d1a594938e26da2bd84",
+              "captureSourceSHA256": {
+                "anonymous": "1c7353d11553545a2dd11d3dbc9923a4f02b04b38e774d1a594938e26da2bd84"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeDelete','E32BA67Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_005|'+encoded);",
+              "operationSHA256": "1c7353d11553545a2dd11d3dbc9923a4f02b04b38e774d1a594938e26da2bd84",
+              "captureSourceSHA256": {
+                "E32BA67C187TRIGGER005": "7ae3b53d1cfbff4926d81895deec5cfc01753162cf8861429f806d3c39ce4a19"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeDelete','E32BA68Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_005|'+encoded);",
+              "operationSHA256": "b322c6d1f181f28df54c50624b9f720d4ed7d7290d8311b635adaba56dc6c86b",
+              "captureSourceSHA256": {
+                "anonymous": "b322c6d1f181f28df54c50624b9f720d4ed7d7290d8311b635adaba56dc6c86b"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeDelete','E32BA68Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_005|'+encoded);",
+              "operationSHA256": "b322c6d1f181f28df54c50624b9f720d4ed7d7290d8311b635adaba56dc6c86b",
+              "captureSourceSHA256": {
+                "E32BA68C187TRIGGER005": "3353a25f5191eb676db97a82e0ba86716760e7442ef4b74dcce0fac33cb0908e"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187TRIGGER_006",
+      "label": "afterDelete actual triggering input",
+      "config": {
+        "stage": "afterDelete",
+        "clone": false,
+        "flow": "Name"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('afterDelete','E32BA62Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_006|'+encoded);",
+              "operationSHA256": "a8414e86578f17796e4532241010bd502241124b3bd9352a8d0c62768a13601f",
+              "captureSourceSHA256": {
+                "anonymous": "a8414e86578f17796e4532241010bd502241124b3bd9352a8d0c62768a13601f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('afterDelete','E32BA62Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_006|'+encoded);",
+              "operationSHA256": "a8414e86578f17796e4532241010bd502241124b3bd9352a8d0c62768a13601f",
+              "captureSourceSHA256": {
+                "E32BA62C187TRIGGER006": "5fb57213fd6a7e6535d5f70b3fa9f072c43aa8e9ef68925bf6391c5fe46bd79f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('afterDelete','E32BA67Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_006|'+encoded);",
+              "operationSHA256": "bdce32978bebcd6ce64a0800db389e612209545d59a24d0d2ecd8709704f954d",
+              "captureSourceSHA256": {
+                "anonymous": "bdce32978bebcd6ce64a0800db389e612209545d59a24d0d2ecd8709704f954d"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('afterDelete','E32BA67Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_006|'+encoded);",
+              "operationSHA256": "bdce32978bebcd6ce64a0800db389e612209545d59a24d0d2ecd8709704f954d",
+              "captureSourceSHA256": {
+                "E32BA67C187TRIGGER006": "2b5d3cdee67087989f1437a016c34e378407ca7561eb2eb9534c06602bffa3bf"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('afterDelete','E32BA68Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_006|'+encoded);",
+              "operationSHA256": "5f0a8e95e79acb03c99d0739be92aab4cc323bea68cbab78115286d1ad62ce22",
+              "captureSourceSHA256": {
+                "anonymous": "5f0a8e95e79acb03c99d0739be92aab4cc323bea68cbab78115286d1ad62ce22"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('afterDelete','E32BA68Name',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_006|'+encoded);",
+              "operationSHA256": "5f0a8e95e79acb03c99d0739be92aab4cc323bea68cbab78115286d1ad62ce22",
+              "captureSourceSHA256": {
+                "E32BA68C187TRIGGER006": "40ed0384c541c1585ad2ba6b88bcf75ff9a8589b984d8c37dac555ea7447b46a"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187TRIGGER_007",
+      "label": "afterUpdate explicit clone input",
+      "config": {
+        "stage": "afterUpdate",
+        "clone": true,
+        "flow": "Name"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('afterUpdate','E32BA62Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_007|'+encoded);",
+              "operationSHA256": "a37ea7ef942e7c89808e807d4af6c9dc8c09781204f356c96f642b2822ebfd19",
+              "captureSourceSHA256": {
+                "anonymous": "a37ea7ef942e7c89808e807d4af6c9dc8c09781204f356c96f642b2822ebfd19"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('afterUpdate','E32BA62Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_007|'+encoded);",
+              "operationSHA256": "a37ea7ef942e7c89808e807d4af6c9dc8c09781204f356c96f642b2822ebfd19",
+              "captureSourceSHA256": {
+                "E32BA62C187TRIGGER007": "8c8c1f3395982a0600a6f34077e9139742c9c431326e302de0a17e72352b089e"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('afterUpdate','E32BA67Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_007|'+encoded);",
+              "operationSHA256": "6dfdf4e846e0042e939b89efcc51f40b466c2cd686f7ad38aaacd2c527c187ca",
+              "captureSourceSHA256": {
+                "anonymous": "6dfdf4e846e0042e939b89efcc51f40b466c2cd686f7ad38aaacd2c527c187ca"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('afterUpdate','E32BA67Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_007|'+encoded);",
+              "operationSHA256": "6dfdf4e846e0042e939b89efcc51f40b466c2cd686f7ad38aaacd2c527c187ca",
+              "captureSourceSHA256": {
+                "E32BA67C187TRIGGER007": "0f2b94d74d4acf836c6637d38738854667a8ef155caa2eaa88b6718b39a364f0"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('afterUpdate','E32BA68Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_007|'+encoded);",
+              "operationSHA256": "36e56ec29d10a85b3958ac5ff3fd56c17fdd1dbc1ce615da446552bb326a18da",
+              "captureSourceSHA256": {
+                "anonymous": "36e56ec29d10a85b3958ac5ff3fd56c17fdd1dbc1ce615da446552bb326a18da"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('afterUpdate','E32BA68Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_007|'+encoded);",
+              "operationSHA256": "36e56ec29d10a85b3958ac5ff3fd56c17fdd1dbc1ce615da446552bb326a18da",
+              "captureSourceSHA256": {
+                "E32BA68C187TRIGGER007": "4b80c26ca2f82a80d76df99515d2788460086487d8035f0748b290b8b9015696"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187TRIGGER_008",
+      "label": "beforeDelete explicit clone input",
+      "config": {
+        "stage": "beforeDelete",
+        "clone": true,
+        "flow": "Name"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeDelete','E32BA62Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_008|'+encoded);",
+              "operationSHA256": "62e76f53add5bd0a8b4028f5f05dcff89fdc396f24898d9a2fe69333278949c7",
+              "captureSourceSHA256": {
+                "anonymous": "62e76f53add5bd0a8b4028f5f05dcff89fdc396f24898d9a2fe69333278949c7"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeDelete','E32BA62Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_008|'+encoded);",
+              "operationSHA256": "62e76f53add5bd0a8b4028f5f05dcff89fdc396f24898d9a2fe69333278949c7",
+              "captureSourceSHA256": {
+                "E32BA62C187TRIGGER008": "0391ca32d9520d89b30c004e5ea363ff022477ac64de774d34c6069586c61731"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeDelete','E32BA67Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_008|'+encoded);",
+              "operationSHA256": "57a13807e5eb89f4a739912a195eb53dfe75573c5dcc0a25fe2f74d893d1c25d",
+              "captureSourceSHA256": {
+                "anonymous": "57a13807e5eb89f4a739912a195eb53dfe75573c5dcc0a25fe2f74d893d1c25d"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeDelete','E32BA67Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_008|'+encoded);",
+              "operationSHA256": "57a13807e5eb89f4a739912a195eb53dfe75573c5dcc0a25fe2f74d893d1c25d",
+              "captureSourceSHA256": {
+                "E32BA67C187TRIGGER008": "10206e894a45840a558add2216c40649c0bd28e00f79be058e32ce69ac94f112"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeDelete','E32BA68Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_008|'+encoded);",
+              "operationSHA256": "fcedb1a500ffa93a37908118ffcf360ba050744666590f31c24b2ce37c5841ee",
+              "captureSourceSHA256": {
+                "anonymous": "fcedb1a500ffa93a37908118ffcf360ba050744666590f31c24b2ce37c5841ee"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeDelete','E32BA68Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_008|'+encoded);",
+              "operationSHA256": "fcedb1a500ffa93a37908118ffcf360ba050744666590f31c24b2ce37c5841ee",
+              "captureSourceSHA256": {
+                "E32BA68C187TRIGGER008": "2c3ee0bbdecb2c92748f5b508a7a1fe578a070741cc41f7ee458de8a506e1a68"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187TRIGGER_009",
+      "label": "afterDelete explicit clone input",
+      "config": {
+        "stage": "afterDelete",
+        "clone": true,
+        "flow": "Name"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('afterDelete','E32BA62Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_009|'+encoded);",
+              "operationSHA256": "c0473dedb066c94476c2a5a9a56b937fd328465c32eb24d30b2892a7656cb922",
+              "captureSourceSHA256": {
+                "anonymous": "c0473dedb066c94476c2a5a9a56b937fd328465c32eb24d30b2892a7656cb922"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('afterDelete','E32BA62Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_009|'+encoded);",
+              "operationSHA256": "c0473dedb066c94476c2a5a9a56b937fd328465c32eb24d30b2892a7656cb922",
+              "captureSourceSHA256": {
+                "E32BA62C187TRIGGER009": "fa52422a9dd396fa9992934edab047c4e5af046b3b4318edbd1881bc77d7fd32"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('afterDelete','E32BA67Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_009|'+encoded);",
+              "operationSHA256": "1da616363398b4e6f1be096c1c1fd5acb12e32c1ca9e5a3f2b1e9595d0c9bf92",
+              "captureSourceSHA256": {
+                "anonymous": "1da616363398b4e6f1be096c1c1fd5acb12e32c1ca9e5a3f2b1e9595d0c9bf92"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('afterDelete','E32BA67Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_009|'+encoded);",
+              "operationSHA256": "1da616363398b4e6f1be096c1c1fd5acb12e32c1ca9e5a3f2b1e9595d0c9bf92",
+              "captureSourceSHA256": {
+                "E32BA67C187TRIGGER009": "4e70d145bc02babd3d9abc5aa8feee457fa66484e8f8469977a586401ba8feb7"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('afterDelete','E32BA68Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_009|'+encoded);",
+              "operationSHA256": "7d865720733d28ad1b6675a34fd7394a78caa5f8ec38f6ab30953bdc835f4b97",
+              "captureSourceSHA256": {
+                "anonymous": "7d865720733d28ad1b6675a34fd7394a78caa5f8ec38f6ab30953bdc835f4b97"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('afterDelete','E32BA68Name',true,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_009|'+encoded);",
+              "operationSHA256": "7d865720733d28ad1b6675a34fd7394a78caa5f8ec38f6ab30953bdc835f4b97",
+              "captureSourceSHA256": {
+                "E32BA68C187TRIGGER009": "9ad5ce849cf73dc5b087131c4fdc0cc03597c464c38b4135d11e2c49a641b04f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187TRIGGER_010",
+      "label": "beforeUpdate Null graph write-back twin",
+      "config": {
+        "stage": "beforeUpdate",
+        "clone": false,
+        "flow": "Null"
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeUpdate','E32BA62Null',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_010|'+encoded);",
+              "operationSHA256": "0824c5f0fd32afe7b008372908df519cee9a70f1b53dd1055f5696c00473b89d",
+              "captureSourceSHA256": {
+                "anonymous": "0824c5f0fd32afe7b008372908df519cee9a70f1b53dd1055f5696c00473b89d"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeUpdate','E32BA62Null',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_010|'+encoded);",
+              "operationSHA256": "0824c5f0fd32afe7b008372908df519cee9a70f1b53dd1055f5696c00473b89d",
+              "captureSourceSHA256": {
+                "E32BA62C187TRIGGER010": "982e02c158323bcb6f2375dc6d7f7cc16fc28b2157b44fd6330e259df03df150"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeUpdate','E32BA67Null',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_010|'+encoded);",
+              "operationSHA256": "ca2abf68194db0a3c4db632858402cd537b49ea33bf9d5771d23ac2d85370193",
+              "captureSourceSHA256": {
+                "anonymous": "ca2abf68194db0a3c4db632858402cd537b49ea33bf9d5771d23ac2d85370193"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeUpdate','E32BA67Null',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_010|'+encoded);",
+              "operationSHA256": "ca2abf68194db0a3c4db632858402cd537b49ea33bf9d5771d23ac2d85370193",
+              "captureSourceSHA256": {
+                "E32BA67C187TRIGGER010": "9ab1e4e757423577b85c477f53477204ae83ef366bd59a12e356ed1ddcc0673d"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeUpdate','E32BA68Null',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_010|'+encoded);",
+              "operationSHA256": "c2ee35ffe88832277ef960633e4ba431010c7ba31e3ef406214c1ecd551d95cb",
+              "captureSourceSHA256": {
+                "anonymous": "c2ee35ffe88832277ef960633e4ba431010c7ba31e3ef406214c1ecd551d95cb"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeUpdate','E32BA68Null',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187TRIGGER_010|'+encoded);",
+              "operationSHA256": "c2ee35ffe88832277ef960633e4ba431010c7ba31e3ef406214c1ecd551d95cb",
+              "captureSourceSHA256": {
+                "E32BA68C187TRIGGER010": "f248f2ca46863a78cfd025fb4f4ff3bef8f3a904e12136403320dfe123e2e00c"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": [
+                        "same",
+                        "Foo",
+                        null,
+                        "Technology"
+                      ],
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired",
+                        "record"
+                      ],
+                      "outputPresent": true,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "Foo",
+                    null,
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

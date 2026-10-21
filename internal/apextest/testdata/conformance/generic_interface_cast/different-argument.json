@@ -1,0 +1,774 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "different-argument",
+  "shapeCount": 5,
+  "nativeObservationCount": 30,
+  "rows": [
+    {
+      "id": "C169GI_041",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "sourcesByAPI": {
+            "62.0": {
+              "classes": {
+                "C169CmpObject": "public class C169CmpObject implements System.Comparator<Object>{public Integer compare(Object a,Object b){return String.valueOf(a)==String.valueOf(b)?0:1;}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169CmpObject();System.Comparator<String> c=(System.Comparator<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_041|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_041|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169CmpObject": "1cf997694c48dd744f62c4ab38b6548eaf5913045d8fe240b6300fff7c1d2789",
+                "anonymous": "90842a73c59b8000479dc1d8803bb6ce64546f132da8f4a68a4c0059205e3107"
+              }
+            },
+            "67.0": {
+              "classes": {
+                "C169CmpObject": "public class C169CmpObject implements System.Comparator<Object>{public Integer compare(Object a,Object b){return String.valueOf(a)==String.valueOf(b)?0:1;}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169CmpObject();System.Comparator<String> c=(System.Comparator<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_041|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_041|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169CmpObject": "1cf997694c48dd744f62c4ab38b6548eaf5913045d8fe240b6300fff7c1d2789",
+                "anonymous": "90842a73c59b8000479dc1d8803bb6ce64546f132da8f4a68a4c0059205e3107"
+              }
+            },
+            "68.0": {
+              "classes": {
+                "C169CmpObject": "public class C169CmpObject implements System.Comparator<Object>{public Integer compare(Object a,Object b){return String.valueOf(a)==String.valueOf(b)?0:1;}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169CmpObject();System.Comparator<String> c=(System.Comparator<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_041|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_041|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169CmpObject": "1cf997694c48dd744f62c4ab38b6548eaf5913045d8fe240b6300fff7c1d2789",
+                "anonymous": "90842a73c59b8000479dc1d8803bb6ce64546f132da8f4a68a4c0059205e3107"
+              }
+            }
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            }
+          }
+        },
+        "isTest": {
+          "sourcesByAPI": {
+            "62.0": {
+              "classes": {
+                "C169CmpObject": "public class C169CmpObject implements System.Comparator<Object>{public Integer compare(Object a,Object b){return String.valueOf(a)==String.valueOf(b)?0:1;}}",
+                "C169Observe041": "@IsTest private class C169Observe041{@IsTest static void observe(){String r;try{Object o=new C169CmpObject();System.Comparator<String> c=(System.Comparator<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_041|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_041|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe041"
+              ],
+              "sourceSha256": {
+                "class:C169CmpObject": "1cf997694c48dd744f62c4ab38b6548eaf5913045d8fe240b6300fff7c1d2789",
+                "class:C169Observe041": "687d82d5d961bd66b6cd1475ff084a3be645da5b1f84031431f8a4327f7d8818"
+              }
+            },
+            "67.0": {
+              "classes": {
+                "C169CmpObject": "public class C169CmpObject implements System.Comparator<Object>{public Integer compare(Object a,Object b){return String.valueOf(a)==String.valueOf(b)?0:1;}}",
+                "C169Observe041": "@IsTest private class C169Observe041{@IsTest static void observe(){String r;try{Object o=new C169CmpObject();System.Comparator<String> c=(System.Comparator<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_041|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_041|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe041"
+              ],
+              "sourceSha256": {
+                "class:C169CmpObject": "1cf997694c48dd744f62c4ab38b6548eaf5913045d8fe240b6300fff7c1d2789",
+                "class:C169Observe041": "687d82d5d961bd66b6cd1475ff084a3be645da5b1f84031431f8a4327f7d8818"
+              }
+            },
+            "68.0": {
+              "classes": {
+                "C169CmpObject": "public class C169CmpObject implements System.Comparator<Object>{public Integer compare(Object a,Object b){return String.valueOf(a)==String.valueOf(b)?0:1;}}",
+                "C169Observe041": "@IsTest private class C169Observe041{@IsTest static void observe(){String r;try{Object o=new C169CmpObject();System.Comparator<String> c=(System.Comparator<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_041|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_041|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe041"
+              ],
+              "sourceSha256": {
+                "class:C169CmpObject": "1cf997694c48dd744f62c4ab38b6548eaf5913045d8fe240b6300fff7c1d2789",
+                "class:C169Observe041": "687d82d5d961bd66b6cd1475ff084a3be645da5b1f84031431f8a4327f7d8818"
+              }
+            }
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C169GI_042",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "sourcesByAPI": {
+            "62.0": {
+              "classes": {
+                "C169BatchObject": "public class C169BatchObject implements Database.Batchable<Object>{public Iterable<Object> start(Database.BatchableContext c){return new List<Object>();}public void execute(Database.BatchableContext c,List<Object> scope){}public void finish(Database.BatchableContext c){}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169BatchObject();Database.Batchable<SObject> c=(Database.Batchable<SObject>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_042|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_042|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169BatchObject": "42a6a9b5432aa753c2e97a87a8089973e37916a733bafd5c8ee5b344b1df26cc",
+                "anonymous": "92457e15a2616103b09af9e567fe0c4a6f7bbfa015ccca9aeaa7643e2a0a6ed1"
+              }
+            },
+            "67.0": {
+              "classes": {
+                "C169BatchObject": "public class C169BatchObject implements Database.Batchable<Object>{public Iterable<Object> start(Database.BatchableContext c){return new List<Object>();}public void execute(Database.BatchableContext c,List<Object> scope){}public void finish(Database.BatchableContext c){}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169BatchObject();Database.Batchable<SObject> c=(Database.Batchable<SObject>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_042|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_042|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169BatchObject": "42a6a9b5432aa753c2e97a87a8089973e37916a733bafd5c8ee5b344b1df26cc",
+                "anonymous": "92457e15a2616103b09af9e567fe0c4a6f7bbfa015ccca9aeaa7643e2a0a6ed1"
+              }
+            },
+            "68.0": {
+              "classes": {
+                "C169BatchObject": "public class C169BatchObject implements Database.Batchable<Object>{public Iterable<Object> start(Database.BatchableContext c){return new List<Object>();}public void execute(Database.BatchableContext c,List<Object> scope){}public void finish(Database.BatchableContext c){}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169BatchObject();Database.Batchable<SObject> c=(Database.Batchable<SObject>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_042|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_042|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169BatchObject": "42a6a9b5432aa753c2e97a87a8089973e37916a733bafd5c8ee5b344b1df26cc",
+                "anonymous": "92457e15a2616103b09af9e567fe0c4a6f7bbfa015ccca9aeaa7643e2a0a6ed1"
+              }
+            }
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            }
+          }
+        },
+        "isTest": {
+          "sourcesByAPI": {
+            "62.0": {
+              "classes": {
+                "C169BatchObject": "public class C169BatchObject implements Database.Batchable<Object>{public Iterable<Object> start(Database.BatchableContext c){return new List<Object>();}public void execute(Database.BatchableContext c,List<Object> scope){}public void finish(Database.BatchableContext c){}}",
+                "C169Observe042": "@IsTest private class C169Observe042{@IsTest static void observe(){String r;try{Object o=new C169BatchObject();Database.Batchable<SObject> c=(Database.Batchable<SObject>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_042|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_042|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe042"
+              ],
+              "sourceSha256": {
+                "class:C169BatchObject": "42a6a9b5432aa753c2e97a87a8089973e37916a733bafd5c8ee5b344b1df26cc",
+                "class:C169Observe042": "25034fe1bb21142d295c133ee647a9da7d58b5bd48e3d485b3d2065a3119a613"
+              }
+            },
+            "67.0": {
+              "classes": {
+                "C169BatchObject": "public class C169BatchObject implements Database.Batchable<Object>{public Iterable<Object> start(Database.BatchableContext c){return new List<Object>();}public void execute(Database.BatchableContext c,List<Object> scope){}public void finish(Database.BatchableContext c){}}",
+                "C169Observe042": "@IsTest private class C169Observe042{@IsTest static void observe(){String r;try{Object o=new C169BatchObject();Database.Batchable<SObject> c=(Database.Batchable<SObject>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_042|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_042|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe042"
+              ],
+              "sourceSha256": {
+                "class:C169BatchObject": "42a6a9b5432aa753c2e97a87a8089973e37916a733bafd5c8ee5b344b1df26cc",
+                "class:C169Observe042": "25034fe1bb21142d295c133ee647a9da7d58b5bd48e3d485b3d2065a3119a613"
+              }
+            },
+            "68.0": {
+              "classes": {
+                "C169BatchObject": "public class C169BatchObject implements Database.Batchable<Object>{public Iterable<Object> start(Database.BatchableContext c){return new List<Object>();}public void execute(Database.BatchableContext c,List<Object> scope){}public void finish(Database.BatchableContext c){}}",
+                "C169Observe042": "@IsTest private class C169Observe042{@IsTest static void observe(){String r;try{Object o=new C169BatchObject();Database.Batchable<SObject> c=(Database.Batchable<SObject>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_042|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_042|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe042"
+              ],
+              "sourceSha256": {
+                "class:C169BatchObject": "42a6a9b5432aa753c2e97a87a8089973e37916a733bafd5c8ee5b344b1df26cc",
+                "class:C169Observe042": "25034fe1bb21142d295c133ee647a9da7d58b5bd48e3d485b3d2065a3119a613"
+              }
+            }
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C169GI_043",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "sourcesByAPI": {
+            "62.0": {
+              "classes": {
+                "C169BatchAccount": "public class C169BatchAccount implements Database.Batchable<Account>{public Iterable<Account> start(Database.BatchableContext c){return new List<Account>();}public void execute(Database.BatchableContext c,List<Account> scope){}public void finish(Database.BatchableContext c){}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169BatchAccount();Database.Batchable<Object> c=(Database.Batchable<Object>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_043|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_043|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169BatchAccount": "93eb048d4b443f1076bf8d99921fd18d7e9dd348c74e699c79cde2a3fd4226c1",
+                "anonymous": "c412eee43397f971b5159b70039e68c396777a5416bfa98aee9682c58c60a3e2"
+              }
+            },
+            "67.0": {
+              "classes": {
+                "C169BatchAccount": "public class C169BatchAccount implements Database.Batchable<Account>{public Iterable<Account> start(Database.BatchableContext c){return new List<Account>();}public void execute(Database.BatchableContext c,List<Account> scope){}public void finish(Database.BatchableContext c){}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169BatchAccount();Database.Batchable<Object> c=(Database.Batchable<Object>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_043|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_043|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169BatchAccount": "93eb048d4b443f1076bf8d99921fd18d7e9dd348c74e699c79cde2a3fd4226c1",
+                "anonymous": "c412eee43397f971b5159b70039e68c396777a5416bfa98aee9682c58c60a3e2"
+              }
+            },
+            "68.0": {
+              "classes": {
+                "C169BatchAccount": "public class C169BatchAccount implements Database.Batchable<Account>{public Iterable<Account> start(Database.BatchableContext c){return new List<Account>();}public void execute(Database.BatchableContext c,List<Account> scope){}public void finish(Database.BatchableContext c){}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169BatchAccount();Database.Batchable<Object> c=(Database.Batchable<Object>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_043|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_043|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169BatchAccount": "93eb048d4b443f1076bf8d99921fd18d7e9dd348c74e699c79cde2a3fd4226c1",
+                "anonymous": "c412eee43397f971b5159b70039e68c396777a5416bfa98aee9682c58c60a3e2"
+              }
+            }
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            }
+          }
+        },
+        "isTest": {
+          "sourcesByAPI": {
+            "62.0": {
+              "classes": {
+                "C169BatchAccount": "public class C169BatchAccount implements Database.Batchable<Account>{public Iterable<Account> start(Database.BatchableContext c){return new List<Account>();}public void execute(Database.BatchableContext c,List<Account> scope){}public void finish(Database.BatchableContext c){}}",
+                "C169Observe043": "@IsTest private class C169Observe043{@IsTest static void observe(){String r;try{Object o=new C169BatchAccount();Database.Batchable<Object> c=(Database.Batchable<Object>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_043|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_043|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe043"
+              ],
+              "sourceSha256": {
+                "class:C169BatchAccount": "93eb048d4b443f1076bf8d99921fd18d7e9dd348c74e699c79cde2a3fd4226c1",
+                "class:C169Observe043": "aafdba5e8d1e77e60265300cae93d1cafbe02a59cca8f3366db14a881d41281f"
+              }
+            },
+            "67.0": {
+              "classes": {
+                "C169BatchAccount": "public class C169BatchAccount implements Database.Batchable<Account>{public Iterable<Account> start(Database.BatchableContext c){return new List<Account>();}public void execute(Database.BatchableContext c,List<Account> scope){}public void finish(Database.BatchableContext c){}}",
+                "C169Observe043": "@IsTest private class C169Observe043{@IsTest static void observe(){String r;try{Object o=new C169BatchAccount();Database.Batchable<Object> c=(Database.Batchable<Object>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_043|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_043|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe043"
+              ],
+              "sourceSha256": {
+                "class:C169BatchAccount": "93eb048d4b443f1076bf8d99921fd18d7e9dd348c74e699c79cde2a3fd4226c1",
+                "class:C169Observe043": "aafdba5e8d1e77e60265300cae93d1cafbe02a59cca8f3366db14a881d41281f"
+              }
+            },
+            "68.0": {
+              "classes": {
+                "C169BatchAccount": "public class C169BatchAccount implements Database.Batchable<Account>{public Iterable<Account> start(Database.BatchableContext c){return new List<Account>();}public void execute(Database.BatchableContext c,List<Account> scope){}public void finish(Database.BatchableContext c){}}",
+                "C169Observe043": "@IsTest private class C169Observe043{@IsTest static void observe(){String r;try{Object o=new C169BatchAccount();Database.Batchable<Object> c=(Database.Batchable<Object>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_043|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_043|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe043"
+              ],
+              "sourceSha256": {
+                "class:C169BatchAccount": "93eb048d4b443f1076bf8d99921fd18d7e9dd348c74e699c79cde2a3fd4226c1",
+                "class:C169Observe043": "aafdba5e8d1e77e60265300cae93d1cafbe02a59cca8f3366db14a881d41281f"
+              }
+            }
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C169GI_044",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "sourcesByAPI": {
+            "62.0": {
+              "classes": {
+                "C169IterableObject": "public class C169IterableObject implements Iterable<Object>{public Iterator<Object> iterator(){return new C169IteratorObject();}}",
+                "C169IteratorObject": "public class C169IteratorObject implements Iterator<Object>{public Boolean hasNext(){return false;}public Object next(){return 'synthetic';}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169IterableObject();Iterable<String> c=(Iterable<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_044|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_044|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169IterableObject": "acce42cf43c15c276fc00b14bdd5ec7b3b2db9e8cb3cba9f8e41733b9336f18b",
+                "class:C169IteratorObject": "2d58295b51adf4d4ad153769777979c146b69744d263fd33d570ff57f57f7536",
+                "anonymous": "bd5c4df8b3ca3fcbcc172cdaa23d36fa3d61577c582c1b9570dcc3ad457916ec"
+              }
+            },
+            "67.0": {
+              "classes": {
+                "C169IterableObject": "public class C169IterableObject implements Iterable<Object>{public Iterator<Object> iterator(){return new C169IteratorObject();}}",
+                "C169IteratorObject": "public class C169IteratorObject implements Iterator<Object>{public Boolean hasNext(){return false;}public Object next(){return 'synthetic';}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169IterableObject();Iterable<String> c=(Iterable<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_044|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_044|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169IterableObject": "acce42cf43c15c276fc00b14bdd5ec7b3b2db9e8cb3cba9f8e41733b9336f18b",
+                "class:C169IteratorObject": "2d58295b51adf4d4ad153769777979c146b69744d263fd33d570ff57f57f7536",
+                "anonymous": "bd5c4df8b3ca3fcbcc172cdaa23d36fa3d61577c582c1b9570dcc3ad457916ec"
+              }
+            },
+            "68.0": {
+              "classes": {
+                "C169IterableObject": "public class C169IterableObject implements Iterable<Object>{public Iterator<Object> iterator(){return new C169IteratorObject();}}",
+                "C169IteratorObject": "public class C169IteratorObject implements Iterator<Object>{public Boolean hasNext(){return false;}public Object next(){return 'synthetic';}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169IterableObject();Iterable<String> c=(Iterable<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_044|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_044|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169IterableObject": "acce42cf43c15c276fc00b14bdd5ec7b3b2db9e8cb3cba9f8e41733b9336f18b",
+                "class:C169IteratorObject": "2d58295b51adf4d4ad153769777979c146b69744d263fd33d570ff57f57f7536",
+                "anonymous": "bd5c4df8b3ca3fcbcc172cdaa23d36fa3d61577c582c1b9570dcc3ad457916ec"
+              }
+            }
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            }
+          }
+        },
+        "isTest": {
+          "sourcesByAPI": {
+            "62.0": {
+              "classes": {
+                "C169IterableObject": "public class C169IterableObject implements Iterable<Object>{public Iterator<Object> iterator(){return new C169IteratorObject();}}",
+                "C169IteratorObject": "public class C169IteratorObject implements Iterator<Object>{public Boolean hasNext(){return false;}public Object next(){return 'synthetic';}}",
+                "C169Observe044": "@IsTest private class C169Observe044{@IsTest static void observe(){String r;try{Object o=new C169IterableObject();Iterable<String> c=(Iterable<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_044|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_044|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe044"
+              ],
+              "sourceSha256": {
+                "class:C169IterableObject": "acce42cf43c15c276fc00b14bdd5ec7b3b2db9e8cb3cba9f8e41733b9336f18b",
+                "class:C169IteratorObject": "2d58295b51adf4d4ad153769777979c146b69744d263fd33d570ff57f57f7536",
+                "class:C169Observe044": "f5b29ed6199d91e9c7d96ebc43af0a7d61d6404ccd6dff03eba3b5e44314baca"
+              }
+            },
+            "67.0": {
+              "classes": {
+                "C169IterableObject": "public class C169IterableObject implements Iterable<Object>{public Iterator<Object> iterator(){return new C169IteratorObject();}}",
+                "C169IteratorObject": "public class C169IteratorObject implements Iterator<Object>{public Boolean hasNext(){return false;}public Object next(){return 'synthetic';}}",
+                "C169Observe044": "@IsTest private class C169Observe044{@IsTest static void observe(){String r;try{Object o=new C169IterableObject();Iterable<String> c=(Iterable<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_044|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_044|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe044"
+              ],
+              "sourceSha256": {
+                "class:C169IterableObject": "acce42cf43c15c276fc00b14bdd5ec7b3b2db9e8cb3cba9f8e41733b9336f18b",
+                "class:C169IteratorObject": "2d58295b51adf4d4ad153769777979c146b69744d263fd33d570ff57f57f7536",
+                "class:C169Observe044": "f5b29ed6199d91e9c7d96ebc43af0a7d61d6404ccd6dff03eba3b5e44314baca"
+              }
+            },
+            "68.0": {
+              "classes": {
+                "C169IterableObject": "public class C169IterableObject implements Iterable<Object>{public Iterator<Object> iterator(){return new C169IteratorObject();}}",
+                "C169IteratorObject": "public class C169IteratorObject implements Iterator<Object>{public Boolean hasNext(){return false;}public Object next(){return 'synthetic';}}",
+                "C169Observe044": "@IsTest private class C169Observe044{@IsTest static void observe(){String r;try{Object o=new C169IterableObject();Iterable<String> c=(Iterable<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_044|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_044|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe044"
+              ],
+              "sourceSha256": {
+                "class:C169IterableObject": "acce42cf43c15c276fc00b14bdd5ec7b3b2db9e8cb3cba9f8e41733b9336f18b",
+                "class:C169IteratorObject": "2d58295b51adf4d4ad153769777979c146b69744d263fd33d570ff57f57f7536",
+                "class:C169Observe044": "f5b29ed6199d91e9c7d96ebc43af0a7d61d6404ccd6dff03eba3b5e44314baca"
+              }
+            }
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C169GI_045",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "sourcesByAPI": {
+            "62.0": {
+              "classes": {
+                "C169IteratorObject": "public class C169IteratorObject implements Iterator<Object>{public Boolean hasNext(){return false;}public Object next(){return 'synthetic';}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169IteratorObject();Iterator<String> c=(Iterator<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_045|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_045|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169IteratorObject": "2d58295b51adf4d4ad153769777979c146b69744d263fd33d570ff57f57f7536",
+                "anonymous": "587b1b798105ce77ebdb12f238821fac580ef430825c786dbd7a19fb871bd277"
+              }
+            },
+            "67.0": {
+              "classes": {
+                "C169IteratorObject": "public class C169IteratorObject implements Iterator<Object>{public Boolean hasNext(){return false;}public Object next(){return 'synthetic';}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169IteratorObject();Iterator<String> c=(Iterator<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_045|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_045|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169IteratorObject": "2d58295b51adf4d4ad153769777979c146b69744d263fd33d570ff57f57f7536",
+                "anonymous": "587b1b798105ce77ebdb12f238821fac580ef430825c786dbd7a19fb871bd277"
+              }
+            },
+            "68.0": {
+              "classes": {
+                "C169IteratorObject": "public class C169IteratorObject implements Iterator<Object>{public Boolean hasNext(){return false;}public Object next(){return 'synthetic';}}"
+              },
+              "tests": [],
+              "anonymous": "String r;try{Object o=new C169IteratorObject();Iterator<String> c=(Iterator<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_045|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_045|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+              "sourceSha256": {
+                "class:C169IteratorObject": "2d58295b51adf4d4ad153769777979c146b69744d263fd33d570ff57f57f7536",
+                "anonymous": "587b1b798105ce77ebdb12f238821fac580ef430825c786dbd7a19fb871bd277"
+              }
+            }
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            }
+          }
+        },
+        "isTest": {
+          "sourcesByAPI": {
+            "62.0": {
+              "classes": {
+                "C169IteratorObject": "public class C169IteratorObject implements Iterator<Object>{public Boolean hasNext(){return false;}public Object next(){return 'synthetic';}}",
+                "C169Observe045": "@IsTest private class C169Observe045{@IsTest static void observe(){String r;try{Object o=new C169IteratorObject();Iterator<String> c=(Iterator<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_045|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_045|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe045"
+              ],
+              "sourceSha256": {
+                "class:C169IteratorObject": "2d58295b51adf4d4ad153769777979c146b69744d263fd33d570ff57f57f7536",
+                "class:C169Observe045": "f4c5bb5c89c2b32af94613f982bdcac9811502cc863d38339764bc7648920bfb"
+              }
+            },
+            "67.0": {
+              "classes": {
+                "C169IteratorObject": "public class C169IteratorObject implements Iterator<Object>{public Boolean hasNext(){return false;}public Object next(){return 'synthetic';}}",
+                "C169Observe045": "@IsTest private class C169Observe045{@IsTest static void observe(){String r;try{Object o=new C169IteratorObject();Iterator<String> c=(Iterator<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_045|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_045|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe045"
+              ],
+              "sourceSha256": {
+                "class:C169IteratorObject": "2d58295b51adf4d4ad153769777979c146b69744d263fd33d570ff57f57f7536",
+                "class:C169Observe045": "f4c5bb5c89c2b32af94613f982bdcac9811502cc863d38339764bc7648920bfb"
+              }
+            },
+            "68.0": {
+              "classes": {
+                "C169IteratorObject": "public class C169IteratorObject implements Iterator<Object>{public Boolean hasNext(){return false;}public Object next(){return 'synthetic';}}",
+                "C169Observe045": "@IsTest private class C169Observe045{@IsTest static void observe(){String r;try{Object o=new C169IteratorObject();Iterator<String> c=(Iterator<String>)o;r=String.valueOf(c!=null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C169GI_045|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C169GI_045|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+              },
+              "tests": [
+                "C169Observe045"
+              ],
+              "sourceSha256": {
+                "class:C169IteratorObject": "2d58295b51adf4d4ad153769777979c146b69744d263fd33d570ff57f57f7536",
+                "class:C169Observe045": "f4c5bb5c89c2b32af94613f982bdcac9811502cc863d38339764bc7648920bfb"
+              }
+            }
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "true"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"true\"}"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+api=67.0
+context=anonymous
+rows=6
+native_complete=true
+deployment_success=true
+helper_class_api=67.0
+wrapper_class_api=67.0
+captured_utc=2026-10-19T03:19:24.821131+00:00
+SeededIdentityProbe.cls_sha256=d0410ea04dfc7fceab4ae0d2d48d04c54905b4ae46ad6ffda5c7a9ec21f490fc
+anonymous.apex_sha256=b99908320bbecc937fc6537c67e9b084351afbea773cb748a7af3622ef3b90b7

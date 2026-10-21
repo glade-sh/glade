@@ -1,0 +1,233 @@
+{
+  "description": "Owned native namespaced Contact checkbox FLS observations. Standard User profile, Salesforce license, Standard user type, object read/edit allowed. Namespace is mapped to a synthetic name in the replay. Source APIs55/62/67; Metadata transport67. Assertions carry observations; these are not passing native tests.",
+  "cells": [
+    {
+      "sourceApi": "55.0",
+      "scenario": "combined",
+      "object": [
+        true,
+        true
+      ],
+      "a": [
+        true,
+        true
+      ],
+      "b": [
+        true,
+        true
+      ],
+      "explicitAssignments": 2,
+      "profileAssignments": 1,
+      "profileOwnedFieldRows": 0
+    },
+    {
+      "sourceApi": "55.0",
+      "scenario": "grant",
+      "object": [
+        true,
+        true
+      ],
+      "a": [
+        true,
+        true
+      ],
+      "b": [
+        true,
+        true
+      ],
+      "explicitAssignments": 1,
+      "profileAssignments": 1,
+      "profileOwnedFieldRows": 0
+    },
+    {
+      "sourceApi": "55.0",
+      "scenario": "missing",
+      "object": [
+        true,
+        true
+      ],
+      "a": [
+        false,
+        false
+      ],
+      "b": [
+        false,
+        false
+      ],
+      "explicitAssignments": 1,
+      "profileAssignments": 1,
+      "profileOwnedFieldRows": 0
+    },
+    {
+      "sourceApi": "55.0",
+      "scenario": "noEdit",
+      "object": [
+        true,
+        true
+      ],
+      "a": [
+        true,
+        false
+      ],
+      "b": [
+        false,
+        false
+      ],
+      "explicitAssignments": 1,
+      "profileAssignments": 1,
+      "profileOwnedFieldRows": 0
+    },
+    {
+      "sourceApi": "62.0",
+      "scenario": "combined",
+      "object": [
+        true,
+        true
+      ],
+      "a": [
+        true,
+        true
+      ],
+      "b": [
+        true,
+        true
+      ],
+      "explicitAssignments": 2,
+      "profileAssignments": 1,
+      "profileOwnedFieldRows": 0
+    },
+    {
+      "sourceApi": "62.0",
+      "scenario": "grant",
+      "object": [
+        true,
+        true
+      ],
+      "a": [
+        true,
+        true
+      ],
+      "b": [
+        true,
+        true
+      ],
+      "explicitAssignments": 1,
+      "profileAssignments": 1,
+      "profileOwnedFieldRows": 0
+    },
+    {
+      "sourceApi": "62.0",
+      "scenario": "missing",
+      "object": [
+        true,
+        true
+      ],
+      "a": [
+        false,
+        false
+      ],
+      "b": [
+        false,
+        false
+      ],
+      "explicitAssignments": 1,
+      "profileAssignments": 1,
+      "profileOwnedFieldRows": 0
+    },
+    {
+      "sourceApi": "62.0",
+      "scenario": "noEdit",
+      "object": [
+        true,
+        true
+      ],
+      "a": [
+        true,
+        false
+      ],
+      "b": [
+        false,
+        false
+      ],
+      "explicitAssignments": 1,
+      "profileAssignments": 1,
+      "profileOwnedFieldRows": 0
+    },
+    {
+      "sourceApi": "67.0",
+      "scenario": "combined",
+      "object": [
+        true,
+        true
+      ],
+      "a": [
+        true,
+        true
+      ],
+      "b": [
+        true,
+        true
+      ],
+      "explicitAssignments": 2,
+      "profileAssignments": 1,
+      "profileOwnedFieldRows": 0
+    },
+    {
+      "sourceApi": "67.0",
+      "scenario": "grant",
+      "object": [
+        true,
+        true
+      ],
+      "a": [
+        true,
+        true
+      ],
+      "b": [
+        true,
+        true
+      ],
+      "explicitAssignments": 1,
+      "profileAssignments": 1,
+      "profileOwnedFieldRows": 0
+    },
+    {
+      "sourceApi": "67.0",
+      "scenario": "missing",
+      "object": [
+        true,
+        true
+      ],
+      "a": [
+        false,
+        false
+      ],
+      "b": [
+        false,
+        false
+      ],
+      "explicitAssignments": 1,
+      "profileAssignments": 1,
+      "profileOwnedFieldRows": 0
+    },
+    {
+      "sourceApi": "67.0",
+      "scenario": "noEdit",
+      "object": [
+        true,
+        true
+      ],
+      "a": [
+        true,
+        false
+      ],
+      "b": [
+        false,
+        false
+      ],
+      "explicitAssignments": 1,
+      "profileAssignments": 1,
+      "profileOwnedFieldRows": 0
+    }
+  ]
+}

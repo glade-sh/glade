@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -14,12 +15,17 @@ import (
 )
 
 type stringFamilyCase struct {
-	ID            string `json:"id"`
-	Code          string `json:"code"`
-	Compile       bool   `json:"compile"`
-	Expected      string `json:"expected"`
-	FloorExpected string `json:"floorExpected"`
-	NativeBlocker string `json:"nativeBlocker,omitempty"`
+	ID               string `json:"id"`
+	Code             string `json:"code"`
+	Compile          bool   `json:"compile"`
+	Expected         string `json:"expected"`
+	FloorExpected    string `json:"floorExpected"`
+	NativeBlocker    string `json:"nativeBlocker,omitempty"`
+	API68Observation *struct {
+		APIVersion, Route, Category, CodeSHA256 string
+		Compiled                                bool
+		Success                                 *bool
+	} `json:"api68Observation,omitempty"`
 }
 
 func loadStringFamilyCases(t *testing.T) []stringFamilyCase {
@@ -34,6 +40,25 @@ func loadStringFamilyCases(t *testing.T) []stringFamilyCase {
 	}
 	if len(cases) != 300 {
 		t.Fatalf("cases=%d want=300", len(cases))
+	}
+	blocked := 0
+	for _, tc := range cases {
+		if tc.NativeBlocker == "" {
+			continue
+		}
+		if tc.ID != "R291" {
+			t.Fatalf("unexpected native blocker %s", tc.ID)
+		}
+		observation := tc.API68Observation
+		if observation == nil || observation.APIVersion != "68.0" || observation.Route != "anonymous" ||
+			!observation.Compiled || observation.Success == nil || *observation.Success ||
+			observation.Category != tc.Expected || observation.CodeSHA256 != fmt.Sprintf("%x", sha256.Sum256([]byte(tc.Code))) {
+			t.Fatalf("incomplete API68 native blocker observation for %s: %+v", tc.ID, observation)
+		}
+		blocked++
+	}
+	if blocked != 1 {
+		t.Fatalf("native blockers=%d want=1 (R291)", blocked)
 	}
 	return cases
 }
@@ -52,8 +77,12 @@ func stringFamilyAssertion(tc stringFamilyCase, api string) string {
 }
 
 // API62 anonymous oracle rows are an owned native export.
-// API67 keeps its existing oracle and assertions. API63-66 exercise the API67
-// projection; those versions have no native capture in this fixture.
+// API68 anonymous capture at native-capture has
+// SHA-256 5036dff7109069d85cce63deaaf1d5cf0544c9da813dc3a9100b7653bf2e8e93.
+// Its 299 stable answers match the API67 oracle. The later direct capture in
+// R291's api68Observation records an uncaught native system error. R291 remains
+// excluded from executable parity; the request-specific error IDs stay private.
+// API63-66 exercise the API67 projection without native captures.
 // No Salesforce CLI, credentials or network is used.
 func TestStringFamilyConformanceAnonymous(t *testing.T) {
 	cases := loadStringFamilyCases(t)
@@ -64,15 +93,18 @@ func TestStringFamilyConformanceAnonymous(t *testing.T) {
 		}
 	}
 	floorMismatches := newFloorCompilerMismatches(t, "String", nativeCompilerRows, "anonymous")
-	for _, api := range []string{"62.0", "63.0", "64.0", "65.0", "66.0", "67.0"} {
+	for _, api := range []string{"62.0", "63.0", "64.0", "65.0", "66.0", "67.0", "68.0"} {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "String", api)
-			if api != "62.0" && api != "67.0" {
+			if api != "62.0" && api != "67.0" && api != "68.0" {
 				t.Logf("String API %s expectations project the API 67.0 oracle; no native capture at API %s", api, api)
 			}
 			for _, tc := range cases {
 				if tc.NativeBlocker != "" {
 					t.Logf("%s excluded from executable conformance: %s", tc.ID, tc.NativeBlocker)
+					if api == "68.0" {
+						t.Logf("%s API68 anonymous native failure captured (%s); no local parity count", tc.ID, tc.API68Observation.Category)
+					}
 					continue
 				}
 				kind := "exact"
@@ -111,12 +143,15 @@ func TestStringFamilyConformanceAnonymous(t *testing.T) {
 	}
 }
 
+// The @IsTest route checks local execution against anonymous native values;
+// this family has no native named-method capture.
 func TestStringFamilyConformanceIsTestClass(t *testing.T) {
 	cases := loadStringFamilyCases(t)
-	for _, api := range []string{"62.0", "63.0", "64.0", "65.0", "66.0", "67.0"} {
+	t.Log("API68 named checks are local assertions against anonymous native values; no native named capture, R291 remains excluded")
+	for _, api := range []string{"62.0", "63.0", "64.0", "65.0", "66.0", "67.0", "68.0"} {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "String", api)
-			if api != "62.0" && api != "67.0" {
+			if api != "62.0" && api != "67.0" && api != "68.0" {
 				t.Logf("String API %s expectations project the API 67.0 oracle; no native capture at API %s", api, api)
 			}
 			root := t.TempDir()

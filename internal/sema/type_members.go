@@ -20,9 +20,12 @@ type typeMembers struct {
 	shortKey                          string
 	namespace                         string
 	dependency                        bool
+	receiverDependencySource          bool
+	receiverDependencyPeers           []string
 	platform                          bool
 	sobject                           bool
 	platformEvent                     bool
+	generatedHistory                  bool
 	externalPackageSObject            bool
 	partialSObject                    bool
 	nestingDepth                      int
@@ -40,9 +43,13 @@ type typeMembers struct {
 }
 
 type semaTypeMemberModel struct {
-	members         map[string]typeMembers
-	shortCandidates map[string][]string
-	platform        *semaLazyPlatformTypeMemberModel
+	receiverDependencyInstalled bool
+	customLabelNames            map[string]bool
+	customLabelsKnown           bool
+	knowledgeEnabled            bool
+	members                     map[string]typeMembers
+	shortCandidates             map[string][]string
+	platform                    *semaLazyPlatformTypeMemberModel
 	// sourceTypesByFile retains duplicate source-backed type variants that
 	// share a global Apex name. A repository can contain independent SFDX
 	// packages with the same class name; method-body analysis must overlay the
@@ -457,6 +464,7 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 	}
 	var diagnostics []diagnostic.Diagnostic
 	bodyStarted := recorder.beginPhase()
+	diagnostics = append(diagnostics, a.checkFieldInitializerTypes(index, model, sources)...)
 	workItems := buildSemaMethodBodyWorkItems(index, sources)
 	if workerCount > 1 {
 		tasks := buildSemaMethodBodyTasks(index, workItems)
@@ -1043,6 +1051,7 @@ func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 		shortKey:                  semaShortTypeKey(typ.Name),
 		namespace:                 typ.Namespace,
 		dependency:                typ.Dependency,
+		receiverDependencySource:  typ.HasSourceSnapshot() && typ.SourceRoot != "" && !typ.Artifact,
 		nestingDepth:              typ.NestingDepth,
 		kind:                      typ.Kind,
 		superClass:                typ.SuperClass,
@@ -1106,6 +1115,7 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 			shortKey:                  semaShortTypeKey(typ.Name),
 			namespace:                 typ.Namespace,
 			dependency:                typ.Dependency,
+			receiverDependencySource:  typ.HasSourceSnapshot() && typ.SourceRoot != "" && !typ.Artifact,
 			nestingDepth:              typ.NestingDepth,
 			kind:                      typ.Kind,
 			superClass:                typ.SuperClass,
@@ -1229,9 +1239,12 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 			}
 		}
 		objectMembers.sobject = true
-		// Event contracts follow explicit object metadata, not API-name
-		// spelling. Partial field-only metadata must not erase this provenance.
-		objectMembers.platformEvent = objectMembers.platformEvent || strings.EqualFold(object.PublishBehavior, "PublishImmediately") || strings.EqualFold(object.PublishBehavior, "PublishAfterCommit")
+		objectMembers.generatedHistory = object.GeneratedHistoryParent != ""
+		// A complete __e object defines an event even when publishBehavior is
+		// omitted. Partial field-only metadata must not erase this provenance.
+		objectMembers.platformEvent = objectMembers.platformEvent ||
+			(!object.Partial && strings.HasSuffix(object.Name, "__e")) ||
+			strings.EqualFold(object.PublishBehavior, "PublishImmediately") || strings.EqualFold(object.PublishBehavior, "PublishAfterCommit")
 		objectMembers.partialSObject = objectMembers.partialSObject || object.Partial
 		if objectMembers.namespace == "" {
 			objectMembers.namespace = semaNamespaceFromAPIName(object.Name)
@@ -1242,16 +1255,22 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 		}
 		semaAddSObjectProviderMembers(&objectMembers, newSemaSObjectFieldProvider(projectNamespace, object), projectNamespace, index.Objects)
 		if object.CustomSettingsType == "" && strings.HasSuffix(strings.ToLower(object.Name), "__c") {
-			key := normalizeName("ContentDocumentLinks")
-			if _, declared := objectMembers.fields[key]; !declared {
-				objectMembers.fields[key] = typesys.MemberSymbol{
-					Kind:      apexast.DeclarationField,
-					Name:      "ContentDocumentLinks",
-					Type:      "List<ContentDocumentLink>",
-					Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
+			storage.VisitPlatformChildRelationships(storage.ObjectDefinition{APIName: object.Name}, func(child string, relationship storage.Relationship) {
+				if strings.EqualFold(relationship.ChildRelationship, "Shares") {
+					if _, shareable := semaShareObjectForSchemaObject(object); !shareable {
+						return
+					}
 				}
+				key := normalizeName(relationship.ChildRelationship)
+				if _, declared := objectMembers.fields[key]; !declared {
+					objectMembers.fields[key] = semaPlatformRelationshipMember(relationship.ChildRelationship, "List<"+child+">")
+				}
+			})
+			if _, declared := objectMembers.fields["userrecordaccess"]; !declared {
+				objectMembers.fields["userrecordaccess"] = semaPlatformRelationshipMember("UserRecordAccess", "UserRecordAccess")
 			}
 		}
+
 		for _, field := range object.Fields {
 			childRelationshipNames := []string{}
 			if field.ChildRelationshipName != "" {
@@ -1281,6 +1300,13 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 							kind:     apexast.DeclarationClass,
 							fields:   make(map[string]typesys.MemberSymbol),
 							methods:  make(map[string][]typesys.MemberSymbol),
+						}
+						// A relationship-only entry shadows the lazy platform
+						// object. Keep a known standard parent synthetic so its
+						// standard fields hydrate beside the child relationship.
+						if standardName, known := semaStandardSObjectNameForKey(parentKey); known {
+							parentMembers.name = standardName
+							parentMembers.syntheticStandardSObject = true
 						}
 					}
 				} else if parentMembers.fields == nil {
@@ -1348,12 +1374,24 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 		}
 		sourceUnitsWithDuplicates[sourceUnitByFile[typ.File]] = true
 	}
+	customLabelNames := make(map[string]bool, len(index.CustomLabelNames))
+	for _, name := range index.CustomLabelNames {
+		customLabelNames[normalizeName(name)] = true
+	}
 	model := &semaTypeMemberModel{
+		customLabelNames:          customLabelNames,
+		customLabelsKnown:         index.CustomLabelsKnown,
 		members:                   out,
 		sourceTypesByFile:         sourceTypesByFile,
 		sourceMembersByUnit:       sourceMembersByUnit,
 		sourceUnitsWithDuplicates: sourceUnitsWithDuplicates,
 		sourceUnitByFile:          sourceUnitByFile,
+	}
+	for _, feature := range index.OrgShapeFeatures {
+		if strings.EqualFold(feature, "Knowledge") {
+			model.knowledgeEnabled = true
+			break
+		}
 	}
 	view := newSemaTypeMemberStateWithPlatform(model, platform).view()
 	for unit, membersByKey := range sourceMembersByUnit {
@@ -1367,6 +1405,7 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 		out[key] = semaResolveTypeMembers(view, members)
 	}
 	model.shortCandidates = buildSemaShortCandidateIndex(out, semaTypeMemberCandidateKeys(index))
+	model.receiverDependencyInstalled = markReceiverDependencyPeers(out, index)
 	return model
 }
 
@@ -1873,22 +1912,40 @@ func semaStandardChildRelationshipKey(objectName string) string {
 func semaStandardChildRelationshipMembers(objectName string) []semaStandardChildRelationshipMember {
 	ensureSemaStandardChildRelationshipMembers()
 	key := semaStandardChildRelationshipKey(objectName)
-	return append([]semaStandardChildRelationshipMember(nil), semaStandardChildRelationshipCache.byParent[key]...)
+	members := append([]semaStandardChildRelationshipMember(nil), semaStandardChildRelationshipCache.byParent[key]...)
+	if !storage.IsKnownStandardObject(objectName) {
+		return members
+	}
+	seen := make(map[string]bool, len(members))
+	for _, member := range members {
+		seen[normalizeName(member.name)] = true
+	}
+	storage.VisitPlatformChildRelationships(storage.ObjectDefinition{APIName: objectName}, func(child string, relationship storage.Relationship) {
+		key := normalizeName(relationship.ChildRelationship)
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		members = append(members, semaStandardChildRelationshipMember{name: relationship.ChildRelationship, typ: "List<" + child + ">"})
+	})
+	return members
+}
+
+func semaPlatformRelationshipMember(name, typ string) typesys.MemberSymbol {
+	return typesys.MemberSymbol{Kind: apexast.DeclarationField, Name: name, Type: typ, Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier}}
 }
 
 func semaStandardChildRelationshipMemberForKey(objectName, fieldKey string) (typesys.MemberSymbol, bool) {
 	ensureSemaStandardChildRelationshipMembers()
-	key := semaStandardChildRelationshipKey(objectName)
-	for _, relationship := range semaStandardChildRelationshipCache.byParent[key] {
-		if normalizeName(relationship.name) != fieldKey {
-			continue
+	for _, relationship := range semaStandardChildRelationshipCache.byParent[semaStandardChildRelationshipKey(objectName)] {
+		if normalizeName(relationship.name) == fieldKey {
+			return semaPlatformRelationshipMember(relationship.name, relationship.typ), true
 		}
-		return typesys.MemberSymbol{
-			Kind:      apexast.DeclarationField,
-			Name:      relationship.name,
-			Type:      relationship.typ,
-			Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
-		}, true
+	}
+	if storage.IsKnownStandardObject(objectName) {
+		if child, relation, ok := storage.LookupPlatformChildRelationship(storage.ObjectDefinition{APIName: objectName}, fieldKey); ok {
+			return semaPlatformRelationshipMember(relation.ChildRelationship, "List<"+child+">"), true
+		}
 	}
 	return typesys.MemberSymbol{}, false
 }
@@ -2309,7 +2366,7 @@ func semaFallbackStandardSObjectFields(objectName string, synthetic bool) []sche
 			{Name: "CronExpression", Type: "Text"},
 			{Name: "TimesTriggered", Type: "Number"},
 			{Name: "NextFireTime", Type: "Datetime"},
-			{Name: "CronJobDetailId", Type: "Id"},
+			{Name: "CronJobDetailId", Type: "Lookup", ReferenceTo: []string{"CronJobDetail"}, RelationshipName: "CronJobDetail"},
 		}
 	case synthetic:
 		return []schema.Field{
@@ -2476,6 +2533,11 @@ func semaApexTypeForStorageField(field storage.Field) string {
 		return "Id"
 	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist:
 		return "String"
+	case storage.FieldCalculated:
+		if valueType := semaApexTypeForSchemaField(schema.Field{Type: semaSchemaTypeForStorageDisplayType(field.DisplayType)}); valueType != "" && valueType != "Object" {
+			return valueType
+		}
+		fallthrough
 	default:
 		if strings.HasSuffix(normalizeName(field.APIName), "address") {
 			return "Address"
@@ -2644,6 +2706,17 @@ func resolveNestedTypeName(model *semaTypeMemberView, owner, typeName string) st
 			return candidate
 		}
 	}
+	// Inherited project types keep lexical precedence. A project top-level type
+	// overrides a nested name only when inherited platform lookup finds it.
+	for end := strings.LastIndexByte(owner, '.'); end >= 0; end = strings.LastIndexByte(owner[:end], '.') {
+		enclosing := owner[:end]
+		if resolved := resolveNestedProjectTypeNameFromSuperclasses(model, enclosing, typeName); resolved != "" {
+			return resolved
+		}
+	}
+	if resolved := resolveNestedProjectTypeNameFromSuperclasses(model, owner, typeName); resolved != "" {
+		return resolved
+	}
 	for end := strings.LastIndexByte(owner, '.'); end >= 0; end = strings.LastIndexByte(owner[:end], '.') {
 		enclosing := owner[:end]
 		if resolved := resolveNestedTypeNameFromSuperclasses(model, enclosing, typeName); resolved != "" {
@@ -2668,8 +2741,42 @@ func semaSystemBuiltinBase(typeName string) bool {
 	}
 }
 
+func semaProjectTopLevelApexTypeName(model *semaTypeMemberView, typeName string) string {
+	members, ok := model.lookupName(typeName)
+	if !ok || members.platform || members.dependency || members.syntheticStandardSObject || members.nestingDepth != 0 {
+		return ""
+	}
+	switch members.kind {
+	case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
+		return members.name
+	default:
+		return ""
+	}
+}
+
 func resolveNestedTypeNameFromSuperclasses(model *semaTypeMemberView, owner, typeName string) string {
+	return resolveNestedTypeNameFromSuperclassesWithPlatform(model, owner, typeName, true)
+}
+
+func resolveNestedProjectTypeNameFromSuperclasses(model *semaTypeMemberView, owner, typeName string) string {
+	return resolveNestedTypeNameFromSuperclassesWithPlatform(model, owner, typeName, false)
+}
+
+func resolveNestedTypeNameFromSuperclassesWithPlatform(model *semaTypeMemberView, owner, typeName string, includePlatform bool) string {
 	seen := make(map[string]bool)
+	var enclosingOwners []string
+	resolveNested := func(candidate string) string {
+		members, ok := model.lookupName(candidate)
+		if !ok || (!includePlatform && members.platform) {
+			return ""
+		}
+		if includePlatform && members.platform {
+			if projectName := semaProjectTopLevelApexTypeName(model, typeName); projectName != "" {
+				return projectName
+			}
+		}
+		return candidate
+	}
 	for current := owner; current != ""; {
 		key := model.canonicalName(current)
 		if key == "" || seen[key] {
@@ -2681,10 +2788,20 @@ func resolveNestedTypeNameFromSuperclasses(model *semaTypeMemberView, owner, typ
 			break
 		}
 		candidate := members.superClass + "." + typeName
-		if _, ok := model.lookupName(candidate); ok {
-			return candidate
+		if resolved := resolveNested(candidate); resolved != "" {
+			return resolved
+		}
+		for enclosing := members.superClass; strings.Contains(enclosing, "."); {
+			enclosing = enclosing[:strings.LastIndexByte(enclosing, '.')]
+			enclosingOwners = append(enclosingOwners, enclosing)
 		}
 		current = members.superClass
+	}
+	for _, enclosing := range enclosingOwners {
+		candidate := enclosing + "." + typeName
+		if resolved := resolveNested(candidate); resolved != "" {
+			return resolved
+		}
 	}
 	return ""
 }

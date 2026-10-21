@@ -1,0 +1,28 @@
+{
+  "api": "67.0",
+  "checkOnly": true,
+  "status": "Failed",
+  "id": "0Afhv000000Wy98CAC",
+  "failures": [
+    {
+      "changed": false,
+      "columnNumber": 14,
+      "componentType": "ApexClass",
+      "created": false,
+      "createdDate": "2026-10-19T04:31:27.000Z",
+      "deleted": false,
+      "fileName": "classes/InterfaceOnlyDriver.cls",
+      "fullName": "InterfaceOnlyDriver",
+      "lineNumber": 1,
+      "problem": "Class InterfaceOnlyDriver must implement the method: String DriverHost.Driver.run(DriverHost.Request)",
+      "problemType": "Error",
+      "success": false
+    }
+  ],
+  "anonymous": {
+    "compiled": false,
+    "success": false,
+    "compileProblem": "Class TemporaryDriver must implement the method: String DriverHost.Driver.run(DriverHost.Request)",
+    "exceptionMessage": ""
+  }
+}

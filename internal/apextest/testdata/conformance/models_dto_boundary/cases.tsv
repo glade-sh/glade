@@ -1,0 +1,2 @@
+method	observation
+requestShape	ModelsAPI generation request and response DTO constructor/read-write shape without any hosted invocation

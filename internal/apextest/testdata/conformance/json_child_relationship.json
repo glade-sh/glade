@@ -1,0 +1,552 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "packetRowsSha256": "bdb07c4592ca774891f1569ddbb47b04d8979873883901e5e60ab5a6c6092167",
+  "nativeJsonSha256": "3371b4658cc7034d1461a6b1e24ebf443dbdfb588c66ae393a06296feaa30e65",
+  "sourceManifestSha256": "cd86500b7b47c95e1fe5992615a7f7169c90dd9d903e6776516d2162a3219255",
+  "rows": [
+    {
+      "id": "C126CHILDJSON_001",
+      "question": "Child envelope serialize/deserialize roundtrip",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126CHILDJSON_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "fd7b17cd1a812518da070c86f7181ef1f68af9b79e8c9de94d4b379043f24329"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "62cead8a99f5b0bf6dba268f82178345d4d26fcbed279bb81fb8b02e4d94a122",
+            "67.0": "d7d06af43770b5d64adf56dfd2e25206b2aff3272c5193c1d3d8e5bbf1b4df48",
+            "68.0": "78f3d5dd0fec0a4a3e8a86a5cf5eaef91a92ab39da2068335c1108e0f6ee48bd"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}',Account.class);String s=JSON.serialize(a);o.put('serialized',s);Account b=(Account)JSON.deserialize(s,Account.class);o.put('roundtrip',JSON.serialize(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126CHILDJSON_001|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126CHILDJSON_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "b0eab06b271616369c556db5c982efc518fe1f91230e959fb698fdbce5b8eef9"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "dcf03561801408166fb487c825e891035182e8bd44f4fcf4770ff3aa7e02afc3",
+            "67.0": "7649c73676176cd252b97ce45205ec69f0764e07f9f688e4254c2d5d213fe5b3",
+            "68.0": "4e3b206dd91347599211fe896fa241557ffb248b166f5f0158f7e83545c75b9b"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}',Account.class);String s=JSON.serialize(a);o.put('serialized',s);Account b=(Account)JSON.deserialize(s,Account.class);o.put('roundtrip',JSON.serialize(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126CHILDJSON_001|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126CHILDJSON_002",
+      "question": "Empty child envelope",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126CHILDJSON_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "1d3fbdc474bde5c228638c3bfe2ba549572a0bde96834c811e715e397bd8154a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "82c35e3383a9b5cc120ee8dc7fbbfeda69809703665e69f4645085a58adfcc0d",
+            "67.0": "331d98d9c1b5ed322272f631d5dbc59f94e74a8ec629741c035ebc3385eb0e45",
+            "68.0": "656b1a01d4d54ca9287df65fc9e5be792a041bffabd396577eb7514c631e3803"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}',Account.class);String s=JSON.serialize(a);o.put('serialized',s);Account b=(Account)JSON.deserialize(s,Account.class);o.put('roundtrip',JSON.serialize(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126CHILDJSON_002|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126CHILDJSON_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "3d039aa5bf08d2a089ee372379e2010e9954b7356079ae20f4994b80d5909c46"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "a92e64d4446b64fa9236f6487f5ad5d2386326c5f5dc9cc17cb5086ec6bc2f66",
+            "67.0": "13e25a2c655d5a14fd1a0e5eec4445e79e5c7439cbd96083ea4da1d490149e2e",
+            "68.0": "feba3e3a335967b919cc17f1833b226189bc32d685ee2fe87c8e4c64310ff834"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}',Account.class);String s=JSON.serialize(a);o.put('serialized',s);Account b=(Account)JSON.deserialize(s,Account.class);o.put('roundtrip',JSON.serialize(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126CHILDJSON_002|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126CHILDJSON_003",
+      "question": "Naked child array",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126CHILDJSON_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "bc8b72cb9cdc1f7bb2967cd8888c88692adaba585c804383048a0e798af80d50"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "QueryResult must start with '{'",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "QueryResult must start with '{'",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "QueryResult must start with '{'",
+                "exceptionType": "System.JSONException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "fcf72848c49e25b1bb476ff11f0d934f69b72ab929ea1e5e0e27fb28c6d812d5",
+            "67.0": "7d08ab28c639941e67c67543a00323f2cfd792cf57b6092f86e90029915fb411",
+            "68.0": "3dd2f408e0c0de014baf521e4b0d5d2c0260d7c52a0ccc3ec0ea58cb8f08c46e"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=(Account)JSON.deserialize('{\"Contacts\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}',Account.class);String s=JSON.serialize(a);o.put('serialized',s);Account b=(Account)JSON.deserialize(s,Account.class);o.put('roundtrip',JSON.serialize(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126CHILDJSON_003|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126CHILDJSON_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "e3900f73aa97612b3c0c4a65750c275c874caba0a6bf2603fdccf8556d4805b6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "QueryResult must start with '{'",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "QueryResult must start with '{'",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "QueryResult must start with '{'",
+                "exceptionType": "System.JSONException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "acd33a739d1f2e58dfb6b0f1c7200369e4b42795d5091d9bbdbe45d180b73ba6",
+            "67.0": "8b2adbd230db4418665ca6e5bb340bf4d0940d9f0a8c66f378430e6a460086a1",
+            "68.0": "e07d554d2ddc4982064fc6f2c856cba15c76d36a2a4c7874debf36fb76f94537"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=(Account)JSON.deserialize('{\"Contacts\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}',Account.class);String s=JSON.serialize(a);o.put('serialized',s);Account b=(Account)JSON.deserialize(s,Account.class);o.put('roundtrip',JSON.serialize(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126CHILDJSON_003|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126CHILDJSON_004",
+      "question": "Wrong child type",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126CHILDJSON_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "d05f2f7547a515e147e89b765502c749d599ee1b61941c9372e50b5f07960f6f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"Name\":\"Synthetic\"}]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"Name\":\"Synthetic\"}]}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"Name\":\"Synthetic\"}]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"Name\":\"Synthetic\"}]}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"Name\":\"Synthetic\"}]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"Name\":\"Synthetic\"}]}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "1f7d852671685309b6cea7b0ee99c76521ff0f847a08fc3d29e381975baa4de6",
+            "67.0": "7002527ef9bd958cf384ae834a45030540f69e70e62a6a0bc676c67a3ad816e3",
+            "68.0": "c4e2c4eca4657f9044d36ad92c8548ae9e761bc10d347139da3488607d47d53a"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}]}}',Account.class);String s=JSON.serialize(a);o.put('serialized',s);Account b=(Account)JSON.deserialize(s,Account.class);o.put('roundtrip',JSON.serialize(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126CHILDJSON_004|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126CHILDJSON_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "c3ecbaf3b702d9db2497219990586edd31f88ba15717095852b6fee94d650c26"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"Name\":\"Synthetic\"}]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"Name\":\"Synthetic\"}]}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"Name\":\"Synthetic\"}]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"Name\":\"Synthetic\"}]}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"Name\":\"Synthetic\"}]}}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"Name\":\"Synthetic\"}]}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "8b04ce16668f801e82526ce5aeb466fa29688f134041b9d07bf7616673f5827c",
+            "67.0": "e2852a28cb273439bc07e6e7f04b7e53b3f65f742cc669aa29595ec556c4afd5",
+            "68.0": "db2f1505c1ee61f5dd175480b48ffb173e8f145bccbb3584a26a2803bf83c445"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}]}}',Account.class);String s=JSON.serialize(a);o.put('serialized',s);Account b=(Account)JSON.deserialize(s,Account.class);o.put('roundtrip',JSON.serialize(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126CHILDJSON_004|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126CHILDJSON_005",
+      "question": "Unknown child relationship",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126CHILDJSON_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "981790cce2d921e110e946da85f748ce310610a5274e82ec42fed39fcd8bfbfe"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "No field name specified on column for sobject of type Account",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "No field name specified on column for sobject of type Account",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "No field name specified on column for sobject of type Account",
+                "exceptionType": "System.JSONException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "a420ac5a0a25c7a4de6f8ac3192a2f27e9ad1cdfcf39ac6d8fc22d41f008e66b",
+            "67.0": "021d0fd77b3b905e14199651d59fd01e0484dd0a82791e2d8f53adbb973791fd",
+            "68.0": "93af6757250984028ee37af909e78b83a9f4dd3f9f3b840aadb364da5f56b880"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=(Account)JSON.deserialize('{\"C126Missing\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}',Account.class);String s=JSON.serialize(a);o.put('serialized',s);Account b=(Account)JSON.deserialize(s,Account.class);o.put('roundtrip',JSON.serialize(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126CHILDJSON_005|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126CHILDJSON_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "74b803ca7d5980c9be18d530e5c035411955ee2411b09189fe45a702787d0e06"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "No field name specified on column for sobject of type Account",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "No field name specified on column for sobject of type Account",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "No field name specified on column for sobject of type Account",
+                "exceptionType": "System.JSONException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "4f964e9534a24a191faab190e5c374be11d1c2006e3c3c4e8cfbcc33a36582ee",
+            "67.0": "85ebc26960776c91d3b60a15bd2a7da331b11160f22285094802f814aa649080",
+            "68.0": "e5aab46e4acf188b1313c9d10f3aca60045cd0d4783439a848d967a4b31ad949"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=(Account)JSON.deserialize('{\"C126Missing\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Able\"}]}}',Account.class);String s=JSON.serialize(a);o.put('serialized',s);Account b=(Account)JSON.deserialize(s,Account.class);o.put('roundtrip',JSON.serialize(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126CHILDJSON_005|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126CHILDJSON_006",
+      "question": "Record without child envelope",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126CHILDJSON_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "52b856ff71294a4bf837263e751408157ecae86b7a6148620b3de671f4aaf8bf"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "0010ad1d844b1aa35317deaaf4b7e8953377030c4a033ce199379b8eb21c9659",
+            "67.0": "8aac4b1dcee79eb78233ead878e54523384e2e4eeb9ffd83f29a24cfa08b123f",
+            "68.0": "3da60859599ede66770ae121cd283b0c00890eee2f18adc9431ce491737cf357"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=(Account)JSON.deserialize('{\"Name\":\"Synthetic\"}',Account.class);String s=JSON.serialize(a);o.put('serialized',s);Account b=(Account)JSON.deserialize(s,Account.class);o.put('roundtrip',JSON.serialize(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126CHILDJSON_006|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126CHILDJSON_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "a5aa55457e64224bd57566e9130ae392af87e5a80f8c96a0f32053585502e0ea"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "roundtrip": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}",
+                "serialized": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "d200655742a0d0078932311a2edab64af47951e82669741b3c24c282b945c752",
+            "67.0": "137820824287bec98d8bf7d20a6603a4a284444345ae14061e0f06827647c978",
+            "68.0": "6c7daf89ccaf35cd39b5cdca2e7f8f9003cb8c82c62f3f9473413cb043587798"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=(Account)JSON.deserialize('{\"Name\":\"Synthetic\"}',Account.class);String s=JSON.serialize(a);o.put('serialized',s);Account b=(Account)JSON.deserialize(s,Account.class);o.put('roundtrip',JSON.serialize(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126CHILDJSON_006|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    }
+  ]
+}

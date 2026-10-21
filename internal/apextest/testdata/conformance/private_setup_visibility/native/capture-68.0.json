@@ -1,0 +1,25 @@
+{
+  "id": "0Afdq00000EcSo1CAF",
+  "status": "Failed",
+  "done": true,
+  "checkOnly": true,
+  "numberComponentErrors": 0,
+  "numberTestErrors": 1,
+  "numberTestsCompleted": 0,
+  "numberTestsTotal": 1,
+  "errors": [],
+  "failures": [
+    {
+      "id": "01pdq00000PmtAIAAZ",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|visibility|{\"message\":\"List has no rows for assignment to SObject\",\"exceptionType\":\"System.QueryException\",\"withoutSharing\":0,\"inside\":0,\"outside\":1}",
+      "methodName": "visibility",
+      "name": "PrivateSetupVisibilityTest",
+      "namespace": null,
+      "packageName": "PrivateSetupVisibilityTest",
+      "stackTrace": "Class.PrivateSetupVisibilityTest.visibility: line 16, column 1",
+      "time": 640,
+      "type": "Class"
+    }
+  ],
+  "successes": []
+}

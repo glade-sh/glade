@@ -68,8 +68,9 @@ func TestL17StaticResourceArchivePathsAndMIME(t *testing.T) {
 	}
 }
 
-// Native API59/67 response headers and member bytes are exported unchanged
+// Native API59/67/68 response headers and member bytes are exported unchanged
 // from the nested script/style controls, including the full Content-Type.
+// API labels bind native captures; the local resource route is unversioned.
 func TestL17StaticResourceCapturedMIME(t *testing.T) {
 	data, err := os.ReadFile("testdata/l17_resource_mime_controls.json")
 	if err != nil {
@@ -87,7 +88,7 @@ func TestL17StaticResourceCapturedMIME(t *testing.T) {
 	if err := json.Unmarshal(data, &controls); err != nil {
 		t.Fatal(err)
 	}
-	if len(controls.Rows) != 4 {
+	if len(controls.Rows) != 6 {
 		t.Fatalf("got %d MIME controls, want two at each API", len(controls.Rows))
 	}
 	for _, row := range controls.Rows {

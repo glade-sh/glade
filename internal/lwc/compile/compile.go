@@ -92,7 +92,8 @@ type compileRoots struct {
 
 const (
 	minimumLWCSourceAPIVersion = 59
-	maximumLWCSourceAPIVersion = 67
+	// Unversioned bundles use the highest version covered by native controls.
+	maximumLWCSourceAPIVersion = 68
 )
 
 func Compile(p project.Project, opts Options) (Manifest, error) {
@@ -340,6 +341,11 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 		}
 		meta, err := lwc.ParseComponentMeta(metaPath)
 		if err != nil {
+			var unknown *lwc.UnknownMetadataElementError
+			if errors.As(err, &unknown) {
+				componentPath := strings.TrimSuffix(metaPath, "-meta.xml")
+				return compileConfig{}, fmt.Errorf("%s: %w", filepath.ToSlash(componentPath), errors.New("XML parse error: Unhandled XML element: "+unknown.Element))
+			}
 			return compileConfig{}, fmt.Errorf("%s: %w", filepath.ToSlash(metaPath), err)
 		}
 		if err := meta.ValidateCompilerConfiguration(); err != nil {

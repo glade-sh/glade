@@ -1,0 +1,9 @@
+id	group	route	status	value
+explicitNull	TEXT_DEFAULT	anonymous	runtime	null
+fresh	TEXT_DEFAULT	anonymous	runtime	true
+function	TEXT_DEFAULT	anonymous	runtime	"LEAF"
+generated	TEXT_DEFAULT	anonymous	runtime	{"dateShape":true,"length":30,"prefix":true,"userSuffix":true}
+literal	TEXT_DEFAULT	anonymous	runtime	"a & b (text)"
+pair	TEXT_DEFAULT	anonymous	runtime	"leftright"
+stable	TEXT_DEFAULT	anonymous	runtime	true
+supplied	TEXT_DEFAULT	anonymous	runtime	"manual"

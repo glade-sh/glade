@@ -1,0 +1,82 @@
+{
+  "description": "Owned check-only native observations of StandardController getter text and scheduled job names. Generated record IDs are retained; replay compares their exact widths and relationships, not their environment-specific allocation.",
+  "objects": {
+    "DispatchEntry__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Dispatch Entry</label><pluralLabel>Dispatch Entries</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n"
+  },
+  "rows": [
+    {
+      "id": "inserted_job",
+      "shape": "end-to-end",
+      "sourceApi": "66.0",
+      "transportApi": "66.0",
+      "route": "istest",
+      "classes": {
+        "ControllerJobTextCapture": "@IsTest private class ControllerJobTextCapture {\n    @IsTest static void observe() {\n        System.assertEquals('NATIVE_OBSERVATION', JSON.serialize(ControllerJobTextObserver.observe()));\n    }\n}\n",
+        "ControllerJobTextObserver": "public class ControllerJobTextObserver {\n    public class Work implements Schedulable { public void execute(SchedulableContext context) {} }\n    public static List<Object> observe() {\n        List<Object> out = new List<Object>();\n        String firstJob;\n        String duplicateJob;\n        List<String> cleanup = new List<String>();\n        try {\n            DispatchEntry__c row = new DispatchEntry__c(Name='Owned entry');\n            insert row;\n            ApexPages.StandardController controller = new ApexPages.StandardController(row);\n            String fieldText = String.valueOf(row.Id);\n            String shortened = fieldText.substring(0,15);\n            String getter = controller.getId();\n            Object dynamicGetter = controller.getId();\n            String submitted = 't_' + controller.getId();\n            String literal = '001000000000001';\n            Id declaredId = literal;\n            Object dynamicId = declaredId;\n            out.add(fieldText);\n            out.add(shortened);\n            out.add(new List<Object>{getter, getter.length(), EncodingUtil.convertToHex(Blob.valueOf(getter)), dynamicGetter instanceof String, dynamicGetter instanceof Id});\n            out.add(submitted);\n            firstJob = System.schedule(submitted, '0 0 0 1 1 ? 2099', new Work());\n            out.add([SELECT CronJobDetail.Name FROM CronTrigger WHERE Id=:firstJob].CronJobDetail.Name);\n            try {\n                duplicateJob = System.schedule(submitted, '0 0 0 1 1 ? 2099', new Work());\n                out.add(new List<String>{'ACCEPTED'});\n            } catch (Exception fault) {\n                out.add(new List<String>{fault.getTypeName(), fault.getMessage()});\n            }\n            out.add(new List<Object>{literal, literal.length(), String.valueOf(declaredId), String.valueOf(dynamicId), 't_' + literal, 't_' + declaredId});\n        } catch (Exception fault) {\n            out.add(new List<String>{'SETUP_ERROR', fault.getTypeName(), fault.getMessage()});\n        } finally {\n            for (String jobId : new List<String>{duplicateJob, firstJob}) {\n                if (jobId == null) continue;\n                try { System.abortJob(jobId); }\n                catch (Exception fault) { cleanup.add(fault.getTypeName() + '|' + fault.getMessage()); }\n            }\n        }\n        out.add(cleanup);\n        return out;\n    }\n}\n"
+      },
+      "native": [
+        "a0AEc00000KMMBFMA5",
+        "a0AEc00000KMMBF",
+        [
+          "a0AEc00000KMMBF",
+          15,
+          "613041456330303030304b4d4d4246",
+          true,
+          true
+        ],
+        "t_a0AEc00000KMMBF",
+        "t_a0AEc00000KMMBF",
+        [
+          "System.AsyncException",
+          "The Apex job named \"t_a0AEc00000KMMBF\" is already scheduled for execution."
+        ],
+        [
+          "001000000000001",
+          15,
+          "001000000000001AAA",
+          "001000000000001AAA",
+          "t_001000000000001",
+          "t_001000000000001AAA"
+        ],
+        []
+      ]
+    },
+    {
+      "id": "supplied_ids",
+      "shape": "constructors",
+      "sourceApi": "66.0",
+      "transportApi": "66.0",
+      "route": "istest",
+      "classes": {
+        "ControllerJobTextCapture": "@IsTest private class ControllerJobTextCapture {\n    @IsTest static void observe() {\n        System.assertEquals('NATIVE_OBSERVATION', JSON.serialize(ControllerJobTextObserver.observe()));\n    }\n}\n",
+        "ControllerJobTextObserver": "public class ControllerJobTextObserver {\n    public static List<Object> observe() {\n        DispatchEntry__c row = new DispatchEntry__c(Name='Owned entry');\n        insert row;\n        String full = String.valueOf(row.Id);\n        String shortText = full.substring(0,15);\n        List<Object> out = new List<Object>();\n        for (String supplied : new List<String>{shortText, full}) {\n            ApexPages.StandardController controller = new ApexPages.StandardController(new DispatchEntry__c(Id=supplied));\n            String getter = controller.getId();\n            out.add(new List<Object>{supplied, supplied.length(), getter, getter.length(), 't_' + controller.getId()});\n        }\n        return out;\n    }\n}\n"
+      },
+      "native": [
+        [
+          "a0AEc00000KMMJJ",
+          15,
+          "a0AEc00000KMMJJ",
+          15,
+          "t_a0AEc00000KMMJJ"
+        ],
+        [
+          "a0AEc00000KMMJJMA5",
+          18,
+          "a0AEc00000KMMJJ",
+          15,
+          "t_a0AEc00000KMMJJ"
+        ]
+      ]
+    }
+  ],
+  "uncaptured": [
+    {
+      "scope": "API62/67/68 named and API62/66/67/68 anonymous getter text",
+      "reason": "Only source-matched API66 named rows were needed for the decisive capture; other version/route cells were not executed."
+    },
+    {
+      "scope": "Request-only controller getter text",
+      "reason": "Captured constructors all carry record IDs; page-parameter fallback remains unchanged."
+    }
+  ]
+}

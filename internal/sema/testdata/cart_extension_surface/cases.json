@@ -1,0 +1,199 @@
+[
+  {
+    "id": "orchestrator_override",
+    "name": "GardenOrchestratorOverride",
+    "kind": "override",
+    "base": "CartCalculate",
+    "source": "global class GardenOrchestratorOverride extends CartExtension.CartCalculate {\n  private static Integer calls = 0;\n  global override void calculate(CartExtension.CartCalculateOrchestratorRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.CartCalculate value=new GardenOrchestratorOverride(); value.calculate(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + GardenOrchestratorOverride.observe());\n"
+  },
+  {
+    "id": "inventory_override",
+    "name": "GardenInventoryOverride",
+    "kind": "override",
+    "base": "InventoryCartCalculator",
+    "source": "global class GardenInventoryOverride extends CartExtension.InventoryCartCalculator {\n  global override void calculate(CartExtension.CartCalculateCalculatorRequest request) {}\n}\n"
+  },
+  {
+    "id": "inventory_empty",
+    "name": "GardenInventoryEmpty",
+    "kind": "empty",
+    "base": "InventoryCartCalculator",
+    "source": "global class GardenInventoryEmpty extends CartExtension.InventoryCartCalculator {}\n"
+  },
+  {
+    "id": "inventory_construct",
+    "name": "GardenInventoryConstruct",
+    "kind": "construct",
+    "base": "InventoryCartCalculator",
+    "source": "public class GardenInventoryConstruct { public static Object make() { return new CartExtension.InventoryCartCalculator(); } }\n"
+  },
+  {
+    "id": "pricing_override",
+    "name": "GardenPricingOverride",
+    "kind": "override",
+    "base": "PricingCartCalculator",
+    "source": "global class GardenPricingOverride extends CartExtension.PricingCartCalculator {\n  private static Integer calls = 0;\n  global override void calculate(CartExtension.CartCalculateCalculatorRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.PricingCartCalculator value=new GardenPricingOverride(); value.calculate(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + GardenPricingOverride.observe());\n"
+  },
+  {
+    "id": "pricing_empty",
+    "name": "GardenPricingEmpty",
+    "kind": "empty",
+    "base": "PricingCartCalculator",
+    "source": "global class GardenPricingEmpty extends CartExtension.PricingCartCalculator {}\n"
+  },
+  {
+    "id": "pricing_construct",
+    "name": "GardenPricingConstruct",
+    "kind": "construct",
+    "base": "PricingCartCalculator",
+    "source": "public class GardenPricingConstruct { public static Object make() { return new CartExtension.PricingCartCalculator(); } }\n"
+  },
+  {
+    "id": "promotions_override",
+    "name": "GardenPromotionsOverride",
+    "kind": "override",
+    "base": "PromotionsCartCalculator",
+    "source": "global class GardenPromotionsOverride extends CartExtension.PromotionsCartCalculator {\n  private static Integer calls = 0;\n  global override void calculate(CartExtension.CartCalculateCalculatorRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.PromotionsCartCalculator value=new GardenPromotionsOverride(); value.calculate(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + GardenPromotionsOverride.observe());\n"
+  },
+  {
+    "id": "promotions_empty",
+    "name": "GardenPromotionsEmpty",
+    "kind": "empty",
+    "base": "PromotionsCartCalculator",
+    "source": "global class GardenPromotionsEmpty extends CartExtension.PromotionsCartCalculator {}\n"
+  },
+  {
+    "id": "promotions_construct",
+    "name": "GardenPromotionsConstruct",
+    "kind": "construct",
+    "base": "PromotionsCartCalculator",
+    "source": "public class GardenPromotionsConstruct { public static Object make() { return new CartExtension.PromotionsCartCalculator(); } }\n"
+  },
+  {
+    "id": "shipping_override",
+    "name": "GardenShippingOverride",
+    "kind": "override",
+    "base": "ShippingCartCalculator",
+    "source": "global class GardenShippingOverride extends CartExtension.ShippingCartCalculator {\n  private static Integer calls = 0;\n  global override void calculate(CartExtension.CartCalculateCalculatorRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.ShippingCartCalculator value=new GardenShippingOverride(); value.calculate(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + GardenShippingOverride.observe());\n"
+  },
+  {
+    "id": "shipping_empty",
+    "name": "GardenShippingEmpty",
+    "kind": "empty",
+    "base": "ShippingCartCalculator",
+    "source": "global class GardenShippingEmpty extends CartExtension.ShippingCartCalculator {}\n"
+  },
+  {
+    "id": "shipping_construct",
+    "name": "GardenShippingConstruct",
+    "kind": "construct",
+    "base": "ShippingCartCalculator",
+    "source": "public class GardenShippingConstruct { public static Object make() { return new CartExtension.ShippingCartCalculator(); } }\n"
+  },
+  {
+    "id": "tax_override",
+    "name": "GardenTaxOverride",
+    "kind": "override",
+    "base": "TaxCartCalculator",
+    "source": "global class GardenTaxOverride extends CartExtension.TaxCartCalculator {\n  private static Integer calls = 0;\n  global override void calculate(CartExtension.CartCalculateCalculatorRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.TaxCartCalculator value=new GardenTaxOverride(); value.calculate(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + GardenTaxOverride.observe());\n"
+  },
+  {
+    "id": "tax_empty",
+    "name": "GardenTaxEmpty",
+    "kind": "empty",
+    "base": "TaxCartCalculator",
+    "source": "global class GardenTaxEmpty extends CartExtension.TaxCartCalculator {}\n"
+  },
+  {
+    "id": "tax_construct",
+    "name": "GardenTaxConstruct",
+    "kind": "construct",
+    "base": "TaxCartCalculator",
+    "source": "public class GardenTaxConstruct { public static Object make() { return new CartExtension.TaxCartCalculator(); } }\n"
+  },
+  {
+    "id": "order_override",
+    "name": "GardenOrderOverride",
+    "kind": "override",
+    "base": "CheckoutCreateOrder",
+    "source": "global class GardenOrderOverride extends CartExtension.CheckoutCreateOrder {\n  private static Integer calls = 0;\n  global override CartExtension.CreateOrderResponse createOrder(CartExtension.CreateOrderRequest request) { calls++; return null; }\n  public static Boolean observe() { calls=0; CartExtension.CheckoutCreateOrder value=new GardenOrderOverride(); value.createOrder(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + GardenOrderOverride.observe());\n"
+  },
+  {
+    "id": "split_override",
+    "name": "GardenSplitOverride",
+    "kind": "override",
+    "base": "SplitShipmentService",
+    "source": "global class GardenSplitOverride extends CartExtension.SplitShipmentService {\n  private static Integer calls = 0;\n  global override void arrangeItems(CartExtension.ItemArrangementRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.SplitShipmentService value=new GardenSplitOverride(); value.arrangeItems(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + GardenSplitOverride.observe());\n"
+  },
+  {
+    "id": "split_mock_override",
+    "name": "GardenSplitMockOverride",
+    "kind": "override",
+    "base": "SplitShipmentServiceMock",
+    "source": "global class GardenSplitMockOverride extends CartExtension.SplitShipmentServiceMock {\n  private static Integer calls = 0;\n  global override void arrangeItems(CartExtension.ItemArrangementRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.SplitShipmentServiceMock value=new GardenSplitMockOverride(); value.arrangeItems(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + GardenSplitMockOverride.observe());\n"
+  },
+  {
+    "id": "split_mock_empty",
+    "name": "GardenSplitMockEmpty",
+    "kind": "empty",
+    "base": "SplitShipmentServiceMock",
+    "source": "global class GardenSplitMockEmpty extends CartExtension.SplitShipmentServiceMock {}\n"
+  },
+  {
+    "id": "split_mock_construct",
+    "name": "GardenSplitMockConstruct",
+    "kind": "construct",
+    "base": "SplitShipmentServiceMock",
+    "source": "public class GardenSplitMockConstruct { public static Object make() { return new CartExtension.SplitShipmentServiceMock(); } }\n"
+  },
+  {
+    "id": "helper_prices",
+    "name": "GardenHelperPrices",
+    "kind": "helper",
+    "base": "CartCalculate",
+    "source": "global class GardenHelperPrices extends CartExtension.CartCalculate { global override void prices(CartExtension.CartCalculateCalculatorRequest request) {} }\n"
+  },
+  {
+    "id": "helper_promotions",
+    "name": "GardenHelperPromotions",
+    "kind": "helper",
+    "base": "CartCalculate",
+    "source": "global class GardenHelperPromotions extends CartExtension.CartCalculate { global override void promotions(CartExtension.CartCalculateCalculatorRequest request) {} }\n"
+  },
+  {
+    "id": "helper_inventory",
+    "name": "GardenHelperInventory",
+    "kind": "helper",
+    "base": "CartCalculate",
+    "source": "global class GardenHelperInventory extends CartExtension.CartCalculate { global override void inventory(CartExtension.CartCalculateCalculatorRequest request) {} }\n"
+  },
+  {
+    "id": "helper_shipping",
+    "name": "GardenHelperShipping",
+    "kind": "helper",
+    "base": "CartCalculate",
+    "source": "global class GardenHelperShipping extends CartExtension.CartCalculate { global override void shipping(CartExtension.CartCalculateCalculatorRequest request) {} }\n"
+  },
+  {
+    "id": "helper_taxes",
+    "name": "GardenHelperTaxes",
+    "kind": "helper",
+    "base": "CartCalculate",
+    "source": "global class GardenHelperTaxes extends CartExtension.CartCalculate { global override void taxes(CartExtension.CartCalculateCalculatorRequest request) {} }\n"
+  },
+  {
+    "id": "helper_postshipping",
+    "name": "GardenHelperPostshipping",
+    "kind": "helper",
+    "base": "CartCalculate",
+    "source": "global class GardenHelperPostshipping extends CartExtension.CartCalculate { global override void postShipping(CartExtension.CartCalculateCalculatorRequest request) {} }\n"
+  }
+]

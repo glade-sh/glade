@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	boundsControl	{"charEnd":"Specified index is invalid.","charNegative":"Specified index is invalid.","substringReverse":"Ending position out of bounds: 1","substringStart":"Starting position out of bounds: 4"}
+62.0	scanAscii	{"emptyPastEnd":2052,"length":2052,"missing":-1,"negativeStart":0,"suffix":"#end","sum":63488}
+62.0	unicodeControl	{"bmp":937,"delimiter":4,"length":8,"negativeStart":0,"suffix":"|end","tail":124}
+67.0	boundsControl	{"charEnd":"Specified index is invalid.","charNegative":"Specified index is invalid.","substringReverse":"Ending position out of bounds: 1","substringStart":"Starting position out of bounds: 4"}
+67.0	scanAscii	{"emptyPastEnd":2052,"length":2052,"missing":-1,"negativeStart":0,"suffix":"#end","sum":63488}
+67.0	unicodeControl	{"bmp":937,"delimiter":4,"length":8,"negativeStart":0,"suffix":"|end","tail":124}

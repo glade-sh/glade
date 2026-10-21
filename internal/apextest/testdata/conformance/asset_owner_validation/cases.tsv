@@ -1,0 +1,6 @@
+case	shape
+asset_unrelated	Asset insert with no AccountId or ContactId
+asset_account	Asset insert linked to an existing Account
+asset_contact	Asset insert linked to an existing Contact
+account_missing_owner	Partial Account insert with a nonexistent User OwnerId
+account_current_owner	Partial Account insert with the current User OwnerId

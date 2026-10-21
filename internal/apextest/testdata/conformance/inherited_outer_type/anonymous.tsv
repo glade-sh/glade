@@ -1,0 +1,10 @@
+source_api	method	observation
+62.0	direct	"{""value"":""count:3""}"
+62.0	inherited	"{""value"":""later:3""}"
+62.0	qualified	"{""value"":""count:3""}"
+67.0	direct	"{""value"":""count:3""}"
+67.0	inherited	"{""value"":""later:3""}"
+67.0	qualified	"{""value"":""count:3""}"
+68.0	direct	"{""value"":""count:3""}"
+68.0	inherited	"{""value"":""later:3""}"
+68.0	qualified	"{""value"":""count:3""}"

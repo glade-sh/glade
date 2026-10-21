@@ -1,0 +1,11 @@
+List<LookupScopeChild__c> oldChildren = [SELECT Id FROM LookupScopeChild__c WHERE Name = 'disk-runtime-scope-child-20261019'];
+if (!oldChildren.isEmpty()) delete oldChildren;
+List<LookupScopeParent__c> oldParents = [SELECT Id FROM LookupScopeParent__c WHERE Name = 'disk-runtime-scope-parent-20261019'];
+if (!oldParents.isEmpty()) delete oldParents;
+LookupScopeParent__c parentRecord = new LookupScopeParent__c(Name = 'disk-runtime-scope-parent-20261019');
+insert parentRecord;
+LookupScopeChild__c childRecord = new LookupScopeChild__c(Name = 'disk-runtime-scope-child-20261019', Parent__c = parentRecord.Id);
+insert childRecord;
+delete parentRecord;
+LookupScopeChild__c observed = [SELECT Parent__c FROM LookupScopeChild__c WHERE Id = :childRecord.Id];
+System.debug('NATIVE_LOOKUP=' + (observed.Parent__c == null ? 'NULL' : String.valueOf(observed.Parent__c)));

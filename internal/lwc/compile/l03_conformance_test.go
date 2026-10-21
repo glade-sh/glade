@@ -64,7 +64,7 @@ type l03DiagnosticSignature struct {
 }
 
 // TestL03SalesforceConformance compares exact exported native row text at the
-// floor, ceiling and captured 65/66 boundaries. Capture mode reports mismatches.
+// API 59/67/68 and captured 65/66 boundaries. Capture mode reports mismatches.
 // DOM answers come from the compiled browser engine and the owned fixture's
 // WeakMap of actual Node references, including all frames and removed nodes.
 func TestL03SalesforceConformance(t *testing.T) {
@@ -80,7 +80,7 @@ func TestL03SalesforceConformance(t *testing.T) {
 	if len(cases) != 276 {
 		t.Fatalf("L03 requires all 276 native cases, got %d", len(cases))
 	}
-	versions := []string{"59.0", "65.0", "66.0", "67.0"}
+	versions := []string{"59.0", "65.0", "66.0", "67.0", "68.0"}
 	seen, runtimeCases, boundaryCases := map[string]bool{}, 0, 0
 	for _, c := range cases {
 		if c.ID == "" || seen[c.ID] {
@@ -95,7 +95,7 @@ func TestL03SalesforceConformance(t *testing.T) {
 		} else if c.Kind != "compile" {
 			t.Fatalf("unknown L03 case kind %q for %s", c.Kind, c.ID)
 		}
-		caseVersions := []string{"59.0", "67.0"}
+		caseVersions := []string{"59.0", "67.0", "68.0"}
 		if c.VersionGate != nil {
 			boundaryCases++
 			if c.Kind != "compile" || c.VersionGate.ID != c.ID || c.VersionGate.LastFloorBehavior != 65 || c.VersionGate.FirstDifferentBehavior != 66 {

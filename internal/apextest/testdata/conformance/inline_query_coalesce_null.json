@@ -1,0 +1,1386 @@
+{
+  "apiVersions": [
+    "62.0",
+    "64.0",
+    "67.0"
+  ],
+  "sourcesByAPI": {
+    "62.0": {
+      "id": "query_null_matrix",
+      "classes": {
+        "QueryNullMatrix62": "public class QueryNullMatrix62 {\n public static Account pickReturn(String marker) { return [SELECT Id,Name FROM Account WHERE Name=:marker ORDER BY Id] ?? null; }\n public static Account pickInit(String marker) { Account value=[SELECT Id,Name FROM Account WHERE Name=:marker ORDER BY Id] ?? null; return value; }\n public static Account pickAssign(String marker) { Account value; value=[SELECT Id,Name FROM Account WHERE Name=:marker ORDER BY Id] ?? null; return value; }\n public static List<Account> pickList(String marker) { return [SELECT Id,Name FROM Account WHERE Name=:marker ORDER BY Id] ?? null; }\n public static LeadStatus pickStatus() { return [SELECT ApiName FROM LeadStatus WHERE IsConverted=true LIMIT 1] ?? null; }\n public static String observe(String kind,Integer size) {\n  Savepoint sp=Database.setSavepoint();\n  Map<String,Object> answer=new Map<String,Object>{'kind'=>kind,'rows'=>size,'phase'=>'setup'};\n  try {\n   String marker='owned-query-null-'+kind+'-'+size;\n   Integer collisions=[SELECT COUNT() FROM Account WHERE Name=:marker];\n   if(collisions!=0) { answer.put('outcome','collision'); return JSON.serialize(answer); }\n   List<Account> seeds=new List<Account>();\n   for(Integer i=0;i<size;i++) seeds.add(new Account(Name=marker));\n   if(!seeds.isEmpty()) insert seeds;\n   answer.put('phase','evaluate');\n   if(kind=='list') {\n    List<Account> values=pickList(marker);\n    answer.put('outcome','returned');answer.put('isNull',values==null);answer.put('count',values==null?null:values.size());\n   } else {\n    Account value;\n    if(kind=='return') value=pickReturn(marker);\n    else if(kind=='initialize') value=pickInit(marker);\n    else value=pickAssign(marker);\n    answer.put('outcome','returned');answer.put('isNull',value==null);\n    answer.put('sameId',value!=null&&seeds.size()==1&&value.Id==seeds[0].Id);\n    answer.put('sameName',value!=null&&value.Name==marker);\n   }\n  } catch(Exception error) {answer.put('outcome','exception');answer.put('exType',error.getTypeName());answer.put('exMessage',error.getMessage());}\n  finally { Database.rollback(sp); }\n  return JSON.serialize(answer);\n }\n}\n",
+        "QueryNullMatrix62Test": "@IsTest private class QueryNullMatrix62Test {\n@IsTest static void observe_return0(){System.assert(false,'NATIVE_RESULT|return_0|'+QueryNullMatrix62.observe('return',0));}\n@IsTest static void observe_return1(){System.assert(false,'NATIVE_RESULT|return_1|'+QueryNullMatrix62.observe('return',1));}\n@IsTest static void observe_return2(){System.assert(false,'NATIVE_RESULT|return_2|'+QueryNullMatrix62.observe('return',2));}\n@IsTest static void observe_initialize0(){System.assert(false,'NATIVE_RESULT|initialize_0|'+QueryNullMatrix62.observe('initialize',0));}\n@IsTest static void observe_initialize1(){System.assert(false,'NATIVE_RESULT|initialize_1|'+QueryNullMatrix62.observe('initialize',1));}\n@IsTest static void observe_initialize2(){System.assert(false,'NATIVE_RESULT|initialize_2|'+QueryNullMatrix62.observe('initialize',2));}\n@IsTest static void observe_assign0(){System.assert(false,'NATIVE_RESULT|assign_0|'+QueryNullMatrix62.observe('assign',0));}\n@IsTest static void observe_assign1(){System.assert(false,'NATIVE_RESULT|assign_1|'+QueryNullMatrix62.observe('assign',1));}\n@IsTest static void observe_assign2(){System.assert(false,'NATIVE_RESULT|assign_2|'+QueryNullMatrix62.observe('assign',2));}\n@IsTest static void observe_list0(){System.assert(false,'NATIVE_RESULT|list_0|'+QueryNullMatrix62.observe('list',0));}\n@IsTest static void observe_list1(){System.assert(false,'NATIVE_RESULT|list_1|'+QueryNullMatrix62.observe('list',1));}\n@IsTest static void observe_list2(){System.assert(false,'NATIVE_RESULT|list_2|'+QueryNullMatrix62.observe('list',2));}\n}\n"
+      },
+      "sourceSha256": {
+        "class:QueryNullMatrix62": "7bd33204db44516bcfb6ba30267844f8bddbcb98bf515d61f2280b651ed9f14d",
+        "class:QueryNullMatrix62Test": "ad0425382e9b9b0b943c662c23a004e28fe33e95b0c46bb405f3d1fef891c8bb",
+        "anonymous": "0f141018e942d27ce109a0770ce0782839b4e54e072d04c0b6860ffb00a48aa3"
+      },
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|return_0|'+QueryNullMatrix62.observe('return',0));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|return_1|'+QueryNullMatrix62.observe('return',1));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|return_2|'+QueryNullMatrix62.observe('return',2));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|initialize_0|'+QueryNullMatrix62.observe('initialize',0));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|initialize_1|'+QueryNullMatrix62.observe('initialize',1));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|initialize_2|'+QueryNullMatrix62.observe('initialize',2));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|assign_0|'+QueryNullMatrix62.observe('assign',0));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|assign_1|'+QueryNullMatrix62.observe('assign',1));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|assign_2|'+QueryNullMatrix62.observe('assign',2));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|list_0|'+QueryNullMatrix62.observe('list',0));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|list_1|'+QueryNullMatrix62.observe('list',1));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|list_2|'+QueryNullMatrix62.observe('list',2));\n",
+      "tests": [
+        "QueryNullMatrix62Test"
+      ]
+    },
+    "64.0": {
+      "id": "query_null_matrix",
+      "classes": {
+        "QueryNullMatrix": "public class QueryNullMatrix {\n public static Account pickReturn(String marker) { return [SELECT Id,Name FROM Account WHERE Name=:marker ORDER BY Id] ?? null; }\n public static Account pickInit(String marker) { Account value=[SELECT Id,Name FROM Account WHERE Name=:marker ORDER BY Id] ?? null; return value; }\n public static Account pickAssign(String marker) { Account value; value=[SELECT Id,Name FROM Account WHERE Name=:marker ORDER BY Id] ?? null; return value; }\n public static List<Account> pickList(String marker) { return [SELECT Id,Name FROM Account WHERE Name=:marker ORDER BY Id] ?? null; }\n public static LeadStatus pickStatus() { return [SELECT ApiName FROM LeadStatus WHERE IsConverted=true LIMIT 1] ?? null; }\n public static String observe(String kind,Integer size) {\n  Savepoint sp=Database.setSavepoint();\n  Map<String,Object> answer=new Map<String,Object>{'kind'=>kind,'rows'=>size,'phase'=>'setup'};\n  try {\n   String marker='owned-query-null-'+kind+'-'+size;\n   Integer collisions=[SELECT COUNT() FROM Account WHERE Name=:marker];\n   if(collisions!=0) { answer.put('outcome','collision'); return JSON.serialize(answer); }\n   List<Account> seeds=new List<Account>();\n   for(Integer i=0;i<size;i++) seeds.add(new Account(Name=marker));\n   if(!seeds.isEmpty()) insert seeds;\n   answer.put('phase','evaluate');\n   if(kind=='list') {\n    List<Account> values=pickList(marker);\n    answer.put('outcome','returned');answer.put('isNull',values==null);answer.put('count',values==null?null:values.size());\n   } else {\n    Account value;\n    if(kind=='return') value=pickReturn(marker);\n    else if(kind=='initialize') value=pickInit(marker);\n    else value=pickAssign(marker);\n    answer.put('outcome','returned');answer.put('isNull',value==null);\n    answer.put('sameId',value!=null&&seeds.size()==1&&value.Id==seeds[0].Id);\n    answer.put('sameName',value!=null&&value.Name==marker);\n   }\n  } catch(Exception error) {answer.put('outcome','exception');answer.put('exType',error.getTypeName());answer.put('exMessage',error.getMessage());}\n  finally { Database.rollback(sp); }\n  return JSON.serialize(answer);\n }\n}\n",
+        "QueryNullMatrixTest": "@IsTest private class QueryNullMatrixTest {\n@IsTest static void observe_return0(){System.assert(false,'NATIVE_RESULT|return_0|'+QueryNullMatrix.observe('return',0));}\n@IsTest static void observe_return1(){System.assert(false,'NATIVE_RESULT|return_1|'+QueryNullMatrix.observe('return',1));}\n@IsTest static void observe_return2(){System.assert(false,'NATIVE_RESULT|return_2|'+QueryNullMatrix.observe('return',2));}\n@IsTest static void observe_initialize0(){System.assert(false,'NATIVE_RESULT|initialize_0|'+QueryNullMatrix.observe('initialize',0));}\n@IsTest static void observe_initialize1(){System.assert(false,'NATIVE_RESULT|initialize_1|'+QueryNullMatrix.observe('initialize',1));}\n@IsTest static void observe_initialize2(){System.assert(false,'NATIVE_RESULT|initialize_2|'+QueryNullMatrix.observe('initialize',2));}\n@IsTest static void observe_assign0(){System.assert(false,'NATIVE_RESULT|assign_0|'+QueryNullMatrix.observe('assign',0));}\n@IsTest static void observe_assign1(){System.assert(false,'NATIVE_RESULT|assign_1|'+QueryNullMatrix.observe('assign',1));}\n@IsTest static void observe_assign2(){System.assert(false,'NATIVE_RESULT|assign_2|'+QueryNullMatrix.observe('assign',2));}\n@IsTest static void observe_list0(){System.assert(false,'NATIVE_RESULT|list_0|'+QueryNullMatrix.observe('list',0));}\n@IsTest static void observe_list1(){System.assert(false,'NATIVE_RESULT|list_1|'+QueryNullMatrix.observe('list',1));}\n@IsTest static void observe_list2(){System.assert(false,'NATIVE_RESULT|list_2|'+QueryNullMatrix.observe('list',2));}\n}\n"
+      },
+      "sourceSha256": {
+        "class:QueryNullMatrix": "ba970e5adaffa404e55c50867115fddb35aa3de67ca3851bc2ee849fefbbfe66",
+        "class:QueryNullMatrixTest": "9ea72156b5bca15b40e106e2edfff64b058a6701bfff42d0304fab6c276b90ae",
+        "anonymous": "f8a6ec3d55f2e408278fb4d3dc5bbac6aa22bda606c5919cb5038c20a2f72208"
+      },
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|return_0|'+QueryNullMatrix.observe('return',0));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|return_1|'+QueryNullMatrix.observe('return',1));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|return_2|'+QueryNullMatrix.observe('return',2));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|initialize_0|'+QueryNullMatrix.observe('initialize',0));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|initialize_1|'+QueryNullMatrix.observe('initialize',1));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|initialize_2|'+QueryNullMatrix.observe('initialize',2));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|assign_0|'+QueryNullMatrix.observe('assign',0));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|assign_1|'+QueryNullMatrix.observe('assign',1));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|assign_2|'+QueryNullMatrix.observe('assign',2));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|list_0|'+QueryNullMatrix.observe('list',0));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|list_1|'+QueryNullMatrix.observe('list',1));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|list_2|'+QueryNullMatrix.observe('list',2));\n",
+      "tests": [
+        "QueryNullMatrixTest"
+      ]
+    },
+    "67.0": {
+      "id": "query_null_matrix",
+      "classes": {
+        "QueryNullMatrix67": "public class QueryNullMatrix67 {\n public static Account pickReturn(String marker) { return [SELECT Id,Name FROM Account WHERE Name=:marker ORDER BY Id] ?? null; }\n public static Account pickInit(String marker) { Account value=[SELECT Id,Name FROM Account WHERE Name=:marker ORDER BY Id] ?? null; return value; }\n public static Account pickAssign(String marker) { Account value; value=[SELECT Id,Name FROM Account WHERE Name=:marker ORDER BY Id] ?? null; return value; }\n public static List<Account> pickList(String marker) { return [SELECT Id,Name FROM Account WHERE Name=:marker ORDER BY Id] ?? null; }\n public static LeadStatus pickStatus() { return [SELECT ApiName FROM LeadStatus WHERE IsConverted=true LIMIT 1] ?? null; }\n public static String observe(String kind,Integer size) {\n  Savepoint sp=Database.setSavepoint();\n  Map<String,Object> answer=new Map<String,Object>{'kind'=>kind,'rows'=>size,'phase'=>'setup'};\n  try {\n   String marker='owned-query-null-'+kind+'-'+size;\n   Integer collisions=[SELECT COUNT() FROM Account WHERE Name=:marker];\n   if(collisions!=0) { answer.put('outcome','collision'); return JSON.serialize(answer); }\n   List<Account> seeds=new List<Account>();\n   for(Integer i=0;i<size;i++) seeds.add(new Account(Name=marker));\n   if(!seeds.isEmpty()) insert seeds;\n   answer.put('phase','evaluate');\n   if(kind=='list') {\n    List<Account> values=pickList(marker);\n    answer.put('outcome','returned');answer.put('isNull',values==null);answer.put('count',values==null?null:values.size());\n   } else {\n    Account value;\n    if(kind=='return') value=pickReturn(marker);\n    else if(kind=='initialize') value=pickInit(marker);\n    else value=pickAssign(marker);\n    answer.put('outcome','returned');answer.put('isNull',value==null);\n    answer.put('sameId',value!=null&&seeds.size()==1&&value.Id==seeds[0].Id);\n    answer.put('sameName',value!=null&&value.Name==marker);\n   }\n  } catch(Exception error) {answer.put('outcome','exception');answer.put('exType',error.getTypeName());answer.put('exMessage',error.getMessage());}\n  finally { Database.rollback(sp); }\n  return JSON.serialize(answer);\n }\n}\n",
+        "QueryNullMatrix67Test": "@IsTest private class QueryNullMatrix67Test {\n@IsTest static void observe_return0(){System.assert(false,'NATIVE_RESULT|return_0|'+QueryNullMatrix67.observe('return',0));}\n@IsTest static void observe_return1(){System.assert(false,'NATIVE_RESULT|return_1|'+QueryNullMatrix67.observe('return',1));}\n@IsTest static void observe_return2(){System.assert(false,'NATIVE_RESULT|return_2|'+QueryNullMatrix67.observe('return',2));}\n@IsTest static void observe_initialize0(){System.assert(false,'NATIVE_RESULT|initialize_0|'+QueryNullMatrix67.observe('initialize',0));}\n@IsTest static void observe_initialize1(){System.assert(false,'NATIVE_RESULT|initialize_1|'+QueryNullMatrix67.observe('initialize',1));}\n@IsTest static void observe_initialize2(){System.assert(false,'NATIVE_RESULT|initialize_2|'+QueryNullMatrix67.observe('initialize',2));}\n@IsTest static void observe_assign0(){System.assert(false,'NATIVE_RESULT|assign_0|'+QueryNullMatrix67.observe('assign',0));}\n@IsTest static void observe_assign1(){System.assert(false,'NATIVE_RESULT|assign_1|'+QueryNullMatrix67.observe('assign',1));}\n@IsTest static void observe_assign2(){System.assert(false,'NATIVE_RESULT|assign_2|'+QueryNullMatrix67.observe('assign',2));}\n@IsTest static void observe_list0(){System.assert(false,'NATIVE_RESULT|list_0|'+QueryNullMatrix67.observe('list',0));}\n@IsTest static void observe_list1(){System.assert(false,'NATIVE_RESULT|list_1|'+QueryNullMatrix67.observe('list',1));}\n@IsTest static void observe_list2(){System.assert(false,'NATIVE_RESULT|list_2|'+QueryNullMatrix67.observe('list',2));}\n}\n"
+      },
+      "sourceSha256": {
+        "class:QueryNullMatrix67": "d620937048f3a0b7f169ff2e5a870224d943a9445f5715aca8ae45c08d7b457b",
+        "class:QueryNullMatrix67Test": "97a099ccd281c3b058dd3c86aa1148bf2104773ed670b108c54b85eeefa36e86",
+        "anonymous": "9f5bcffd10e284a777b45a4a0091c7234f9ea815e12e67ed9464dd884cf73ddf"
+      },
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|return_0|'+QueryNullMatrix67.observe('return',0));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|return_1|'+QueryNullMatrix67.observe('return',1));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|return_2|'+QueryNullMatrix67.observe('return',2));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|initialize_0|'+QueryNullMatrix67.observe('initialize',0));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|initialize_1|'+QueryNullMatrix67.observe('initialize',1));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|initialize_2|'+QueryNullMatrix67.observe('initialize',2));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|assign_0|'+QueryNullMatrix67.observe('assign',0));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|assign_1|'+QueryNullMatrix67.observe('assign',1));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|assign_2|'+QueryNullMatrix67.observe('assign',2));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|list_0|'+QueryNullMatrix67.observe('list',0));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|list_1|'+QueryNullMatrix67.observe('list',1));\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|list_2|'+QueryNullMatrix67.observe('list',2));\n",
+      "tests": [
+        "QueryNullMatrix67Test"
+      ]
+    }
+  },
+  "compileRows": [
+    {
+      "id": "record_return",
+      "sourceRef": "matrix",
+      "observedMethod": "pickReturn",
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "accepted"
+        },
+        "64.0": {
+          "outcome": "accepted"
+        },
+        "67.0": {
+          "outcome": "accepted"
+        }
+      }
+    },
+    {
+      "id": "record_initialize",
+      "sourceRef": "matrix",
+      "observedMethod": "pickInit",
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "accepted"
+        },
+        "64.0": {
+          "outcome": "accepted"
+        },
+        "67.0": {
+          "outcome": "accepted"
+        }
+      }
+    },
+    {
+      "id": "record_assign",
+      "sourceRef": "matrix",
+      "observedMethod": "pickAssign",
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "accepted"
+        },
+        "64.0": {
+          "outcome": "accepted"
+        },
+        "67.0": {
+          "outcome": "accepted"
+        }
+      }
+    },
+    {
+      "id": "list_return",
+      "sourceRef": "matrix",
+      "observedMethod": "pickList",
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "accepted"
+        },
+        "64.0": {
+          "outcome": "accepted"
+        },
+        "67.0": {
+          "outcome": "accepted"
+        }
+      }
+    },
+    {
+      "id": "status_return",
+      "sourceRef": "matrix",
+      "observedMethod": "pickStatus",
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "accepted"
+        },
+        "64.0": {
+          "outcome": "accepted"
+        },
+        "67.0": {
+          "outcome": "accepted"
+        }
+      }
+    },
+    {
+      "id": "ordinary_list",
+      "sourcesByAPI": {
+        "62.0": {
+          "id": "query_null_matrix",
+          "classes": {
+            "QueryNullBadList62": "public class QueryNullBadList62 { public static Account read(List<Account> rows) { return rows ?? null; } }"
+          },
+          "sourceSha256": {
+            "class:QueryNullBadList62": "41ab6d0e072d40dd4f403fb1900b9b31e040c115d543cd0bf70d4765dddfe4e4"
+          }
+        },
+        "64.0": {
+          "id": "query_null_matrix",
+          "classes": {
+            "QueryNullBadList": "public class QueryNullBadList { public static Account read(List<Account> rows) { return rows ?? null; } }"
+          },
+          "sourceSha256": {
+            "class:QueryNullBadList": "5da8fb37d233258d41fc7266c7050ff6c0729a2c497a60b595b1afe6176d7bad"
+          }
+        },
+        "67.0": {
+          "id": "query_null_matrix",
+          "classes": {
+            "QueryNullBadList67": "public class QueryNullBadList67 { public static Account read(List<Account> rows) { return rows ?? null; } }"
+          },
+          "sourceSha256": {
+            "class:QueryNullBadList67": "183c1d06f864d003a7696107a3a10927191eb80999c4c7c828f312efc8f24614"
+          }
+        }
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "rejected",
+          "diagnostics": [
+            {
+              "problem": "Illegal conversion from List<Account> to Account"
+            }
+          ],
+          "nativeDiagnostic": {
+            "componentType": "ApexClass",
+            "fullName": "QueryNullBadList62",
+            "lineNumber": 1,
+            "columnNumber": 84,
+            "problemType": "Error",
+            "problem": "Illegal conversion from List<Account> to Account"
+          }
+        },
+        "64.0": {
+          "outcome": "rejected",
+          "diagnostics": [
+            {
+              "problem": "Illegal conversion from List<Account> to Account"
+            }
+          ],
+          "nativeDiagnostic": {
+            "componentType": "ApexClass",
+            "fullName": "QueryNullBadList",
+            "lineNumber": 1,
+            "columnNumber": 82,
+            "problemType": "Error",
+            "problem": "Illegal conversion from List<Account> to Account"
+          }
+        },
+        "67.0": {
+          "outcome": "rejected",
+          "diagnostics": [
+            {
+              "problem": "Illegal conversion from List<Account> to Account"
+            }
+          ],
+          "nativeDiagnostic": {
+            "componentType": "ApexClass",
+            "fullName": "QueryNullBadList67",
+            "lineNumber": 1,
+            "columnNumber": 84,
+            "problemType": "Error",
+            "problem": "Illegal conversion from List<Account> to Account"
+          }
+        }
+      }
+    },
+    {
+      "id": "wrong_record",
+      "sourcesByAPI": {
+        "62.0": {
+          "id": "query_null_matrix",
+          "classes": {
+            "QueryNullBadType62": "public class QueryNullBadType62 { public static Contact read() { return [SELECT Id FROM Account LIMIT 1] ?? null; } }"
+          },
+          "sourceSha256": {
+            "class:QueryNullBadType62": "dc8bbf2440359c4a1591682d5615ba727a9ced61fe91beb7c160dba989f0908e"
+          }
+        },
+        "64.0": {
+          "id": "query_null_matrix",
+          "classes": {
+            "QueryNullBadType": "public class QueryNullBadType { public static Contact read() { return [SELECT Id FROM Account LIMIT 1] ?? null; } }"
+          },
+          "sourceSha256": {
+            "class:QueryNullBadType": "391dbe021608ba9d47c04da1881bb25efe0737862b98e4bc8d5afeb4620c25a9"
+          }
+        },
+        "67.0": {
+          "id": "query_null_matrix",
+          "classes": {
+            "QueryNullBadType67": "public class QueryNullBadType67 { public static Contact read() { return [SELECT Id FROM Account LIMIT 1] ?? null; } }"
+          },
+          "sourceSha256": {
+            "class:QueryNullBadType67": "2a3e813a2bf829a0b64fc009210d53b34818cdbea5406d78c86092d2671f9a34"
+          }
+        }
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "rejected",
+          "diagnostics": [
+            {
+              "problem": "Illegal conversion from List<Account> to Contact"
+            }
+          ],
+          "nativeDiagnostic": {
+            "componentType": "ApexClass",
+            "fullName": "QueryNullBadType62",
+            "lineNumber": 1,
+            "columnNumber": 66,
+            "problemType": "Error",
+            "problem": "Illegal conversion from List<Account> to Contact"
+          }
+        },
+        "64.0": {
+          "outcome": "rejected",
+          "diagnostics": [
+            {
+              "problem": "Illegal conversion from List<Account> to Contact"
+            }
+          ],
+          "nativeDiagnostic": {
+            "componentType": "ApexClass",
+            "fullName": "QueryNullBadType",
+            "lineNumber": 1,
+            "columnNumber": 64,
+            "problemType": "Error",
+            "problem": "Illegal conversion from List<Account> to Contact"
+          }
+        },
+        "67.0": {
+          "outcome": "rejected",
+          "diagnostics": [
+            {
+              "problem": "Illegal conversion from List<Account> to Contact"
+            }
+          ],
+          "nativeDiagnostic": {
+            "componentType": "ApexClass",
+            "fullName": "QueryNullBadType67",
+            "lineNumber": 1,
+            "columnNumber": 66,
+            "problemType": "Error",
+            "problem": "Illegal conversion from List<Account> to Contact"
+          }
+        }
+      }
+    }
+  ],
+  "runtimeRows": [
+    {
+      "id": "return_0",
+      "testMethod": "observe_return0",
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "return"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "return"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "return"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "return"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "return"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "return"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "return_1",
+      "testMethod": "observe_return1",
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "return"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "return"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "return"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "return"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "return"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "return"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "return_2",
+      "testMethod": "observe_return2",
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "return"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "return"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "return"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "return"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "return"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "return"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "initialize_0",
+      "testMethod": "observe_initialize0",
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "initialize"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "initialize"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "initialize"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "initialize"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "initialize"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "initialize"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "initialize_1",
+      "testMethod": "observe_initialize1",
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "initialize"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "initialize"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "initialize"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "initialize"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "initialize"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "initialize"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "initialize_2",
+      "testMethod": "observe_initialize2",
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "initialize"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "initialize"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "initialize"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "initialize"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "initialize"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "initialize"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "assign_0",
+      "testMethod": "observe_assign0",
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "assign"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "assign"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "assign"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "assign"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "assign"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": false,
+              "sameId": false,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "assign"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "assign_1",
+      "testMethod": "observe_assign1",
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "assign"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "assign"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "assign"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "assign"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "assign"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "sameName": true,
+              "sameId": true,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "assign"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "assign_2",
+      "testMethod": "observe_assign2",
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "assign"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "assign"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "assign"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "assign"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "assign"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "exMessage": "List has more than 1 row for assignment to SObject",
+              "exType": "System.QueryException",
+              "outcome": "exception",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "assign"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "list_0",
+      "testMethod": "observe_list0",
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "count": null,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "list"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "count": null,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "list"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "count": null,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "list"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "count": null,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "list"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "count": null,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "list"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "count": null,
+              "isNull": true,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 0,
+              "kind": "list"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "list_1",
+      "testMethod": "observe_list1",
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "count": 1,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "list"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "count": 1,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "list"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "count": 1,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "list"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "count": 1,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "list"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "count": 1,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "list"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "count": 1,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 1,
+              "kind": "list"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "list_2",
+      "testMethod": "observe_list2",
+      "expectedByAPI": {
+        "62.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "count": 2,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "list"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "count": 2,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "list"
+            }
+          }
+        },
+        "64.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "count": 2,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "list"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "count": 2,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "list"
+            }
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "outcome": "runtime",
+            "value": {
+              "count": 2,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "list"
+            }
+          },
+          "isTest": {
+            "outcome": "runtime",
+            "value": {
+              "count": 2,
+              "isNull": false,
+              "outcome": "returned",
+              "phase": "evaluate",
+              "rows": 2,
+              "kind": "list"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "carries": [
+    {
+      "apiVersion": "68.0",
+      "reason": "Not captured in this bounded query-null matrix; no API68 result is asserted."
+    },
+    {
+      "apiVersion": "62.0",
+      "reason": "Negative ordinary-list and different-record rows assert native rejection only; exact diagnostic wording is retained but diagnostic text parity remains unasserted."
+    },
+    {
+      "apiVersion": "64.0",
+      "reason": "Negative ordinary-list and different-record rows assert native rejection only; exact diagnostic wording is retained but diagnostic text parity remains unasserted."
+    },
+    {
+      "apiVersion": "67.0",
+      "reason": "Negative ordinary-list and different-record rows assert native rejection only; exact diagnostic wording is retained but diagnostic text parity remains unasserted."
+    }
+  ],
+  "provenance": {
+    "scope": "Owned inline SOQL literal-null coalescing compile and runtime observations only; no final hosted operation is involved.",
+    "diagnosticComparison": "Negative compile rows assert rejection only. Exact native diagnostic wording is retained as evidence and remains outside diagnostic-parity assertions.",
+    "apis": {
+      "62.0": {
+        "matrixSourceFile": "matrix-sources-62.json",
+        "matrixDeployFile": "matrix62-deploy.json",
+        "negativeDeployFile": "negative62-deploy.json",
+        "anonymousFile": "matrix62-anonymous.json",
+        "isTestFile": "matrix62-isTest.json",
+        "parsedObservationsSha256": "c3ae3181c4e3a4b62152dfac2465b642090659cd8bb5117712d79cfa72b93ffe",
+        "classMetadata": {
+          "QueryNullMatrix62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "QueryNullMatrix62Test": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+        },
+        "nativeRouteStatus": {
+          "anonymous": "success, twelve USER_DEBUG observation markers",
+          "isTest": "twelve intentional observation assertions"
+        },
+        "classMetadataSha256": {
+          "QueryNullMatrix62": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+          "QueryNullMatrix62Test": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        },
+        "nativeResponseSha256": {
+          "matrixDeployFile": "2f89b9e143241b77c5ef8e739b3a8bf4c93fa5b73833ea27edd72caaf8e43084",
+          "negativeDeployFile": "17ce0953b8cca607c3846205c68e1b08e3c710fd3e1feac4080500b9444bb220",
+          "anonymousFile": "bbbb38a781900ff271c123708ce77ee3d0378d981f0ec9cdf3376dbae35ddc09",
+          "isTestFile": "82ee6254f3c51425b3ce31dbf77deb55446e1d92fa3e1bb5038e4f26387ce8a6"
+        }
+      },
+      "64.0": {
+        "matrixSourceFile": "matrix-sources.json",
+        "matrixDeployFile": "matrix64-deploy.json",
+        "negativeDeployFile": "negative64-deploy.json",
+        "anonymousFile": "matrix64-anonymous.json",
+        "isTestFile": "matrix64-isTest.json",
+        "parsedObservationsSha256": "c3ae3181c4e3a4b62152dfac2465b642090659cd8bb5117712d79cfa72b93ffe",
+        "classMetadata": {
+          "QueryNullMatrix": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>\n",
+          "QueryNullMatrixTest": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>\n"
+        },
+        "nativeRouteStatus": {
+          "anonymous": "success, twelve USER_DEBUG observation markers",
+          "isTest": "twelve intentional observation assertions"
+        },
+        "classMetadataSha256": {
+          "QueryNullMatrix": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+          "QueryNullMatrixTest": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4"
+        },
+        "nativeResponseSha256": {
+          "matrixDeployFile": "5ef1dae87da93b53e7386fa1f3c82fcd52cb8a8f78d39bf66ec0330fd2d5c325",
+          "negativeDeployFile": "6c46da65c94c4370607a3bb8e4defffa97da60a027a9e68a4f0555a01616e132",
+          "anonymousFile": "b890da6979a4571ed31b6fcb3891b2533b5b9967bc61d4d54f8ccec57bc21240",
+          "isTestFile": "db5338dd3f1db02c0cffb8a125388284923b345dae50cabfe5977f92d29a0489"
+        }
+      },
+      "67.0": {
+        "matrixSourceFile": "matrix-sources-67.json",
+        "matrixDeployFile": "matrix67-deploy.json",
+        "negativeDeployFile": "negative67-deploy.json",
+        "anonymousFile": "matrix67-anonymous.json",
+        "isTestFile": "matrix67-isTest.json",
+        "parsedObservationsSha256": "c3ae3181c4e3a4b62152dfac2465b642090659cd8bb5117712d79cfa72b93ffe",
+        "classMetadata": {
+          "QueryNullMatrix67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "QueryNullMatrix67Test": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+        },
+        "nativeRouteStatus": {
+          "anonymous": "success, twelve USER_DEBUG observation markers",
+          "isTest": "twelve intentional observation assertions"
+        },
+        "classMetadataSha256": {
+          "QueryNullMatrix67": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+          "QueryNullMatrix67Test": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        },
+        "nativeResponseSha256": {
+          "matrixDeployFile": "dec5b37536af771f4bee677f476414e282a73910a31cbda01c1703c0eb093731",
+          "negativeDeployFile": "4adb02c5b747db97cc422266ae6e4f37a756c8e3b80a1c8b03c4ea45891b9f51",
+          "anonymousFile": "0fe30a699f7cd6e16781e75bdc71f6705f738874d97a19800ddaadb473bc630b",
+          "isTestFile": "fc13fb733f9c4d4ab1b87b4a673ff94c2c06fad12ac88e241e5141e1d63e3db1"
+        }
+      }
+    },
+    "oracleFilesSha256": {
+      "org.tsv": "8e1574bfeed3fe85715563ca35c006dbe3ff3694e59602c504c9eacc92eeed7b",
+      "ORG-RUN.txt": "2a3a1d95682cad37a81f5e5ce7d63292d1939788c21cbe77b0d314a3af230e11",
+      "cases.tsv": "d19db77a837f5a67abf590be1ff80a6f89121d3a39edd68b33f88df93e8294b2"
+    }
+  },
+  "nativeCompileObservationCount": 21,
+  "nativeRuntimeObservationCount": 72
+}

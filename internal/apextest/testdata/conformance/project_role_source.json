@@ -1,0 +1,150 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "shapeCount": 1,
+  "nativeObservationCount": 6,
+  "rows": [
+    {
+      "id": "RS03",
+      "expected": {
+        "outcome": "runtime",
+        "value": "count:2|child:ASeedChild:Owned Child|parent:ZSeedParent:Owned Parent|linked:true|root:true|absent:0|defaults:Edit:Edit:Edit|explicit:Edit:Edit:Edit|description:Owned parent description|forecast:false"
+      },
+      "routes": {
+        "anonymous": {
+          "id": "RS03A",
+          "anonymous": "System.assert(false,'P|RS03A|' + RoleSeedProbe.observe());\n",
+          "setupClasses": {
+            "RoleSeedProbe": "public class RoleSeedProbe {\n public static String observe() {\n  Map<String,UserRole> roles = new Map<String,UserRole>();\n  for(UserRole r:[SELECT Id,Name,DeveloperName,ParentRoleId,OpportunityAccessForAccountOwner,CaseAccessForAccountOwner,ContactAccessForAccountOwner,RollupDescription,MayForecastManagerShare FROM UserRole WHERE DeveloperName IN ('ASeedChild','ZSeedParent')]) { roles.put(r.DeveloperName,r); }\n  UserRole child=roles.get('ASeedChild'); UserRole parent=roles.get('ZSeedParent');\n  return 'count:'+roles.size()+'|child:'+child.DeveloperName+':'+child.Name+'|parent:'+parent.DeveloperName+':'+parent.Name\n   +'|linked:'+(child.ParentRoleId==parent.Id)+'|root:'+(parent.ParentRoleId==null)\n   +'|absent:'+ [SELECT count() FROM UserRole WHERE DeveloperName='UnprovidedRole']\n   +'|defaults:'+child.OpportunityAccessForAccountOwner+':'+child.CaseAccessForAccountOwner+':'+child.ContactAccessForAccountOwner\n   +'|explicit:'+parent.OpportunityAccessForAccountOwner+':'+parent.CaseAccessForAccountOwner+':'+parent.ContactAccessForAccountOwner\n   +'|description:'+parent.RollupDescription+'|forecast:'+parent.MayForecastManagerShare;\n }\n}"
+          },
+          "roleMetadata": {
+            "ASeedChild": "<Role xmlns=\"http://soap.sforce.com/2006/04/metadata\"><name>Owned Child</name><parentRole>ZSeedParent</parentRole></Role>\n",
+            "ZSeedParent": "<Role xmlns=\"http://soap.sforce.com/2006/04/metadata\"><name>Owned Parent</name><caseAccessLevel>Edit</caseAccessLevel><opportunityAccessLevel>Edit</opportunityAccessLevel><contactAccessLevel>Edit</contactAccessLevel><description>Owned parent description</description><mayForecastManagerShare>false</mayForecastManagerShare></Role>\n"
+          },
+          "stage": "runtime",
+          "sourceSha256": {
+            "anonymous": "7e48d031deddaa9b0a015aabda7aa1cc9738195e8fdd68e1b0788655406dad79",
+            "setupClass:RoleSeedProbe": "fe3463f837ee51429eca542640f9223cd979d22708ecef023898d03636f96fca",
+            "role:ASeedChild": "ace1f5d575b10d9a63d02fa9227f5a7082f85e71ac197187aa66be984792453c",
+            "role:ZSeedParent": "6ff293043451fe520b2d913cf8bdc613f72aca3d8a6d04af373e6ba9dea49639"
+          }
+        },
+        "isTest": {
+          "id": "RS03T",
+          "classes": {
+            "RoleSeedProbe": "public class RoleSeedProbe {\n public static String observe() {\n  Map<String,UserRole> roles = new Map<String,UserRole>();\n  for(UserRole r:[SELECT Id,Name,DeveloperName,ParentRoleId,OpportunityAccessForAccountOwner,CaseAccessForAccountOwner,ContactAccessForAccountOwner,RollupDescription,MayForecastManagerShare FROM UserRole WHERE DeveloperName IN ('ASeedChild','ZSeedParent')]) { roles.put(r.DeveloperName,r); }\n  UserRole child=roles.get('ASeedChild'); UserRole parent=roles.get('ZSeedParent');\n  return 'count:'+roles.size()+'|child:'+child.DeveloperName+':'+child.Name+'|parent:'+parent.DeveloperName+':'+parent.Name\n   +'|linked:'+(child.ParentRoleId==parent.Id)+'|root:'+(parent.ParentRoleId==null)\n   +'|absent:'+ [SELECT count() FROM UserRole WHERE DeveloperName='UnprovidedRole']\n   +'|defaults:'+child.OpportunityAccessForAccountOwner+':'+child.CaseAccessForAccountOwner+':'+child.ContactAccessForAccountOwner\n   +'|explicit:'+parent.OpportunityAccessForAccountOwner+':'+parent.CaseAccessForAccountOwner+':'+parent.ContactAccessForAccountOwner\n   +'|description:'+parent.RollupDescription+'|forecast:'+parent.MayForecastManagerShare;\n }\n}",
+            "RoleSeedSpec": "@IsTest private class RoleSeedSpec { @IsTest static void observe(){System.assert(false,'P|RS03T|' + RoleSeedProbe.observe());} }\n"
+          },
+          "tests": [
+            "RoleSeedSpec"
+          ],
+          "roleMetadata": {
+            "ASeedChild": "<Role xmlns=\"http://soap.sforce.com/2006/04/metadata\"><name>Owned Child</name><parentRole>ZSeedParent</parentRole></Role>\n",
+            "ZSeedParent": "<Role xmlns=\"http://soap.sforce.com/2006/04/metadata\"><name>Owned Parent</name><caseAccessLevel>Edit</caseAccessLevel><opportunityAccessLevel>Edit</opportunityAccessLevel><contactAccessLevel>Edit</contactAccessLevel><description>Owned parent description</description><mayForecastManagerShare>false</mayForecastManagerShare></Role>\n"
+          },
+          "stage": "runtime",
+          "sourceSha256": {
+            "class:RoleSeedProbe": "fe3463f837ee51429eca542640f9223cd979d22708ecef023898d03636f96fca",
+            "class:RoleSeedSpec": "90be2fb3a9d0849672da3a2255c0c7fc2fdc72dfbbc55384e89d442f17da9807",
+            "role:ASeedChild": "ace1f5d575b10d9a63d02fa9227f5a7082f85e71ac197187aa66be984792453c",
+            "role:ZSeedParent": "6ff293043451fe520b2d913cf8bdc613f72aca3d8a6d04af373e6ba9dea49639"
+          }
+        }
+      }
+    }
+  ],
+  "cells": [
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "RS03A",
+      "native": "count:2|child:ASeedChild:Owned Child|parent:ZSeedParent:Owned Parent|linked:true|root:true|absent:0|defaults:Edit:Edit:Edit|explicit:Edit:Edit:Edit|description:Owned parent description|forecast:false",
+      "nativeSHA256": "bbf3d92bdfaba0e5bc8f82753b8e5f49dc496c86228e43b6730b2d6671f06b41",
+      "rawReceiptSHA256": "7d195c4357feb001286efa37c6af62d2f86fad5cce2051ac8db8f90aa1485f94"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "RS03T",
+      "native": "count:2|child:ASeedChild:Owned Child|parent:ZSeedParent:Owned Parent|linked:true|root:true|absent:0|defaults:Edit:Edit:Edit|explicit:Edit:Edit:Edit|description:Owned parent description|forecast:false",
+      "nativeSHA256": "bbf3d92bdfaba0e5bc8f82753b8e5f49dc496c86228e43b6730b2d6671f06b41",
+      "rawReceiptSHA256": "8694d66fb4dfdeb1fcc18129b499093e635810b680e78505b444417ac9e35daa"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "RS03A",
+      "native": "count:2|child:ASeedChild:Owned Child|parent:ZSeedParent:Owned Parent|linked:true|root:true|absent:0|defaults:Edit:Edit:Edit|explicit:Edit:Edit:Edit|description:Owned parent description|forecast:false",
+      "nativeSHA256": "bbf3d92bdfaba0e5bc8f82753b8e5f49dc496c86228e43b6730b2d6671f06b41",
+      "rawReceiptSHA256": "7803fb9c6422c00e54bd3d554b40a21daab8e68f7838d96c59e96226f76f6227"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "RS03T",
+      "native": "count:2|child:ASeedChild:Owned Child|parent:ZSeedParent:Owned Parent|linked:true|root:true|absent:0|defaults:Edit:Edit:Edit|explicit:Edit:Edit:Edit|description:Owned parent description|forecast:false",
+      "nativeSHA256": "bbf3d92bdfaba0e5bc8f82753b8e5f49dc496c86228e43b6730b2d6671f06b41",
+      "rawReceiptSHA256": "dfc4aa136de750b48c40822c238bbc341a6a20db911dc2c684d52c621293daf8"
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "id": "RS03A",
+      "native": "count:2|child:ASeedChild:Owned Child|parent:ZSeedParent:Owned Parent|linked:true|root:true|absent:0|defaults:Edit:Edit:Edit|explicit:Edit:Edit:Edit|description:Owned parent description|forecast:false",
+      "nativeSHA256": "bbf3d92bdfaba0e5bc8f82753b8e5f49dc496c86228e43b6730b2d6671f06b41",
+      "rawReceiptSHA256": "c91dc82360e972b03e179b4206221bde8fe7bbf3d07d779100d229f0bbb12738"
+    },
+    {
+      "api": "68.0",
+      "route": "isTest",
+      "id": "RS03T",
+      "native": "count:2|child:ASeedChild:Owned Child|parent:ZSeedParent:Owned Parent|linked:true|root:true|absent:0|defaults:Edit:Edit:Edit|explicit:Edit:Edit:Edit|description:Owned parent description|forecast:false",
+      "nativeSHA256": "bbf3d92bdfaba0e5bc8f82753b8e5f49dc496c86228e43b6730b2d6671f06b41",
+      "rawReceiptSHA256": "0a1cc60ecdf784b2bcf3cc40950a0053e1f5e19eb4be4447b637a06d866cd888"
+    }
+  ],
+  "classMetadataByAPI": {
+    "62.0": {
+      "RoleSeedProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "RoleSeedSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "67.0": {
+      "RoleSeedProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "RoleSeedSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "68.0": {
+      "RoleSeedProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "RoleSeedSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+    }
+  },
+  "classMetadataSHA256": {
+    "62.0": {
+      "RoleSeedProbe": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "RoleSeedSpec": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+    },
+    "67.0": {
+      "RoleSeedProbe": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "RoleSeedSpec": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+    },
+    "68.0": {
+      "RoleSeedProbe": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "RoleSeedSpec": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+    }
+  },
+  "carriedBoundary": {
+    "id": "RS02",
+    "roleMetadata": "<Role xmlns=\"http://soap.sforce.com/2006/04/metadata\"><name>Owned Parent</name><caseAccessLevel>Read</caseAccessLevel><opportunityAccessLevel>Read</opportunityAccessLevel><contactAccessLevel>Read</contactAccessLevel></Role>\n",
+    "roleMetadataSHA256": "54c620596e57c9ea4dc5c5e0de79d4c536c7ca2ef3dad6cf8b9d591e03c6de32",
+    "api62SetupRejection": {
+      "type": "Role",
+      "message": "field integrity exception: unknown (Opportunity access level below organization default)",
+      "rawReceiptSHA256": "67bcc767157248aa33cec54c329e48cbeba36323447b1b78d9662392c3b2b9bb"
+    },
+    "api67ExpectedNative": null,
+    "api68ExpectedNative": null,
+    "runtimeExpectedNative": null
+  }
+}

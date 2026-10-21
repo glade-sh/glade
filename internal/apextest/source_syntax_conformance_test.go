@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -20,17 +21,17 @@ import (
 // Owned source and native observations are sufficient for credential-free CI.
 func TestSourceSyntaxOrgConformance(t *testing.T) {
 	type familyCase struct {
-		ID, Code, Expected string
-		Compile            bool
-		NamedExpected      string `json:"namedExpected"`
+		ID, Code, Expected   string
+		Compile              bool
+		NamedExpected        string            `json:"namedExpected"`
+		AnonymousOnly        bool              `json:"anonymousOnly"`
+		NamedCompilationOnly bool              `json:"namedCompilationOnly"`
+		NativeAnonymous      map[string]string `json:"nativeAnonymous"`
 	}
 	var data struct {
 		APIVersions []string     `json:"apiVersions"`
 		Cases       []familyCase `json:"cases"`
 		Controls    []familyCase `json:"controls"`
-		Remaining   []struct {
-			ID, Expected, Reason string
-		} `json:"remaining"`
 	}
 	raw, err := os.ReadFile("testdata/conformance/source_syntax.json")
 	if err != nil {
@@ -39,8 +40,8 @@ func TestSourceSyntaxOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 221 || len(data.Controls) != 30 || len(data.Remaining) != 4 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
-		t.Fatalf("oracle shape: cases=%d controls=%d remaining=%d versions=%v", len(data.Cases), len(data.Controls), len(data.Remaining), data.APIVersions)
+	if len(data.Cases) != 225 || len(data.Controls) != 30 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
+		t.Fatalf("oracle shape: cases=%d controls=%d versions=%v", len(data.Cases), len(data.Controls), data.APIVersions)
 	}
 	data.Cases = append(data.Cases, data.Controls...)
 	seen := map[string]bool{}
@@ -50,13 +51,8 @@ func TestSourceSyntaxOrgConformance(t *testing.T) {
 		}
 		seen[row.ID] = true
 	}
-	for _, row := range data.Remaining {
-		if seen[row.ID] || row.Expected == "" || row.Reason == "" {
-			t.Fatalf("invalid remaining row: %#v", row)
-		}
-		seen[row.ID] = true
-		t.Logf("%s: %s; native=%s", row.ID, row.Reason, row.Expected)
-	}
+	// The boundary test also checks exact C071/C072 diagnostics. These three
+	// former carries are included here; their named observations are compile-only.
 	helper := `public class P {
  public String expectedText;
  public Boolean expectedNull=false;
@@ -126,6 +122,9 @@ func TestSourceSyntaxOrgConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "source syntax", api)
+			if api == "68.0" {
+				t.Log("API68 V/G controls and named runtime checks are local regressions without native API68 route captures; C043 is anonymous-only")
+			}
 			build := func(root string, sources map[string]string) typesys.Index {
 				t.Helper()
 				paths := make([]string, 0, len(sources))
@@ -154,6 +153,9 @@ func TestSourceSyntaxOrgConformance(t *testing.T) {
 			namedSource.WriteString("@IsTest private class SourceSyntaxProbe {\n")
 			grouped := map[string]bool{}
 			for _, tc := range data.Cases {
+				if tc.AnonymousOnly || tc.NamedCompilationOnly {
+					continue
+				}
 				decls, _, invalid := declarations(tc.Code)
 				if invalid || len(decls) > 0 || strings.HasPrefix(namedExpected(tc), "COMPILE_ERROR") {
 					continue
@@ -190,10 +192,16 @@ func TestSourceSyntaxOrgConformance(t *testing.T) {
 			}
 			for _, tc := range data.Cases {
 				t.Run(tc.ID, func(t *testing.T) {
-					decls, code, parseRejected := declarations(tc.Code)
+					sourceCode, exactSource := tc.NativeAnonymous[api]
+					if !exactSource {
+						sourceCode = tc.Code
+					}
+					decls, code, parseRejected := declarations(sourceCode)
 					rowIndex := base
 					if len(decls) > 0 && !parseRejected {
-						decls["P"] = helper
+						if _, capturedHelper := decls["P"]; !capturedHelper {
+							decls["P"] = helper
+						}
 						rowIndex = build(t.TempDir(), decls)
 					}
 					declarationRejected := parseRejected || rowIndex.HasErrors()
@@ -205,8 +213,14 @@ func TestSourceSyntaxOrgConformance(t *testing.T) {
 						if strings.HasPrefix(tc.Expected, "COMPILE_ERROR") {
 							kind = "category"
 						}
+						if api == "68.0" && (strings.HasPrefix(tc.ID, "V") || strings.HasPrefix(tc.ID, "G")) {
+							kind = "legacy"
+						}
 						counts.TrackKind(t, "anonymous", kind, 1)
 						source := body(tc, code, tc.Expected)
+						if exactSource {
+							source = code
+						}
 						analysis := sema.AnalyzeAnonymous(rowIndex, source, api)
 						program, compileErr := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
 						rejected := declarationRejected || analysis.HasErrors() || compileErr != nil
@@ -218,7 +232,10 @@ func TestSourceSyntaxOrgConformance(t *testing.T) {
 							t.Fatalf("anonymous compile: declarations=%t parse=%v semantics=%v", declarationRejected, compileErr, analysis.Diagnostics)
 						}
 						rowRunner := runner
-						if len(decls) > 0 {
+						if exactSource {
+							rowOrg := orgFromIndex(rowIndex)
+							rowRunner = newConformanceRunner(t, rowIndex, conformanceRunnerOptions{LinkProject: true, Org: &rowOrg})
+						} else if len(decls) > 0 {
 							runtime, err := CompileProjectRuntimeForRequestWithSourceDigests(rowIndex, nil)
 							if err != nil {
 								t.Fatal(err)
@@ -226,16 +243,48 @@ func TestSourceSyntaxOrgConformance(t *testing.T) {
 							rowOrg := orgFromIndex(rowIndex)
 							rowRunner = newConformanceRunner(t, rowIndex, conformanceRunnerOptions{Base: runner, RequestRuntime: &runtime, Org: &rowOrg})
 						}
-						if _, err := rowRunner.execute(program); err != nil {
-							t.Fatal(err)
+						_, runErr := rowRunner.execute(program)
+						if want, uncaught := strings.CutPrefix(tc.Expected, "UNCAUGHT|"); uncaught {
+							observed := ""
+							if runErr != nil {
+								observed = runErr.Error()
+								var runtimeErr *vm.RuntimeError
+								if errors.As(runErr, &runtimeErr) {
+									observed = runtimeErr.ExceptionMessage()
+									if runtimeErr.Type != "" && !strings.HasPrefix(observed, runtimeErr.Type+": ") {
+										observed = runtimeErr.Type + ": " + observed
+									}
+								}
+							}
+							if observed != want {
+								t.Fatalf("native uncaught <%s>; Glade <%s>", want, observed)
+							}
+							return
+						}
+						if runErr != nil {
+							t.Fatal(runErr)
 						}
 					})
-					t.Run("isTest", func(t *testing.T) {
+					if tc.AnonymousOnly {
+						return
+					}
+					namedRoute := "isTest"
+					if tc.NamedCompilationOnly {
+						namedRoute = "namedCompilation"
+					}
+					t.Run(namedRoute, func(t *testing.T) {
 						kind := "exact"
 						if strings.HasPrefix(namedExpected(tc), "COMPILE_ERROR") {
 							kind = "category"
 						}
-						counts.TrackKind(t, "@IsTest", kind, 1)
+						if api == "68.0" && !tc.NamedCompilationOnly {
+							kind = "legacy"
+						}
+						countRoute := "@IsTest"
+						if tc.NamedCompilationOnly {
+							countRoute = "named-compile"
+						}
+						counts.TrackKind(t, countRoute, kind, 1)
 						if grouped[tc.ID] {
 							prepareNamedResults(t)
 							result := namedResults[tc.ID]
@@ -252,7 +301,8 @@ func TestSourceSyntaxOrgConformance(t *testing.T) {
 							return
 						}
 						sources := map[string]string{"P": helper}
-						for name, declaration := range decls {
+						namedDecls, namedCode, _ := declarations(tc.Code)
+						for name, declaration := range namedDecls {
 							if name == "P" {
 								continue
 							}
@@ -262,7 +312,7 @@ func TestSourceSyntaxOrgConformance(t *testing.T) {
 							}
 							sources[name] = declaration
 						}
-						sources["SourceSyntaxIsolated"] = "@IsTest private class SourceSyntaxIsolated { @IsTest static void observed(){\n" + body(tc, code, namedExpected(tc)) + "\n} }"
+						sources["SourceSyntaxIsolated"] = "@IsTest private class SourceSyntaxIsolated { @IsTest static void observed(){\n" + body(tc, namedCode, namedExpected(tc)) + "\n} }"
 						isolatedIndex := build(t.TempDir(), sources)
 						analysis := sema.Analyze(isolatedIndex)
 						if strings.HasPrefix(namedExpected(tc), "COMPILE_ERROR") {
@@ -271,6 +321,9 @@ func TestSourceSyntaxOrgConformance(t *testing.T) {
 						}
 						if isolatedIndex.HasErrors() || analysis.HasErrors() {
 							t.Fatalf("named isolated compile: %v %v", isolatedIndex.Diagnostics, analysis.Diagnostics)
+						}
+						if tc.NamedCompilationOnly {
+							return
 						}
 						run := Run(isolatedIndex, Options{NoDiskCache: true, Parallelism: 1})
 						if run.Summary().Total != 1 || run.Summary().Passed != 1 {

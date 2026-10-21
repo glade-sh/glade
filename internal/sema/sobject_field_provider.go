@@ -99,6 +99,7 @@ func (p *semaLayeredSObjectFieldProvider) lookupNormalized(fieldName, normalized
 	}
 	var field schema.Field
 	found := false
+	declared := false
 	for i, layer := range p.layers {
 		if layer == nil {
 			continue
@@ -114,9 +115,17 @@ func (p *semaLayeredSObjectFieldProvider) lookupNormalized(fieldName, normalized
 		if !found {
 			field = incoming
 			found = true
+			declared = i < p.declaredLayers
 			continue
 		}
 		enrich := semaEnrichSObjectProviderField
+		if _, standard := layer.(*semaStandardSObjectFieldProvider); standard &&
+			(!declared || strings.EqualFold(field.Type, "Id")) && strings.EqualFold(incoming.Type, "Reference") && len(incoming.ReferenceTo) > 0 {
+			// Fallbacks describe the Apex value type or an approximate lookup.
+			// Prefer the catalog's captured reference type while retaining
+			// explicit project lookup/text declarations.
+			field.Type = incoming.Type
+		}
 		if p.partialStandard && i == 2 {
 			enrich = semaEnrichPartialStandardSObjectProviderField
 		}
@@ -284,7 +293,7 @@ func semaSchemaFieldsFromStandardDefinition(definition storage.ObjectDefinition)
 	}
 	for i := range object.Fields {
 		field, ok := byKey[normalizeName(object.Fields[i].Name)]
-		if !ok || field.Type != storage.FieldAny || strings.TrimSpace(field.DisplayType) == "" {
+		if !ok || (field.Type != storage.FieldAny && field.Type != storage.FieldCalculated) || strings.TrimSpace(field.DisplayType) == "" {
 			continue
 		}
 		object.Fields[i].Type = semaSchemaTypeForStorageDisplayType(field.DisplayType)
@@ -493,6 +502,9 @@ func semaCommonSObjectSchemaFields(object schema.Object) []schema.Field {
 	}
 	if strings.EqualFold(object.CustomSettingsType, "Hierarchy") || semaSchemaHasField(object.Fields, "SetupOwnerId") {
 		common = append(common, schema.Field{Name: "SetupOwnerId", Type: "Lookup", ReferenceTo: []string{"Name"}, RelationshipName: "SetupOwner"})
+	} else if strings.EqualFold(object.CustomSettingsType, "List") {
+		// The native capture captures only the scalar Id, not a SetupOwner relationship.
+		common = append(common, schema.Field{Name: "SetupOwnerId", Type: "Id"})
 	}
 	if semaObjectSupportsRecordTypeRelationship(object) {
 		common = append(common, schema.Field{Name: "RecordTypeId", Type: "Lookup", ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"})

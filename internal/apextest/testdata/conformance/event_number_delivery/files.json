@@ -1,0 +1,11 @@
+{
+  "objects/MeadowSignal__e/MeadowSignal__e.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><publishBehavior>PublishImmediately</publishBehavior><label>Meadow Signal</label><pluralLabel>Meadow Signals</pluralLabel></CustomObject>",
+  "classes/MeadowEventLog.cls": "public class MeadowEventLog { public static List<String> values = new List<String>(); }",
+  "classes/MeadowEventProbe.cls": "@IsTest public class MeadowEventProbe {\n @IsTest static void observe() {\n  MeadowSignal__e e = new MeadowSignal__e(Whole__c=1, Fraction__c=1.25);\n  List<String> direct = new List<String>{String.valueOf(e.Whole__c),String.valueOf(e.Fraction__c)};\n  Test.startTest(); EventBus.publish(e); Test.getEventBus().deliver(); Test.stopTest();\n  System.assert(false, 'NATIVE|'+String.join(direct,',')+'|'+String.join(MeadowEventLog.values,','));\n }\n}",
+  "triggers/MeadowSignalObserve.trigger": "trigger MeadowSignalObserve on MeadowSignal__e (after insert) { for(MeadowSignal__e e:Trigger.new) {MeadowEventLog.values.add(String.valueOf(e.Whole__c)); MeadowEventLog.values.add(String.valueOf(e.Fraction__c));}}",
+  "objects/MeadowSignal__e/fields/Whole__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Whole__c</fullName><label>Whole</label><precision>5</precision><scale>0</scale><type>Number</type></CustomField>",
+  "objects/MeadowSignal__e/fields/Fraction__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Fraction__c</fullName><label>Fraction</label><precision>5</precision><scale>2</scale><type>Number</type></CustomField>",
+  "classes/MeadowEventLog.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexClass>",
+  "classes/MeadowEventProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexClass>",
+  "triggers/MeadowSignalObserve.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexTrigger>"
+}

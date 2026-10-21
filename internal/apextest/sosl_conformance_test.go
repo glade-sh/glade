@@ -18,7 +18,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Captured Salesforce rows are exact-text assertions at both API endpoints.
+// Captured Salesforce rows are exact-text assertions at their covered APIs.
 // Empty controls use Id=null; nonempty controls seed their own exported records.
 func TestSOSLOrgConformance(t *testing.T) {
 	type familyCase struct {
@@ -30,6 +30,8 @@ func TestSOSLOrgConformance(t *testing.T) {
 	}
 	var data struct {
 		APIVersions                  []string `json:"apiVersions"`
+		ControlAPIVersions           []string `json:"controlApiVersions"`
+		ShadowControlAPIVersions     []string `json:"shadowControlApiVersions"`
 		Cases, Controls              []familyCase
 		ShadowControls               []familyCase
 		Declarations                 map[string]string
@@ -51,8 +53,11 @@ func TestSOSLOrgConformance(t *testing.T) {
 	if len(data.Cases)+len(data.Remaining) != 277 || len(data.Controls) != 70 || len(data.ShadowControls) != 8 {
 		t.Fatalf("oracle rows: %d asserted + %d carried; %d controls + %d shadow controls", len(data.Cases), len(data.Remaining), len(data.Controls), len(data.ShadowControls))
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
-		t.Fatalf("oracle APIs: %v", data.APIVersions)
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" ||
+		strings.Join(data.ControlAPIVersions, ",") != "62.0,67.0,68.0" ||
+		strings.Join(data.ShadowControlAPIVersions, ",") != "62.0,67.0,68.0" {
+		t.Fatalf("oracle API coverage: primary %v controls %v shadow %v",
+			data.APIVersions, data.ControlAPIVersions, data.ShadowControlAPIVersions)
 	}
 	seen := map[string]bool{}
 	for _, row := range data.Remaining {
@@ -65,12 +70,20 @@ func TestSOSLOrgConformance(t *testing.T) {
 	for _, limitation := range data.HostedLimitations {
 		t.Logf("hosted limitation: %s", limitation)
 	}
-	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)
-	for _, row := range append(append([]familyCase{}, rows...), data.ShadowControls...) {
+	allRows := append(append([]familyCase{}, data.Cases...), data.Controls...)
+	for _, row := range append(append([]familyCase{}, allRows...), data.ShadowControls...) {
 		if row.ID == "" || seen[row.ID] || row.Expected == "?" {
 			t.Fatalf("invalid assertion: %#v", row)
 		}
 		seen[row.ID] = true
+	}
+	hasAPI := func(versions []string, api string) bool {
+		for _, version := range versions {
+			if version == api {
+				return true
+			}
+		}
+		return false
 	}
 	helper := `public class P {
  public String expectedText;
@@ -130,6 +143,11 @@ func TestSOSLOrgConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "SOSL", api)
+			rows := make([]familyCase, 0, len(data.Cases)+len(data.Controls))
+			rows = append(rows, data.Cases...)
+			if hasAPI(data.ControlAPIVersions, api) {
+				rows = append(rows, data.Controls...)
+			}
 			root := t.TempDir()
 			helperPath := filepath.Join(root, "P.cls")
 			writeFile(t, helperPath, helper)
@@ -177,6 +195,9 @@ func TestSOSLOrgConformance(t *testing.T) {
 			// Result and metadata rejection controls clone the linked base with
 			// an attached org. Other empty controls exercise the nil-org route.
 			resultRunner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: runner, LinkProject: true, Org: &org})
+			if api == "68.0" {
+				t.Log("API 68 @IsTest checks are local cross-route checks against anonymous Salesforce answers; no native named-route capture")
+			}
 			var namedSource strings.Builder
 			namedSource.WriteString("@IsTest private class SOSLProbe {\n")
 			executable := 0
@@ -290,6 +311,9 @@ func TestSOSLOrgConformance(t *testing.T) {
 				})
 			}
 
+			if !hasAPI(data.ShadowControlAPIVersions, api) {
+				return
+			}
 			// S001-S008 have a source-owned Search namespace. Keep this index
 			// separate so the platform constructor/signature controls above
 			// continue to resolve their captured platform symbols.

@@ -71,6 +71,7 @@
       "github.com/glade-sh/glade/internal/trace",
       "github.com/glade-sh/glade/internal/tui",
       "github.com/glade-sh/glade/internal/typesys",
+      "github.com/glade-sh/glade/internal/tzdata",
       "github.com/glade-sh/glade/internal/visualforce",
       "github.com/glade-sh/glade/internal/vm",
       "github.com/glade-sh/glade/internal/watch",

@@ -1,0 +1,7 @@
+id	group	route	status	value
+SO01	SCHEDULE_OWNER	anonymous	runtime	{"outcome":"runtime","value":true}
+SO02	SCHEDULE_OWNER	anonymous	runtime	{"outcome":"runtime","value":true}
+SB01	SCHEDULE_OWNER	anonymous	runtime	{"outcome":"runtime","value":true}
+SC01	CONTROL	anonymous	runtime	{"outcome":"runtime","value":true}
+SC02	CONTROL	anonymous	runtime	{"outcome":"runtime","value":true}
+SC03	CONTROL	anonymous	runtime	{"outcome":"runtime","value":true}

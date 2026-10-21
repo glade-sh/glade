@@ -1,0 +1,2026 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "shapeCount": 16,
+  "nativeObservationCount": 96,
+  "marker": "C135C_RESULT|",
+  "rows": [
+    {
+      "id": "LIST_PARENS",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Object held = new List<String>(); Account ignored = (Account) held;}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|LIST_PARENS|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "bc18cf25b5364715b627787f1d4fe30f7c9871ab36586f5f0ebef44f114638ec"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<String> to Account",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<String> to Account",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<String> to Account",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ObsLISTPARENSTest": "@IsTest private class ObsLISTPARENSTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Object held = new List<String>(); Account ignored = (Account) held;}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>553){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|LIST_PARENS|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsLISTPARENSTest"
+          ],
+          "sourceSha256": {
+            "class:ObsLISTPARENSTest": "41d545a182c6da3fcd83f58be9f09ad957bfffed2f6ab9bf67bb6ec30403cdd0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<String> to Account",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<String> to Account",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<String> to Account",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "TYPE_ANY",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Type reflected=Type.forName('ANY');payload.put('reflectedNull',reflected==null);payload.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|TYPE_ANY|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "157ca7336ccf58c56f6cf209a9ee9e359fd1b45dc741788b4d03d9c9a9dfee42"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Object\",\"reflectedNull\":false,\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Object",
+                  "reflectedNull": false,
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Object\",\"reflectedNull\":false,\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Object",
+                  "reflectedNull": false,
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Object\",\"reflectedNull\":false,\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Object",
+                  "reflectedNull": false,
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ObsTYPEANYTest": "@IsTest private class ObsTYPEANYTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Type reflected=Type.forName('ANY');payload.put('reflectedNull',reflected==null);payload.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>556){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|TYPE_ANY|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsTYPEANYTest"
+          ],
+          "sourceSha256": {
+            "class:ObsTYPEANYTest": "ee2ce42e510d23a431c62e422f2ede17bc69f68552ab8dc876403d6b23368ea5"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Object\",\"reflectedNull\":false,\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Object",
+                  "reflectedNull": false,
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Object\",\"reflectedNull\":false,\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Object",
+                  "reflectedNull": false,
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Object\",\"reflectedNull\":false,\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Object",
+                  "reflectedNull": false,
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "LIST_ANY_REFLECT",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{String element;try{Account ignored=(Account)(Object)new List<Object>{1};payload.put('unexpectedCastAccepted',true);}catch(TypeException error){payload.put('castExceptionType',error.getTypeName());payload.put('castExceptionMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}payload.put('element',element);payload.put('stage','reflection');Type reflected=Type.forName(element);payload.put('reflectedNull',reflected==null);payload.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|LIST_ANY_REFLECT|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "0b5f48da31343a070bcb497d64c8e4ae5dfc9f159eeaaa4eb92286d32128338b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Object\",\"reflectedNull\":false,\"stage\":\"reflection\",\"element\":\"ANY\",\"castExceptionMessage\":\"Invalid conversion from runtime type List<ANY> to Account\",\"castExceptionType\":\"System.TypeException\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Object",
+                  "reflectedNull": false,
+                  "stage": "reflection",
+                  "element": "ANY",
+                  "castExceptionMessage": "Invalid conversion from runtime type List<ANY> to Account",
+                  "castExceptionType": "System.TypeException",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Object\",\"reflectedNull\":false,\"stage\":\"reflection\",\"element\":\"ANY\",\"castExceptionMessage\":\"Invalid conversion from runtime type List<ANY> to Account\",\"castExceptionType\":\"System.TypeException\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Object",
+                  "reflectedNull": false,
+                  "stage": "reflection",
+                  "element": "ANY",
+                  "castExceptionMessage": "Invalid conversion from runtime type List<ANY> to Account",
+                  "castExceptionType": "System.TypeException",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Object\",\"reflectedNull\":false,\"stage\":\"reflection\",\"element\":\"ANY\",\"castExceptionMessage\":\"Invalid conversion from runtime type List<ANY> to Account\",\"castExceptionType\":\"System.TypeException\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Object",
+                  "reflectedNull": false,
+                  "stage": "reflection",
+                  "element": "ANY",
+                  "castExceptionMessage": "Invalid conversion from runtime type List<ANY> to Account",
+                  "castExceptionType": "System.TypeException",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ObsLISTANYREFLECTTest": "@IsTest private class ObsLISTANYREFLECTTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{String element;try{Account ignored=(Account)(Object)new List<Object>{1};payload.put('unexpectedCastAccepted',true);}catch(TypeException error){payload.put('castExceptionType',error.getTypeName());payload.put('castExceptionMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}payload.put('element',element);payload.put('stage','reflection');Type reflected=Type.forName(element);payload.put('reflectedNull',reflected==null);payload.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>548){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|LIST_ANY_REFLECT|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsLISTANYREFLECTTest"
+          ],
+          "sourceSha256": {
+            "class:ObsLISTANYREFLECTTest": "8b3053bafdbde88d54f2a0b626d2f6be347b99b41d7751bb81fea98b8cbd3c0f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Object\",\"reflectedNull\":false,\"stage\":\"reflection\",\"element\":\"ANY\",\"castExceptionMessage\":\"Invalid conversion from runtime type List<ANY> to Account\",\"castExceptionType\":\"System.TypeException\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Object",
+                  "reflectedNull": false,
+                  "stage": "reflection",
+                  "element": "ANY",
+                  "castExceptionMessage": "Invalid conversion from runtime type List<ANY> to Account",
+                  "castExceptionType": "System.TypeException",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Object\",\"reflectedNull\":false,\"stage\":\"reflection\",\"element\":\"ANY\",\"castExceptionMessage\":\"Invalid conversion from runtime type List<ANY> to Account\",\"castExceptionType\":\"System.TypeException\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Object",
+                  "reflectedNull": false,
+                  "stage": "reflection",
+                  "element": "ANY",
+                  "castExceptionMessage": "Invalid conversion from runtime type List<ANY> to Account",
+                  "castExceptionType": "System.TypeException",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Object\",\"reflectedNull\":false,\"stage\":\"reflection\",\"element\":\"ANY\",\"castExceptionMessage\":\"Invalid conversion from runtime type List<ANY> to Account\",\"castExceptionType\":\"System.TypeException\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Object",
+                  "reflectedNull": false,
+                  "stage": "reflection",
+                  "element": "ANY",
+                  "castExceptionMessage": "Invalid conversion from runtime type List<ANY> to Account",
+                  "castExceptionType": "System.TypeException",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "PARAM_LIST_STRING_EMPTY",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<String> input=new List<String>();payload.put('stage','parameter-hop');payload.putAll(ParameterChain0.probe(input));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|PARAM_LIST_STRING_EMPTY|'+captureJson);",
+          "classes": {
+            "ParameterInspector0": "public class ParameterInspector0 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain0": "public class ParameterChain0 { public class Sample {} public static Map<String,Object> probe(List<Object> items) { return ParameterInspector0.name(items); } }"
+          },
+          "sourceSha256": {
+            "class:ParameterInspector0": "3e4ae4604107d33f2e027c8b2a54f99df8596b5f2e4c33b4a942d4a6ac0c8246",
+            "class:ParameterChain0": "82fd976fbf4a13554c848a45e30a1b2e34bd6fc3fc82771e826fa0504ba10f09",
+            "anonymous": "62d47dd69ba7c8721a3bc167a81a42a57fbec53977ea4e60922106c81f56cb0e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"String\",\"reflectedNull\":false,\"element\":\"String\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "String",
+                  "reflectedNull": false,
+                  "element": "String",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<String> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"String\",\"reflectedNull\":false,\"element\":\"String\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "String",
+                  "reflectedNull": false,
+                  "element": "String",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<String> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"String\",\"reflectedNull\":false,\"element\":\"String\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "String",
+                  "reflectedNull": false,
+                  "element": "String",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<String> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ParameterInspector0": "public class ParameterInspector0 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain0": "public class ParameterChain0 { public class Sample {} public static Map<String,Object> probe(List<Object> items) { return ParameterInspector0.name(items); } }",
+            "ObsPARAMLISTSTRINGEMPTYTest": "@IsTest private class ObsPARAMLISTSTRINGEMPTYTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<String> input=new List<String>();payload.put('stage','parameter-hop');payload.putAll(ParameterChain0.probe(input));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>541){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|PARAM_LIST_STRING_EMPTY|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsPARAMLISTSTRINGEMPTYTest"
+          ],
+          "sourceSha256": {
+            "class:ParameterInspector0": "3e4ae4604107d33f2e027c8b2a54f99df8596b5f2e4c33b4a942d4a6ac0c8246",
+            "class:ParameterChain0": "82fd976fbf4a13554c848a45e30a1b2e34bd6fc3fc82771e826fa0504ba10f09",
+            "class:ObsPARAMLISTSTRINGEMPTYTest": "aee7d9e6de738b35fe2056365a366f8cbb5477b24417e0aa26499f3c54c46bfb"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"String\",\"reflectedNull\":false,\"element\":\"String\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "String",
+                  "reflectedNull": false,
+                  "element": "String",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<String> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"String\",\"reflectedNull\":false,\"element\":\"String\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "String",
+                  "reflectedNull": false,
+                  "element": "String",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<String> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"String\",\"reflectedNull\":false,\"element\":\"String\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "String",
+                  "reflectedNull": false,
+                  "element": "String",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<String> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "PARAM_LIST_ACCOUNT_EMPTY",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<Account> input=new List<Account>();payload.put('stage','parameter-hop');payload.putAll(ParameterChain1.probe(input));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|PARAM_LIST_ACCOUNT_EMPTY|'+captureJson);",
+          "classes": {
+            "ParameterInspector1": "public class ParameterInspector1 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain1": "public class ParameterChain1 { public class Sample {} public static Map<String,Object> probe(List<Object> items) { return ParameterInspector1.name(items); } }"
+          },
+          "sourceSha256": {
+            "class:ParameterInspector1": "6428a344fc2b460ebab0d7d7d40f77eccbaf6cea0384050d1db777c1287de5d7",
+            "class:ParameterChain1": "e68f01e04de05d11dc4fc1e9d9e31ec9a4442bec632dc6da3208d1294347dd6a",
+            "anonymous": "955b8cd494df570b91b34e842963296712928b8ee3c92c16b162c447d12d8a15"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Account\",\"reflectedNull\":false,\"element\":\"Account\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Account> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Account",
+                  "reflectedNull": false,
+                  "element": "Account",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Account> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Account\",\"reflectedNull\":false,\"element\":\"Account\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Account> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Account",
+                  "reflectedNull": false,
+                  "element": "Account",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Account> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Account\",\"reflectedNull\":false,\"element\":\"Account\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Account> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Account",
+                  "reflectedNull": false,
+                  "element": "Account",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Account> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ParameterInspector1": "public class ParameterInspector1 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain1": "public class ParameterChain1 { public class Sample {} public static Map<String,Object> probe(List<Object> items) { return ParameterInspector1.name(items); } }",
+            "ObsPARAMLISTACCOUNTEMPTYTest": "@IsTest private class ObsPARAMLISTACCOUNTEMPTYTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<Account> input=new List<Account>();payload.put('stage','parameter-hop');payload.putAll(ParameterChain1.probe(input));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>540){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|PARAM_LIST_ACCOUNT_EMPTY|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsPARAMLISTACCOUNTEMPTYTest"
+          ],
+          "sourceSha256": {
+            "class:ParameterInspector1": "6428a344fc2b460ebab0d7d7d40f77eccbaf6cea0384050d1db777c1287de5d7",
+            "class:ParameterChain1": "e68f01e04de05d11dc4fc1e9d9e31ec9a4442bec632dc6da3208d1294347dd6a",
+            "class:ObsPARAMLISTACCOUNTEMPTYTest": "13788dc76d3e5569bb2cfc7c90d7bb9ed6ff1856a83b83d095b6f25273243979"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Account\",\"reflectedNull\":false,\"element\":\"Account\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Account> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Account",
+                  "reflectedNull": false,
+                  "element": "Account",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Account> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Account\",\"reflectedNull\":false,\"element\":\"Account\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Account> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Account",
+                  "reflectedNull": false,
+                  "element": "Account",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Account> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Account\",\"reflectedNull\":false,\"element\":\"Account\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Account> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Account",
+                  "reflectedNull": false,
+                  "element": "Account",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Account> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "PARAM_SOBJECT_VAR_OPPORTUNITY",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> input=new List<Opportunity>();payload.put('stage','parameter-hop');payload.putAll(ParameterChain2.probe(input));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|PARAM_SOBJECT_VAR_OPPORTUNITY|'+captureJson);",
+          "classes": {
+            "ParameterInspector2": "public class ParameterInspector2 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain2": "public class ParameterChain2 { public class Sample {} public static Map<String,Object> probe(List<Object> items) { return ParameterInspector2.name(items); } }"
+          },
+          "sourceSha256": {
+            "class:ParameterInspector2": "0ae8e669c38cb91d03de1bf86cf05be44182bed36fe131181e1d3f21bdd66622",
+            "class:ParameterChain2": "bf0abd39f951b37835dabc7790bae62f6105c20ee735c8460cdf8ddb2d161471",
+            "anonymous": "d71e039c973523593780296e37c6a42d97881a47d3c5832f70e4bde43a68bc9a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Opportunity\",\"reflectedNull\":false,\"element\":\"Opportunity\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Opportunity> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Opportunity",
+                  "reflectedNull": false,
+                  "element": "Opportunity",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Opportunity> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Opportunity\",\"reflectedNull\":false,\"element\":\"Opportunity\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Opportunity> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Opportunity",
+                  "reflectedNull": false,
+                  "element": "Opportunity",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Opportunity> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Opportunity\",\"reflectedNull\":false,\"element\":\"Opportunity\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Opportunity> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Opportunity",
+                  "reflectedNull": false,
+                  "element": "Opportunity",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Opportunity> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ParameterInspector2": "public class ParameterInspector2 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain2": "public class ParameterChain2 { public class Sample {} public static Map<String,Object> probe(List<Object> items) { return ParameterInspector2.name(items); } }",
+            "ObsPARAMSOBJECTVAROPPORTUNITYTest": "@IsTest private class ObsPARAMSOBJECTVAROPPORTUNITYTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<SObject> input=new List<Opportunity>();payload.put('stage','parameter-hop');payload.putAll(ParameterChain2.probe(input));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>535){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|PARAM_SOBJECT_VAR_OPPORTUNITY|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsPARAMSOBJECTVAROPPORTUNITYTest"
+          ],
+          "sourceSha256": {
+            "class:ParameterInspector2": "0ae8e669c38cb91d03de1bf86cf05be44182bed36fe131181e1d3f21bdd66622",
+            "class:ParameterChain2": "bf0abd39f951b37835dabc7790bae62f6105c20ee735c8460cdf8ddb2d161471",
+            "class:ObsPARAMSOBJECTVAROPPORTUNITYTest": "a3bb0cce439a2a8e6efa0dbc512220803391e18e17ecca67d710869a7b503223"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Opportunity\",\"reflectedNull\":false,\"element\":\"Opportunity\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Opportunity> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Opportunity",
+                  "reflectedNull": false,
+                  "element": "Opportunity",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Opportunity> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Opportunity\",\"reflectedNull\":false,\"element\":\"Opportunity\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Opportunity> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Opportunity",
+                  "reflectedNull": false,
+                  "element": "Opportunity",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Opportunity> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Opportunity\",\"reflectedNull\":false,\"element\":\"Opportunity\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Opportunity> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Opportunity",
+                  "reflectedNull": false,
+                  "element": "Opportunity",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Opportunity> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "PARAM_LIST_INTEGER",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<Integer> input=new List<Integer>{1,2};payload.put('stage','parameter-hop');payload.putAll(ParameterChain3.probe(input));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|PARAM_LIST_INTEGER|'+captureJson);",
+          "classes": {
+            "ParameterInspector3": "public class ParameterInspector3 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain3": "public class ParameterChain3 { public class Sample {} public static Map<String,Object> probe(List<Object> items) { return ParameterInspector3.name(items); } }"
+          },
+          "sourceSha256": {
+            "class:ParameterInspector3": "17c1bd85af97184634c6773ea619b296abaabc34d34a30d5b28875e487474224",
+            "class:ParameterChain3": "cfa0540238fa216de4020325d1db1da33ed1dbea78512b4fab0328ee6c72a24a",
+            "anonymous": "c19df14452dc7bad8172da0e989ff568fd0ad57bfd7a63e453c054ece2ca6d11"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Integer",
+                  "reflectedNull": false,
+                  "element": "Integer",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Integer> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Integer",
+                  "reflectedNull": false,
+                  "element": "Integer",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Integer> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Integer",
+                  "reflectedNull": false,
+                  "element": "Integer",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Integer> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ParameterInspector3": "public class ParameterInspector3 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain3": "public class ParameterChain3 { public class Sample {} public static Map<String,Object> probe(List<Object> items) { return ParameterInspector3.name(items); } }",
+            "ObsPARAMLISTINTEGERTest": "@IsTest private class ObsPARAMLISTINTEGERTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<Integer> input=new List<Integer>{1,2};payload.put('stage','parameter-hop');payload.putAll(ParameterChain3.probe(input));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>546){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|PARAM_LIST_INTEGER|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsPARAMLISTINTEGERTest"
+          ],
+          "sourceSha256": {
+            "class:ParameterInspector3": "17c1bd85af97184634c6773ea619b296abaabc34d34a30d5b28875e487474224",
+            "class:ParameterChain3": "cfa0540238fa216de4020325d1db1da33ed1dbea78512b4fab0328ee6c72a24a",
+            "class:ObsPARAMLISTINTEGERTest": "db41c67d111dcf6cfbb7528f6dede25a7f38c81a3cb753a2cd733be45e6e73f1"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Integer",
+                  "reflectedNull": false,
+                  "element": "Integer",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Integer> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Integer",
+                  "reflectedNull": false,
+                  "element": "Integer",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Integer> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type List<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Integer",
+                  "reflectedNull": false,
+                  "element": "Integer",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type List<Integer> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "PARAM_SET_ID_ITERABLE",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('stage','parameter-hop');payload.putAll(ParameterChain4.probe((Iterable<Object>)new Set<Id>()));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|PARAM_SET_ID_ITERABLE|'+captureJson);",
+          "classes": {
+            "ParameterInspector4": "public class ParameterInspector4 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain4": "public class ParameterChain4 { public class Sample {} public static Map<String,Object> probe(Iterable<Object> items) { return ParameterInspector4.name(items); } }"
+          },
+          "sourceSha256": {
+            "class:ParameterInspector4": "e67c439708b5a4f81b5d528e5b3eae3ecdb8720f89e463248124a06faf441b42",
+            "class:ParameterChain4": "e690d8ef4dbdd06182ae358b571bbfc591af02e4278d5813ac6d762a1d1dd779",
+            "anonymous": "7e17da0b97c47a1ee579fb80ac8e09bc015a27cd802d22db2df3f0f87c8c2928"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Id\",\"reflectedNull\":false,\"element\":\"Id\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type Set<Id> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Id",
+                  "reflectedNull": false,
+                  "element": "Id",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type Set<Id> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Id\",\"reflectedNull\":false,\"element\":\"Id\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type Set<Id> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Id",
+                  "reflectedNull": false,
+                  "element": "Id",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type Set<Id> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Id\",\"reflectedNull\":false,\"element\":\"Id\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type Set<Id> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Id",
+                  "reflectedNull": false,
+                  "element": "Id",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type Set<Id> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ParameterInspector4": "public class ParameterInspector4 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain4": "public class ParameterChain4 { public class Sample {} public static Map<String,Object> probe(Iterable<Object> items) { return ParameterInspector4.name(items); } }",
+            "ObsPARAMSETIDITERABLETest": "@IsTest private class ObsPARAMSETIDITERABLETest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('stage','parameter-hop');payload.putAll(ParameterChain4.probe((Iterable<Object>)new Set<Id>()));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>543){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|PARAM_SET_ID_ITERABLE|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsPARAMSETIDITERABLETest"
+          ],
+          "sourceSha256": {
+            "class:ParameterInspector4": "e67c439708b5a4f81b5d528e5b3eae3ecdb8720f89e463248124a06faf441b42",
+            "class:ParameterChain4": "e690d8ef4dbdd06182ae358b571bbfc591af02e4278d5813ac6d762a1d1dd779",
+            "class:ObsPARAMSETIDITERABLETest": "f656103237fbc02c7c9478e43f117cec2338187b78df5d01c96811cbe80f2e0e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Id\",\"reflectedNull\":false,\"element\":\"Id\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type Set<Id> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Id",
+                  "reflectedNull": false,
+                  "element": "Id",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type Set<Id> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Id\",\"reflectedNull\":false,\"element\":\"Id\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type Set<Id> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Id",
+                  "reflectedNull": false,
+                  "element": "Id",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type Set<Id> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Id\",\"reflectedNull\":false,\"element\":\"Id\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type Set<Id> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Id",
+                  "reflectedNull": false,
+                  "element": "Id",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type Set<Id> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "PARAM_SET_INTEGER_ITERABLE",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('stage','parameter-hop');payload.putAll(ParameterChain5.probe((Iterable<Object>)new Set<Integer>{1}));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|PARAM_SET_INTEGER_ITERABLE|'+captureJson);",
+          "classes": {
+            "ParameterInspector5": "public class ParameterInspector5 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain5": "public class ParameterChain5 { public class Sample {} public static Map<String,Object> probe(Iterable<Object> items) { return ParameterInspector5.name(items); } }"
+          },
+          "sourceSha256": {
+            "class:ParameterInspector5": "e7167a164be245945d7bb448f9dec07d064db903e6254fbaf8e1b50c10d04e3f",
+            "class:ParameterChain5": "a367b939f6b263ee23588f188ef9ad965abcaa0c3aba80191ede11921fea258d",
+            "anonymous": "9b3848996fa715e18f9ef75fde93101cd50b17d75d4f2430935ee96ffe00b320"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type Set<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Integer",
+                  "reflectedNull": false,
+                  "element": "Integer",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type Set<Integer> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type Set<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Integer",
+                  "reflectedNull": false,
+                  "element": "Integer",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type Set<Integer> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type Set<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Integer",
+                  "reflectedNull": false,
+                  "element": "Integer",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type Set<Integer> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ParameterInspector5": "public class ParameterInspector5 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain5": "public class ParameterChain5 { public class Sample {} public static Map<String,Object> probe(Iterable<Object> items) { return ParameterInspector5.name(items); } }",
+            "ObsPARAMSETINTEGERITERABLETest": "@IsTest private class ObsPARAMSETINTEGERITERABLETest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('stage','parameter-hop');payload.putAll(ParameterChain5.probe((Iterable<Object>)new Set<Integer>{1}));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>538){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|PARAM_SET_INTEGER_ITERABLE|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsPARAMSETINTEGERITERABLETest"
+          ],
+          "sourceSha256": {
+            "class:ParameterInspector5": "e7167a164be245945d7bb448f9dec07d064db903e6254fbaf8e1b50c10d04e3f",
+            "class:ParameterChain5": "a367b939f6b263ee23588f188ef9ad965abcaa0c3aba80191ede11921fea258d",
+            "class:ObsPARAMSETINTEGERITERABLETest": "7ac6aac19fd09f927e85a8febf87d0800b663b41dcffbfe84117a2906a5dfdb9"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type Set<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Integer",
+                  "reflectedNull": false,
+                  "element": "Integer",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type Set<Integer> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type Set<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Integer",
+                  "reflectedNull": false,
+                  "element": "Integer",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type Set<Integer> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"reflectionMessage\":null,\"reflectionType\":null,\"castMessage\":\"Invalid conversion from runtime type Set<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "reflectedName": "Integer",
+                  "reflectedNull": false,
+                  "element": "Integer",
+                  "reflectionMessage": null,
+                  "reflectionType": null,
+                  "castMessage": "Invalid conversion from runtime type Set<Integer> to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "PARAM_INNER_INSTANCE",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('stage','parameter-hop');payload.putAll(ParameterChain6.probe(new ParameterChain6.Sample()));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|PARAM_INNER_INSTANCE|'+captureJson);",
+          "classes": {
+            "ParameterInspector6": "public class ParameterInspector6 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain6": "public class ParameterChain6 { public class Sample {} public static Map<String,Object> probe(Object items) { return ParameterInspector6.name(items); } }"
+          },
+          "sourceSha256": {
+            "class:ParameterInspector6": "ef648c285267ec735f43cf0e41b813db25fd0bf08438ab0604ad37975290efa5",
+            "class:ParameterChain6": "857c7fa3a1fa3a230278ffa925ca4f0ac0628ec3066f32de6e6be2a1e32fb9b7",
+            "anonymous": "0cf121db8e622de4c61ff98fe5dd57cad097645cbdd014a0985f2f34084901c6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"element\":null,\"reflectionMessage\":\"Attempt to de-reference a null object\",\"reflectionType\":\"System.NullPointerException\",\"castMessage\":\"Invalid conversion from runtime type ParameterChain6.Sample to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "element": null,
+                  "reflectionMessage": "Attempt to de-reference a null object",
+                  "reflectionType": "System.NullPointerException",
+                  "castMessage": "Invalid conversion from runtime type ParameterChain6.Sample to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"element\":null,\"reflectionMessage\":\"Attempt to de-reference a null object\",\"reflectionType\":\"System.NullPointerException\",\"castMessage\":\"Invalid conversion from runtime type ParameterChain6.Sample to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "element": null,
+                  "reflectionMessage": "Attempt to de-reference a null object",
+                  "reflectionType": "System.NullPointerException",
+                  "castMessage": "Invalid conversion from runtime type ParameterChain6.Sample to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"element\":null,\"reflectionMessage\":\"Attempt to de-reference a null object\",\"reflectionType\":\"System.NullPointerException\",\"castMessage\":\"Invalid conversion from runtime type ParameterChain6.Sample to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "element": null,
+                  "reflectionMessage": "Attempt to de-reference a null object",
+                  "reflectionType": "System.NullPointerException",
+                  "castMessage": "Invalid conversion from runtime type ParameterChain6.Sample to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ParameterInspector6": "public class ParameterInspector6 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain6": "public class ParameterChain6 { public class Sample {} public static Map<String,Object> probe(Object items) { return ParameterInspector6.name(items); } }",
+            "ObsPARAMINNERINSTANCETest": "@IsTest private class ObsPARAMINNERINSTANCETest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('stage','parameter-hop');payload.putAll(ParameterChain6.probe(new ParameterChain6.Sample()));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>544){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|PARAM_INNER_INSTANCE|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsPARAMINNERINSTANCETest"
+          ],
+          "sourceSha256": {
+            "class:ParameterInspector6": "ef648c285267ec735f43cf0e41b813db25fd0bf08438ab0604ad37975290efa5",
+            "class:ParameterChain6": "857c7fa3a1fa3a230278ffa925ca4f0ac0628ec3066f32de6e6be2a1e32fb9b7",
+            "class:ObsPARAMINNERINSTANCETest": "f0bcd53bdf2d199a6c1ed45e3b5f2ada352589ecbe7cc14c27e56390e55b16b4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"element\":null,\"reflectionMessage\":\"Attempt to de-reference a null object\",\"reflectionType\":\"System.NullPointerException\",\"castMessage\":\"Invalid conversion from runtime type ParameterChain6.Sample to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "element": null,
+                  "reflectionMessage": "Attempt to de-reference a null object",
+                  "reflectionType": "System.NullPointerException",
+                  "castMessage": "Invalid conversion from runtime type ParameterChain6.Sample to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"element\":null,\"reflectionMessage\":\"Attempt to de-reference a null object\",\"reflectionType\":\"System.NullPointerException\",\"castMessage\":\"Invalid conversion from runtime type ParameterChain6.Sample to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "element": null,
+                  "reflectionMessage": "Attempt to de-reference a null object",
+                  "reflectionType": "System.NullPointerException",
+                  "castMessage": "Invalid conversion from runtime type ParameterChain6.Sample to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"element\":null,\"reflectionMessage\":\"Attempt to de-reference a null object\",\"reflectionType\":\"System.NullPointerException\",\"castMessage\":\"Invalid conversion from runtime type ParameterChain6.Sample to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "element": null,
+                  "reflectionMessage": "Attempt to de-reference a null object",
+                  "reflectionType": "System.NullPointerException",
+                  "castMessage": "Invalid conversion from runtime type ParameterChain6.Sample to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "PARAM_DATE",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('stage','parameter-hop');payload.putAll(ParameterChain7.probe(Date.newInstance(2026,1,1)));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|PARAM_DATE|'+captureJson);",
+          "classes": {
+            "ParameterInspector7": "public class ParameterInspector7 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain7": "public class ParameterChain7 { public class Sample {} public static Map<String,Object> probe(Object items) { return ParameterInspector7.name(items); } }"
+          },
+          "sourceSha256": {
+            "class:ParameterInspector7": "8f66b0c79479634778a9fe41a8fddb719c9fb7e8b473553b051cae5f85c358c0",
+            "class:ParameterChain7": "6916e3afaca93586eeba114931c6999e5a01dd628f71b54d98a9cf9f5a7f3c40",
+            "anonymous": "5e11187cbfe26cc4135f74840572b4654ff0fcf798f9ecb1474eb41655868c7b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"element\":null,\"reflectionMessage\":\"Attempt to de-reference a null object\",\"reflectionType\":\"System.NullPointerException\",\"castMessage\":\"Invalid conversion from runtime type Date to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "element": null,
+                  "reflectionMessage": "Attempt to de-reference a null object",
+                  "reflectionType": "System.NullPointerException",
+                  "castMessage": "Invalid conversion from runtime type Date to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"element\":null,\"reflectionMessage\":\"Attempt to de-reference a null object\",\"reflectionType\":\"System.NullPointerException\",\"castMessage\":\"Invalid conversion from runtime type Date to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "element": null,
+                  "reflectionMessage": "Attempt to de-reference a null object",
+                  "reflectionType": "System.NullPointerException",
+                  "castMessage": "Invalid conversion from runtime type Date to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"element\":null,\"reflectionMessage\":\"Attempt to de-reference a null object\",\"reflectionType\":\"System.NullPointerException\",\"castMessage\":\"Invalid conversion from runtime type Date to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "element": null,
+                  "reflectionMessage": "Attempt to de-reference a null object",
+                  "reflectionType": "System.NullPointerException",
+                  "castMessage": "Invalid conversion from runtime type Date to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ParameterInspector7": "public class ParameterInspector7 { public static Map<String,Object> name(Object o) {Map<String,Object> answer=new Map<String,Object>{'castAccepted'=>false,'castType'=>null,'castMessage'=>null,'reflectionType'=>null,'reflectionMessage'=>null};String element;try {Account ignored=(Account)o;answer.put('castAccepted',true);}catch(Exception error){answer.put('castType',error.getTypeName());answer.put('castMessage',error.getMessage());element=error.getMessage().substringBetween('List<','>');}answer.put('element',element);try{Type reflected=Type.forName(element);answer.put('reflectedNull',reflected==null);answer.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception error){answer.put('reflectionType',error.getTypeName());answer.put('reflectionMessage',error.getMessage());}return answer;} }",
+            "ParameterChain7": "public class ParameterChain7 { public class Sample {} public static Map<String,Object> probe(Object items) { return ParameterInspector7.name(items); } }",
+            "ObsPARAMDATETest": "@IsTest private class ObsPARAMDATETest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('stage','parameter-hop');payload.putAll(ParameterChain7.probe(Date.newInstance(2026,1,1)));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>554){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|PARAM_DATE|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsPARAMDATETest"
+          ],
+          "sourceSha256": {
+            "class:ParameterInspector7": "8f66b0c79479634778a9fe41a8fddb719c9fb7e8b473553b051cae5f85c358c0",
+            "class:ParameterChain7": "6916e3afaca93586eeba114931c6999e5a01dd628f71b54d98a9cf9f5a7f3c40",
+            "class:ObsPARAMDATETest": "c95511b32f0088c1ad91906b13ec650e08d8cc1e9723401b2b0d83f4093f4356"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"element\":null,\"reflectionMessage\":\"Attempt to de-reference a null object\",\"reflectionType\":\"System.NullPointerException\",\"castMessage\":\"Invalid conversion from runtime type Date to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "element": null,
+                  "reflectionMessage": "Attempt to de-reference a null object",
+                  "reflectionType": "System.NullPointerException",
+                  "castMessage": "Invalid conversion from runtime type Date to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"element\":null,\"reflectionMessage\":\"Attempt to de-reference a null object\",\"reflectionType\":\"System.NullPointerException\",\"castMessage\":\"Invalid conversion from runtime type Date to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "element": null,
+                  "reflectionMessage": "Attempt to de-reference a null object",
+                  "reflectionType": "System.NullPointerException",
+                  "castMessage": "Invalid conversion from runtime type Date to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"element\":null,\"reflectionMessage\":\"Attempt to de-reference a null object\",\"reflectionType\":\"System.NullPointerException\",\"castMessage\":\"Invalid conversion from runtime type Date to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"stage\":\"parameter-hop\",\"exceptionMessage\":null,\"exceptionType\":null}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "element": null,
+                  "reflectionMessage": "Attempt to de-reference a null object",
+                  "reflectionType": "System.NullPointerException",
+                  "castMessage": "Invalid conversion from runtime type Date to Account",
+                  "castType": "System.TypeException",
+                  "castAccepted": false,
+                  "stage": "parameter-hop",
+                  "exceptionMessage": null,
+                  "exceptionType": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "DIRECT_LISTOBJ_TO_LISTSTRING",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<Object> items=new List<Object>{'one','two'};List<String> converted=(List<String>)items;payload.put('size',converted.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|DIRECT_LISTOBJ_TO_LISTSTRING|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "ac4ca972c09190a5ea37b626945907b000f58e3d30d2ba0fa785198a8838d295"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ObsDIRECTLISTOBJTOLISTSTRINGTest": "@IsTest private class ObsDIRECTLISTOBJTOLISTSTRINGTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<Object> items=new List<Object>{'one','two'};List<String> converted=(List<String>)items;payload.put('size',converted.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>536){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|DIRECT_LISTOBJ_TO_LISTSTRING|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsDIRECTLISTOBJTOLISTSTRINGTest"
+          ],
+          "sourceSha256": {
+            "class:ObsDIRECTLISTOBJTOLISTSTRINGTest": "4b1109357ca34cc81f44a15c80b2bff787afc66de91c0f605a948b779facf898"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "DIRECT_LISTOBJ_TO_LISTINTEGER",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<Object> items=new List<Object>{1,2};List<Integer> converted=(List<Integer>)items;payload.put('size',converted.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|DIRECT_LISTOBJ_TO_LISTINTEGER|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "9838bf3cc362e497d2188821e8c5023accb794e992cabdb0642071b98a98b1b4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<Integer>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<Integer>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<Integer>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<Integer>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<Integer>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<Integer>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ObsDIRECTLISTOBJTOLISTINTEGERTest": "@IsTest private class ObsDIRECTLISTOBJTOLISTINTEGERTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<Object> items=new List<Object>{1,2};List<Integer> converted=(List<Integer>)items;payload.put('size',converted.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>535){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|DIRECT_LISTOBJ_TO_LISTINTEGER|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsDIRECTLISTOBJTOLISTINTEGERTest"
+          ],
+          "sourceSha256": {
+            "class:ObsDIRECTLISTOBJTOLISTINTEGERTest": "2e55e5a4c6a56d5af997963f57573bd7bbec03094e68f667e8f3aecc0f7bc552"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<Integer>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<Integer>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<Integer>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<Integer>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<Integer>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<Integer>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "PARAM_LISTOBJ_TO_LISTSTRING",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<Object> items=new List<Object>{'one','two'};Integer count=ParameterListNarrow.size(items);payload.put('size',count);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|PARAM_LISTOBJ_TO_LISTSTRING|'+captureJson);",
+          "classes": {
+            "ParameterListNarrow": "public class ParameterListNarrow { public static Integer size(List<Object> items) { List<String> converted=(List<String>)items;return converted.size(); } }"
+          },
+          "sourceSha256": {
+            "class:ParameterListNarrow": "38ca45c9d803ce5d87532810fbd944571ce70c14d06e1a1cc53c216f3d5f6fd2",
+            "anonymous": "1e128cb31618f80af8802750748fcfab67a9b37091b0a7c5eef57cfee4ed62aa"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ParameterListNarrow": "public class ParameterListNarrow { public static Integer size(List<Object> items) { List<String> converted=(List<String>)items;return converted.size(); } }",
+            "ObsPARAMLISTOBJTOLISTSTRINGTest": "@IsTest private class ObsPARAMLISTOBJTOLISTSTRINGTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<Object> items=new List<Object>{'one','two'};Integer count=ParameterListNarrow.size(items);payload.put('size',count);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>537){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|PARAM_LISTOBJ_TO_LISTSTRING|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsPARAMLISTOBJTOLISTSTRINGTest"
+          ],
+          "sourceSha256": {
+            "class:ParameterListNarrow": "38ca45c9d803ce5d87532810fbd944571ce70c14d06e1a1cc53c216f3d5f6fd2",
+            "class:ObsPARAMLISTOBJTOLISTSTRINGTest": "39aaab939b5a232012262e77edfd04d0dda6ac8decf663e227d04c71183f68a2"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "TYPE_FORNAME_NULL",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Type reflected=Type.forName(null);payload.put('reflectedNull',reflected==null);payload.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|TYPE_FORNAME_NULL|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "c725bcd16624c52137e4cd78c8fd5d980c13abede04b6c50c04502a66508dbec"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Attempt to de-reference a null object\",\"exceptionType\":\"System.NullPointerException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Attempt to de-reference a null object",
+                  "exceptionType": "System.NullPointerException"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Attempt to de-reference a null object\",\"exceptionType\":\"System.NullPointerException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Attempt to de-reference a null object",
+                  "exceptionType": "System.NullPointerException"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Attempt to de-reference a null object\",\"exceptionType\":\"System.NullPointerException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Attempt to de-reference a null object",
+                  "exceptionType": "System.NullPointerException"
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ObsTYPEFORNAMENULLTest": "@IsTest private class ObsTYPEFORNAMENULLTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Type reflected=Type.forName(null);payload.put('reflectedNull',reflected==null);payload.put('reflectedName',reflected==null?null:reflected.getName());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>547){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|TYPE_FORNAME_NULL|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsTYPEFORNAMENULLTest"
+          ],
+          "sourceSha256": {
+            "class:ObsTYPEFORNAMENULLTest": "8342bcd4394b44288c51d7b453a332d9e1cef277726b7e1713ebf92e5338b8dc"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Attempt to de-reference a null object\",\"exceptionType\":\"System.NullPointerException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Attempt to de-reference a null object",
+                  "exceptionType": "System.NullPointerException"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Attempt to de-reference a null object\",\"exceptionType\":\"System.NullPointerException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Attempt to de-reference a null object",
+                  "exceptionType": "System.NullPointerException"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Attempt to de-reference a null object\",\"exceptionType\":\"System.NullPointerException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Attempt to de-reference a null object",
+                  "exceptionType": "System.NullPointerException"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "DIRECT_LISTOBJ_TO_LISTSTRING_EMPTY",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<Object> items=new List<Object>();List<String> converted=(List<String>)items;payload.put('size',converted.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|DIRECT_LISTOBJ_TO_LISTSTRING_EMPTY|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "2aa313693337e640f603a19297c4b06bc9cfd4e0a7acdb2e7f9ab02867e199ca"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "ObsDIRECTLISTOBJTOLISTSTRINGEMPTYTest": "@IsTest private class ObsDIRECTLISTOBJTOLISTSTRINGEMPTYTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{List<Object> items=new List<Object>();List<String> converted=(List<String>)items;payload.put('size',converted.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>530){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|DIRECT_LISTOBJ_TO_LISTSTRING_EMPTY|'+captureJson);} }"
+          },
+          "tests": [
+            "ObsDIRECTLISTOBJTOLISTSTRINGEMPTYTest"
+          ],
+          "sourceSha256": {
+            "class:ObsDIRECTLISTOBJTOLISTSTRINGEMPTYTest": "4d157fa8b26cd30737743c44d4f4c07489f786841aad7afd1e5ece6de49f4493"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": "{\"exceptionMessage\":\"Invalid conversion from runtime type List<ANY> to List<String>\",\"exceptionType\":\"System.TypeException\"}",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "Invalid conversion from runtime type List<ANY> to List<String>",
+                  "exceptionType": "System.TypeException"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

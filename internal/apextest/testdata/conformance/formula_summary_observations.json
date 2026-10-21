@@ -1,0 +1,1188 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "shapeCount": 16,
+  "nativeObservationCount": 96,
+  "provenance": "Owned synthetic black-box Salesforce observations on a plain Developer scratch org. Each request and test source was pinned to its matrix API. Anonymous execution and named check-only test observations are independent. Stable semantic labels and the test class name replace capture transport identifiers; all native payload values are retained. Object metadata combines the accepted deployed components, identical across these APIs. No org identity, credentials or private source is included. CI executes locally without contacting Salesforce.",
+  "objects": {
+    "ProbeTile__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>OptionalText__c</fullName><label>OptionalText</label><length>100</length><type>Text</type></fields><label>ProbeTile</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>ProbeTile rows</pluralLabel><sharingModel>ReadWrite</sharingModel><fields><fullName>FindSpace__c</fullName><label>FindSpace</label><formula>FIND(\" \",Name)</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><precision>18</precision><scale>0</scale><type>Number</type></fields><fields><fullName>FindCaption__c</fullName><label>FindCaption</label><formula>TEXT(FIND(\" \",Name))</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><type>Text</type></fields><fields><fullName>FindCase__c</fullName><label>FindCase</label><formula>FIND(\"B\",Name)</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><precision>18</precision><scale>0</scale><type>Number</type></fields><fields><fullName>FindStart__c</fullName><label>FindStart</label><formula>FIND(\"a\",Name,3)</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><precision>18</precision><scale>0</scale><type>Number</type></fields><fields><fullName>FindZero__c</fullName><label>FindZero</label><formula>FIND(\"a\",Name,0)</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><precision>18</precision><scale>0</scale><type>Number</type></fields><fields><fullName>FindHigh__c</fullName><label>FindHigh</label><formula>FIND(\"a\",Name,999)</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><precision>18</precision><scale>0</scale><type>Number</type></fields><fields><fullName>FindOptional__c</fullName><label>FindOptional</label><formula>FIND(\"x\",OptionalText__c)</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><precision>18</precision><scale>0</scale><type>Number</type></fields><fields><fullName>DotCount__c</fullName><label>DotCount</label><summaryForeignKey>ProbeDot__c.ParentTile__c</summaryForeignKey><summaryOperation>count</summaryOperation><type>Summary</type></fields></CustomObject>",
+    "ProbeDot__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>ParentTile__c</fullName><label>ParentTile</label><referenceTo>ProbeTile__c</referenceTo><relationshipLabel>Dots</relationshipLabel><relationshipName>Dots</relationshipName><relationshipOrder>0</relationshipOrder><reparentableMasterDetail>false</reparentableMasterDetail><type>MasterDetail</type><writeRequiresMasterRead>false</writeRequiresMasterRead></fields><label>ProbeDot</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>ProbeDot rows</pluralLabel><sharingModel>ControlledByParent</sharingModel></CustomObject>"
+  },
+  "rows": [
+    {
+      "label": "find-space",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindSpace__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindSpace__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-space|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindSpace__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindSpace__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-space|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 6,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 6,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 6,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 6,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 6,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 6,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "find-caption-option",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindCaption__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindCaption__c);SelectOption option=new SelectOption('choice',x.FindCaption__c);payload.put('label',option.getLabel());payload.put('disabled',option.getDisabled());payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-caption-option|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindCaption__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindCaption__c);SelectOption option=new SelectOption('choice',x.FindCaption__c);payload.put('label',option.getLabel());payload.put('disabled',option.getDisabled());payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-caption-option|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "disabled": false,
+            "label": "6",
+            "value": "6",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "disabled": false,
+            "label": "6",
+            "value": "6",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "disabled": false,
+            "label": "6",
+            "value": "6",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "disabled": false,
+            "label": "6",
+            "value": "6",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "disabled": false,
+            "label": "6",
+            "value": "6",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "disabled": false,
+            "label": "6",
+            "value": "6",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "find-case-sensitive-no-match",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindCase__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindCase__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-case-sensitive-no-match|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindCase__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindCase__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-case-sensitive-no-match|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "find-start-three",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindStart__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindStart__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-start-three|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindStart__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindStart__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-start-three|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 5,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 5,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 5,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 5,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 5,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 5,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "find-zero-start",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindZero__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindZero__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-zero-start|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindZero__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindZero__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-zero-start|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 1,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 1,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 1,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 1,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 1,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 1,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "find-past-end",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindHigh__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindHigh__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-past-end|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindHigh__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindHigh__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-past-end|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "find-null-input",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindOptional__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindOptional__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-null-input|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta');insert x;payload.put('stage','effect');x=[SELECT FindOptional__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindOptional__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-null-input|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "find-nonblank-input",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta',OptionalText__c='mix');insert x;payload.put('stage','effect');x=[SELECT FindOptional__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindOptional__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-nonblank-input|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c x=new ProbeTile__c(Name='alpha beta',OptionalText__c='mix');insert x;payload.put('stage','effect');x=[SELECT FindOptional__c FROM ProbeTile__c WHERE Id=:x.Id];payload.put('value',x.FindOptional__c);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|find-nonblank-input|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 3,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 3,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 3,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 3,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "value": 3,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "value": 3,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "option-null-label",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{payload.put('stage','effect');SelectOption option=new SelectOption('choice',null);payload.put('label',option.getLabel());payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|option-null-label|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{payload.put('stage','effect');SelectOption option=new SelectOption('choice',null);payload.put('label',option.getLabel());payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|option-null-label|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "exceptionMessage": "Argument 2 cannot be null",
+            "exceptionType": "System.NullPointerException",
+            "readBackComplete": false,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "exceptionMessage": "Argument 2 cannot be null",
+            "exceptionType": "System.NullPointerException",
+            "readBackComplete": false,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "exceptionMessage": "Argument 2 cannot be null",
+            "exceptionType": "System.NullPointerException",
+            "readBackComplete": false,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "exceptionMessage": "Argument 2 cannot be null",
+            "exceptionType": "System.NullPointerException",
+            "readBackComplete": false,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "exceptionMessage": "Argument 2 cannot be null",
+            "exceptionType": "System.NullPointerException",
+            "readBackComplete": false,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "exceptionMessage": "Argument 2 cannot be null",
+            "exceptionType": "System.NullPointerException",
+            "readBackComplete": false,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "option-explicit-label",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{payload.put('stage','effect');SelectOption option=new SelectOption('choice','6',false);payload.put('label',option.getLabel());payload.put('disabled',option.getDisabled());payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|option-explicit-label|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{payload.put('stage','effect');SelectOption option=new SelectOption('choice','6',false);payload.put('label',option.getLabel());payload.put('disabled',option.getDisabled());payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|option-explicit-label|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "disabled": false,
+            "label": "6",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "disabled": false,
+            "label": "6",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "disabled": false,
+            "label": "6",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "disabled": false,
+            "label": "6",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "disabled": false,
+            "label": "6",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "disabled": false,
+            "label": "6",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "count-caller-after-insert",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c p=new ProbeTile__c(Name='Count seed');insert p;payload.put('stage','effect');payload.put('value',p.DotCount__c);payload.put('children',0);payload.put('read','caller');payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|count-caller-after-insert|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c p=new ProbeTile__c(Name='Count seed');insert p;payload.put('stage','effect');payload.put('value',p.DotCount__c);payload.put('children',0);payload.put('read','caller');payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|count-caller-after-insert|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 0,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 0,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 0,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 0,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 0,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 0,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "count-query-empty",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c p=new ProbeTile__c(Name='Count seed');insert p;payload.put('stage','effect');p=[SELECT DotCount__c FROM ProbeTile__c WHERE Id=:p.Id];payload.put('value',p.DotCount__c);payload.put('children',0);payload.put('read','query');payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|count-query-empty|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c p=new ProbeTile__c(Name='Count seed');insert p;payload.put('stage','effect');p=[SELECT DotCount__c FROM ProbeTile__c WHERE Id=:p.Id];payload.put('value',p.DotCount__c);payload.put('children',0);payload.put('read','query');payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|count-query-empty|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 0,
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 0,
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 0,
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 0,
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 0,
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 0,
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "count-caller-after-child-insert",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c p=new ProbeTile__c(Name='Count seed');insert p;payload.put('stage','effect');ProbeDot__c child=new ProbeDot__c(Name='dot',ParentTile__c=p.Id);insert child;payload.put('value',p.DotCount__c);payload.put('children',1);payload.put('read','caller');payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|count-caller-after-child-insert|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c p=new ProbeTile__c(Name='Count seed');insert p;payload.put('stage','effect');ProbeDot__c child=new ProbeDot__c(Name='dot',ParentTile__c=p.Id);insert child;payload.put('value',p.DotCount__c);payload.put('children',1);payload.put('read','caller');payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|count-caller-after-child-insert|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 1,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 1,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 1,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 1,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 1,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 1,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "count-query-one-child",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c p=new ProbeTile__c(Name='Count seed');insert p;payload.put('stage','effect');ProbeDot__c child=new ProbeDot__c(Name='dot',ParentTile__c=p.Id);insert child;p=[SELECT DotCount__c FROM ProbeTile__c WHERE Id=:p.Id];payload.put('value',p.DotCount__c);payload.put('children',1);payload.put('read','query');payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|count-query-one-child|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c p=new ProbeTile__c(Name='Count seed');insert p;payload.put('stage','effect');ProbeDot__c child=new ProbeDot__c(Name='dot',ParentTile__c=p.Id);insert child;p=[SELECT DotCount__c FROM ProbeTile__c WHERE Id=:p.Id];payload.put('value',p.DotCount__c);payload.put('children',1);payload.put('read','query');payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|count-query-one-child|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 1,
+            "value": 1,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 1,
+            "value": 1,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 1,
+            "value": 1,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 1,
+            "value": 1,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 1,
+            "value": 1,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 1,
+            "value": 1,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "count-caller-after-child-delete",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c p=new ProbeTile__c(Name='Count seed');insert p;payload.put('stage','effect');ProbeDot__c child=new ProbeDot__c(Name='dot',ParentTile__c=p.Id);insert child;delete child;payload.put('value',p.DotCount__c);payload.put('children',0);payload.put('read','caller');payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|count-caller-after-child-delete|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c p=new ProbeTile__c(Name='Count seed');insert p;payload.put('stage','effect');ProbeDot__c child=new ProbeDot__c(Name='dot',ParentTile__c=p.Id);insert child;delete child;payload.put('value',p.DotCount__c);payload.put('children',0);payload.put('read','caller');payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|count-caller-after-child-delete|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 0,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 0,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 0,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 0,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 0,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "caller",
+            "children": 0,
+            "value": null,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "count-query-after-child-delete",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c p=new ProbeTile__c(Name='Count seed');insert p;payload.put('stage','effect');ProbeDot__c child=new ProbeDot__c(Name='dot',ParentTile__c=p.Id);insert child;delete child;p=[SELECT DotCount__c FROM ProbeTile__c WHERE Id=:p.Id];payload.put('value',p.DotCount__c);payload.put('children',0);payload.put('read','query');payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|count-query-after-child-delete|'+envelope);",
+      "namedSource": "@IsTest private class FormulaSummaryObservationSpec {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'stage'=>'begin','readBackComplete'=>false};try{ProbeTile__c p=new ProbeTile__c(Name='Count seed');insert p;payload.put('stage','effect');ProbeDot__c child=new ProbeDot__c(Name='dot',ParentTile__c=p.Id);insert child;delete child;p=[SELECT DotCount__c FROM ProbeTile__c WHERE Id=:p.Id];payload.put('value',p.DotCount__c);payload.put('children',0);payload.put('read','query');payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());if(error instanceof DmlException){DmlException de=(DmlException)error;payload.put('dmlStatus',String.valueOf(de.getDmlStatusCode(0)));}}String envelope=JSON.serialize(payload);System.assert(envelope.length()<600,'FIXTURE_OVERSIZE');System.assert(false,'P|count-query-after-child-delete|'+envelope);}}",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 0,
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 0,
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 0,
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 0,
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 0,
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "value": {
+            "read": "query",
+            "children": 0,
+            "value": 0,
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    }
+  ]
+}

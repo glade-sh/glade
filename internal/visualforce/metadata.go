@@ -4,8 +4,11 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 func validateVisualforceMetadata(path, resource string) error {
@@ -70,6 +73,92 @@ func validateVisualforceMetadata(path, resource string) error {
 	// Unnamespaced local partial metadata remains usable for API-version input.
 	if resource == "ApexPage" && metadata.XMLName.Space == "http://soap.sforce.com/2006/04/metadata" && !seen["label"] {
 		return fmt.Errorf("Required field is missing: label")
+	}
+	return nil
+}
+
+func visualforceConfirmationTokenRequired(path string) (bool, error) {
+	metaPath := path
+	if !strings.HasSuffix(strings.ToLower(metaPath), "-meta.xml") {
+		metaPath += "-meta.xml"
+	}
+	data, err := os.ReadFile(metaPath)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	var metadata struct {
+		Required string `xml:"confirmationTokenRequired"`
+	}
+	if err := xml.Unmarshal(data, &metadata); err != nil {
+		return false, err
+	}
+	value := strings.TrimSpace(metadata.Required)
+	return value == "true" || value == "1", nil
+}
+
+// VisualforceAccessMetadataError retains the resource that owns a page/class
+// access diagnostic, even when validation is requested through the VF loader.
+type VisualforceAccessMetadataError struct {
+	File    string
+	Message string
+}
+
+func (e *VisualforceAccessMetadataError) Error() string { return e.Message }
+
+// ValidateVisualforceAccessMetadata checks only the pageAccesses/classAccesses
+// section. CRUD, FLS, permission assignments and query security stay with security and access modes.
+func ValidateVisualforceAccessMetadata(p project.Project) error {
+	if len(p.VisualforcePageFiles) == 0 {
+		return nil
+	}
+	pages, classes := map[string]bool{}, map[string]bool{}
+	for _, path := range p.VisualforcePageFiles {
+		pages[strings.ToLower(nameFromPath(path, ".page"))] = true
+	}
+	for _, path := range p.ApexFiles {
+		if strings.EqualFold(filepath.Ext(path), ".cls") {
+			classes[strings.ToLower(nameFromPath(path, ".cls"))] = true
+		}
+	}
+	for _, path := range p.PermissionSetFiles {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		var metadata struct {
+			Entries []struct {
+				XMLName xml.Name
+				Page    string  `xml:"apexPage"`
+				Class   string  `xml:"apexClass"`
+				Enabled *string `xml:"enabled"`
+			} `xml:",any"`
+		}
+		if err := xml.Unmarshal(data, &metadata); err != nil {
+			return err
+		}
+		for _, entry := range metadata.Entries {
+			if entry.XMLName.Local != "pageAccesses" && entry.XMLName.Local != "classAccesses" {
+				continue
+			}
+			if entry.Enabled != nil {
+				value := strings.TrimSpace(*entry.Enabled)
+				switch value {
+				case "true", "false", "0", "1":
+				default:
+					return &VisualforceAccessMetadataError{File: path, Message: fmt.Sprintf("Error parsing file: '%s' is not valid for type xsd:boolean, should be '0', '1', 'true' or 'false'", value)}
+				}
+			}
+			name, field, resource, names := strings.TrimSpace(entry.Page), "apexPage", "ApexPage", pages
+			if entry.XMLName.Local == "classAccesses" {
+				name, field, resource, names = strings.TrimSpace(entry.Class), "apexClass", "ApexClass", classes
+			}
+			if name != "" && !names[strings.ToLower(name)] {
+				return &VisualforceAccessMetadataError{File: path, Message: fmt.Sprintf("In field: %s - no %s named %s found", field, resource, name)}
+			}
+		}
 	}
 	return nil
 }

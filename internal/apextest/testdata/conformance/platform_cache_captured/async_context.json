@@ -1,0 +1,3224 @@
+{
+  "APIVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "Cluster": "async_context",
+  "CellCount": 48,
+  "ObservedCount": 48,
+  "AssertedCount": 48,
+  "CarriedCount": 0,
+  "Cells": [
+    {
+      "ID": "PCQ001",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ001-ac69a0d1-pending'); insert pcMarker; Id pcJob=System.enqueueJob(new PcPCQ001A62AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ001A62AJob": "public class PcPCQ001A62AJob implements Queueable { Id markerId; public PcPCQ001A62AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ001-ac69a0d1-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ001-ac69a0d1-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ001-ac69a0d1-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ001-ac69a0d1-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "85c14fe81f0141524f2438d5a30873088e4be375d49355b35aa76f922391f126",
+        "class:PcPCQ001A62AJob": "63634072e0e14c7e89f718b4387b691d31a91c953066a88896bc4ed5ed3a435b"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "value",
+      "Value": "false",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ001-ac69a0d1-"
+    },
+    {
+      "ID": "PCQ001",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ001A62IJob": "public class PcPCQ001A62IJob implements Queueable { Id markerId; public PcPCQ001A62IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ001-e9e675ae-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ001-e9e675ae-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ001-e9e675ae-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ001-e9e675ae-done');} }",
+          "PcPCQ001A62Test": "@IsTest private class PcPCQ001A62Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ001-e9e675ae-pending'); insert pcMarker; Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ001A62IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ001-e9e675ae-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ001-e9e675ae-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ001-e9e675ae-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ001-e9e675ae-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ001-e9e675ae-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ001|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ001A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ001A62IJob": "f355879f518ba8df7a39c99659d1fe1766b2ac32037443c8c7bbc40e50c6c04f",
+        "class:PcPCQ001A62Test": "6439d96aac778aae03fe98e017a0b63bb0072d38e7a5ae6a541b679ba2deec7a"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "value",
+      "Value": "false"
+    },
+    {
+      "ID": "PCQ002",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ002-86519821-pending'); insert pcMarker; Id pcJob=System.enqueueJob(new PcPCQ002A62AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ002A62AJob": "public class PcPCQ002A62AJob implements Queueable { Id markerId; public PcPCQ002A62AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ002-86519821-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.getPartition('local.PcAlt').isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ002-86519821-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ002-86519821-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ002-86519821-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "cdfc4f4d7ceb290a076f47e1f150d152b086d6cfe92dacdb933f35d49778eeaa",
+        "class:PcPCQ002A62AJob": "bd79f3e658036db59202a9f79798f29602fa81ea2c9f80bedf38b30375c68438"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "false",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ002-86519821-"
+    },
+    {
+      "ID": "PCQ002",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ002A62IJob": "public class PcPCQ002A62IJob implements Queueable { Id markerId; public PcPCQ002A62IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ002-126d3019-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.getPartition('local.PcAlt').isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ002-126d3019-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ002-126d3019-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ002-126d3019-done');} }",
+          "PcPCQ002A62Test": "@IsTest private class PcPCQ002A62Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ002-126d3019-pending'); insert pcMarker; Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ002A62IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ002-126d3019-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ002-126d3019-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ002-126d3019-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ002-126d3019-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ002-126d3019-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ002|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ002A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ002A62IJob": "336eef4b708b11e20fd622372deef453e01e9bf64743a4437033a3c81c4b83b6",
+        "class:PcPCQ002A62Test": "2f2447b2450ff3f1661075cfb8406a0da638f433dcc9037e23299c719ed327b0"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "false"
+    },
+    {
+      "ID": "PCQ003",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ003-61eecf95-pending'); insert pcMarker; try { Cache.Session.remove('local.PcAlt.PcKPCQ003A62A'); } catch (Exception ignored) { }Id pcJob=System.enqueueJob(new PcPCQ003A62AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ003A62AJob": "public class PcPCQ003A62AJob implements Queueable { Id markerId; public PcPCQ003A62AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ003-61eecf95-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { Cache.Session.put('local.PcAlt.PcKPCQ003A62A', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCQ003A62A'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ003-61eecf95-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ003-61eecf95-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ003-61eecf95-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "f72bf0fc8b9174d4b71e628af23fe4043529fa8f8a948c51e34ecd3f87a832d9",
+        "class:PcPCQ003A62AJob": "f3d94e5bd42a367395f2cc95fe55c00135b6711fb2d07712b8809a768d43d4a0"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheNoSessionException|Session not found - Session Cache not supported",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "EXC|cache.Session.SessionCacheNoSessionException|Session not found - Session Cache not supported",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ003-61eecf95-"
+    },
+    {
+      "ID": "PCQ003",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ003A62IJob": "public class PcPCQ003A62IJob implements Queueable { Id markerId; public PcPCQ003A62IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ003-3c25f4e2-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { Cache.Session.put('local.PcAlt.PcKPCQ003A62I', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCQ003A62I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ003-3c25f4e2-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ003-3c25f4e2-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ003-3c25f4e2-done');} }",
+          "PcPCQ003A62Test": "@IsTest private class PcPCQ003A62Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ003-3c25f4e2-pending'); insert pcMarker; try { Cache.Session.remove('local.PcAlt.PcKPCQ003A62I'); } catch (Exception ignored) { }Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ003A62IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ003-3c25f4e2-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ003-3c25f4e2-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ003-3c25f4e2-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ003-3c25f4e2-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ003-3c25f4e2-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ003|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ003A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ003A62IJob": "794082c42750d95b3dbe42b914ca7897bdeab13b4beb818b23193061ab976a4d",
+        "class:PcPCQ003A62Test": "78a922a33a7b65ba3c39af71b01bc2d77f4cc31a590a6d8679082b449c1364f2"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "ok",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "ok"
+    },
+    {
+      "ID": "PCQ004",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ004-c39cf383-pending'); insert pcMarker; try { Cache.Org.remove('local.PcAlt.PcKPCQ004A62A'); } catch (Exception ignored) { }Id pcJob=System.enqueueJob(new PcPCQ004A62AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ004A62AJob": "public class PcPCQ004A62AJob implements Queueable { Id markerId; public PcPCQ004A62AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ004-c39cf383-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { Cache.Org.put('local.PcAlt.PcKPCQ004A62A', 1); r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCQ004A62A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCQ004A62A'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ004-c39cf383-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ004-c39cf383-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ004-c39cf383-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "ee47eb8b00d668a3f5b7bd6439507c0c4fd53525ef6fb88498d3e77494ee71ab",
+        "class:PcPCQ004A62AJob": "38139ec31828a5fa8179bf3af0260cec71fa62f29b419a690e64ca25f5b267cf"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "1",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "1",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ004-c39cf383-"
+    },
+    {
+      "ID": "PCQ004",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ004A62IJob": "public class PcPCQ004A62IJob implements Queueable { Id markerId; public PcPCQ004A62IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ004-de783ab8-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { Cache.Org.put('local.PcAlt.PcKPCQ004A62I', 1); r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCQ004A62I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCQ004A62I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ004-de783ab8-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ004-de783ab8-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ004-de783ab8-done');} }",
+          "PcPCQ004A62Test": "@IsTest private class PcPCQ004A62Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ004-de783ab8-pending'); insert pcMarker; try { Cache.Org.remove('local.PcAlt.PcKPCQ004A62I'); } catch (Exception ignored) { }Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ004A62IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ004-de783ab8-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ004-de783ab8-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ004-de783ab8-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ004-de783ab8-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ004-de783ab8-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ004|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ004A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ004A62IJob": "e767fef9755726c227441bbac1082708c5f54d592af690cb263ad4edbb74956e",
+        "class:PcPCQ004A62Test": "e9598e5cde92fcb9363cf2b78255041e5bc611c6fb7f98a97d23938fef6e70b9"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "1",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "1"
+    },
+    {
+      "ID": "PCQ005",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ005-ff522bda-pending'); insert pcMarker; PcPCQ005A62AJob.run(pcMarker.Id); Id pcJob=null;",
+        "Classes": {
+          "PcPCQ005A62AJob": "public class PcPCQ005A62AJob { @future public static void run(Id markerId){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ005-ff522bda-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ005-ff522bda-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ005-ff522bda-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ005-ff522bda-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "9aee16acae5b60bed72d0cb3e12768b12b074c449d469ca853f2a1b4c03d7c89",
+        "class:PcPCQ005A62AJob": "e0e21d553f83bd20c1a2b3a42b6203f9be8525159265ebc9c52f3c8648736c23"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "value",
+      "Value": "false",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ005-ff522bda-"
+    },
+    {
+      "ID": "PCQ005",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ005A62IJob": "public class PcPCQ005A62IJob { @future public static void run(Id markerId){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ005-174d8c98-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ005-174d8c98-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ005-174d8c98-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ005-174d8c98-done');} }",
+          "PcPCQ005A62Test": "@IsTest private class PcPCQ005A62Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ005-174d8c98-pending'); insert pcMarker; Test.startTest();PcPCQ005A62IJob.run(pcMarker.Id); Id pcJob=null;Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ005-174d8c98-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ005-174d8c98-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ005-174d8c98-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ005-174d8c98-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ005-174d8c98-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ005|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ005A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ005A62IJob": "2d863356dcb5e89c31d47404513523702c543bfef399a9e40270b3e52af5e9b5",
+        "class:PcPCQ005A62Test": "bc976be861b5d9af6b26098db29d535f7fe940c6f0c8f96bfbd23180a5ed4dcf"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "value",
+      "Value": "false"
+    },
+    {
+      "ID": "PCQ006",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ006-5d59c5ad-pending'); insert pcMarker; Id pcJob=Database.executeBatch(new PcPCQ006A62AJob(pcMarker.Id),1);",
+        "Classes": {
+          "PcPCQ006A62AJob": "public class PcPCQ006A62AJob implements Database.Batchable<Account> { Id markerId; public PcPCQ006A62AJob(Id markerId){this.markerId=markerId;} public Database.QueryLocator start(Database.BatchableContext context){return Database.getQueryLocator([SELECT Id FROM Account WHERE Id=:markerId]);} public void execute(Database.BatchableContext context,List<Account> scope){String r; if(scope.size()!=1 || scope[0].Id!=markerId){throw new IllegalArgumentException('FIXTURE_ERROR batch scope');} List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ006-5d59c5ad-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ006-5d59c5ad-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ006-5d59c5ad-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ006-5d59c5ad-done');} public void finish(Database.BatchableContext context){} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "9f6bd266eee372cb2411abb380bd9837fe3bc6d40dcc816215fb30ca5a1cb6e2",
+        "class:PcPCQ006A62AJob": "33a906e41cbb86122be0fd3d757fa6531a841b1a65518c26c29dd26274cfe6ae"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcPCQ006A62AJob",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Class PcPCQ006A62AJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Class PcPCQ006A62AJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)",
+      "RejectUnit": "PcPCQ006A62AJob",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ006-5d59c5ad-"
+    },
+    {
+      "ID": "PCQ006",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ006A62IJob": "public class PcPCQ006A62IJob implements Database.Batchable<Account> { Id markerId; public PcPCQ006A62IJob(Id markerId){this.markerId=markerId;} public Database.QueryLocator start(Database.BatchableContext context){return Database.getQueryLocator([SELECT Id FROM Account WHERE Id=:markerId]);} public void execute(Database.BatchableContext context,List<Account> scope){String r; if(scope.size()!=1 || scope[0].Id!=markerId){throw new IllegalArgumentException('FIXTURE_ERROR batch scope');} List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ006-0496da74-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ006-0496da74-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ006-0496da74-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ006-0496da74-done');} public void finish(Database.BatchableContext context){} }",
+          "PcPCQ006A62Test": "@IsTest private class PcPCQ006A62Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ006-0496da74-pending'); insert pcMarker; Test.startTest();Id pcJob=Database.executeBatch(new PcPCQ006A62IJob(pcMarker.Id),1);Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ006-0496da74-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ006-0496da74-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ006-0496da74-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ006-0496da74-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ006-0496da74-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ006|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ006A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ006A62IJob": "383445a4d7728084b934777fb934921cbd0f904bc2b934a8fcd4b02b05a34d06",
+        "class:PcPCQ006A62Test": "9b0356033d062c13558df9c86026ebfd13213e07084d16e72716ee5d2f7b0e71"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcPCQ006A62IJob",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Class PcPCQ006A62IJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+          },
+          {
+            "name": "PcPCQ006A62Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Dependent class is invalid and needs recompilation:\n Class PcPCQ006A62IJob : Class PcPCQ006A62IJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Class PcPCQ006A62IJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)",
+      "RejectUnit": "PcPCQ006A62IJob"
+    },
+    {
+      "ID": "PCQ007",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ007-d21cb6ee-pending'); insert pcMarker; Cache.Org.remove('local.PcAlt.PcKPCQ007A62A'); Cache.Org.put('local.PcAlt.PcKPCQ007A62A', 'before');Id pcJob=System.enqueueJob(new PcPCQ007A62AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ007A62AJob": "public class PcPCQ007A62AJob implements Queueable { Id markerId; public PcPCQ007A62AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ007-d21cb6ee-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCQ007A62A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCQ007A62A'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ007-d21cb6ee-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ007-d21cb6ee-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ007-d21cb6ee-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "ba8c2ec2e263097e40327ea832c985cac79db791a0d8720741a3c210275bfe4d",
+        "class:PcPCQ007A62AJob": "a27986a6986659912ef2d0dea9bedefa506da5c9276f429c490dfd916b6b904c"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "before",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "before",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ007-d21cb6ee-"
+    },
+    {
+      "ID": "PCQ007",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ007A62IJob": "public class PcPCQ007A62IJob implements Queueable { Id markerId; public PcPCQ007A62IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ007-aca22dc1-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCQ007A62I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCQ007A62I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ007-aca22dc1-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ007-aca22dc1-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ007-aca22dc1-done');} }",
+          "PcPCQ007A62Test": "@IsTest private class PcPCQ007A62Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ007-aca22dc1-pending'); insert pcMarker; Cache.Org.remove('local.PcAlt.PcKPCQ007A62I'); Cache.Org.put('local.PcAlt.PcKPCQ007A62I', 'before');Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ007A62IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ007-aca22dc1-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ007-aca22dc1-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ007-aca22dc1-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ007-aca22dc1-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ007-aca22dc1-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ007|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ007A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ007A62IJob": "4d424f5ebb942ece055378ff772b9ef78e29c0b0e1f1bd7c8f609c6c9985876b",
+        "class:PcPCQ007A62Test": "7748621abdd77607176b3cbf0fbb7a7a666a310ac76ab21747a344bc22127a5d"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "before",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "before"
+    },
+    {
+      "ID": "PCQ008",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ008-624de0cb-pending'); insert pcMarker; Cache.Session.remove('local.PcAlt.PcKPCQ008A62A'); Cache.Session.put('local.PcAlt.PcKPCQ008A62A', 'before');Id pcJob=System.enqueueJob(new PcPCQ008A62AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ008A62AJob": "public class PcPCQ008A62AJob implements Queueable { Id markerId; public PcPCQ008A62AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ008-624de0cb-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.get('local.PcAlt.PcKPCQ008A62A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCQ008A62A'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ008-624de0cb-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ008-624de0cb-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ008-624de0cb-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "2de2ed383cfd965f5ad64a9bd4139acdd10093276a118f685f7e71b196326f11",
+        "class:PcPCQ008A62AJob": "297c749174e63ea7755cb0319f79a15e591343cf5c0434cdf6513dc6e8c2bfaf"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheNoSessionException|Session not found - Session Cache not supported",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "EXC|cache.Session.SessionCacheNoSessionException|Session not found - Session Cache not supported",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ008-624de0cb-"
+    },
+    {
+      "ID": "PCQ008",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ008A62IJob": "public class PcPCQ008A62IJob implements Queueable { Id markerId; public PcPCQ008A62IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ008-0e34ff91-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.get('local.PcAlt.PcKPCQ008A62I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCQ008A62I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ008-0e34ff91-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ008-0e34ff91-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ008-0e34ff91-done');} }",
+          "PcPCQ008A62Test": "@IsTest private class PcPCQ008A62Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ008-0e34ff91-pending'); insert pcMarker; Cache.Session.remove('local.PcAlt.PcKPCQ008A62I'); Cache.Session.put('local.PcAlt.PcKPCQ008A62I', 'before');Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ008A62IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ008-0e34ff91-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ008-0e34ff91-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ008-0e34ff91-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ008-0e34ff91-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ008-0e34ff91-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ008|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ008A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ008A62IJob": "523431e8f7680c19c19247661a8e4c085bf487de69ac99f771337a366a4b4301",
+        "class:PcPCQ008A62Test": "b54ad72b5d3bae3568d38d2862cda59405efc073588a48ee7d51843a3e07df89"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "before",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "before"
+    },
+    {
+      "ID": "PCQ001",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ001-6050e316-pending'); insert pcMarker; Id pcJob=System.enqueueJob(new PcPCQ001A67AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ001A67AJob": "public class PcPCQ001A67AJob implements Queueable { Id markerId; public PcPCQ001A67AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ001-6050e316-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ001-6050e316-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ001-6050e316-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ001-6050e316-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "3f820b1e824b7a2fa99f9ba16f70db16c5ac512b3c9fc7d42c85466d8048db64",
+        "class:PcPCQ001A67AJob": "61f0fabd58e97f234df68e9cdf59e18999de5161f5196e0fa46bc964452a7822"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "value",
+      "Value": "false",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ001-6050e316-"
+    },
+    {
+      "ID": "PCQ001",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ001A67IJob": "public class PcPCQ001A67IJob implements Queueable { Id markerId; public PcPCQ001A67IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ001-8c030202-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ001-8c030202-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ001-8c030202-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ001-8c030202-done');} }",
+          "PcPCQ001A67Test": "@IsTest private class PcPCQ001A67Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ001-8c030202-pending'); insert pcMarker; Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ001A67IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ001-8c030202-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ001-8c030202-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ001-8c030202-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ001-8c030202-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ001-8c030202-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ001|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ001A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ001A67IJob": "4f612cc88869c927b8fa1e3caa3b64c9f5b983a2a3791e986c2eba9607841811",
+        "class:PcPCQ001A67Test": "be511efb307b4edcb45707b09ed59922f990c4ffe1cc89060d44e6e1b1a459e8"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "value",
+      "Value": "false"
+    },
+    {
+      "ID": "PCQ002",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ002-7769029e-pending'); insert pcMarker; Id pcJob=System.enqueueJob(new PcPCQ002A67AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ002A67AJob": "public class PcPCQ002A67AJob implements Queueable { Id markerId; public PcPCQ002A67AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ002-7769029e-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.getPartition('local.PcAlt').isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ002-7769029e-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ002-7769029e-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ002-7769029e-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "78641c9ad0d80f3f287380cafbe9fbf1a8370115436361d5a97daacb53413b0b",
+        "class:PcPCQ002A67AJob": "726bd6a0f5bbff1ff7963165cb5de864e0c0b3709c88fd40620cf6c04f1b2657"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "false",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ002-7769029e-"
+    },
+    {
+      "ID": "PCQ002",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ002A67IJob": "public class PcPCQ002A67IJob implements Queueable { Id markerId; public PcPCQ002A67IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ002-9d0250a3-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.getPartition('local.PcAlt').isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ002-9d0250a3-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ002-9d0250a3-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ002-9d0250a3-done');} }",
+          "PcPCQ002A67Test": "@IsTest private class PcPCQ002A67Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ002-9d0250a3-pending'); insert pcMarker; Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ002A67IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ002-9d0250a3-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ002-9d0250a3-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ002-9d0250a3-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ002-9d0250a3-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ002-9d0250a3-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ002|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ002A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ002A67IJob": "8066db46430ec2cf33a0132308249c05e121373a149c0982828c464d2f1cdf01",
+        "class:PcPCQ002A67Test": "b94dfd3e20195cac59b1a616b2a1b3f76ee0cfd8d0a5e9bbde98e9f7cecd4a30"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "false"
+    },
+    {
+      "ID": "PCQ003",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ003-f302b3fe-pending'); insert pcMarker; try { Cache.Session.remove('local.PcAlt.PcKPCQ003A67A'); } catch (Exception ignored) { }Id pcJob=System.enqueueJob(new PcPCQ003A67AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ003A67AJob": "public class PcPCQ003A67AJob implements Queueable { Id markerId; public PcPCQ003A67AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ003-f302b3fe-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { Cache.Session.put('local.PcAlt.PcKPCQ003A67A', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCQ003A67A'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ003-f302b3fe-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ003-f302b3fe-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ003-f302b3fe-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "4d5bcb793d2fd3b1b6c66cb80b0e08964d8f39662ca06440b34c95a43c7b17ce",
+        "class:PcPCQ003A67AJob": "9c4ad78cc30b0a8a05a9954d07e915f91f1b5df5535385a8f4640079a759b8fb"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheNoSessionException|Session not found - Session Cache not supported",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "EXC|cache.Session.SessionCacheNoSessionException|Session not found - Session Cache not supported",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ003-f302b3fe-"
+    },
+    {
+      "ID": "PCQ003",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ003A67IJob": "public class PcPCQ003A67IJob implements Queueable { Id markerId; public PcPCQ003A67IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ003-b66a8b02-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { Cache.Session.put('local.PcAlt.PcKPCQ003A67I', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCQ003A67I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ003-b66a8b02-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ003-b66a8b02-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ003-b66a8b02-done');} }",
+          "PcPCQ003A67Test": "@IsTest private class PcPCQ003A67Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ003-b66a8b02-pending'); insert pcMarker; try { Cache.Session.remove('local.PcAlt.PcKPCQ003A67I'); } catch (Exception ignored) { }Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ003A67IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ003-b66a8b02-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ003-b66a8b02-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ003-b66a8b02-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ003-b66a8b02-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ003-b66a8b02-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ003|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ003A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ003A67IJob": "f41e5adc877ba346753f78427620582a065ec4bf5d1ff7cd0c428b66a29a6b7d",
+        "class:PcPCQ003A67Test": "f923cbbb9b9535465ab4a4a3edba4013c668925b13f2e4dcd37d1d62bfe502e9"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "ok",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "ok"
+    },
+    {
+      "ID": "PCQ004",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ004-1eaeff63-pending'); insert pcMarker; try { Cache.Org.remove('local.PcAlt.PcKPCQ004A67A'); } catch (Exception ignored) { }Id pcJob=System.enqueueJob(new PcPCQ004A67AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ004A67AJob": "public class PcPCQ004A67AJob implements Queueable { Id markerId; public PcPCQ004A67AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ004-1eaeff63-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { Cache.Org.put('local.PcAlt.PcKPCQ004A67A', 1); r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCQ004A67A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCQ004A67A'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ004-1eaeff63-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ004-1eaeff63-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ004-1eaeff63-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "5b3bfb68a3764fecb297989020ba5a946d7da44527a45db40f89efb986796ab6",
+        "class:PcPCQ004A67AJob": "0372324fb6fb4983e946d981f7ddd8999d105a4d861e5e5006814d2045100ddf"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "1",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "1",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ004-1eaeff63-"
+    },
+    {
+      "ID": "PCQ004",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ004A67IJob": "public class PcPCQ004A67IJob implements Queueable { Id markerId; public PcPCQ004A67IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ004-65374700-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { Cache.Org.put('local.PcAlt.PcKPCQ004A67I', 1); r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCQ004A67I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCQ004A67I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ004-65374700-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ004-65374700-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ004-65374700-done');} }",
+          "PcPCQ004A67Test": "@IsTest private class PcPCQ004A67Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ004-65374700-pending'); insert pcMarker; try { Cache.Org.remove('local.PcAlt.PcKPCQ004A67I'); } catch (Exception ignored) { }Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ004A67IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ004-65374700-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ004-65374700-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ004-65374700-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ004-65374700-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ004-65374700-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ004|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ004A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ004A67IJob": "aef8660eb06c001a6c44e9901cfa5b545a1235658b81627f8ba92f686c36f43d",
+        "class:PcPCQ004A67Test": "f9fbff51240497b116aa63a5376e8d8f187eca0e713b01a1ff9f59161c066b84"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "1",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "1"
+    },
+    {
+      "ID": "PCQ005",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ005-424f0a29-pending'); insert pcMarker; PcPCQ005A67AJob.run(pcMarker.Id); Id pcJob=null;",
+        "Classes": {
+          "PcPCQ005A67AJob": "public class PcPCQ005A67AJob { @future public static void run(Id markerId){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ005-424f0a29-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ005-424f0a29-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ005-424f0a29-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ005-424f0a29-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "88ae546482e6668d56ab555c0ab6a11032d7e405c3fa0cace8c75d08ce14c005",
+        "class:PcPCQ005A67AJob": "fc2c6133355829e0f7b97ca7195bf8da8edded72b4c336af104ee5b6a5443ac8"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "value",
+      "Value": "false",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ005-424f0a29-"
+    },
+    {
+      "ID": "PCQ005",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ005A67IJob": "public class PcPCQ005A67IJob { @future public static void run(Id markerId){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ005-21203b04-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ005-21203b04-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ005-21203b04-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ005-21203b04-done');} }",
+          "PcPCQ005A67Test": "@IsTest private class PcPCQ005A67Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ005-21203b04-pending'); insert pcMarker; Test.startTest();PcPCQ005A67IJob.run(pcMarker.Id); Id pcJob=null;Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ005-21203b04-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ005-21203b04-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ005-21203b04-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ005-21203b04-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ005-21203b04-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ005|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ005A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ005A67IJob": "44c9c09a72f3cb8ed7edac513ad7acf9f30d09bd3d583126451bfea5d825da3d",
+        "class:PcPCQ005A67Test": "fcaad1640d5190ab75b3c0cfe07b289c95cf570c6b3b4f2aded0be1396960083"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "value",
+      "Value": "false"
+    },
+    {
+      "ID": "PCQ006",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ006-03499f99-pending'); insert pcMarker; Id pcJob=Database.executeBatch(new PcPCQ006A67AJob(pcMarker.Id),1);",
+        "Classes": {
+          "PcPCQ006A67AJob": "public class PcPCQ006A67AJob implements Database.Batchable<Account> { Id markerId; public PcPCQ006A67AJob(Id markerId){this.markerId=markerId;} public Database.QueryLocator start(Database.BatchableContext context){return Database.getQueryLocator([SELECT Id FROM Account WHERE Id=:markerId]);} public void execute(Database.BatchableContext context,List<Account> scope){String r; if(scope.size()!=1 || scope[0].Id!=markerId){throw new IllegalArgumentException('FIXTURE_ERROR batch scope');} List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ006-03499f99-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ006-03499f99-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ006-03499f99-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ006-03499f99-done');} public void finish(Database.BatchableContext context){} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "1fa30bb40e4cae25bf8d035da0ee96b1a22a9669f69ccce7a79ba07d2b784607",
+        "class:PcPCQ006A67AJob": "3038af9df11377988f60a8ca1f5951c34e5398c058ab737982fd9093ee5e490b"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcPCQ006A67AJob",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Class PcPCQ006A67AJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Class PcPCQ006A67AJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)",
+      "RejectUnit": "PcPCQ006A67AJob",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ006-03499f99-"
+    },
+    {
+      "ID": "PCQ006",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ006A67IJob": "public class PcPCQ006A67IJob implements Database.Batchable<Account> { Id markerId; public PcPCQ006A67IJob(Id markerId){this.markerId=markerId;} public Database.QueryLocator start(Database.BatchableContext context){return Database.getQueryLocator([SELECT Id FROM Account WHERE Id=:markerId]);} public void execute(Database.BatchableContext context,List<Account> scope){String r; if(scope.size()!=1 || scope[0].Id!=markerId){throw new IllegalArgumentException('FIXTURE_ERROR batch scope');} List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ006-f8e0e42a-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ006-f8e0e42a-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ006-f8e0e42a-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ006-f8e0e42a-done');} public void finish(Database.BatchableContext context){} }",
+          "PcPCQ006A67Test": "@IsTest private class PcPCQ006A67Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ006-f8e0e42a-pending'); insert pcMarker; Test.startTest();Id pcJob=Database.executeBatch(new PcPCQ006A67IJob(pcMarker.Id),1);Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ006-f8e0e42a-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ006-f8e0e42a-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ006-f8e0e42a-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ006-f8e0e42a-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ006-f8e0e42a-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ006|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ006A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ006A67IJob": "39cf91e5991f47794fcf4abf071c3251c57465d8485889c21a72eaf766213dda",
+        "class:PcPCQ006A67Test": "bf0d1ec52edceaca9997d633bf9afc9120b39887c9f6860974a845b93d6b6879"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcPCQ006A67IJob",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Class PcPCQ006A67IJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+          },
+          {
+            "name": "PcPCQ006A67Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Dependent class is invalid and needs recompilation:\n Class PcPCQ006A67IJob : Class PcPCQ006A67IJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Class PcPCQ006A67IJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)",
+      "RejectUnit": "PcPCQ006A67IJob"
+    },
+    {
+      "ID": "PCQ007",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ007-b9092b98-pending'); insert pcMarker; Cache.Org.remove('local.PcAlt.PcKPCQ007A67A'); Cache.Org.put('local.PcAlt.PcKPCQ007A67A', 'before');Id pcJob=System.enqueueJob(new PcPCQ007A67AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ007A67AJob": "public class PcPCQ007A67AJob implements Queueable { Id markerId; public PcPCQ007A67AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ007-b9092b98-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCQ007A67A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCQ007A67A'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ007-b9092b98-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ007-b9092b98-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ007-b9092b98-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "c688d01a5808d0b6343166f497388745d88febc1bf1c37b77141a812e954ee5e",
+        "class:PcPCQ007A67AJob": "8ae94d6fd920a9fa71e8736c3ae80c0cddb2c7b6936a26d0c3b7528b7634d0a0"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "before",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "before",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ007-b9092b98-"
+    },
+    {
+      "ID": "PCQ007",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ007A67IJob": "public class PcPCQ007A67IJob implements Queueable { Id markerId; public PcPCQ007A67IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ007-c7529b6d-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCQ007A67I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCQ007A67I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ007-c7529b6d-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ007-c7529b6d-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ007-c7529b6d-done');} }",
+          "PcPCQ007A67Test": "@IsTest private class PcPCQ007A67Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ007-c7529b6d-pending'); insert pcMarker; Cache.Org.remove('local.PcAlt.PcKPCQ007A67I'); Cache.Org.put('local.PcAlt.PcKPCQ007A67I', 'before');Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ007A67IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ007-c7529b6d-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ007-c7529b6d-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ007-c7529b6d-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ007-c7529b6d-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ007-c7529b6d-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ007|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ007A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ007A67IJob": "925dfcf49e680388e1cbd90c0b232e7ab586504637584858fb7070bf95f9a01c",
+        "class:PcPCQ007A67Test": "d6d5f910740d1e67990442fad2cae1aaca2eefeba00528890a550735844bda31"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "before",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "before"
+    },
+    {
+      "ID": "PCQ008",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ008-5b2c6c6e-pending'); insert pcMarker; Cache.Session.remove('local.PcAlt.PcKPCQ008A67A'); Cache.Session.put('local.PcAlt.PcKPCQ008A67A', 'before');Id pcJob=System.enqueueJob(new PcPCQ008A67AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ008A67AJob": "public class PcPCQ008A67AJob implements Queueable { Id markerId; public PcPCQ008A67AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ008-5b2c6c6e-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.get('local.PcAlt.PcKPCQ008A67A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCQ008A67A'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ008-5b2c6c6e-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ008-5b2c6c6e-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ008-5b2c6c6e-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "9176336617a3563c211684ab210ed5074c14c4b4e910047db71a7bc0145297ed",
+        "class:PcPCQ008A67AJob": "43930d75aae9bf9c40bfd3c88b015d473496f04e95f6202d87a5bbb4818cffd9"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheNoSessionException|Session not found - Session Cache not supported",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "EXC|cache.Session.SessionCacheNoSessionException|Session not found - Session Cache not supported",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ008-5b2c6c6e-"
+    },
+    {
+      "ID": "PCQ008",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ008A67IJob": "public class PcPCQ008A67IJob implements Queueable { Id markerId; public PcPCQ008A67IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ008-b61e4299-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.get('local.PcAlt.PcKPCQ008A67I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCQ008A67I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ008-b61e4299-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ008-b61e4299-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ008-b61e4299-done');} }",
+          "PcPCQ008A67Test": "@IsTest private class PcPCQ008A67Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ008-b61e4299-pending'); insert pcMarker; Cache.Session.remove('local.PcAlt.PcKPCQ008A67I'); Cache.Session.put('local.PcAlt.PcKPCQ008A67I', 'before');Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ008A67IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ008-b61e4299-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ008-b61e4299-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ008-b61e4299-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ008-b61e4299-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ008-b61e4299-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ008|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ008A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ008A67IJob": "01777392f085093f88e3d1da4feeda61d49e8c0c86664cc5e8a144bbcad179c6",
+        "class:PcPCQ008A67Test": "a0b36ca504eeb2832d0b26fcf4d9c0aeb773de46346e5d0e6a961b71fd5702f1"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "before",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "before"
+    },
+    {
+      "ID": "PCQ001",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ001-3ddfc078-pending'); insert pcMarker; Id pcJob=System.enqueueJob(new PcPCQ001A68AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ001A68AJob": "public class PcPCQ001A68AJob implements Queueable { Id markerId; public PcPCQ001A68AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ001-3ddfc078-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ001-3ddfc078-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ001-3ddfc078-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ001-3ddfc078-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "0d4856288764e6d1266d92b20d23378523119e48957b7bfc3be2c82fd58024da",
+        "class:PcPCQ001A68AJob": "305fe4c70ca51e68f8b3facaa8bd9424736c0eb0f8ef15f8c8cfbf61c66a2af0"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "value",
+      "Value": "false",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ001-3ddfc078-"
+    },
+    {
+      "ID": "PCQ001",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ001A68IJob": "public class PcPCQ001A68IJob implements Queueable { Id markerId; public PcPCQ001A68IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ001-57eb08ff-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ001-57eb08ff-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ001-57eb08ff-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ001-57eb08ff-done');} }",
+          "PcPCQ001A68Test": "@IsTest private class PcPCQ001A68Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ001-57eb08ff-pending'); insert pcMarker; Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ001A68IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ001-57eb08ff-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ001-57eb08ff-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ001-57eb08ff-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ001-57eb08ff-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ001-57eb08ff-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ001|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ001A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ001A68IJob": "901606d595faf0ce44b96ef1bac196ea6399374ed6e31018bba0b789205345b3",
+        "class:PcPCQ001A68Test": "83d6f0fe5f9d8047d5f914d0f1d9f339b5a3a058425ab576fa9f26d73c3a8e51"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "value",
+      "Value": "false"
+    },
+    {
+      "ID": "PCQ002",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ002-679b6a6b-pending'); insert pcMarker; Id pcJob=System.enqueueJob(new PcPCQ002A68AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ002A68AJob": "public class PcPCQ002A68AJob implements Queueable { Id markerId; public PcPCQ002A68AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ002-679b6a6b-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.getPartition('local.PcAlt').isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ002-679b6a6b-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ002-679b6a6b-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ002-679b6a6b-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "bf788be0eb26a5c813e2aad4c3d9c9ed4f52f0b916a922810bbc66704308ce4f",
+        "class:PcPCQ002A68AJob": "90f8b11d908084fee8aa738ae08c178131e4a773e66429dc6982e94c1b00dc6c"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "false",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ002-679b6a6b-"
+    },
+    {
+      "ID": "PCQ002",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ002A68IJob": "public class PcPCQ002A68IJob implements Queueable { Id markerId; public PcPCQ002A68IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ002-4a55ec55-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.getPartition('local.PcAlt').isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ002-4a55ec55-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ002-4a55ec55-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ002-4a55ec55-done');} }",
+          "PcPCQ002A68Test": "@IsTest private class PcPCQ002A68Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ002-4a55ec55-pending'); insert pcMarker; Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ002A68IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ002-4a55ec55-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ002-4a55ec55-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ002-4a55ec55-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ002-4a55ec55-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ002-4a55ec55-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ002|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ002A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ002A68IJob": "6c44a055d75b863ec4e690e4cdcd091fc2e11eeb54ca1f2ce525dbfe7f111c16",
+        "class:PcPCQ002A68Test": "49fa2e8ed4483323ae14b07556ef41b7750d1de9bab2f2528fe37f2204210afe"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "false"
+    },
+    {
+      "ID": "PCQ003",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ003-21f60acf-pending'); insert pcMarker; try { Cache.Session.remove('local.PcAlt.PcKPCQ003A68A'); } catch (Exception ignored) { }Id pcJob=System.enqueueJob(new PcPCQ003A68AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ003A68AJob": "public class PcPCQ003A68AJob implements Queueable { Id markerId; public PcPCQ003A68AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ003-21f60acf-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { Cache.Session.put('local.PcAlt.PcKPCQ003A68A', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCQ003A68A'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ003-21f60acf-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ003-21f60acf-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ003-21f60acf-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "1a34e887ca1abe0e80349603197de302d2a8e442c6d5d6cfaffdabc572d57cea",
+        "class:PcPCQ003A68AJob": "46df25f41f85c835e73ebf12754865c5d02defcf83e26b9247a38ba2aad728ae"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheNoSessionException|Session not found - Session Cache not supported",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "EXC|cache.Session.SessionCacheNoSessionException|Session not found - Session Cache not supported",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ003-21f60acf-"
+    },
+    {
+      "ID": "PCQ003",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ003A68IJob": "public class PcPCQ003A68IJob implements Queueable { Id markerId; public PcPCQ003A68IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ003-4e6b027f-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { Cache.Session.put('local.PcAlt.PcKPCQ003A68I', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCQ003A68I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ003-4e6b027f-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ003-4e6b027f-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ003-4e6b027f-done');} }",
+          "PcPCQ003A68Test": "@IsTest private class PcPCQ003A68Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ003-4e6b027f-pending'); insert pcMarker; try { Cache.Session.remove('local.PcAlt.PcKPCQ003A68I'); } catch (Exception ignored) { }Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ003A68IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ003-4e6b027f-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ003-4e6b027f-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ003-4e6b027f-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ003-4e6b027f-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ003-4e6b027f-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ003|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ003A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ003A68IJob": "4c9424ab3d01080527ac8555c703e632ae2dbe59ee99e104371cef93d0824c60",
+        "class:PcPCQ003A68Test": "4145cbdfb61381567b0cdf66769777e4c01a4505deb70384603e399f700c0e38"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "ok",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "ok"
+    },
+    {
+      "ID": "PCQ004",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ004-dc03153f-pending'); insert pcMarker; try { Cache.Org.remove('local.PcAlt.PcKPCQ004A68A'); } catch (Exception ignored) { }Id pcJob=System.enqueueJob(new PcPCQ004A68AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ004A68AJob": "public class PcPCQ004A68AJob implements Queueable { Id markerId; public PcPCQ004A68AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ004-dc03153f-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { Cache.Org.put('local.PcAlt.PcKPCQ004A68A', 1); r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCQ004A68A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCQ004A68A'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ004-dc03153f-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ004-dc03153f-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ004-dc03153f-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "83b64987d4222e620cdf0329d7dd90abf32d43ac1597e1e1637c9c19cdd995f4",
+        "class:PcPCQ004A68AJob": "9704364765c4d8593e3e4107715b164a60d833883bf3e0a177915104db7253ce"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "1",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "1",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ004-dc03153f-"
+    },
+    {
+      "ID": "PCQ004",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ004A68IJob": "public class PcPCQ004A68IJob implements Queueable { Id markerId; public PcPCQ004A68IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ004-ffe51677-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { Cache.Org.put('local.PcAlt.PcKPCQ004A68I', 1); r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCQ004A68I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCQ004A68I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ004-ffe51677-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ004-ffe51677-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ004-ffe51677-done');} }",
+          "PcPCQ004A68Test": "@IsTest private class PcPCQ004A68Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ004-ffe51677-pending'); insert pcMarker; try { Cache.Org.remove('local.PcAlt.PcKPCQ004A68I'); } catch (Exception ignored) { }Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ004A68IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ004-ffe51677-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ004-ffe51677-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ004-ffe51677-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ004-ffe51677-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ004-ffe51677-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ004|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ004A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ004A68IJob": "f8a462a967a990d6e03d58ace0e06b1fed4f252ea99dfa14a40eaceda564180c",
+        "class:PcPCQ004A68Test": "a9abcd34d0c5fba49751a683c68105950b6c7703e7ec923115f5b11a4b0cc8dd"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "1",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "1"
+    },
+    {
+      "ID": "PCQ005",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ005-e323bcfe-pending'); insert pcMarker; PcPCQ005A68AJob.run(pcMarker.Id); Id pcJob=null;",
+        "Classes": {
+          "PcPCQ005A68AJob": "public class PcPCQ005A68AJob { @future public static void run(Id markerId){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ005-e323bcfe-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ005-e323bcfe-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ005-e323bcfe-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ005-e323bcfe-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "1cc6e1d67cf8f62dbb305bc7cb2c816e6f0dc06d770949685a9331eb34020a85",
+        "class:PcPCQ005A68AJob": "a9a414ed17e639c087367638b47a631894a24e067b1e1a0cac65b46432073b93"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "value",
+      "Value": "false",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ005-e323bcfe-"
+    },
+    {
+      "ID": "PCQ005",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ005A68IJob": "public class PcPCQ005A68IJob { @future public static void run(Id markerId){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ005-d6821c86-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ005-d6821c86-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ005-d6821c86-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ005-d6821c86-done');} }",
+          "PcPCQ005A68Test": "@IsTest private class PcPCQ005A68Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ005-d6821c86-pending'); insert pcMarker; Test.startTest();PcPCQ005A68IJob.run(pcMarker.Id); Id pcJob=null;Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ005-d6821c86-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ005-d6821c86-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ005-d6821c86-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ005-d6821c86-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ005-d6821c86-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ005|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ005A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ005A68IJob": "6cabe22e5d33c045c8f9c68fdd39344b5545986828e2daca9a9b102cb8039f8a",
+        "class:PcPCQ005A68Test": "c923597f34b46df2686276ac0d4634fee27c1224cfddf87314a12fc5c3eab42d"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "false",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "value",
+      "Value": "false"
+    },
+    {
+      "ID": "PCQ006",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ006-09474719-pending'); insert pcMarker; Id pcJob=Database.executeBatch(new PcPCQ006A68AJob(pcMarker.Id),1);",
+        "Classes": {
+          "PcPCQ006A68AJob": "public class PcPCQ006A68AJob implements Database.Batchable<Account> { Id markerId; public PcPCQ006A68AJob(Id markerId){this.markerId=markerId;} public Database.QueryLocator start(Database.BatchableContext context){return Database.getQueryLocator([SELECT Id FROM Account WHERE Id=:markerId]);} public void execute(Database.BatchableContext context,List<Account> scope){String r; if(scope.size()!=1 || scope[0].Id!=markerId){throw new IllegalArgumentException('FIXTURE_ERROR batch scope');} List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ006-09474719-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ006-09474719-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ006-09474719-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ006-09474719-done');} public void finish(Database.BatchableContext context){} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "b438c346eba02fe00c45c85ec2775591aeadaf49d3623cf1d654df7e677e3958",
+        "class:PcPCQ006A68AJob": "67ad56d2d24ee72844887e764fece660e3587ff7ab6bbb015fdbcdb915337022"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcPCQ006A68AJob",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Class PcPCQ006A68AJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Class PcPCQ006A68AJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)",
+      "RejectUnit": "PcPCQ006A68AJob",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ006-09474719-"
+    },
+    {
+      "ID": "PCQ006",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ006A68IJob": "public class PcPCQ006A68IJob implements Database.Batchable<Account> { Id markerId; public PcPCQ006A68IJob(Id markerId){this.markerId=markerId;} public Database.QueryLocator start(Database.BatchableContext context){return Database.getQueryLocator([SELECT Id FROM Account WHERE Id=:markerId]);} public void execute(Database.BatchableContext context,List<Account> scope){String r; if(scope.size()!=1 || scope[0].Id!=markerId){throw new IllegalArgumentException('FIXTURE_ERROR batch scope');} List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ006-199d5691-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ006-199d5691-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ006-199d5691-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ006-199d5691-done');} public void finish(Database.BatchableContext context){} }",
+          "PcPCQ006A68Test": "@IsTest private class PcPCQ006A68Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ006-199d5691-pending'); insert pcMarker; Test.startTest();Id pcJob=Database.executeBatch(new PcPCQ006A68IJob(pcMarker.Id),1);Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ006-199d5691-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ006-199d5691-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ006-199d5691-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ006-199d5691-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ006-199d5691-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ006|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ006A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ006A68IJob": "d325538bc05248ea099cf7d0a068f0183d78c6962ecee39480598dd42f0a1358",
+        "class:PcPCQ006A68Test": "492cd5f892707ed2eef150e921f713cd583589d0a7d0bb625684147cdaacf417"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcPCQ006A68IJob",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Class PcPCQ006A68IJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+          },
+          {
+            "name": "PcPCQ006A68Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Dependent class is invalid and needs recompilation:\n Class PcPCQ006A68IJob : Class PcPCQ006A68IJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": true
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Class PcPCQ006A68IJob must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)",
+      "RejectUnit": "PcPCQ006A68IJob"
+    },
+    {
+      "ID": "PCQ007",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ007-d706ae09-pending'); insert pcMarker; Cache.Org.remove('local.PcAlt.PcKPCQ007A68A'); Cache.Org.put('local.PcAlt.PcKPCQ007A68A', 'before');Id pcJob=System.enqueueJob(new PcPCQ007A68AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ007A68AJob": "public class PcPCQ007A68AJob implements Queueable { Id markerId; public PcPCQ007A68AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ007-d706ae09-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCQ007A68A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCQ007A68A'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ007-d706ae09-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ007-d706ae09-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ007-d706ae09-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "537683b3fe928e2d36d8ab035117f5c35db1ce9260b3c60de16c4d9398a3488a",
+        "class:PcPCQ007A68AJob": "d152ca3451f68489a986712dea75317a688d19463bf9cafc2707a7a1691f37d6"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "before",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "before",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ007-d706ae09-"
+    },
+    {
+      "ID": "PCQ007",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ007A68IJob": "public class PcPCQ007A68IJob implements Queueable { Id markerId; public PcPCQ007A68IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ007-b2d36d58-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCQ007A68I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCQ007A68I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ007-b2d36d58-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ007-b2d36d58-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ007-b2d36d58-done');} }",
+          "PcPCQ007A68Test": "@IsTest private class PcPCQ007A68Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ007-b2d36d58-pending'); insert pcMarker; Cache.Org.remove('local.PcAlt.PcKPCQ007A68I'); Cache.Org.put('local.PcAlt.PcKPCQ007A68I', 'before');Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ007A68IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ007-b2d36d58-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ007-b2d36d58-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ007-b2d36d58-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ007-b2d36d58-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ007-b2d36d58-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ007|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ007A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ007A68IJob": "a2a7ecc9391f038a0ddc5f5571cdc9d39a9888851d46a552262ad08801834095",
+        "class:PcPCQ007A68Test": "6adfcb10dfb6461d3a436e30a5aad316f382a3a4e5983cbdfa7b1669619ede7a"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "before",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "before"
+    },
+    {
+      "ID": "PCQ008",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "Account pcMarker=new Account(Name='PCQ-PCQ008-192c971b-pending'); insert pcMarker; Cache.Session.remove('local.PcAlt.PcKPCQ008A68A'); Cache.Session.put('local.PcAlt.PcKPCQ008A68A', 'before');Id pcJob=System.enqueueJob(new PcPCQ008A68AJob(pcMarker.Id));",
+        "Classes": {
+          "PcPCQ008A68AJob": "public class PcPCQ008A68AJob implements Queueable { Id markerId; public PcPCQ008A68AJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ008-192c971b-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.get('local.PcAlt.PcKPCQ008A68A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCQ008A68A'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ008-192c971b-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ008-192c971b-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ008-192c971b-done');} }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "265329112c685be33ab4a7194f8bfdf9aad369f0e8b39104cbc18322de49d12a",
+        "class:PcPCQ008A68AJob": "c4e43ef973904dfc5253d9bfc1eebf1684a37ca7a1bb2ccd506628fca92d3074"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheNoSessionException|Session not found - Session Cache not supported",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "EXC|cache.Session.SessionCacheNoSessionException|Session not found - Session Cache not supported",
+      "Flow": "async",
+      "AsyncPrefix": "PCQ-PCQ008-192c971b-"
+    },
+    {
+      "ID": "PCQ008",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCQ008A68IJob": "public class PcPCQ008A68IJob implements Queueable { Id markerId; public PcPCQ008A68IJob(Id markerId){this.markerId=markerId;} public void execute(QueueableContext context){String r; List<Account> pcGuard=[SELECT Id,Name FROM Account WHERE Id=:markerId]; if(pcGuard.size()!=1 || pcGuard[0].Name!='PCQ-PCQ008-ea1a2749-pending'){throw new IllegalArgumentException('FIXTURE_ERROR marker ownership');} try { r = String.valueOf(Cache.Session.get('local.PcAlt.PcKPCQ008A68I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCQ008A68I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }List<Account> pcChunks=new List<Account>(); for(Integer pcI=0;pcI<pcWire.length();pcI+=180){pcChunks.add(new Account(Name='PCQ-PCQ008-ea1a2749-'+String.valueOf(pcI)+':'+pcWire.substring(pcI,Math.min(pcI+180,pcWire.length()))));} insert pcChunks;insert new Account(Name='PCQ-PCQ008-ea1a2749-hash:'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))));update new Account(Id=markerId,Name='PCQ-PCQ008-ea1a2749-done');} }",
+          "PcPCQ008A68Test": "@IsTest private class PcPCQ008A68Test { @IsTest static void observe(){Account pcMarker=new Account(Name='PCQ-PCQ008-ea1a2749-pending'); insert pcMarker; Cache.Session.remove('local.PcAlt.PcKPCQ008A68I'); Cache.Session.put('local.PcAlt.PcKPCQ008A68I', 'before');Test.startTest();Id pcJob=System.enqueueJob(new PcPCQ008A68IJob(pcMarker.Id));Test.stopTest();List<Account> pcRead=[SELECT Id,Name FROM Account WHERE Name LIKE 'PCQ-PCQ008-ea1a2749-%']; String pcWire=''; Map<Integer,String> pcParts=new Map<Integer,String>(); Boolean pcDone=false; String pcHash; Integer pcForeign=0; for(Account pcA:pcRead){if(!pcA.Name.startsWith('PCQ-PCQ008-ea1a2749-')){pcForeign++;} if(pcA.Name=='PCQ-PCQ008-ea1a2749-done'){pcDone=true;} else if(pcA.Name.startsWith('PCQ-PCQ008-ea1a2749-hash:')){System.assertEquals(null,pcHash,'FIXTURE_ERROR duplicate hash');pcHash=pcA.Name.substring(25);} else if(pcA.Name!='PCQ-PCQ008-ea1a2749-pending'){String pcTail=pcA.Name.substring(20);Integer pcColon=pcTail.indexOf(':');pcParts.put(Integer.valueOf(pcTail.substring(0,pcColon)),pcTail.substring(pcColon+1));}} if(!pcDone || pcParts.isEmpty() || pcForeign!=0){System.assert(false,'FIXTURE_ERROR async effect');} for(Integer pcI=0;pcI<pcParts.size()*180;pcI+=180){System.assert(pcParts.containsKey(pcI),'FIXTURE_ERROR chunk gap');pcWire+=pcParts.get(pcI);} System.assertEquals(pcHash,EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcWire))),'FIXTURE_ERROR raw chunk hash'); delete pcRead; if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>pcWire.length()});} System.assert(false,'PCE36_RESULT|PCQ008|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCQ008A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCQ008A68IJob": "2775159f9c60e1272e54a2b3019ec095787a4b53e3568819094a4a160ea1f466",
+        "class:PcPCQ008A68Test": "33b3e93ead9c82b5762c453d8bb2411db24f7a9d233678830fb0f2dbd4606373"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "before",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "before"
+    }
+  ]
+}

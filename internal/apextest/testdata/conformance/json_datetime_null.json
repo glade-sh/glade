@@ -1,0 +1,625 @@
+{
+  "captures": [
+    {
+      "api": "62.0",
+      "files": {
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls": "public class DatetimeJsonNullProbe {\n public class Envelope {public Datetime stamp;}\n public static List<Object> collect() {\n  List<Object> rows=new List<Object>();\n  for(Integer operation=1;operation<=14;operation++) {\n   Map<String,Object> row=new Map<String,Object>{'id'=>'N'+String.valueOf(operation)};\n   try {\n    Object value;\n    if(operation==1) value=JSON.deserialize('null',Datetime.class);\n    else if(operation==2) value=JSON.deserializeStrict('null',Datetime.class);\n    else if(operation==3) value=JSON.deserialize('\"null\"',Datetime.class);\n    else if(operation==4) value=JSON.deserializeStrict('\"null\"',Datetime.class);\n    else if(operation==5) {Datetime stamp=(Datetime)JSON.deserialize('\"2025-01-01T00:00:00.123Z\"',Datetime.class);value=new Map<String,Object>{'epoch'=>stamp.getTime(),'json'=>JSON.serialize(stamp)};}\n    else if(operation==6) {Envelope box=(Envelope)JSON.deserialize('{\"stamp\":null}',Envelope.class);value=box.stamp==null;}\n    else if(operation==7) {List<Datetime> items=(List<Datetime>)JSON.deserialize('[null]',List<Datetime>.class);value=items.size()==1 && items[0]==null;}\n    else if(operation==8) {Map<String,Datetime> items=(Map<String,Datetime>)JSON.deserialize('{\"stamp\":null}',Map<String,Datetime>.class);value=items.size()==1 && items.containsKey('stamp') && items.get('stamp')==null;}\n    else if(operation==9) {Event record=(Event)JSON.deserialize('{\"StartDateTime\":null}',Event.class);value=record.StartDateTime==null;}\n    else if(operation==10 || operation==11) {JSONParser parser=JSON.createParser('null');parser.nextToken();value=operation==10 ? parser.readValueAs(Datetime.class) : parser.readValueAsStrict(Datetime.class);}\n    else if(operation==12) value=JSON.deserialize('null',String.class);\n    else if(operation==13) value=JSON.deserialize('null',Integer.class);\n    else if(operation==14) {Datetime stamp=null;value=JSON.deserialize(JSON.serialize(stamp),Datetime.class);}\n    row.put('returned',true);row.put('isNull',value==null);row.put('value',value);\n   } catch(Exception problem) {row.put('type',problem.getTypeName());row.put('message',problem.getMessage());}\n   rows.add(row);\n  }\n  return rows;\n }\n}\n",
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls": "@IsTest private class DatetimeJsonNullProbeTest {@IsTest static void collect() {System.assert(false,'NATIVE_DATETIME_JSON_NULL|'+JSON.serialize(DatetimeJsonNullProbe.collect()));}}\n",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}"
+      },
+      "native": [
+        {
+          "id": "N1",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N2",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N3",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N4",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N5",
+          "isNull": false,
+          "returned": true,
+          "value": {
+            "epoch": 1735689600123,
+            "json": "\"2025-01-01T00:00:00.123Z\""
+          }
+        },
+        {
+          "id": "N6",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N7",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N8",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N9",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N10",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N11",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N12",
+          "isNull": true,
+          "returned": true,
+          "value": null
+        },
+        {
+          "id": "N13",
+          "isNull": true,
+          "returned": true,
+          "value": null
+        },
+        {
+          "id": "N14",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        }
+      ],
+      "receiptSHA256": "30518f3c9b6c7041389296aad9c5147e74e723f675a1bd5f7dc2c16925d4ddce",
+      "route": "istest",
+      "sha256": {
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls": "c1c01b2dfe29d976aabe776e903ff28e2900244e2e4b7cd39222b06784fc4b64",
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls": "3f0d4797c6d4db9f79b5aae998946a44c7cb45a213b5994b212357559f77a98f",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "sfdx-project.json": "3f6415903c25e013895eb93fa7fbec23956f74b06460f5266f9d0ac53b80ddbc"
+      }
+    },
+    {
+      "anonymous": "System.debug('NATIVE_DATETIME_JSON_NULL|'+JSON.serialize(DatetimeJsonNullProbe.collect()));\n",
+      "api": "62.0",
+      "files": {
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls": "public class DatetimeJsonNullProbe {\n public class Envelope {public Datetime stamp;}\n public static List<Object> collect() {\n  List<Object> rows=new List<Object>();\n  for(Integer operation=1;operation<=14;operation++) {\n   Map<String,Object> row=new Map<String,Object>{'id'=>'N'+String.valueOf(operation)};\n   try {\n    Object value;\n    if(operation==1) value=JSON.deserialize('null',Datetime.class);\n    else if(operation==2) value=JSON.deserializeStrict('null',Datetime.class);\n    else if(operation==3) value=JSON.deserialize('\"null\"',Datetime.class);\n    else if(operation==4) value=JSON.deserializeStrict('\"null\"',Datetime.class);\n    else if(operation==5) {Datetime stamp=(Datetime)JSON.deserialize('\"2025-01-01T00:00:00.123Z\"',Datetime.class);value=new Map<String,Object>{'epoch'=>stamp.getTime(),'json'=>JSON.serialize(stamp)};}\n    else if(operation==6) {Envelope box=(Envelope)JSON.deserialize('{\"stamp\":null}',Envelope.class);value=box.stamp==null;}\n    else if(operation==7) {List<Datetime> items=(List<Datetime>)JSON.deserialize('[null]',List<Datetime>.class);value=items.size()==1 && items[0]==null;}\n    else if(operation==8) {Map<String,Datetime> items=(Map<String,Datetime>)JSON.deserialize('{\"stamp\":null}',Map<String,Datetime>.class);value=items.size()==1 && items.containsKey('stamp') && items.get('stamp')==null;}\n    else if(operation==9) {Event record=(Event)JSON.deserialize('{\"StartDateTime\":null}',Event.class);value=record.StartDateTime==null;}\n    else if(operation==10 || operation==11) {JSONParser parser=JSON.createParser('null');parser.nextToken();value=operation==10 ? parser.readValueAs(Datetime.class) : parser.readValueAsStrict(Datetime.class);}\n    else if(operation==12) value=JSON.deserialize('null',String.class);\n    else if(operation==13) value=JSON.deserialize('null',Integer.class);\n    else if(operation==14) {Datetime stamp=null;value=JSON.deserialize(JSON.serialize(stamp),Datetime.class);}\n    row.put('returned',true);row.put('isNull',value==null);row.put('value',value);\n   } catch(Exception problem) {row.put('type',problem.getTypeName());row.put('message',problem.getMessage());}\n   rows.add(row);\n  }\n  return rows;\n }\n}\n",
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls": "@IsTest private class DatetimeJsonNullProbeTest {@IsTest static void collect() {System.assert(false,'NATIVE_DATETIME_JSON_NULL|'+JSON.serialize(DatetimeJsonNullProbe.collect()));}}\n",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}"
+      },
+      "native": [
+        {
+          "id": "N1",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N2",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N3",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N4",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N5",
+          "isNull": false,
+          "returned": true,
+          "value": {
+            "epoch": 1735689600123,
+            "json": "\"2025-01-01T00:00:00.123Z\""
+          }
+        },
+        {
+          "id": "N6",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N7",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N8",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N9",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N10",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N11",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N12",
+          "isNull": true,
+          "returned": true,
+          "value": null
+        },
+        {
+          "id": "N13",
+          "isNull": true,
+          "returned": true,
+          "value": null
+        },
+        {
+          "id": "N14",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        }
+      ],
+      "receiptSHA256": "a5f1b49eb7270e9427ee3e3570a6763561aa1036192d1413ca4632abd7790ef5",
+      "route": "anonymous",
+      "sha256": {
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls": "c1c01b2dfe29d976aabe776e903ff28e2900244e2e4b7cd39222b06784fc4b64",
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls": "3f0d4797c6d4db9f79b5aae998946a44c7cb45a213b5994b212357559f77a98f",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "sfdx-project.json": "3f6415903c25e013895eb93fa7fbec23956f74b06460f5266f9d0ac53b80ddbc"
+      }
+    },
+    {
+      "api": "63.0",
+      "files": {
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls": "public class DatetimeJsonNullProbe {\n public class Envelope {public Datetime stamp;}\n public static List<Object> collect() {\n  List<Object> rows=new List<Object>();\n  for(Integer operation=1;operation<=14;operation++) {\n   Map<String,Object> row=new Map<String,Object>{'id'=>'N'+String.valueOf(operation)};\n   try {\n    Object value;\n    if(operation==1) value=JSON.deserialize('null',Datetime.class);\n    else if(operation==2) value=JSON.deserializeStrict('null',Datetime.class);\n    else if(operation==3) value=JSON.deserialize('\"null\"',Datetime.class);\n    else if(operation==4) value=JSON.deserializeStrict('\"null\"',Datetime.class);\n    else if(operation==5) {Datetime stamp=(Datetime)JSON.deserialize('\"2025-01-01T00:00:00.123Z\"',Datetime.class);value=new Map<String,Object>{'epoch'=>stamp.getTime(),'json'=>JSON.serialize(stamp)};}\n    else if(operation==6) {Envelope box=(Envelope)JSON.deserialize('{\"stamp\":null}',Envelope.class);value=box.stamp==null;}\n    else if(operation==7) {List<Datetime> items=(List<Datetime>)JSON.deserialize('[null]',List<Datetime>.class);value=items.size()==1 && items[0]==null;}\n    else if(operation==8) {Map<String,Datetime> items=(Map<String,Datetime>)JSON.deserialize('{\"stamp\":null}',Map<String,Datetime>.class);value=items.size()==1 && items.containsKey('stamp') && items.get('stamp')==null;}\n    else if(operation==9) {Event record=(Event)JSON.deserialize('{\"StartDateTime\":null}',Event.class);value=record.StartDateTime==null;}\n    else if(operation==10 || operation==11) {JSONParser parser=JSON.createParser('null');parser.nextToken();value=operation==10 ? parser.readValueAs(Datetime.class) : parser.readValueAsStrict(Datetime.class);}\n    else if(operation==12) value=JSON.deserialize('null',String.class);\n    else if(operation==13) value=JSON.deserialize('null',Integer.class);\n    else if(operation==14) {Datetime stamp=null;value=JSON.deserialize(JSON.serialize(stamp),Datetime.class);}\n    row.put('returned',true);row.put('isNull',value==null);row.put('value',value);\n   } catch(Exception problem) {row.put('type',problem.getTypeName());row.put('message',problem.getMessage());}\n   rows.add(row);\n  }\n  return rows;\n }\n}\n",
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>63.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls": "@IsTest private class DatetimeJsonNullProbeTest {@IsTest static void collect() {System.assert(false,'NATIVE_DATETIME_JSON_NULL|'+JSON.serialize(DatetimeJsonNullProbe.collect()));}}\n",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>63.0</apiVersion><status>Active</status></ApexClass>",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"63.0\"}"
+      },
+      "native": [
+        {
+          "id": "N1",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N2",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N3",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N4",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N5",
+          "isNull": false,
+          "returned": true,
+          "value": {
+            "epoch": 1735689600123,
+            "json": "\"2025-01-01T00:00:00.123Z\""
+          }
+        },
+        {
+          "id": "N6",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N7",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N8",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N9",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N10",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N11",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N12",
+          "isNull": true,
+          "returned": true,
+          "value": null
+        },
+        {
+          "id": "N13",
+          "isNull": true,
+          "returned": true,
+          "value": null
+        },
+        {
+          "id": "N14",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        }
+      ],
+      "receiptSHA256": "314a87b6736b4ed1619f5a92ab8da08b0c9e440bbfa60a816abcc64042b45174",
+      "route": "istest",
+      "sha256": {
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls": "c1c01b2dfe29d976aabe776e903ff28e2900244e2e4b7cd39222b06784fc4b64",
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls-meta.xml": "7390e47817c97ad3aec01c49eaea53aa3f8b4a5dab26a9de554aa7ce702e2c4b",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls": "3f0d4797c6d4db9f79b5aae998946a44c7cb45a213b5994b212357559f77a98f",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls-meta.xml": "7390e47817c97ad3aec01c49eaea53aa3f8b4a5dab26a9de554aa7ce702e2c4b",
+        "sfdx-project.json": "722c537c9832bdc2ed1ecef3764229bfcde408fe39ed2c38279be539bd7f89d6"
+      }
+    },
+    {
+      "anonymous": "System.debug('NATIVE_DATETIME_JSON_NULL|'+JSON.serialize(DatetimeJsonNullProbe.collect()));\n",
+      "api": "63.0",
+      "files": {
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls": "public class DatetimeJsonNullProbe {\n public class Envelope {public Datetime stamp;}\n public static List<Object> collect() {\n  List<Object> rows=new List<Object>();\n  for(Integer operation=1;operation<=14;operation++) {\n   Map<String,Object> row=new Map<String,Object>{'id'=>'N'+String.valueOf(operation)};\n   try {\n    Object value;\n    if(operation==1) value=JSON.deserialize('null',Datetime.class);\n    else if(operation==2) value=JSON.deserializeStrict('null',Datetime.class);\n    else if(operation==3) value=JSON.deserialize('\"null\"',Datetime.class);\n    else if(operation==4) value=JSON.deserializeStrict('\"null\"',Datetime.class);\n    else if(operation==5) {Datetime stamp=(Datetime)JSON.deserialize('\"2025-01-01T00:00:00.123Z\"',Datetime.class);value=new Map<String,Object>{'epoch'=>stamp.getTime(),'json'=>JSON.serialize(stamp)};}\n    else if(operation==6) {Envelope box=(Envelope)JSON.deserialize('{\"stamp\":null}',Envelope.class);value=box.stamp==null;}\n    else if(operation==7) {List<Datetime> items=(List<Datetime>)JSON.deserialize('[null]',List<Datetime>.class);value=items.size()==1 && items[0]==null;}\n    else if(operation==8) {Map<String,Datetime> items=(Map<String,Datetime>)JSON.deserialize('{\"stamp\":null}',Map<String,Datetime>.class);value=items.size()==1 && items.containsKey('stamp') && items.get('stamp')==null;}\n    else if(operation==9) {Event record=(Event)JSON.deserialize('{\"StartDateTime\":null}',Event.class);value=record.StartDateTime==null;}\n    else if(operation==10 || operation==11) {JSONParser parser=JSON.createParser('null');parser.nextToken();value=operation==10 ? parser.readValueAs(Datetime.class) : parser.readValueAsStrict(Datetime.class);}\n    else if(operation==12) value=JSON.deserialize('null',String.class);\n    else if(operation==13) value=JSON.deserialize('null',Integer.class);\n    else if(operation==14) {Datetime stamp=null;value=JSON.deserialize(JSON.serialize(stamp),Datetime.class);}\n    row.put('returned',true);row.put('isNull',value==null);row.put('value',value);\n   } catch(Exception problem) {row.put('type',problem.getTypeName());row.put('message',problem.getMessage());}\n   rows.add(row);\n  }\n  return rows;\n }\n}\n",
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>63.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls": "@IsTest private class DatetimeJsonNullProbeTest {@IsTest static void collect() {System.assert(false,'NATIVE_DATETIME_JSON_NULL|'+JSON.serialize(DatetimeJsonNullProbe.collect()));}}\n",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>63.0</apiVersion><status>Active</status></ApexClass>",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"63.0\"}"
+      },
+      "native": [
+        {
+          "id": "N1",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N2",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N3",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N4",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N5",
+          "isNull": false,
+          "returned": true,
+          "value": {
+            "epoch": 1735689600123,
+            "json": "\"2025-01-01T00:00:00.123Z\""
+          }
+        },
+        {
+          "id": "N6",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N7",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N8",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N9",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N10",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N11",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N12",
+          "isNull": true,
+          "returned": true,
+          "value": null
+        },
+        {
+          "id": "N13",
+          "isNull": true,
+          "returned": true,
+          "value": null
+        },
+        {
+          "id": "N14",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        }
+      ],
+      "receiptSHA256": "98ab2477c772bc02374542d52eb20a9b389cf8ffd4dc947a3604a87766ff1f97",
+      "route": "anonymous",
+      "sha256": {
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls": "c1c01b2dfe29d976aabe776e903ff28e2900244e2e4b7cd39222b06784fc4b64",
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls-meta.xml": "7390e47817c97ad3aec01c49eaea53aa3f8b4a5dab26a9de554aa7ce702e2c4b",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls": "3f0d4797c6d4db9f79b5aae998946a44c7cb45a213b5994b212357559f77a98f",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls-meta.xml": "7390e47817c97ad3aec01c49eaea53aa3f8b4a5dab26a9de554aa7ce702e2c4b",
+        "sfdx-project.json": "722c537c9832bdc2ed1ecef3764229bfcde408fe39ed2c38279be539bd7f89d6"
+      }
+    },
+    {
+      "api": "67.0",
+      "files": {
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls": "public class DatetimeJsonNullProbe {\n public class Envelope {public Datetime stamp;}\n public static List<Object> collect() {\n  List<Object> rows=new List<Object>();\n  for(Integer operation=1;operation<=14;operation++) {\n   Map<String,Object> row=new Map<String,Object>{'id'=>'N'+String.valueOf(operation)};\n   try {\n    Object value;\n    if(operation==1) value=JSON.deserialize('null',Datetime.class);\n    else if(operation==2) value=JSON.deserializeStrict('null',Datetime.class);\n    else if(operation==3) value=JSON.deserialize('\"null\"',Datetime.class);\n    else if(operation==4) value=JSON.deserializeStrict('\"null\"',Datetime.class);\n    else if(operation==5) {Datetime stamp=(Datetime)JSON.deserialize('\"2025-01-01T00:00:00.123Z\"',Datetime.class);value=new Map<String,Object>{'epoch'=>stamp.getTime(),'json'=>JSON.serialize(stamp)};}\n    else if(operation==6) {Envelope box=(Envelope)JSON.deserialize('{\"stamp\":null}',Envelope.class);value=box.stamp==null;}\n    else if(operation==7) {List<Datetime> items=(List<Datetime>)JSON.deserialize('[null]',List<Datetime>.class);value=items.size()==1 && items[0]==null;}\n    else if(operation==8) {Map<String,Datetime> items=(Map<String,Datetime>)JSON.deserialize('{\"stamp\":null}',Map<String,Datetime>.class);value=items.size()==1 && items.containsKey('stamp') && items.get('stamp')==null;}\n    else if(operation==9) {Event record=(Event)JSON.deserialize('{\"StartDateTime\":null}',Event.class);value=record.StartDateTime==null;}\n    else if(operation==10 || operation==11) {JSONParser parser=JSON.createParser('null');parser.nextToken();value=operation==10 ? parser.readValueAs(Datetime.class) : parser.readValueAsStrict(Datetime.class);}\n    else if(operation==12) value=JSON.deserialize('null',String.class);\n    else if(operation==13) value=JSON.deserialize('null',Integer.class);\n    else if(operation==14) {Datetime stamp=null;value=JSON.deserialize(JSON.serialize(stamp),Datetime.class);}\n    row.put('returned',true);row.put('isNull',value==null);row.put('value',value);\n   } catch(Exception problem) {row.put('type',problem.getTypeName());row.put('message',problem.getMessage());}\n   rows.add(row);\n  }\n  return rows;\n }\n}\n",
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls": "@IsTest private class DatetimeJsonNullProbeTest {@IsTest static void collect() {System.assert(false,'NATIVE_DATETIME_JSON_NULL|'+JSON.serialize(DatetimeJsonNullProbe.collect()));}}\n",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"67.0\"}"
+      },
+      "native": [
+        {
+          "id": "N1",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N2",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N3",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N4",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N5",
+          "isNull": false,
+          "returned": true,
+          "value": {
+            "epoch": 1735689600123,
+            "json": "\"2025-01-01T00:00:00.123Z\""
+          }
+        },
+        {
+          "id": "N6",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N7",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N8",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N9",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N10",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N11",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N12",
+          "isNull": true,
+          "returned": true,
+          "value": null
+        },
+        {
+          "id": "N13",
+          "isNull": true,
+          "returned": true,
+          "value": null
+        },
+        {
+          "id": "N14",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        }
+      ],
+      "receiptSHA256": "6ded549e10f551814529e94142f4fd91531ba5f2a06b8f30778f9931a154a6ac",
+      "route": "istest",
+      "sha256": {
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls": "c1c01b2dfe29d976aabe776e903ff28e2900244e2e4b7cd39222b06784fc4b64",
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls": "3f0d4797c6d4db9f79b5aae998946a44c7cb45a213b5994b212357559f77a98f",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "sfdx-project.json": "58a7912dda14c3c2fba252a12fd198a98556f0c44971080e7acdfe0d673c847b"
+      }
+    },
+    {
+      "anonymous": "System.debug('NATIVE_DATETIME_JSON_NULL|'+JSON.serialize(DatetimeJsonNullProbe.collect()));\n",
+      "api": "67.0",
+      "files": {
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls": "public class DatetimeJsonNullProbe {\n public class Envelope {public Datetime stamp;}\n public static List<Object> collect() {\n  List<Object> rows=new List<Object>();\n  for(Integer operation=1;operation<=14;operation++) {\n   Map<String,Object> row=new Map<String,Object>{'id'=>'N'+String.valueOf(operation)};\n   try {\n    Object value;\n    if(operation==1) value=JSON.deserialize('null',Datetime.class);\n    else if(operation==2) value=JSON.deserializeStrict('null',Datetime.class);\n    else if(operation==3) value=JSON.deserialize('\"null\"',Datetime.class);\n    else if(operation==4) value=JSON.deserializeStrict('\"null\"',Datetime.class);\n    else if(operation==5) {Datetime stamp=(Datetime)JSON.deserialize('\"2025-01-01T00:00:00.123Z\"',Datetime.class);value=new Map<String,Object>{'epoch'=>stamp.getTime(),'json'=>JSON.serialize(stamp)};}\n    else if(operation==6) {Envelope box=(Envelope)JSON.deserialize('{\"stamp\":null}',Envelope.class);value=box.stamp==null;}\n    else if(operation==7) {List<Datetime> items=(List<Datetime>)JSON.deserialize('[null]',List<Datetime>.class);value=items.size()==1 && items[0]==null;}\n    else if(operation==8) {Map<String,Datetime> items=(Map<String,Datetime>)JSON.deserialize('{\"stamp\":null}',Map<String,Datetime>.class);value=items.size()==1 && items.containsKey('stamp') && items.get('stamp')==null;}\n    else if(operation==9) {Event record=(Event)JSON.deserialize('{\"StartDateTime\":null}',Event.class);value=record.StartDateTime==null;}\n    else if(operation==10 || operation==11) {JSONParser parser=JSON.createParser('null');parser.nextToken();value=operation==10 ? parser.readValueAs(Datetime.class) : parser.readValueAsStrict(Datetime.class);}\n    else if(operation==12) value=JSON.deserialize('null',String.class);\n    else if(operation==13) value=JSON.deserialize('null',Integer.class);\n    else if(operation==14) {Datetime stamp=null;value=JSON.deserialize(JSON.serialize(stamp),Datetime.class);}\n    row.put('returned',true);row.put('isNull',value==null);row.put('value',value);\n   } catch(Exception problem) {row.put('type',problem.getTypeName());row.put('message',problem.getMessage());}\n   rows.add(row);\n  }\n  return rows;\n }\n}\n",
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls": "@IsTest private class DatetimeJsonNullProbeTest {@IsTest static void collect() {System.assert(false,'NATIVE_DATETIME_JSON_NULL|'+JSON.serialize(DatetimeJsonNullProbe.collect()));}}\n",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"67.0\"}"
+      },
+      "native": [
+        {
+          "id": "N1",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N2",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N3",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N4",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N5",
+          "isNull": false,
+          "returned": true,
+          "value": {
+            "epoch": 1735689600123,
+            "json": "\"2025-01-01T00:00:00.123Z\""
+          }
+        },
+        {
+          "id": "N6",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N7",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N8",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N9",
+          "isNull": false,
+          "returned": true,
+          "value": true
+        },
+        {
+          "id": "N10",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N11",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        },
+        {
+          "id": "N12",
+          "isNull": true,
+          "returned": true,
+          "value": null
+        },
+        {
+          "id": "N13",
+          "isNull": true,
+          "returned": true,
+          "value": null
+        },
+        {
+          "id": "N14",
+          "message": "Invalid format: \"null\"",
+          "type": "System.JSONException"
+        }
+      ],
+      "receiptSHA256": "ba0e587a1043c72d6b20108cf20bd0a373bb42c7500bc2767ecc5e8a7e341fcb",
+      "route": "anonymous",
+      "sha256": {
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls": "c1c01b2dfe29d976aabe776e903ff28e2900244e2e4b7cd39222b06784fc4b64",
+        "force-app/main/default/classes/DatetimeJsonNullProbe.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls": "3f0d4797c6d4db9f79b5aae998946a44c7cb45a213b5994b212357559f77a98f",
+        "force-app/main/default/classes/DatetimeJsonNullProbeTest.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "sfdx-project.json": "58a7912dda14c3c2fba252a12fd198a98556f0c44971080e7acdfe0d673c847b"
+      }
+    }
+  ],
+  "carries": [
+    "Only genuine scalar Datetime at executing source62/63/67 and captured unnamespaced matched caller/source contexts are established. API68, other/unknown versions, mixed-source and shadow/namespace origins remain unverified.",
+    "JSONParser observations cover only nextToken-positioned single-token raw-null documents. Unstarted/nested/quoted-null parser variants retain prior behavior.",
+    "Apex null input String diagnostics, non-null invalid Datetime strings and Date null conversion are outside this change; Date behavior is separately owned. No public corpus class is mapped to this native discrepancy."
+  ],
+  "provenance": {
+    "capturedAt": "2026-10-15",
+    "orgIdSHA256": "d57874efcb0721d7cd7589e3895d9a91def0a63a167631b2fa96735a6bd41f26",
+    "priorOwnedEvidence": "b75d35ce9:json_date_null_native.json otherScalarRootNulls.datetime and anonymous rootDatetimeNull",
+    "transport": "owned synthetic named terminal assertion and anonymous debug; named Fail is observation transport"
+  },
+  "schemaVersion": 1
+}

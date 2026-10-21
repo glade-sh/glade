@@ -1,0 +1,6 @@
+case	shape
+missing_layout	Retrieve a layout name that has not been deployed
+empty_sections_null	Inspect layoutSections on a new Metadata.Layout
+declared_layout	Retrieve the deployed Account layout by its full name
+declared_section	Retain the declared section label and OneColumn style
+declared_fields	Retain ordered Name and Industry layout items

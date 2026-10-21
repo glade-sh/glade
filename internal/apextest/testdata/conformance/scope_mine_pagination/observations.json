@@ -1,0 +1,670 @@
+{
+  "contexts": [
+    {
+      "callerApi": "67.0",
+      "id": "source67-istest-transport62",
+      "route": "istest",
+      "rows": {
+        "accountsActor": {
+          "cursorCount": 2,
+          "cursorPage": [
+            "a",
+            "b"
+          ],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [
+            "a",
+            "b"
+          ],
+          "mineCount": 2,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 1,
+          "window": [
+            "b"
+          ]
+        },
+        "accountsFirst": {
+          "cursorCount": 1,
+          "cursorPage": [
+            "c"
+          ],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [
+            "c"
+          ],
+          "mineCount": 1,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 0,
+          "window": []
+        },
+        "accountsRestored": {
+          "cursorCount": 2,
+          "cursorPage": [
+            "a",
+            "b"
+          ],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [
+            "a",
+            "b"
+          ],
+          "mineCount": 2,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 1,
+          "window": [
+            "b"
+          ]
+        },
+        "accountsSecond": {
+          "cursorCount": 0,
+          "cursorPage": [],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [],
+          "mineCount": 0,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 0,
+          "window": []
+        },
+        "usersActor": {
+          "everything": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mine": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mineCount": 3,
+          "ordinary": [
+            "actor",
+            "first",
+            "second"
+          ]
+        },
+        "usersFirst": {
+          "everything": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mine": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mineCount": 3,
+          "ordinary": [
+            "actor",
+            "first",
+            "second"
+          ]
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "source67-anonymous-transport62",
+      "route": "anonymous",
+      "rows": {
+        "usersActor": {
+          "everything": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mine": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mineCount": 3,
+          "ordinary": [
+            "actor",
+            "first",
+            "second"
+          ]
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "source62-istest-transport62",
+      "route": "istest",
+      "rows": {
+        "accountsActor": {
+          "cursorCount": 2,
+          "cursorPage": [
+            "a",
+            "b"
+          ],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [
+            "a",
+            "b"
+          ],
+          "mineCount": 2,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 1,
+          "window": [
+            "b"
+          ]
+        },
+        "accountsFirst": {
+          "cursorCount": 1,
+          "cursorPage": [
+            "c"
+          ],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [
+            "c"
+          ],
+          "mineCount": 1,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 0,
+          "window": []
+        },
+        "accountsRestored": {
+          "cursorCount": 2,
+          "cursorPage": [
+            "a",
+            "b"
+          ],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [
+            "a",
+            "b"
+          ],
+          "mineCount": 2,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 1,
+          "window": [
+            "b"
+          ]
+        },
+        "accountsSecond": {
+          "cursorCount": 0,
+          "cursorPage": [],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [],
+          "mineCount": 0,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 0,
+          "window": []
+        },
+        "usersActor": {
+          "everything": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mine": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mineCount": 3,
+          "ordinary": [
+            "actor",
+            "first",
+            "second"
+          ]
+        },
+        "usersFirst": {
+          "everything": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mine": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mineCount": 3,
+          "ordinary": [
+            "actor",
+            "first",
+            "second"
+          ]
+        }
+      },
+      "sourceApi": "62.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "source62-anonymous-transport62",
+      "route": "anonymous",
+      "rows": {
+        "usersActor": {
+          "everything": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mine": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mineCount": 3,
+          "ordinary": [
+            "actor",
+            "first",
+            "second"
+          ]
+        }
+      },
+      "sourceApi": "62.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "67.0",
+      "id": "source67-istest-transport67",
+      "route": "istest",
+      "rows": {
+        "accountsActor": {
+          "cursorCount": 2,
+          "cursorPage": [
+            "a",
+            "b"
+          ],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [
+            "a",
+            "b"
+          ],
+          "mineCount": 2,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 1,
+          "window": [
+            "b"
+          ]
+        },
+        "accountsFirst": {
+          "cursorCount": 1,
+          "cursorPage": [
+            "c"
+          ],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [
+            "c"
+          ],
+          "mineCount": 1,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 0,
+          "window": []
+        },
+        "accountsRestored": {
+          "cursorCount": 2,
+          "cursorPage": [
+            "a",
+            "b"
+          ],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [
+            "a",
+            "b"
+          ],
+          "mineCount": 2,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 1,
+          "window": [
+            "b"
+          ]
+        },
+        "accountsSecond": {
+          "cursorCount": 0,
+          "cursorPage": [],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [],
+          "mineCount": 0,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 0,
+          "window": []
+        },
+        "usersActor": {
+          "everything": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mine": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mineCount": 3,
+          "ordinary": [
+            "actor",
+            "first",
+            "second"
+          ]
+        },
+        "usersFirst": {
+          "everything": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mine": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mineCount": 3,
+          "ordinary": [
+            "actor",
+            "first",
+            "second"
+          ]
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "67.0"
+    },
+    {
+      "callerApi": "67.0",
+      "id": "source67-anonymous-transport67",
+      "route": "anonymous",
+      "rows": {
+        "usersActor": {
+          "everything": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mine": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mineCount": 3,
+          "ordinary": [
+            "actor",
+            "first",
+            "second"
+          ]
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "67.0"
+    },
+    {
+      "callerApi": "68.0",
+      "id": "source68-istest-transport68",
+      "route": "istest",
+      "rows": {
+        "accountsActor": {
+          "cursorCount": 2,
+          "cursorPage": [
+            "a",
+            "b"
+          ],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [
+            "a",
+            "b"
+          ],
+          "mineCount": 2,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 1,
+          "window": [
+            "b"
+          ]
+        },
+        "accountsFirst": {
+          "cursorCount": 1,
+          "cursorPage": [
+            "c"
+          ],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [
+            "c"
+          ],
+          "mineCount": 1,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 0,
+          "window": []
+        },
+        "accountsRestored": {
+          "cursorCount": 2,
+          "cursorPage": [
+            "a",
+            "b"
+          ],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [
+            "a",
+            "b"
+          ],
+          "mineCount": 2,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 1,
+          "window": [
+            "b"
+          ]
+        },
+        "accountsSecond": {
+          "cursorCount": 0,
+          "cursorPage": [],
+          "everything": [
+            "a",
+            "b",
+            "c"
+          ],
+          "mine": [],
+          "mineCount": 0,
+          "ordinary": [
+            "a",
+            "b",
+            "c"
+          ],
+          "whereCount": 0,
+          "window": []
+        },
+        "usersActor": {
+          "everything": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mine": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mineCount": 3,
+          "ordinary": [
+            "actor",
+            "first",
+            "second"
+          ]
+        },
+        "usersFirst": {
+          "everything": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mine": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mineCount": 3,
+          "ordinary": [
+            "actor",
+            "first",
+            "second"
+          ]
+        }
+      },
+      "sourceApi": "68.0",
+      "transportApi": "68.0"
+    },
+    {
+      "callerApi": "68.0",
+      "id": "source68-anonymous-transport68",
+      "route": "anonymous",
+      "rows": {
+        "usersActor": {
+          "everything": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mine": [
+            "actor",
+            "first",
+            "second"
+          ],
+          "mineCount": 3,
+          "ordinary": [
+            "actor",
+            "first",
+            "second"
+          ]
+        }
+      },
+      "sourceApi": "68.0",
+      "transportApi": "68.0"
+    }
+  ],
+  "files": [
+    {
+      "path": "setup/OwnedScopePageObservation.cls",
+      "sha256": "4ef57b9ce7970fd5981c05c1b867d093059e2e1f8c33f4c76beda35c19c99d1f"
+    },
+    {
+      "path": "setup/OwnedScopePageObservationTest.cls",
+      "sha256": "84f6566887fd19771eaa0ceedfac2c36bdc6c4de7c955063d092ea6b89f53762"
+    }
+  ]
+}

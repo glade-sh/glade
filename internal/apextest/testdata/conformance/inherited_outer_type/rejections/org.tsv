@@ -1,0 +1,7 @@
+source_api	route	observation
+62.0	named	"{""compiled"":false,""messages"":[""Class InterfaceOnlyDriver must implement the method: String DriverHost.Driver.run(DriverHost.Request)""]}"
+62.0	anonymous	"{""compiled"":false,""message"":""Class TemporaryDriver must implement the method: String DriverHost.Driver.run(DriverHost.Request)""}"
+67.0	named	"{""compiled"":false,""messages"":[""Class InterfaceOnlyDriver must implement the method: String DriverHost.Driver.run(DriverHost.Request)""]}"
+67.0	anonymous	"{""compiled"":false,""message"":""Class TemporaryDriver must implement the method: String DriverHost.Driver.run(DriverHost.Request)""}"
+68.0	named	"{""compiled"":false,""messages"":[""Class InterfaceOnlyDriver must implement the method: String DriverHost.Driver.run(DriverHost.Request)""]}"
+68.0	anonymous	"{""compiled"":false,""message"":""Class TemporaryDriver must implement the method: String DriverHost.Driver.run(DriverHost.Request)""}"

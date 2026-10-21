@@ -22,6 +22,11 @@ import (
 
 // A39's captured API 62/67 rows, owned metadata and native broker observations.
 // CI reconstructs the fixtures from this export and never imports glade-tools.
+// The API 68 anonymous capture at native-capture
+// (SHA-256 6552d5c5d2c07faf7755354bd74883c39a512d329330b61d7d96aa41491d2dd3)
+// and its repeat answer the 243 asserted rows with the exact API 67 text. API 68
+// has no control, native-test, named-observation or named-compilation capture,
+// so those checks stay at API 62/67.
 func TestPlatformEventsOrgConformance(t *testing.T) {
 	type namedCompilation struct{ Name, Source, Expected string }
 	type familyCase struct {
@@ -34,6 +39,9 @@ func TestPlatformEventsOrgConformance(t *testing.T) {
 	var data struct {
 		APIVersions                 []string `json:"apiVersions"`
 		Files, NamedObservations    map[string]string
+		// NamedByAPI holds native named-route answers that differ by source
+		// version, from event_publish_forwarding (API 62 and 67, @IsTest route).
+		NamedByAPI map[string]map[string]string `json:"namedByApi"`
 		Cases, Controls             []familyCase
 		Remaining, Excluded         []familyCase
 		NativeTests, NativeExcluded []nativeTest
@@ -45,7 +53,7 @@ func TestPlatformEventsOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 243 || len(data.Controls) != 83 || len(data.NativeTests) != 56 || len(data.Remaining) != 0 || len(data.Excluded) != 12 || len(data.NativeExcluded) != 2 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 243 || len(data.Controls) != 83 || len(data.NativeTests) != 56 || len(data.Remaining) != 0 || len(data.Excluded) != 12 || len(data.NativeExcluded) != 2 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle: %d asserted + %d controls, %d native tests, %d carries, %d oracle exclusions, %d hosted test exclusions at %v", len(data.Cases), len(data.Controls), len(data.NativeTests), len(data.Remaining), len(data.Excluded), len(data.NativeExcluded), data.APIVersions)
 	}
 	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)
@@ -56,7 +64,7 @@ func TestPlatformEventsOrgConformance(t *testing.T) {
 		}
 		seen[row.ID] = true
 		if len(row.NamedCompilations) != 0 {
-			for _, api := range data.APIVersions {
+			for _, api := range []string{"62.0", "67.0"} {
 				capture, ok := row.NamedCompilations[api]
 				if !ok || capture.Name == "" || capture.Source == "" || !strings.HasPrefix(capture.Expected, "COMPILE_ERROR\t") {
 					t.Fatalf("invalid named rejection capture for %s/%s", row.ID, api)
@@ -183,6 +191,19 @@ func TestPlatformEventsOrgConformance(t *testing.T) {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "platform events", api, "")
+			apiRows, nativeTests := rows, data.NativeTests
+			// namedOnly68 marks rows whose @IsTest answer has no API 68 capture.
+			namedOnly68 := map[string]bool{}
+			if api == "68.0" {
+				apiRows, nativeTests = data.Cases, nil
+				for _, tc := range data.Cases {
+					if _, ok := data.NamedObservations[tc.ID]; ok || len(tc.NamedCompilations) != 0 {
+						namedOnly68[tc.ID] = true
+					}
+				}
+				t.Logf("A39 API 68.0 excludes %d controls, %d native tests and %d @IsTest rows without a named capture: no native API 68 capture", len(data.Controls), len(data.NativeTests), len(namedOnly68))
+				t.Log("A39 API 68.0: native capture is anonymous-only; remaining @IsTest checks keep anonymous-backed local assertions and count as legacy, not native named-route evidence")
+			}
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
 			names := make([]string, 0, len(data.Files))
@@ -235,6 +256,9 @@ func TestPlatformEventsOrgConformance(t *testing.T) {
 				t.Helper()
 				expected, withLine := tc.Expected, true
 				if named {
+					if accepted, ok := data.NamedByAPI[api][tc.ID]; ok {
+						expected = accepted
+					}
 					if capture, ok := tc.NamedCompilations[api]; ok {
 						// Tooling ApexClass insertion returns the bare native diagnostic.
 						expected, withLine = capture.Expected, false
@@ -268,7 +292,7 @@ func TestPlatformEventsOrgConformance(t *testing.T) {
 			var namedSource strings.Builder
 			namedSource.WriteString("@IsTest private class PlatformEventsProbe {\n")
 			executable := 0
-			for _, tc := range rows {
+			for _, tc := range apiRows {
 				decls, _ := declarations(tc.Code)
 				if len(decls) > 0 {
 					declRoot := t.TempDir()
@@ -301,6 +325,9 @@ func TestPlatformEventsOrgConformance(t *testing.T) {
 				executable++
 				expected := tc.Expected
 				if observed, ok := data.NamedObservations[tc.ID]; ok {
+					expected = observed
+				}
+				if observed, ok := data.NamedByAPI[api][tc.ID]; ok {
 					expected = observed
 				}
 				className := "PlatformEventsProbe"
@@ -378,14 +405,22 @@ func TestPlatformEventsOrgConformance(t *testing.T) {
 				initializeTestOrg(&seed)
 				return runCase(context.Background(), row, methods[key], runtimeMethods[testMethodSourceKey(row.ClassName, row.File)], methodErrors[key], programs[key], programErrors[key], namedRunner.base, nil, nil, nil, seed, 0, Options{NoDiskCache: true, Parallelism: 1}, false, nil, counters)
 			}
-			for _, tc := range rows {
+			for _, tc := range apiRows {
 				t.Run(tc.ID, func(t *testing.T) {
 					for _, named := range []bool{false, true} {
+						if named && namedOnly68[tc.ID] {
+							continue
+						}
 						route := "anonymous"
 						if named {
 							route = "isTest"
 						}
-						counts.Run(t, route, tc.ID, route, func(t *testing.T) {
+						kind := "exact"
+						if named && api == "68.0" {
+							// API 68 has no native named-route capture.
+							kind = "legacy"
+						}
+						counts.RunKind(t, route, tc.ID, route, kind, func(t *testing.T) {
 							if analysis, ok := declarationResults[tc.ID]; ok {
 								if tc.NativeLine > 0 {
 									if named {
@@ -433,7 +468,7 @@ func TestPlatformEventsOrgConformance(t *testing.T) {
 					}
 				})
 			}
-			for _, tc := range data.NativeTests {
+			for _, tc := range nativeTests {
 				kind := "exact"
 				if tc.Outcome == "Pass" {
 					kind = "category"

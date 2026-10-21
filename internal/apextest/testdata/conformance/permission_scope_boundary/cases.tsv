@@ -1,0 +1,5 @@
+method	observation
+invalidScope	Immediate USER_MODE permission scope construction with malformed identifier
+nullScope	Immediate USER_MODE permission scope construction with null String
+missingScope	Immediate USER_MODE permission scope construction with syntactically valid absent identifier
+baseScope	Ordinary USER_MODE constant without custom scope

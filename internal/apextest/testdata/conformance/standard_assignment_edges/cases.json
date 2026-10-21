@@ -1,0 +1,14 @@
+[
+  {
+    "id": "history",
+    "body": "AccountHistory e = new AccountHistory(); e.Field = 'Name';"
+  },
+  {
+    "id": "logdate",
+    "body": "EventLogFile e = new EventLogFile(); e.LogDate = Datetime.now();"
+  },
+  {
+    "id": "control",
+    "body": "Account e = new Account(); e.CreatedDate = Datetime.now();"
+  }
+]

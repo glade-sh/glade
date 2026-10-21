@@ -1,0 +1,517 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "cluster": "transport-controls",
+  "shapeCount": 4,
+  "nativeObservationCount": 18,
+  "capturedObservationCount": 24,
+  "packetRowsSha256": "fd89c1212d2e4ba87aad001ff72bea54d0e8f28a0bdb393af72cc51d4c5a54b3",
+  "nativeAnswersSha256": "4651a770309cb61b6f66e523aa069debcea95293c26ac3e83a358a9d1971ac5c",
+  "sourceManifestSha256": "3164f5fc42dba3b344bd172d8721f1722f20f6b35478029ce7a8af178c933d2b",
+  "evidenceSHA256": {
+    "62.0@anonymous": {
+      "tsvSha256": "d3207f68db5632bc09eeaf61fec7c6d6bae3382f0098852aa2a9a6edfeab2a48",
+      "runSha256": "9d44838be7a34c062803ffb7e279b73acfa28d865463335a136ecea977246f75"
+    },
+    "62.0@istest": {
+      "tsvSha256": "47f690e6680100b77ab3a9de63df17971769f4aa6931d8bc4ebc3db4e2165396",
+      "runSha256": "9ac070e9bd71ab3b9ba4d32aadb8227584a4e24627530f904f51e16302d7518b"
+    },
+    "67.0@anonymous": {
+      "tsvSha256": "d3207f68db5632bc09eeaf61fec7c6d6bae3382f0098852aa2a9a6edfeab2a48",
+      "runSha256": "35639d89ccfe1b78301dbd5576a8c4b0677de0d20da54c559b7629c935839139"
+    },
+    "67.0@istest": {
+      "tsvSha256": "47f690e6680100b77ab3a9de63df17971769f4aa6931d8bc4ebc3db4e2165396",
+      "runSha256": "c539330592ce3c9d5f99d9825563969279ea660a4c6b3c1062dc81a2bf67aeff"
+    },
+    "68.0@anonymous": {
+      "tsvSha256": "d3207f68db5632bc09eeaf61fec7c6d6bae3382f0098852aa2a9a6edfeab2a48",
+      "runSha256": "6d2142dc8227613e0c73792d581ec1f5b56f109228603907192d8e128a66a017"
+    },
+    "68.0@istest": {
+      "tsvSha256": "47f690e6680100b77ab3a9de63df17971769f4aa6931d8bc4ebc3db4e2165396",
+      "runSha256": "4afe1949540dcb7373065039fb5b913d605a2126f779ca15bff62adeb8a7a0d6"
+    }
+  },
+  "rows": [
+    {
+      "id": "C156TN_086",
+      "question": "marker transport value",
+      "role": "transport-control",
+      "twin": "C156TN_087",
+      "disposition": "infrastructure",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;r='transport';System.assert(false,'C156_RESULT|C156TN_086|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "32b19062a9151eec1149203351bda378035e5d21f377c002e9fc9488289b75ce"
+          },
+          "infrastructureByAPI": {
+            "62.0": {
+              "compiled": true,
+              "compileProblem": null,
+              "line": 2,
+              "column": 1,
+              "success": false,
+              "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_086|{\"r\":\"transport\"}"
+            },
+            "67.0": {
+              "compiled": true,
+              "compileProblem": null,
+              "line": 2,
+              "column": 1,
+              "success": false,
+              "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_086|{\"r\":\"transport\"}"
+            },
+            "68.0": {
+              "compiled": true,
+              "compileProblem": null,
+              "line": 2,
+              "column": 1,
+              "success": false,
+              "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_086|{\"r\":\"transport\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN086Observe": "@IsTest private class TN086Observe{@IsTest static void observe(){String r;r='transport';System.assert(false,'C156_RESULT|C156TN_086|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}"
+          },
+          "tests": [
+            "TN086Observe"
+          ],
+          "sourceSha256": {
+            "class:TN086Observe": "be304daea8f4fe4050c8c297f8952a175fbb575465477cb60be11f769a17ada7"
+          },
+          "infrastructureByAPI": {
+            "62.0": {
+              "status": "Failed",
+              "checkOnly": true,
+              "code": null,
+              "compile": [],
+              "testFailures": [
+                {
+                  "cls": "TN086Observe",
+                  "method": "observe",
+                  "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_086|{\"r\":\"transport\"}"
+                }
+              ],
+              "testPasses": []
+            },
+            "67.0": {
+              "status": "Failed",
+              "checkOnly": true,
+              "code": null,
+              "compile": [],
+              "testFailures": [
+                {
+                  "cls": "TN086Observe",
+                  "method": "observe",
+                  "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_086|{\"r\":\"transport\"}"
+                }
+              ],
+              "testPasses": []
+            },
+            "68.0": {
+              "status": "Failed",
+              "checkOnly": true,
+              "code": null,
+              "compile": [],
+              "testFailures": [
+                {
+                  "cls": "TN086Observe",
+                  "method": "observe",
+                  "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_086|{\"r\":\"transport\"}"
+                }
+              ],
+              "testPasses": []
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_087",
+      "question": "String null dereference",
+      "role": "runtime-rejection-candidate",
+      "twin": "C156TN_086",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;String s=null;r=String.valueOf(s.length());System.assert(false,'C156_RESULT|C156TN_087|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "2589243d6b841d8dfa6cdd1d2900109f7b23d4e4e2f92139ded80c2732dd6d10"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "67.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "68.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN087Observe": "@IsTest private class TN087Observe{@IsTest static void observe(){String r;String s=null;r=String.valueOf(s.length());System.assert(false,'C156_RESULT|C156TN_087|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}"
+          },
+          "tests": [
+            "TN087Observe"
+          ],
+          "sourceSha256": {
+            "class:TN087Observe": "7fca5cca04036671383a163a22f20c716f22fdc18a0397007e2bf730775825c7"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN087Observe",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN087Observe",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN087Observe",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_088",
+      "question": "null generic collection dereference",
+      "role": "runtime-rejection-candidate",
+      "twin": "C156TN_086",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<String> values=null;r=values.get(0);System.assert(false,'C156_RESULT|C156TN_088|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "4d9cf385738f67d8d8d2ce39744fb07f3a5b193710ce9a176dc4ef49225642c5"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "67.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "68.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN088Observe": "@IsTest private class TN088Observe{@IsTest static void observe(){String r;List<String> values=null;r=values.get(0);System.assert(false,'C156_RESULT|C156TN_088|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}"
+          },
+          "tests": [
+            "TN088Observe"
+          ],
+          "sourceSha256": {
+            "class:TN088Observe": "4d3316aa26d07168de9e0a7d3872b4ab9f4138e90b51803e0bd16e09331c278f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN088Observe",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN088Observe",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN088Observe",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_089",
+      "question": "synthetic type-invalid call",
+      "role": "compile-rejection-candidate",
+      "twin": "C156TN_086",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;r=String.valueOf(Math.abs(new Account()));System.assert(false,'C156_RESULT|C156TN_089|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "d27ada17af4cfaf13ebbb21b344871393764315bf9d543bb8b0233809c1224db"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void abs(Account) from the type System.Math",
+                "line": 2,
+                "column": 32,
+                "success": false,
+                "exceptionMessage": null
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void abs(Account) from the type System.Math"
+            },
+            "67.0": {
+              "native": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void abs(Account) from the type System.Math",
+                "line": 2,
+                "column": 32,
+                "success": false,
+                "exceptionMessage": null
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void abs(Account) from the type System.Math"
+            },
+            "68.0": {
+              "native": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void abs(Account) from the type System.Math",
+                "line": 2,
+                "column": 32,
+                "success": false,
+                "exceptionMessage": null
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void abs(Account) from the type System.Math"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN089Observe": "@IsTest private class TN089Observe{@IsTest static void observe(){String r;r=String.valueOf(Math.abs(new Account()));System.assert(false,'C156_RESULT|C156TN_089|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}"
+          },
+          "tests": [
+            "TN089Observe"
+          ],
+          "sourceSha256": {
+            "class:TN089Observe": "8d142d0e1d5a39ae2761bc470eef9bd90dd41eafc292c69ea1a5bebd37b3457c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "TN089Observe",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method does not exist or incorrect signature: void abs(Account) from the type System.Math"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void abs(Account) from the type System.Math"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "TN089Observe",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method does not exist or incorrect signature: void abs(Account) from the type System.Math"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void abs(Account) from the type System.Math"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "TN089Observe",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method does not exist or incorrect signature: void abs(Account) from the type System.Math"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void abs(Account) from the type System.Math"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

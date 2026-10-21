@@ -40,6 +40,7 @@ func EffectiveSourceAPIVersionFromMetadata(data []byte, fallback string) string 
 }
 
 type Project struct {
+	Test                       config.TestConfig          `json:"test,omitempty"`
 	Root                       string                     `json:"root"`
 	Namespace                  string                     `json:"namespace,omitempty"`
 	SourceAPIVersion           string                     `json:"sourceApiVersion,omitempty"`
@@ -71,9 +72,15 @@ type Project struct {
 	CustomMetadataFiles        []string                   `json:"customMetadataFiles"`
 	WorkflowFiles              []string                   `json:"workflowFiles"`
 	FlowFiles                  []string                   `json:"flowFiles"`
+	OwnerSharingRuleFiles      []string                   `json:"ownerSharingRuleFiles,omitempty"`
+	GroupFiles                 []string                   `json:"groupFiles,omitempty"`
+	QueueFiles                 []string                   `json:"queueFiles,omitempty"`
+	RoleFiles                  []string                   `json:"roleFiles,omitempty"`
 	ProfileFiles               []string                   `json:"profileFiles"`
 	PermissionSetFiles         []string                   `json:"permissionSetFiles"`
 	PermissionSetGroupFiles    []string                   `json:"permissionSetGroupFiles,omitempty"`
+	BusinessHoursSettingsFiles []string                   `json:"businessHoursSettingsFiles,omitempty"`
+	DuplicateRuleFiles         []string                   `json:"duplicateRuleFiles,omitempty"`
 	PermissionAssignmentFiles  []string                   `json:"permissionAssignmentFiles"`
 	ListViewFiles              []string                   `json:"listViewFiles"`
 	LayoutFiles                []string                   `json:"layoutFiles"`
@@ -192,22 +199,7 @@ func OrgShapeFeatures(root string) []string {
 	if cfg, _, err := config.LoadNearest(root); err == nil {
 		features = append(features, cfg.Org.Features...)
 	}
-	for _, name := range []string{
-		"project-scratch-def.json",
-		"hc-project-scratch-def.json",
-	} {
-		path := filepath.Join(root, "config", name)
-		data, err := os.ReadFile(path)
-		if err != nil {
-			continue
-		}
-		var def scratchOrgDefinition
-		if err := json.Unmarshal(data, &def); err == nil {
-			features = append(features, def.Features...)
-			features = append(features, scratchSettingsFeatures(def.Settings)...)
-		}
-	}
-	for _, path := range cumulusCIOrgConfigFiles(root) {
+	for _, path := range scratchOrgConfigFiles(root) {
 		data, err := os.ReadFile(path)
 		if err != nil {
 			continue
@@ -253,21 +245,23 @@ func cumulusCIOrgConfigFiles(root string) []string {
 	return paths
 }
 
+var scratchSettingTriggers = []struct{ block, key, feature string }{
+	{"communitiesSettings", "enableNetworksEnabled", "Communities"},
+	{"communitiesSettings", "enableOotbProfExtUserOpsEnable", "Communities"},
+	{"chatterSettings", "enableChatter", "Chatter"},
+	{"lightningExperienceSettings", "enableS1DesktopEnabled", "LightningExperience"},
+	{"currencySettings", "enableMultiCurrency", "MultiCurrency"},
+	{"quoteSettings", "enableQuote", "Quotes"},
+}
+
 func scratchSettingsFeatures(settings map[string]any) []string {
 	var features []string
-	if nestedBool(settings, "communitiesSettings", "enableNetworksEnabled") || nestedBool(settings, "communitiesSettings", "enableOotbProfExtUserOpsEnable") {
-		features = append(features, "Communities")
+	for _, trigger := range scratchSettingTriggers {
+		if nestedBool(settings, trigger.block, trigger.key) {
+			features = append(features, trigger.feature)
+		}
 	}
-	if nestedBool(settings, "chatterSettings", "enableChatter") {
-		features = append(features, "Chatter")
-	}
-	if nestedBool(settings, "lightningExperienceSettings", "enableS1DesktopEnabled") {
-		features = append(features, "LightningExperience")
-	}
-	if _, ok := settings["userManagementSettings"]; ok {
-		features = append(features, "EnableSetPasswordInApi")
-	}
-	return features
+	return dedupeStrings(features)
 }
 
 func nestedBool(root map[string]any, path ...string) bool {
@@ -379,7 +373,7 @@ func Load(root string) (Project, error) {
 	return load(root, nil, false)
 }
 
-func load(root string, stack map[string]bool, dependency bool) (Project, error) {
+func load(root string, stack map[string]bool, dependency bool, requestedPackages ...string) (Project, error) {
 	absRoot, err := filepath.Abs(root)
 	if err != nil {
 		return Project{}, err
@@ -388,12 +382,6 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	if stack == nil {
 		stack = make(map[string]bool)
 	}
-	if stack[absRoot] {
-		return Project{}, nil
-	}
-	stack[absRoot] = true
-	defer delete(stack, absRoot)
-
 	cfg, err := loadSFDXProject(absRoot)
 	if err != nil {
 		return Project{}, err
@@ -418,7 +406,13 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 				configuredRoot = filepath.Join(cfgDir, filepath.FromSlash(configuredRoot))
 			}
 			if cleaned := filepath.Clean(configuredRoot); cleaned != absRoot {
-				return load(cleaned, stack, dependency)
+				redirectKey := "redirect\x00" + absRoot + "\x00" + strings.Join(requestedPackages, "\x00")
+				if stack[redirectKey] {
+					return Project{}, nil
+				}
+				stack[redirectKey] = true
+				defer delete(stack, redirectKey)
+				return load(cleaned, stack, dependency, requestedPackages...)
 			}
 		}
 		if len(gladeCfg.Project.PackageDirs) > 0 {
@@ -433,8 +427,14 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 		cfg.PackageDirectories = []PackageDirectory{{Path: "."}}
 	}
 	if dependency {
-		cfg.PackageDirectories = dependencyPackageDirectories(cfg.PackageDirectories)
+		cfg.PackageDirectories = dependencyPackageDirectories(cfg.PackageDirectories, requestedPackages...)
 	}
+	viewKey := dependencyPackageViewKey(absRoot, cfg.PackageDirectories)
+	if stack[viewKey] {
+		return Project{}, nil
+	}
+	stack[viewKey] = true
+	defer delete(stack, viewKey)
 
 	p := Project{
 		Root:               absRoot,
@@ -443,6 +443,9 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 		PackageDirectories: cfg.PackageDirectories,
 	}
 	if cfgErr == nil {
+		if !dependency {
+			p.Test = gladeCfg.Test
+		}
 		p.OrgDomainURL = gladeCfg.Org.DomainURL
 		p.SchemaSnapshot = gladeCfg.Project.SchemaSnapshot
 		p.SchemaSnapshotSHA256 = gladeCfg.Project.SchemaSnapshotSHA256
@@ -454,6 +457,9 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	dependencyCfgOK := false
 	if cfgErr != nil {
 		if nearestCfg, _, err := config.LoadNearest(absRoot); err == nil {
+			if !dependency {
+				p.Test = nearestCfg.Test
+			}
 			p.OrgDomainURL = nearestCfg.Org.DomainURL
 			dependencyCfg = nearestCfg
 			dependencyCfgOK = true
@@ -502,9 +508,15 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	sort.Strings(p.CustomMetadataFiles)
 	sort.Strings(p.WorkflowFiles)
 	sort.Strings(p.FlowFiles)
+	sort.Strings(p.OwnerSharingRuleFiles)
+	sort.Strings(p.GroupFiles)
+	sort.Strings(p.QueueFiles)
+	sort.Strings(p.RoleFiles)
 	sort.Strings(p.ProfileFiles)
 	sort.Strings(p.PermissionSetFiles)
 	sort.Strings(p.PermissionSetGroupFiles)
+	sort.Strings(p.BusinessHoursSettingsFiles)
+	sort.Strings(p.DuplicateRuleFiles)
 	sort.Strings(p.PermissionAssignmentFiles)
 	sort.Strings(p.ListViewFiles)
 	sort.Strings(p.LayoutFiles)
@@ -525,6 +537,9 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	sort.Strings(p.LWCCSSFiles)
 	sort.Strings(p.LWCMetaFiles)
 	sort.Strings(p.MessageChannelFiles)
+	if err := validateTestPermissions(p); err != nil {
+		return Project{}, err
+	}
 	return p, nil
 }
 
@@ -553,9 +568,15 @@ func dedupeProjectFiles(p *Project) {
 	p.CustomMetadataFiles = dedupeFilePaths(p.CustomMetadataFiles)
 	p.WorkflowFiles = dedupeFilePaths(p.WorkflowFiles)
 	p.FlowFiles = dedupeFilePaths(p.FlowFiles)
+	p.OwnerSharingRuleFiles = dedupeFilePaths(p.OwnerSharingRuleFiles)
+	p.GroupFiles = dedupeFilePaths(p.GroupFiles)
+	p.QueueFiles = dedupeFilePaths(p.QueueFiles)
+	p.RoleFiles = dedupeFilePaths(p.RoleFiles)
 	p.ProfileFiles = dedupeFilePaths(p.ProfileFiles)
 	p.PermissionSetFiles = dedupeFilePaths(p.PermissionSetFiles)
 	p.PermissionSetGroupFiles = dedupeFilePaths(p.PermissionSetGroupFiles)
+	p.BusinessHoursSettingsFiles = dedupeFilePaths(p.BusinessHoursSettingsFiles)
+	p.DuplicateRuleFiles = dedupeFilePaths(p.DuplicateRuleFiles)
 	p.PermissionAssignmentFiles = dedupeFilePaths(p.PermissionAssignmentFiles)
 	p.ListViewFiles = dedupeFilePaths(p.ListViewFiles)
 	p.LayoutFiles = dedupeFilePaths(p.LayoutFiles)
@@ -617,7 +638,10 @@ func packageDirectoriesFromConfig(paths []string) []PackageDirectory {
 	return out
 }
 
-func dependencyPackageDirectories(dirs []PackageDirectory) []PackageDirectory {
+func dependencyPackageDirectories(dirs []PackageDirectory, requestedPackages ...string) []PackageDirectory {
+	if selected := requestedDependencyPackageDirectories(dirs, requestedPackages); len(selected) > 0 {
+		return selected
+	}
 	var defaults []PackageDirectory
 	for _, dir := range dirs {
 		if dir.Default {
@@ -777,7 +801,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 		if managedPackageDependencySourceLoaded(deps, depRoot) {
 			continue
 		}
-		loaded, err := load(depRoot, stack, true)
+		loaded, err := load(depRoot, stack, true, packageNames...)
 		if err != nil {
 			diagnostics = append(diagnostics, DependencyDiagnostic{
 				SourceRoot: depRoot,
@@ -1422,6 +1446,15 @@ func loadSFDXProject(root string) (sfdxProject, error) {
 	return cfg, nil
 }
 
+// PackageRoots returns the absolute, cleaned package directories the loader
+// resolves for this project, including entries that sit outside Root.
+func (p Project) PackageRoots() []string {
+	if strings.TrimSpace(p.Root) == "" {
+		return nil
+	}
+	return packageRoots(p.Root, p.PackageDirectories, false)
+}
+
 func packageRoots(root string, packageDirs []PackageDirectory, includeConventionalRoots bool) []string {
 	seen := make(map[string]bool)
 	var roots []string
@@ -1531,12 +1564,24 @@ func collectFiles(root string, p *Project) error {
 			p.WorkflowFiles = append(p.WorkflowFiles, path)
 		case strings.HasSuffix(lower, ".flow-meta.xml"), strings.HasSuffix(lower, ".flow"):
 			p.FlowFiles = append(p.FlowFiles, path)
+		case strings.HasSuffix(lower, ".sharingrules"), strings.HasSuffix(lower, ".sharingrules-meta.xml"):
+			p.OwnerSharingRuleFiles = append(p.OwnerSharingRuleFiles, path)
+		case strings.HasSuffix(lower, ".group"), strings.HasSuffix(lower, ".group-meta.xml"):
+			p.GroupFiles = append(p.GroupFiles, path)
+		case strings.HasSuffix(lower, ".queue"), strings.HasSuffix(lower, ".queue-meta.xml"):
+			p.QueueFiles = append(p.QueueFiles, path)
+		case strings.HasSuffix(lower, ".role"), strings.HasSuffix(lower, ".role-meta.xml"):
+			p.RoleFiles = append(p.RoleFiles, path)
 		case strings.HasSuffix(lower, ".profile"), strings.HasSuffix(lower, ".profile-meta.xml"):
 			p.ProfileFiles = append(p.ProfileFiles, path)
 		case strings.HasSuffix(lower, ".custompermission"), strings.HasSuffix(lower, ".custompermission-meta.xml"):
 			p.CustomPermissionFiles = append(p.CustomPermissionFiles, path)
 		case strings.HasSuffix(lower, ".permissionset"), strings.HasSuffix(lower, ".permissionset-meta.xml"):
 			p.PermissionSetFiles = append(p.PermissionSetFiles, path)
+		case strings.EqualFold(filepath.Base(path), "BusinessHours.settings-meta.xml"), strings.EqualFold(filepath.Base(path), "BusinessHours.settings"):
+			p.BusinessHoursSettingsFiles = append(p.BusinessHoursSettingsFiles, path)
+		case strings.HasSuffix(lower, ".duplicaterule"), strings.HasSuffix(lower, ".duplicaterule-meta.xml"):
+			p.DuplicateRuleFiles = append(p.DuplicateRuleFiles, path)
 		case strings.HasSuffix(lower, ".permissionsetgroup"), strings.HasSuffix(lower, ".permissionsetgroup-meta.xml"):
 			p.PermissionSetGroupFiles = append(p.PermissionSetGroupFiles, path)
 		case strings.HasSuffix(lower, ".permissionsetassignment"), strings.HasSuffix(lower, ".permissionsetassignment-meta.xml"):

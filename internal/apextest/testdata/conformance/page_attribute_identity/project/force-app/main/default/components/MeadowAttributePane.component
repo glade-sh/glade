@@ -1,0 +1,4 @@
+<apex:component controller="MeadowAttributeController">
+    <apex:attribute name="recordKey" type="Id" assignTo="{!chosen}" description="Synthetic identity binding"/>
+    <apex:outputText value="{!chosen}"/>
+</apex:component>

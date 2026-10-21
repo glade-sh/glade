@@ -15,7 +15,7 @@ import (
 
 var disableDiskCache atomic.Bool
 
-const testRuntimeCacheABI = "apextest-runtime-v7"
+const testRuntimeCacheABI = "apextest-runtime-v8"
 
 func DisableDiskCacheForTesting() func() {
 	wasDisabled := disableDiskCache.Load()
@@ -610,9 +610,5 @@ func applyStandardFieldScanResult(org *storage.OrgState, scan standardFieldScanR
 	}
 	childRelationshipLookup := projectReferencedChildRelationshipLookup(*org)
 	applyProjectReferencedSourceChildRelationships(org, scan.Inferred, scan.ChildRelationshipRefs, childRelationshipLookup)
-	features := projectReferencedOrgShapeFeatures(scan.Inferred)
-	if len(features) > 0 {
-		storage.ApplyOrgShape(org, features)
-	}
 	applyReferencedStandardFieldSet(org, scan.Inferred, childRelationshipLookup)
 }

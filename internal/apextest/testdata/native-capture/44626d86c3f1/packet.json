@@ -1,0 +1,92 @@
+[
+  {
+    "api": "62.0",
+    "classes": {
+      "OwnedCtor62": "public class OwnedCtor62 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+      "PcConstructorCountsA62Test": "@IsTest private class PcConstructorCountsA62Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor62.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor62.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor62.observe('WRAPPER')));}\n}"
+    },
+    "testClass": "PcConstructorCountsA62Test",
+    "rows": [
+      {
+        "id": "SINGLE",
+        "method": "single",
+        "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor62.observe('SINGLE')));"
+      },
+      {
+        "id": "CHAIN",
+        "method": "chain",
+        "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor62.observe('CHAIN')));"
+      },
+      {
+        "id": "WRAPPER",
+        "method": "wrapper",
+        "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor62.observe('WRAPPER')));"
+      }
+    ],
+    "invalidClasses": {
+      "OwnedDuplicate62": "public class OwnedDuplicate62 { public OwnedDuplicate62(String value){} public OwnedDuplicate62(String value){} }"
+    },
+    "toolsMirror": "capture-revision-093083241259418284085470154683174964762817445752471905941144138888726521116627",
+    "helper": "corpus_e25b/render_apex.py:name"
+  },
+  {
+    "api": "67.0",
+    "classes": {
+      "OwnedCtor67": "public class OwnedCtor67 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+      "PcConstructorCountsA67Test": "@IsTest private class PcConstructorCountsA67Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor67.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor67.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor67.observe('WRAPPER')));}\n}"
+    },
+    "testClass": "PcConstructorCountsA67Test",
+    "rows": [
+      {
+        "id": "SINGLE",
+        "method": "single",
+        "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor67.observe('SINGLE')));"
+      },
+      {
+        "id": "CHAIN",
+        "method": "chain",
+        "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor67.observe('CHAIN')));"
+      },
+      {
+        "id": "WRAPPER",
+        "method": "wrapper",
+        "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor67.observe('WRAPPER')));"
+      }
+    ],
+    "invalidClasses": {
+      "OwnedDuplicate67": "public class OwnedDuplicate67 { public OwnedDuplicate67(String value){} public OwnedDuplicate67(String value){} }"
+    },
+    "toolsMirror": "capture-revision-093083241259418284085470154683174964762817445752471905941144138888726521116627",
+    "helper": "corpus_e25b/render_apex.py:name"
+  },
+  {
+    "api": "68.0",
+    "classes": {
+      "OwnedCtor68": "public class OwnedCtor68 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+      "PcConstructorCountsA68Test": "@IsTest private class PcConstructorCountsA68Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor68.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor68.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor68.observe('WRAPPER')));}\n}"
+    },
+    "testClass": "PcConstructorCountsA68Test",
+    "rows": [
+      {
+        "id": "SINGLE",
+        "method": "single",
+        "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor68.observe('SINGLE')));"
+      },
+      {
+        "id": "CHAIN",
+        "method": "chain",
+        "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor68.observe('CHAIN')));"
+      },
+      {
+        "id": "WRAPPER",
+        "method": "wrapper",
+        "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor68.observe('WRAPPER')));"
+      }
+    ],
+    "invalidClasses": {
+      "OwnedDuplicate68": "public class OwnedDuplicate68 { public OwnedDuplicate68(String value){} public OwnedDuplicate68(String value){} }"
+    },
+    "toolsMirror": "capture-revision-093083241259418284085470154683174964762817445752471905941144138888726521116627",
+    "helper": "corpus_e25b/render_apex.py:name"
+  }
+]

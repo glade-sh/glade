@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>62.0</apiVersion>
+  <interviewLabel>Meadow untouched trigger {!$Flow.CurrentDateTime}</interviewLabel>
+  <label>Meadow untouched trigger</label>
+  <processType>AutoLaunchedFlow</processType>
+  <recordUpdates>
+    <name>UpdateUntouchedRecord</name><label>UpdateUntouchedRecord</label><locationX>0</locationX><locationY>0</locationY>
+    <inputReference>pendingRecord</inputReference>
+  </recordUpdates>
+  <start>
+    <locationX>0</locationX><locationY>0</locationY>
+    <connector><targetReference>UpdateUntouchedRecord</targetReference></connector>
+    <filterLogic>and</filterLogic>
+    <filters><field>Name</field><operator>EqualTo</operator><value><stringValue>Meadow untouched trigger</stringValue></value></filters>
+    <object>Account</object>
+    <recordTriggerType>Create</recordTriggerType>
+    <triggerType>RecordAfterSave</triggerType>
+  </start>
+  <status>Active</status>
+  <variables><name>pendingRecord</name><dataType>SObject</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>true</isOutput><objectType>Account</objectType></variables>
+</Flow>

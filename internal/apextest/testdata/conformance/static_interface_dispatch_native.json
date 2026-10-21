@@ -1,0 +1,1470 @@
+{
+  "apiVersions": [
+    "52.0",
+    "62.0",
+    "67.0"
+  ],
+  "projectAPI": "62.0",
+  "routes": [
+    "isTest",
+    "anonymous"
+  ],
+  "namespaceContext": "none",
+  "knownRows": 37,
+  "pendingCoverage": [
+    "Namespace contexts were not observed.",
+    "Source APIs other than 52.0, 62.0 and 67.0, mixed helper/caller versions, inherited static implementations, arguments, non-void signatures and non-public visibility were not observed."
+  ],
+  "captures": [
+    {
+      "context": "api52",
+      "sourceAPI": "52.0",
+      "callerAPI": "52.0",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "StaticActionObservation",
+      "marker": "STATIC_ACTION_OBSERVATION ",
+      "sourceAPIs": {
+        "OwnedInstanceAction": "52.0",
+        "OwnedAction": "52.0",
+        "OwnedStaticAction": "52.0",
+        "StaticActionObservation": "52.0"
+      },
+      "deploymentReceipt": "deploy.json",
+      "deployment": {
+        "id": "0Afdq00000EWv9ZCAT",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 1,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 1
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "force-app/main/default/classes/OwnedStaticAction.cls": {
+          "source": "public class OwnedStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f"
+        },
+        "force-app/main/default/classes/StaticActionObservation.cls": {
+          "source": "@IsTest\nprivate class StaticActionObservation {\n    @IsTest static void observe() {\n        Map<String,Object> staticResult=new Map<String,Object>{'kind'=>'static','stage'=>'directStatic'};\n        try {\n            OwnedStaticAction.run();\n            staticResult.put('directCalls',OwnedStaticAction.calls);\n            staticResult.put('stage','typeForName');\n            Type token=Type.forName('OwnedStaticAction');\n            staticResult.put('typeFound',token!=null);\n            staticResult.put('stage','newInstance');\n            Object value=token.newInstance();\n            staticResult.put('instanceNonNull',value!=null);\n            staticResult.put('stage','castInterface');\n            OwnedAction action=(OwnedAction)value;\n            staticResult.put('castNonNull',action!=null);\n            staticResult.put('stage','invokeInterface');\n            action.run();\n            staticResult.put('afterCalls',OwnedStaticAction.calls);\n            staticResult.put('stage','complete');\n        } catch(Exception issue) {\n            staticResult.put('exceptionType',issue.getTypeName());\n            staticResult.put('exceptionMessage',issue.getMessage());\n        }\n        Map<String,Object> instanceResult=new Map<String,Object>{'kind'=>'instance','stage'=>'directInstance'};\n        try {\n            new OwnedInstanceAction().run();\n            instanceResult.put('directCalls',OwnedInstanceAction.calls);\n            instanceResult.put('stage','typeForName');\n            Type token=Type.forName('OwnedInstanceAction');\n            instanceResult.put('typeFound',token!=null);\n            instanceResult.put('stage','newInstance');\n            Object value=token.newInstance();\n            instanceResult.put('instanceNonNull',value!=null);\n            instanceResult.put('stage','castInterface');\n            OwnedAction action=(OwnedAction)value;\n            instanceResult.put('castNonNull',action!=null);\n            instanceResult.put('stage','invokeInterface');\n            action.run();\n            instanceResult.put('afterCalls',OwnedInstanceAction.calls);\n            instanceResult.put('stage','complete');\n        } catch(Exception issue) {\n            instanceResult.put('exceptionType',issue.getTypeName());\n            instanceResult.put('exceptionMessage',issue.getMessage());\n        }\n        System.assertEquals('capture','STATIC_ACTION_OBSERVATION '+JSON.serialize(new Map<String,Object>{\n            'staticResult'=>staticResult,'instanceResult'=>instanceResult\n        }));\n    }\n}\n",
+          "sha256": "c4be03002d1bf83e88a08f6ecf04e97e38c6b4f34a662f77ac561589e1ae0e56"
+        },
+        "force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        },
+        "force-app/main/default/classes/OwnedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        },
+        "force-app/main/default/classes/OwnedAction.cls": {
+          "source": "public interface OwnedAction {\n    void run();\n}\n",
+          "sha256": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199"
+        },
+        "force-app/main/default/classes/OwnedInstanceAction.cls": {
+          "source": "public class OwnedInstanceAction implements OwnedAction {\n    public static Integer calls=0;\n    public void run() { calls++; }\n}\n",
+          "sha256": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1"
+        },
+        "force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        },
+        "force-app/main/default/classes/StaticActionObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        }
+      },
+      "sourceDigests": {
+        "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9",
+        "force-app/main/default/classes/OwnedStaticAction.cls": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f",
+        "force-app/main/default/classes/StaticActionObservation.cls": "c4be03002d1bf83e88a08f6ecf04e97e38c6b4f34a662f77ac561589e1ae0e56",
+        "force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+        "force-app/main/default/classes/OwnedAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+        "force-app/main/default/classes/OwnedAction.cls": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199",
+        "force-app/main/default/classes/OwnedInstanceAction.cls": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1",
+        "force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+        "force-app/main/default/classes/StaticActionObservation.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+      },
+      "rawSHA256": {
+        "org.tsv": "5d3129fc6a0f9efa38f9de5d87a22c4185174df92bb315e07940f01a8858c05b",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "1cd1dd0e701c34eb1955ab81f84e1d2d51f8d744010d23cae1abe957072bbc50",
+        "deploy.command.json": "5d35964163ca07419002b677307e6294f7f8e5170839b9ab18d0cec9fec0b95f",
+        "ORG-RUN.txt": "504bf36dff9ee68c2e08096467c1474c89abfeacc7973de1f3103bf4402a161d",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "933ff838a8b2a7ea59cb940920084674c7c157cffb2538562a693f14e3a58e5b"
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "instanceResult": {
+              "afterCalls": 2,
+              "castNonNull": true,
+              "instanceNonNull": true,
+              "typeFound": true,
+              "directCalls": 1,
+              "stage": "complete",
+              "kind": "instance"
+            },
+            "staticResult": {
+              "afterCalls": 2,
+              "castNonNull": true,
+              "instanceNonNull": true,
+              "typeFound": true,
+              "directCalls": 1,
+              "stage": "complete",
+              "kind": "static"
+            }
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"instanceResult\":{\"afterCalls\":2,\"castNonNull\":true,\"instanceNonNull\":true,\"typeFound\":true,\"directCalls\":1,\"stage\":\"complete\",\"kind\":\"instance\"},\"staticResult\":{\"afterCalls\":2,\"castNonNull\":true,\"instanceNonNull\":true,\"typeFound\":true,\"directCalls\":1,\"stage\":\"complete\",\"kind\":\"static\"}}",
+            "methodName": "observe",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.observe: line 46, column 1",
+            "type": "Class"
+          }
+        }
+      ]
+    },
+    {
+      "context": "api52-controls",
+      "sourceAPI": "52.0",
+      "callerAPI": "52.0",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "StaticActionObservation",
+      "marker": "STATIC_ACTION_OBSERVATION ",
+      "sourceAPIs": {
+        "OwnedOtherStaticAction": "52.0",
+        "OwnedInstanceAction": "52.0",
+        "OwnedAction": "52.0",
+        "OwnedUnrelatedAction": "52.0",
+        "OwnedStaticAction": "52.0",
+        "StaticActionObservation": "52.0"
+      },
+      "deploymentReceipt": "deploy.json",
+      "deployment": {
+        "id": "0Afdq00000EWvazCAD",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 6,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 6
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "force-app/main/default/classes/OwnedOtherStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        },
+        "force-app/main/default/classes/OwnedStaticAction.cls": {
+          "source": "public class OwnedStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f"
+        },
+        "force-app/main/default/classes/StaticActionObservation.cls": {
+          "source": "@IsTest\nprivate class StaticActionObservation {\n    private static void counts(Map<String,Object> row) {\n        row.put('primaryCalls',OwnedStaticAction.calls);\n        row.put('otherCalls',OwnedOtherStaticAction.calls);\n        row.put('instanceCalls',OwnedInstanceAction.calls);\n        row.put('unrelatedCalls',OwnedUnrelatedAction.calls);\n    }\n    private static void emit(Map<String,Object> row) {\n        counts(row);\n        System.assertEquals('capture','STATIC_ACTION_OBSERVATION '+JSON.serialize(row));\n    }\n    private static void reflect(String target) {\n        Map<String,Object> row=new Map<String,Object>{'kind'=>'reflection','target'=>target,'stage'=>'typeForName'};\n        try {\n            Type token=Type.forName(target);\n            row.put('typeFound',token!=null);\n            row.put('stage','newInstance');\n            Object value=token.newInstance();\n            row.put('instanceNonNull',value!=null);\n            row.put('stage','castInterface');\n            OwnedAction action=(OwnedAction)value;\n            row.put('castNonNull',action!=null);\n            row.put('stage','invokeInterface');\n            action.run();\n            row.put('stage','complete');\n        } catch(Exception issue) {\n            row.put('exceptionType',issue.getTypeName());\n            row.put('exceptionMessage',issue.getMessage());\n        }\n        emit(row);\n    }\n    @IsTest static void reflectedPrimary() { reflect('OwnedStaticAction'); }\n    @IsTest static void reflectedOther() { reflect('OwnedOtherStaticAction'); }\n    @IsTest static void reflectedInstance() { reflect('OwnedInstanceAction'); }\n    @IsTest static void unrelatedCast() { reflect('OwnedUnrelatedAction'); }\n    @IsTest static void directStaticControls() {\n        Map<String,Object> row=new Map<String,Object>{'kind'=>'directStatic','stage'=>'primaryStatic'};\n        try {\n            OwnedStaticAction.run();\n            row.put('stage','otherStatic');\n            OwnedOtherStaticAction.run();\n            row.put('stage','complete');\n        } catch(Exception issue) {\n            row.put('exceptionType',issue.getTypeName());\n            row.put('exceptionMessage',issue.getMessage());\n        }\n        emit(row);\n    }\n    @IsTest static void nullInterface() {\n        Map<String,Object> row=new Map<String,Object>{'kind'=>'nullInterface','stage'=>'castNull'};\n        try {\n            Object value=null;\n            OwnedAction action=(OwnedAction)value;\n            row.put('castIsNull',action==null);\n            row.put('stage','invokeInterface');\n            action.run();\n            row.put('stage','complete');\n        } catch(Exception issue) {\n            row.put('exceptionType',issue.getTypeName());\n            row.put('exceptionMessage',issue.getMessage());\n        }\n        emit(row);\n    }\n}\n",
+          "sha256": "ce34d03529c62cb6f3e58d773398f94f6481b413cda018756098d1433fd9f0a6"
+        },
+        "force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        },
+        "force-app/main/default/classes/OwnedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        },
+        "force-app/main/default/classes/OwnedAction.cls": {
+          "source": "public interface OwnedAction {\n    void run();\n}\n",
+          "sha256": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199"
+        },
+        "force-app/main/default/classes/OwnedOtherStaticAction.cls": {
+          "source": "public class OwnedOtherStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "6727ca557de6aab5d518e782480625f4b4d8627243cfc6f44aa5026c23d0d701"
+        },
+        "force-app/main/default/classes/OwnedUnrelatedAction.cls": {
+          "source": "public class OwnedUnrelatedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "ccac85185d9ceeacdb0484cb520708e22a5c3e989328856e73bed2d934afc495"
+        },
+        "force-app/main/default/classes/OwnedUnrelatedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        },
+        "force-app/main/default/classes/OwnedInstanceAction.cls": {
+          "source": "public class OwnedInstanceAction implements OwnedAction {\n    public static Integer calls=0;\n    public void run() { calls++; }\n}\n",
+          "sha256": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1"
+        },
+        "force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        },
+        "force-app/main/default/classes/StaticActionObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        }
+      },
+      "sourceDigests": {
+        "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9",
+        "force-app/main/default/classes/OwnedOtherStaticAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+        "force-app/main/default/classes/OwnedStaticAction.cls": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f",
+        "force-app/main/default/classes/StaticActionObservation.cls": "ce34d03529c62cb6f3e58d773398f94f6481b413cda018756098d1433fd9f0a6",
+        "force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+        "force-app/main/default/classes/OwnedAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+        "force-app/main/default/classes/OwnedAction.cls": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199",
+        "force-app/main/default/classes/OwnedOtherStaticAction.cls": "6727ca557de6aab5d518e782480625f4b4d8627243cfc6f44aa5026c23d0d701",
+        "force-app/main/default/classes/OwnedUnrelatedAction.cls": "ccac85185d9ceeacdb0484cb520708e22a5c3e989328856e73bed2d934afc495",
+        "force-app/main/default/classes/OwnedUnrelatedAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+        "force-app/main/default/classes/OwnedInstanceAction.cls": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1",
+        "force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+        "force-app/main/default/classes/StaticActionObservation.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+      },
+      "rawSHA256": {
+        "org.tsv": "096ff423f082498ef35db14a4f12d5f4ecc66b046fdf301cc84d1d2e2aadbfd8",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "f7ca66fec50c109fa814b466799dc4bdcb42485298fdf43e5ac568eb47490974",
+        "deploy.command.json": "5d35964163ca07419002b677307e6294f7f8e5170839b9ab18d0cec9fec0b95f",
+        "ORG-RUN.txt": "c46ae53fce52d8b93ea268d8bb93c78fdd33dc19960385a7a55ffccc2b82d21a",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "1e8e411e895c1f1a46f31e0fea3927f85037afd1b1d0cf83b102ecc46b1740b9"
+      },
+      "rows": [
+        {
+          "id": "directStaticControls",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 1,
+            "primaryCalls": 1,
+            "stage": "complete",
+            "kind": "directStatic"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":1,\"primaryCalls\":1,\"stage\":\"complete\",\"kind\":\"directStatic\"}",
+            "methodName": "directStaticControls",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.directStaticControls: line 48, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "nullInterface",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "exceptionMessage": "Attempt to de-reference a null object",
+            "exceptionType": "System.NullPointerException",
+            "castIsNull": true,
+            "stage": "invokeInterface",
+            "kind": "nullInterface"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":0,\"primaryCalls\":0,\"exceptionMessage\":\"Attempt to de-reference a null object\",\"exceptionType\":\"System.NullPointerException\",\"castIsNull\":true,\"stage\":\"invokeInterface\",\"kind\":\"nullInterface\"}",
+            "methodName": "nullInterface",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.nullInterface: line 63, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "reflectedInstance",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 1,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedInstanceAction",
+            "kind": "reflection"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":1,\"otherCalls\":0,\"primaryCalls\":0,\"castNonNull\":true,\"instanceNonNull\":true,\"typeFound\":true,\"stage\":\"complete\",\"target\":\"OwnedInstanceAction\",\"kind\":\"reflection\"}",
+            "methodName": "reflectedInstance",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.reflect: line 31, column 1\nClass.StaticActionObservation.reflectedInstance: line 35, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "reflectedOther",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 1,
+            "primaryCalls": 0,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedOtherStaticAction",
+            "kind": "reflection"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":1,\"primaryCalls\":0,\"castNonNull\":true,\"instanceNonNull\":true,\"typeFound\":true,\"stage\":\"complete\",\"target\":\"OwnedOtherStaticAction\",\"kind\":\"reflection\"}",
+            "methodName": "reflectedOther",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.reflect: line 31, column 1\nClass.StaticActionObservation.reflectedOther: line 34, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "reflectedPrimary",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 1,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedStaticAction",
+            "kind": "reflection"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":0,\"primaryCalls\":1,\"castNonNull\":true,\"instanceNonNull\":true,\"typeFound\":true,\"stage\":\"complete\",\"target\":\"OwnedStaticAction\",\"kind\":\"reflection\"}",
+            "methodName": "reflectedPrimary",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.reflect: line 31, column 1\nClass.StaticActionObservation.reflectedPrimary: line 33, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "unrelatedCast",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "exceptionMessage": "Invalid conversion from runtime type OwnedUnrelatedAction to OwnedAction",
+            "exceptionType": "System.TypeException",
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "castInterface",
+            "target": "OwnedUnrelatedAction",
+            "kind": "reflection"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":0,\"primaryCalls\":0,\"exceptionMessage\":\"Invalid conversion from runtime type OwnedUnrelatedAction to OwnedAction\",\"exceptionType\":\"System.TypeException\",\"instanceNonNull\":true,\"typeFound\":true,\"stage\":\"castInterface\",\"target\":\"OwnedUnrelatedAction\",\"kind\":\"reflection\"}",
+            "methodName": "unrelatedCast",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.reflect: line 31, column 1\nClass.StaticActionObservation.unrelatedCast: line 36, column 1",
+            "type": "Class"
+          }
+        }
+      ]
+    },
+    {
+      "context": "api62",
+      "sourceAPI": "62.0",
+      "callerAPI": "62.0",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "StaticActionObservation",
+      "marker": "STATIC_ACTION_OBSERVATION ",
+      "sourceAPIs": {
+        "OwnedOtherStaticAction": "62.0",
+        "OwnedInstanceAction": "62.0",
+        "OwnedAction": "62.0",
+        "OwnedUnrelatedAction": "62.0",
+        "OwnedStaticAction": "62.0",
+        "StaticActionObservation": "62.0"
+      },
+      "deploymentReceipt": "deploy.json",
+      "deployment": {
+        "id": "0Afdq00000EWua6CAD",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 6,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 6
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "force-app/main/default/classes/OwnedOtherStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        },
+        "force-app/main/default/classes/OwnedStaticAction.cls": {
+          "source": "public class OwnedStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f"
+        },
+        "force-app/main/default/classes/StaticActionObservation.cls": {
+          "source": "@IsTest\nprivate class StaticActionObservation {\n    private static void counts(Map<String,Object> row) {\n        row.put('primaryCalls',OwnedStaticAction.calls);\n        row.put('otherCalls',OwnedOtherStaticAction.calls);\n        row.put('instanceCalls',OwnedInstanceAction.calls);\n        row.put('unrelatedCalls',OwnedUnrelatedAction.calls);\n    }\n    private static void emit(Map<String,Object> row) {\n        counts(row);\n        System.assertEquals('capture','STATIC_ACTION_OBSERVATION '+JSON.serialize(row));\n    }\n    private static void reflect(String target) {\n        Map<String,Object> row=new Map<String,Object>{'kind'=>'reflection','target'=>target,'stage'=>'typeForName'};\n        try {\n            Type token=Type.forName(target);\n            row.put('typeFound',token!=null);\n            row.put('stage','newInstance');\n            Object value=token.newInstance();\n            row.put('instanceNonNull',value!=null);\n            row.put('stage','castInterface');\n            OwnedAction action=(OwnedAction)value;\n            row.put('castNonNull',action!=null);\n            row.put('stage','invokeInterface');\n            action.run();\n            row.put('stage','complete');\n        } catch(Exception issue) {\n            row.put('exceptionType',issue.getTypeName());\n            row.put('exceptionMessage',issue.getMessage());\n        }\n        emit(row);\n    }\n    @IsTest static void reflectedPrimary() { reflect('OwnedStaticAction'); }\n    @IsTest static void reflectedOther() { reflect('OwnedOtherStaticAction'); }\n    @IsTest static void reflectedInstance() { reflect('OwnedInstanceAction'); }\n    @IsTest static void unrelatedCast() { reflect('OwnedUnrelatedAction'); }\n    @IsTest static void directStaticControls() {\n        Map<String,Object> row=new Map<String,Object>{'kind'=>'directStatic','stage'=>'primaryStatic'};\n        try {\n            OwnedStaticAction.run();\n            row.put('stage','otherStatic');\n            OwnedOtherStaticAction.run();\n            row.put('stage','complete');\n        } catch(Exception issue) {\n            row.put('exceptionType',issue.getTypeName());\n            row.put('exceptionMessage',issue.getMessage());\n        }\n        emit(row);\n    }\n    @IsTest static void nullInterface() {\n        Map<String,Object> row=new Map<String,Object>{'kind'=>'nullInterface','stage'=>'castNull'};\n        try {\n            Object value=null;\n            OwnedAction action=(OwnedAction)value;\n            row.put('castIsNull',action==null);\n            row.put('stage','invokeInterface');\n            action.run();\n            row.put('stage','complete');\n        } catch(Exception issue) {\n            row.put('exceptionType',issue.getTypeName());\n            row.put('exceptionMessage',issue.getMessage());\n        }\n        emit(row);\n    }\n}\n",
+          "sha256": "ce34d03529c62cb6f3e58d773398f94f6481b413cda018756098d1433fd9f0a6"
+        },
+        "force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        },
+        "force-app/main/default/classes/OwnedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        },
+        "force-app/main/default/classes/OwnedAction.cls": {
+          "source": "public interface OwnedAction {\n    void run();\n}\n",
+          "sha256": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199"
+        },
+        "force-app/main/default/classes/OwnedOtherStaticAction.cls": {
+          "source": "public class OwnedOtherStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "6727ca557de6aab5d518e782480625f4b4d8627243cfc6f44aa5026c23d0d701"
+        },
+        "force-app/main/default/classes/OwnedUnrelatedAction.cls": {
+          "source": "public class OwnedUnrelatedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "ccac85185d9ceeacdb0484cb520708e22a5c3e989328856e73bed2d934afc495"
+        },
+        "force-app/main/default/classes/OwnedUnrelatedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        },
+        "force-app/main/default/classes/OwnedInstanceAction.cls": {
+          "source": "public class OwnedInstanceAction implements OwnedAction {\n    public static Integer calls=0;\n    public void run() { calls++; }\n}\n",
+          "sha256": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1"
+        },
+        "force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        },
+        "force-app/main/default/classes/StaticActionObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        }
+      },
+      "sourceDigests": {
+        "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9",
+        "force-app/main/default/classes/OwnedOtherStaticAction.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "force-app/main/default/classes/OwnedStaticAction.cls": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f",
+        "force-app/main/default/classes/StaticActionObservation.cls": "ce34d03529c62cb6f3e58d773398f94f6481b413cda018756098d1433fd9f0a6",
+        "force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "force-app/main/default/classes/OwnedAction.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "force-app/main/default/classes/OwnedAction.cls": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199",
+        "force-app/main/default/classes/OwnedOtherStaticAction.cls": "6727ca557de6aab5d518e782480625f4b4d8627243cfc6f44aa5026c23d0d701",
+        "force-app/main/default/classes/OwnedUnrelatedAction.cls": "ccac85185d9ceeacdb0484cb520708e22a5c3e989328856e73bed2d934afc495",
+        "force-app/main/default/classes/OwnedUnrelatedAction.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "force-app/main/default/classes/OwnedInstanceAction.cls": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1",
+        "force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "force-app/main/default/classes/StaticActionObservation.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+      },
+      "rawSHA256": {
+        "org.tsv": "096ff423f082498ef35db14a4f12d5f4ecc66b046fdf301cc84d1d2e2aadbfd8",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "5f24f4cf0a7e4d480df77a4e1713a881422f876df1f91aac42d3256e1cd8b9bb",
+        "deploy.command.json": "5d35964163ca07419002b677307e6294f7f8e5170839b9ab18d0cec9fec0b95f",
+        "ORG-RUN.txt": "dd8819e069ecd2c91a14a747b1a0cab0c88e97176e0eb1772af4da62dd4b9879",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "cf6c338156aa2328e5e306f8d90b196d31669b08c46a5222ca6ffac709a76c8a"
+      },
+      "rows": [
+        {
+          "id": "directStaticControls",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 1,
+            "primaryCalls": 1,
+            "stage": "complete",
+            "kind": "directStatic"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":1,\"primaryCalls\":1,\"stage\":\"complete\",\"kind\":\"directStatic\"}",
+            "methodName": "directStaticControls",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.directStaticControls: line 48, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "nullInterface",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "exceptionMessage": "Attempt to de-reference a null object",
+            "exceptionType": "System.NullPointerException",
+            "castIsNull": true,
+            "stage": "invokeInterface",
+            "kind": "nullInterface"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":0,\"primaryCalls\":0,\"exceptionMessage\":\"Attempt to de-reference a null object\",\"exceptionType\":\"System.NullPointerException\",\"castIsNull\":true,\"stage\":\"invokeInterface\",\"kind\":\"nullInterface\"}",
+            "methodName": "nullInterface",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.nullInterface: line 63, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "reflectedInstance",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 1,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedInstanceAction",
+            "kind": "reflection"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":1,\"otherCalls\":0,\"primaryCalls\":0,\"castNonNull\":true,\"instanceNonNull\":true,\"typeFound\":true,\"stage\":\"complete\",\"target\":\"OwnedInstanceAction\",\"kind\":\"reflection\"}",
+            "methodName": "reflectedInstance",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.reflect: line 31, column 1\nClass.StaticActionObservation.reflectedInstance: line 35, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "reflectedOther",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 1,
+            "primaryCalls": 0,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedOtherStaticAction",
+            "kind": "reflection"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":1,\"primaryCalls\":0,\"castNonNull\":true,\"instanceNonNull\":true,\"typeFound\":true,\"stage\":\"complete\",\"target\":\"OwnedOtherStaticAction\",\"kind\":\"reflection\"}",
+            "methodName": "reflectedOther",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.reflect: line 31, column 1\nClass.StaticActionObservation.reflectedOther: line 34, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "reflectedPrimary",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 1,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedStaticAction",
+            "kind": "reflection"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":0,\"primaryCalls\":1,\"castNonNull\":true,\"instanceNonNull\":true,\"typeFound\":true,\"stage\":\"complete\",\"target\":\"OwnedStaticAction\",\"kind\":\"reflection\"}",
+            "methodName": "reflectedPrimary",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.reflect: line 31, column 1\nClass.StaticActionObservation.reflectedPrimary: line 33, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "unrelatedCast",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "exceptionMessage": "Invalid conversion from runtime type OwnedUnrelatedAction to OwnedAction",
+            "exceptionType": "System.TypeException",
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "castInterface",
+            "target": "OwnedUnrelatedAction",
+            "kind": "reflection"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":0,\"primaryCalls\":0,\"exceptionMessage\":\"Invalid conversion from runtime type OwnedUnrelatedAction to OwnedAction\",\"exceptionType\":\"System.TypeException\",\"instanceNonNull\":true,\"typeFound\":true,\"stage\":\"castInterface\",\"target\":\"OwnedUnrelatedAction\",\"kind\":\"reflection\"}",
+            "methodName": "unrelatedCast",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.reflect: line 31, column 1\nClass.StaticActionObservation.unrelatedCast: line 36, column 1",
+            "type": "Class"
+          }
+        }
+      ]
+    },
+    {
+      "context": "api67",
+      "sourceAPI": "67.0",
+      "callerAPI": "67.0",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "StaticActionObservation",
+      "marker": "STATIC_ACTION_OBSERVATION ",
+      "sourceAPIs": {
+        "OwnedOtherStaticAction": "67.0",
+        "OwnedInstanceAction": "67.0",
+        "OwnedAction": "67.0",
+        "OwnedUnrelatedAction": "67.0",
+        "OwnedStaticAction": "67.0",
+        "StaticActionObservation": "67.0"
+      },
+      "deploymentReceipt": "report-1.json",
+      "deployment": {
+        "id": "0Afdq00000EWoclCAD",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 6,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 6
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "force-app/main/default/classes/OwnedOtherStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        },
+        "force-app/main/default/classes/OwnedStaticAction.cls": {
+          "source": "public class OwnedStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f"
+        },
+        "force-app/main/default/classes/StaticActionObservation.cls": {
+          "source": "@IsTest\nprivate class StaticActionObservation {\n    private static void counts(Map<String,Object> row) {\n        row.put('primaryCalls',OwnedStaticAction.calls);\n        row.put('otherCalls',OwnedOtherStaticAction.calls);\n        row.put('instanceCalls',OwnedInstanceAction.calls);\n        row.put('unrelatedCalls',OwnedUnrelatedAction.calls);\n    }\n    private static void emit(Map<String,Object> row) {\n        counts(row);\n        System.assertEquals('capture','STATIC_ACTION_OBSERVATION '+JSON.serialize(row));\n    }\n    private static void reflect(String target) {\n        Map<String,Object> row=new Map<String,Object>{'kind'=>'reflection','target'=>target,'stage'=>'typeForName'};\n        try {\n            Type token=Type.forName(target);\n            row.put('typeFound',token!=null);\n            row.put('stage','newInstance');\n            Object value=token.newInstance();\n            row.put('instanceNonNull',value!=null);\n            row.put('stage','castInterface');\n            OwnedAction action=(OwnedAction)value;\n            row.put('castNonNull',action!=null);\n            row.put('stage','invokeInterface');\n            action.run();\n            row.put('stage','complete');\n        } catch(Exception issue) {\n            row.put('exceptionType',issue.getTypeName());\n            row.put('exceptionMessage',issue.getMessage());\n        }\n        emit(row);\n    }\n    @IsTest static void reflectedPrimary() { reflect('OwnedStaticAction'); }\n    @IsTest static void reflectedOther() { reflect('OwnedOtherStaticAction'); }\n    @IsTest static void reflectedInstance() { reflect('OwnedInstanceAction'); }\n    @IsTest static void unrelatedCast() { reflect('OwnedUnrelatedAction'); }\n    @IsTest static void directStaticControls() {\n        Map<String,Object> row=new Map<String,Object>{'kind'=>'directStatic','stage'=>'primaryStatic'};\n        try {\n            OwnedStaticAction.run();\n            row.put('stage','otherStatic');\n            OwnedOtherStaticAction.run();\n            row.put('stage','complete');\n        } catch(Exception issue) {\n            row.put('exceptionType',issue.getTypeName());\n            row.put('exceptionMessage',issue.getMessage());\n        }\n        emit(row);\n    }\n    @IsTest static void nullInterface() {\n        Map<String,Object> row=new Map<String,Object>{'kind'=>'nullInterface','stage'=>'castNull'};\n        try {\n            Object value=null;\n            OwnedAction action=(OwnedAction)value;\n            row.put('castIsNull',action==null);\n            row.put('stage','invokeInterface');\n            action.run();\n            row.put('stage','complete');\n        } catch(Exception issue) {\n            row.put('exceptionType',issue.getTypeName());\n            row.put('exceptionMessage',issue.getMessage());\n        }\n        emit(row);\n    }\n}\n",
+          "sha256": "ce34d03529c62cb6f3e58d773398f94f6481b413cda018756098d1433fd9f0a6"
+        },
+        "force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        },
+        "force-app/main/default/classes/OwnedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        },
+        "force-app/main/default/classes/OwnedAction.cls": {
+          "source": "public interface OwnedAction {\n    void run();\n}\n",
+          "sha256": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199"
+        },
+        "force-app/main/default/classes/OwnedOtherStaticAction.cls": {
+          "source": "public class OwnedOtherStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "6727ca557de6aab5d518e782480625f4b4d8627243cfc6f44aa5026c23d0d701"
+        },
+        "force-app/main/default/classes/OwnedUnrelatedAction.cls": {
+          "source": "public class OwnedUnrelatedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "ccac85185d9ceeacdb0484cb520708e22a5c3e989328856e73bed2d934afc495"
+        },
+        "force-app/main/default/classes/OwnedUnrelatedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        },
+        "force-app/main/default/classes/OwnedInstanceAction.cls": {
+          "source": "public class OwnedInstanceAction implements OwnedAction {\n    public static Integer calls=0;\n    public void run() { calls++; }\n}\n",
+          "sha256": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1"
+        },
+        "force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        },
+        "force-app/main/default/classes/StaticActionObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        }
+      },
+      "sourceDigests": {
+        "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9",
+        "force-app/main/default/classes/OwnedOtherStaticAction.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "force-app/main/default/classes/OwnedStaticAction.cls": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f",
+        "force-app/main/default/classes/StaticActionObservation.cls": "ce34d03529c62cb6f3e58d773398f94f6481b413cda018756098d1433fd9f0a6",
+        "force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "force-app/main/default/classes/OwnedAction.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "force-app/main/default/classes/OwnedAction.cls": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199",
+        "force-app/main/default/classes/OwnedOtherStaticAction.cls": "6727ca557de6aab5d518e782480625f4b4d8627243cfc6f44aa5026c23d0d701",
+        "force-app/main/default/classes/OwnedUnrelatedAction.cls": "ccac85185d9ceeacdb0484cb520708e22a5c3e989328856e73bed2d934afc495",
+        "force-app/main/default/classes/OwnedUnrelatedAction.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "force-app/main/default/classes/OwnedInstanceAction.cls": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1",
+        "force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "force-app/main/default/classes/StaticActionObservation.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+      },
+      "rawSHA256": {
+        "report-1.command.json": "8b2d8cf434582c3abf1a19dd6505c8b3653164c8688c8cb2f690c2eb02988f6e",
+        "org.tsv": "096ff423f082498ef35db14a4f12d5f4ecc66b046fdf301cc84d1d2e2aadbfd8",
+        "report-0.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "report-0.command.json": "4d53ddf9caa9cc3772628a4ce60f79d033c0f0bef82b847db625ec2ddf9e70cd",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "29f265764b92b60a0def065cc5da6fa13c089e3a1ddbbdad74ee969c0ab94d2e",
+        "deploy.command.json": "5d35964163ca07419002b677307e6294f7f8e5170839b9ab18d0cec9fec0b95f",
+        "report-1.json": "d9636d7ba5864111c547f4b098a53d0a9fa1cb75be13756e74a478692109ac0a",
+        "report-0.json": "89bec6e77a605740fb8ff2d09ebaa0c5c57e00e67c5c58b1fb7f8c2149b3815a",
+        "report-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "ORG-RUN.txt": "076742c22918e87990de135aee67f848c3beecc357ba7e3b0597b28435e36d63",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "faaaeec03904e5f40c94358bcdf71abf71ebb7f3c8b484af111aa90fe5c3a4f9"
+      },
+      "rows": [
+        {
+          "id": "directStaticControls",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 1,
+            "primaryCalls": 1,
+            "stage": "complete",
+            "kind": "directStatic"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":1,\"primaryCalls\":1,\"stage\":\"complete\",\"kind\":\"directStatic\"}",
+            "methodName": "directStaticControls",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.directStaticControls: line 48, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "nullInterface",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "exceptionMessage": "Attempt to de-reference a null object",
+            "exceptionType": "System.NullPointerException",
+            "castIsNull": true,
+            "stage": "invokeInterface",
+            "kind": "nullInterface"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":0,\"primaryCalls\":0,\"exceptionMessage\":\"Attempt to de-reference a null object\",\"exceptionType\":\"System.NullPointerException\",\"castIsNull\":true,\"stage\":\"invokeInterface\",\"kind\":\"nullInterface\"}",
+            "methodName": "nullInterface",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.nullInterface: line 63, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "reflectedInstance",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 1,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedInstanceAction",
+            "kind": "reflection"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":1,\"otherCalls\":0,\"primaryCalls\":0,\"castNonNull\":true,\"instanceNonNull\":true,\"typeFound\":true,\"stage\":\"complete\",\"target\":\"OwnedInstanceAction\",\"kind\":\"reflection\"}",
+            "methodName": "reflectedInstance",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.reflect: line 31, column 1\nClass.StaticActionObservation.reflectedInstance: line 35, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "reflectedOther",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 1,
+            "primaryCalls": 0,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedOtherStaticAction",
+            "kind": "reflection"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":1,\"primaryCalls\":0,\"castNonNull\":true,\"instanceNonNull\":true,\"typeFound\":true,\"stage\":\"complete\",\"target\":\"OwnedOtherStaticAction\",\"kind\":\"reflection\"}",
+            "methodName": "reflectedOther",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.reflect: line 31, column 1\nClass.StaticActionObservation.reflectedOther: line 34, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "reflectedPrimary",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 1,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedStaticAction",
+            "kind": "reflection"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":0,\"primaryCalls\":1,\"castNonNull\":true,\"instanceNonNull\":true,\"typeFound\":true,\"stage\":\"complete\",\"target\":\"OwnedStaticAction\",\"kind\":\"reflection\"}",
+            "methodName": "reflectedPrimary",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.reflect: line 31, column 1\nClass.StaticActionObservation.reflectedPrimary: line 33, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "unrelatedCast",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "exceptionMessage": "Invalid conversion from runtime type OwnedUnrelatedAction to OwnedAction",
+            "exceptionType": "System.TypeException",
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "castInterface",
+            "target": "OwnedUnrelatedAction",
+            "kind": "reflection"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: STATIC_ACTION_OBSERVATION {\"unrelatedCalls\":0,\"instanceCalls\":0,\"otherCalls\":0,\"primaryCalls\":0,\"exceptionMessage\":\"Invalid conversion from runtime type OwnedUnrelatedAction to OwnedAction\",\"exceptionType\":\"System.TypeException\",\"instanceNonNull\":true,\"typeFound\":true,\"stage\":\"castInterface\",\"target\":\"OwnedUnrelatedAction\",\"kind\":\"reflection\"}",
+            "methodName": "unrelatedCast",
+            "name": "StaticActionObservation",
+            "stackTrace": "Class.StaticActionObservation.emit: line 11, column 1\nClass.StaticActionObservation.reflect: line 31, column 1\nClass.StaticActionObservation.unrelatedCast: line 36, column 1",
+            "type": "Class"
+          }
+        }
+      ]
+    },
+    {
+      "context": "anonymous-api52",
+      "sourceAPI": "52.0",
+      "callerAPI": "52.0",
+      "projectAPI": "62.0",
+      "transportAPI": "52.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "testClass": "",
+      "marker": "STATIC_ACTION_OBSERVATION|",
+      "sourceAPIs": {
+        "OwnedOtherStaticAction": "52.0",
+        "OwnedInstanceAction": "52.0",
+        "OwnedAction": "52.0",
+        "OwnedUnrelatedAction": "52.0",
+        "OwnedStaticAction": "52.0"
+      },
+      "deploymentReceipt": "setup-result.json",
+      "deployment": {
+        "id": "0Afdq00000EWwdVCAT",
+        "status": "Succeeded",
+        "done": true,
+        "checkOnly": false,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 0,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 0
+      },
+      "sources": {
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "project/force-app/main/default/classes/OwnedOtherStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        },
+        "project/force-app/main/default/classes/OwnedStaticAction.cls": {
+          "source": "public class OwnedStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f"
+        },
+        "project/force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        },
+        "project/force-app/main/default/classes/OwnedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        },
+        "project/force-app/main/default/classes/OwnedAction.cls": {
+          "source": "public interface OwnedAction {\n    void run();\n}\n",
+          "sha256": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199"
+        },
+        "project/force-app/main/default/classes/OwnedOtherStaticAction.cls": {
+          "source": "public class OwnedOtherStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "6727ca557de6aab5d518e782480625f4b4d8627243cfc6f44aa5026c23d0d701"
+        },
+        "project/force-app/main/default/classes/OwnedUnrelatedAction.cls": {
+          "source": "public class OwnedUnrelatedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "ccac85185d9ceeacdb0484cb520708e22a5c3e989328856e73bed2d934afc495"
+        },
+        "project/force-app/main/default/classes/OwnedUnrelatedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        },
+        "project/force-app/main/default/classes/OwnedInstanceAction.cls": {
+          "source": "public class OwnedInstanceAction implements OwnedAction {\n    public static Integer calls=0;\n    public void run() { calls++; }\n}\n",
+          "sha256": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1"
+        },
+        "project/force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+        }
+      },
+      "sourceDigests": {
+        "observe.apex": "a78ee6dfb17cf874f65e59c4100df9f96950e68a2bc81201fd518d45171bccfb",
+        "project/sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9",
+        "project/force-app/main/default/classes/OwnedOtherStaticAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+        "project/force-app/main/default/classes/OwnedStaticAction.cls": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f",
+        "project/force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+        "project/force-app/main/default/classes/OwnedAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+        "project/force-app/main/default/classes/OwnedAction.cls": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199",
+        "project/force-app/main/default/classes/OwnedOtherStaticAction.cls": "6727ca557de6aab5d518e782480625f4b4d8627243cfc6f44aa5026c23d0d701",
+        "project/force-app/main/default/classes/OwnedUnrelatedAction.cls": "ccac85185d9ceeacdb0484cb520708e22a5c3e989328856e73bed2d934afc495",
+        "project/force-app/main/default/classes/OwnedUnrelatedAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+        "project/force-app/main/default/classes/OwnedInstanceAction.cls": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1",
+        "project/force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "f0142c799ea07f070be9f7c9ae143607745a42d2c4c92c79a7e5bb5590d9832f",
+        "org.tsv": "9677bdc52bd2dd9717b11297839ea4bffb437d61637b6434d412a762857266dd",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "deploy.json": "d9f5e2058a2c5eb7ca94e5d3f3a7fed50eb660abb132acf86c1083981becd635",
+        "deploy.command.json": "3d8b556bf69d8d90a6ba6b39508a67c7b2862d132b018dd7b1cf26befcca7be7",
+        "source.apex": "a78ee6dfb17cf874f65e59c4100df9f96950e68a2bc81201fd518d45171bccfb",
+        "setup-result.json": "66037b789a69101327daf60bee44fefdb2cb1cb9c88fbdde5711b2038f1ca4b6",
+        "run.json": "593753ebb6c6f59fc00652e5d191033010d6b1486863ca4d66a878d9954f1bee",
+        "ORG-RUN.txt": "c161dcc27caa0423dc18256d22ae1d120fa5d80065897cfd4fef026d1fc64931",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "b6890eca499260fd9bb134c307c33f67858771726e738d75ec40a76a743eeceb",
+        "observe.apex": "a78ee6dfb17cf874f65e59c4100df9f96950e68a2bc81201fd518d45171bccfb"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 1,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedStaticAction",
+            "kind": "reflection"
+          }
+        },
+        {
+          "id": "1",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 1,
+            "primaryCalls": 0,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedOtherStaticAction",
+            "kind": "reflection"
+          }
+        },
+        {
+          "id": "2",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 1,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedInstanceAction",
+            "kind": "reflection"
+          }
+        },
+        {
+          "id": "3",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "exceptionMessage": "Invalid conversion from runtime type OwnedUnrelatedAction to OwnedAction",
+            "exceptionType": "System.TypeException",
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "castInterface",
+            "target": "OwnedUnrelatedAction",
+            "kind": "reflection"
+          }
+        },
+        {
+          "id": "4",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 1,
+            "primaryCalls": 1,
+            "stage": "complete",
+            "kind": "directStatic"
+          }
+        },
+        {
+          "id": "5",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "exceptionMessage": "Attempt to de-reference a null object",
+            "exceptionType": "System.NullPointerException",
+            "castIsNull": true,
+            "stage": "invokeInterface",
+            "kind": "nullInterface"
+          }
+        }
+      ],
+      "source": {
+        "source": "for(String target : new List<String>{'OwnedStaticAction','OwnedOtherStaticAction','OwnedInstanceAction','OwnedUnrelatedAction'}) {\n OwnedStaticAction.calls=0; OwnedOtherStaticAction.calls=0; OwnedInstanceAction.calls=0; OwnedUnrelatedAction.calls=0;\n Map<String,Object> row=new Map<String,Object>{'kind'=>'reflection','target'=>target,'stage'=>'typeForName'};\n try {\n  Type token=Type.forName(target);row.put('typeFound',token!=null);row.put('stage','newInstance');\n  Object value=token.newInstance();row.put('instanceNonNull',value!=null);row.put('stage','castInterface');\n  OwnedAction action=(OwnedAction)value;row.put('castNonNull',action!=null);row.put('stage','invokeInterface');action.run();row.put('stage','complete');\n } catch(Exception issue) {row.put('exceptionType',issue.getTypeName());row.put('exceptionMessage',issue.getMessage());}\n row.put('primaryCalls',OwnedStaticAction.calls);row.put('otherCalls',OwnedOtherStaticAction.calls);row.put('instanceCalls',OwnedInstanceAction.calls);row.put('unrelatedCalls',OwnedUnrelatedAction.calls);\n System.debug('STATIC_ACTION_OBSERVATION|'+JSON.serialize(row));\n}\nOwnedStaticAction.calls=0;OwnedOtherStaticAction.calls=0;OwnedInstanceAction.calls=0;OwnedUnrelatedAction.calls=0;\nMap<String,Object> direct=new Map<String,Object>{'kind'=>'directStatic','stage'=>'primaryStatic'};\ntry {OwnedStaticAction.run();direct.put('stage','otherStatic');OwnedOtherStaticAction.run();direct.put('stage','complete');}\ncatch(Exception issue){direct.put('exceptionType',issue.getTypeName());direct.put('exceptionMessage',issue.getMessage());}\ndirect.put('primaryCalls',OwnedStaticAction.calls);direct.put('otherCalls',OwnedOtherStaticAction.calls);direct.put('instanceCalls',OwnedInstanceAction.calls);direct.put('unrelatedCalls',OwnedUnrelatedAction.calls);System.debug('STATIC_ACTION_OBSERVATION|'+JSON.serialize(direct));\nOwnedStaticAction.calls=0;OwnedOtherStaticAction.calls=0;OwnedInstanceAction.calls=0;OwnedUnrelatedAction.calls=0;\nMap<String,Object> nil=new Map<String,Object>{'kind'=>'nullInterface','stage'=>'castNull'};\ntry {Object value=null;OwnedAction action=(OwnedAction)value;nil.put('castIsNull',action==null);nil.put('stage','invokeInterface');action.run();nil.put('stage','complete');}\ncatch(Exception issue){nil.put('exceptionType',issue.getTypeName());nil.put('exceptionMessage',issue.getMessage());}\nnil.put('primaryCalls',OwnedStaticAction.calls);nil.put('otherCalls',OwnedOtherStaticAction.calls);nil.put('instanceCalls',OwnedInstanceAction.calls);nil.put('unrelatedCalls',OwnedUnrelatedAction.calls);System.debug('STATIC_ACTION_OBSERVATION|'+JSON.serialize(nil));\n",
+        "sha256": "a78ee6dfb17cf874f65e59c4100df9f96950e68a2bc81201fd518d45171bccfb"
+      },
+      "execution": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      }
+    },
+    {
+      "context": "anonymous-api62",
+      "sourceAPI": "62.0",
+      "callerAPI": "62.0",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "testClass": "",
+      "marker": "STATIC_ACTION_OBSERVATION|",
+      "sourceAPIs": {
+        "OwnedOtherStaticAction": "62.0",
+        "OwnedInstanceAction": "62.0",
+        "OwnedAction": "62.0",
+        "OwnedUnrelatedAction": "62.0",
+        "OwnedStaticAction": "62.0"
+      },
+      "deploymentReceipt": "setup-result.json",
+      "deployment": {
+        "id": "0Afdq00000EWuJyCAL",
+        "status": "Succeeded",
+        "done": true,
+        "checkOnly": false,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 0,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 0
+      },
+      "sources": {
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "project/force-app/main/default/classes/OwnedOtherStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        },
+        "project/force-app/main/default/classes/OwnedStaticAction.cls": {
+          "source": "public class OwnedStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f"
+        },
+        "project/force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        },
+        "project/force-app/main/default/classes/OwnedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        },
+        "project/force-app/main/default/classes/OwnedAction.cls": {
+          "source": "public interface OwnedAction {\n    void run();\n}\n",
+          "sha256": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199"
+        },
+        "project/force-app/main/default/classes/OwnedOtherStaticAction.cls": {
+          "source": "public class OwnedOtherStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "6727ca557de6aab5d518e782480625f4b4d8627243cfc6f44aa5026c23d0d701"
+        },
+        "project/force-app/main/default/classes/OwnedUnrelatedAction.cls": {
+          "source": "public class OwnedUnrelatedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "ccac85185d9ceeacdb0484cb520708e22a5c3e989328856e73bed2d934afc495"
+        },
+        "project/force-app/main/default/classes/OwnedUnrelatedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        },
+        "project/force-app/main/default/classes/OwnedInstanceAction.cls": {
+          "source": "public class OwnedInstanceAction implements OwnedAction {\n    public static Integer calls=0;\n    public void run() { calls++; }\n}\n",
+          "sha256": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1"
+        },
+        "project/force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        }
+      },
+      "sourceDigests": {
+        "observe.apex": "a78ee6dfb17cf874f65e59c4100df9f96950e68a2bc81201fd518d45171bccfb",
+        "project/sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9",
+        "project/force-app/main/default/classes/OwnedOtherStaticAction.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "project/force-app/main/default/classes/OwnedStaticAction.cls": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f",
+        "project/force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "project/force-app/main/default/classes/OwnedAction.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "project/force-app/main/default/classes/OwnedAction.cls": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199",
+        "project/force-app/main/default/classes/OwnedOtherStaticAction.cls": "6727ca557de6aab5d518e782480625f4b4d8627243cfc6f44aa5026c23d0d701",
+        "project/force-app/main/default/classes/OwnedUnrelatedAction.cls": "ccac85185d9ceeacdb0484cb520708e22a5c3e989328856e73bed2d934afc495",
+        "project/force-app/main/default/classes/OwnedUnrelatedAction.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "project/force-app/main/default/classes/OwnedInstanceAction.cls": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1",
+        "project/force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "4a5b16a67021e906f8e63e62fdd88774cfa717040f71f914703b6e1afc30de3d",
+        "org.tsv": "9677bdc52bd2dd9717b11297839ea4bffb437d61637b6434d412a762857266dd",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "deploy.json": "8a7228b6ed40760ed91dd5a46351bf6a1a504ff002383d22b2ed6720818f06cf",
+        "deploy-retry.command.json": "c1f4766e35723c3faf66bf6ab0049405cb59d3e091f40a881a2f6a9edb5fb338",
+        "deploy.command.json": "3d8b556bf69d8d90a6ba6b39508a67c7b2862d132b018dd7b1cf26befcca7be7",
+        "source.apex": "a78ee6dfb17cf874f65e59c4100df9f96950e68a2bc81201fd518d45171bccfb",
+        "setup-result.json": "68e768c902ba4851bbc110a21eb0fcab5de6e250d308cadfaab01068366baca3",
+        "deploy-retry.json": "1d6929ebd6119e1678ae90bfddc8d9c99fc74e868b4ec8252c1bb1ac8d94eceb",
+        "run.json": "d0b6d19d5f668842fe6ff1898a4e54e92efd255727193e85b73fc48aa9d09c80",
+        "ORG-RUN.txt": "f7463428e5cd4cae9cdad4cd5bf71a6091f850cfd1469c09ae8145e234855afd",
+        "deploy-retry.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "19314b2e38f3269e5613d8115af40adff7f27d5df0776527cb28e7d2bb4137c7",
+        "observe.apex": "a78ee6dfb17cf874f65e59c4100df9f96950e68a2bc81201fd518d45171bccfb"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 1,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedStaticAction",
+            "kind": "reflection"
+          }
+        },
+        {
+          "id": "1",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 1,
+            "primaryCalls": 0,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedOtherStaticAction",
+            "kind": "reflection"
+          }
+        },
+        {
+          "id": "2",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 1,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedInstanceAction",
+            "kind": "reflection"
+          }
+        },
+        {
+          "id": "3",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "exceptionMessage": "Invalid conversion from runtime type OwnedUnrelatedAction to OwnedAction",
+            "exceptionType": "System.TypeException",
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "castInterface",
+            "target": "OwnedUnrelatedAction",
+            "kind": "reflection"
+          }
+        },
+        {
+          "id": "4",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 1,
+            "primaryCalls": 1,
+            "stage": "complete",
+            "kind": "directStatic"
+          }
+        },
+        {
+          "id": "5",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "exceptionMessage": "Attempt to de-reference a null object",
+            "exceptionType": "System.NullPointerException",
+            "castIsNull": true,
+            "stage": "invokeInterface",
+            "kind": "nullInterface"
+          }
+        }
+      ],
+      "source": {
+        "source": "for(String target : new List<String>{'OwnedStaticAction','OwnedOtherStaticAction','OwnedInstanceAction','OwnedUnrelatedAction'}) {\n OwnedStaticAction.calls=0; OwnedOtherStaticAction.calls=0; OwnedInstanceAction.calls=0; OwnedUnrelatedAction.calls=0;\n Map<String,Object> row=new Map<String,Object>{'kind'=>'reflection','target'=>target,'stage'=>'typeForName'};\n try {\n  Type token=Type.forName(target);row.put('typeFound',token!=null);row.put('stage','newInstance');\n  Object value=token.newInstance();row.put('instanceNonNull',value!=null);row.put('stage','castInterface');\n  OwnedAction action=(OwnedAction)value;row.put('castNonNull',action!=null);row.put('stage','invokeInterface');action.run();row.put('stage','complete');\n } catch(Exception issue) {row.put('exceptionType',issue.getTypeName());row.put('exceptionMessage',issue.getMessage());}\n row.put('primaryCalls',OwnedStaticAction.calls);row.put('otherCalls',OwnedOtherStaticAction.calls);row.put('instanceCalls',OwnedInstanceAction.calls);row.put('unrelatedCalls',OwnedUnrelatedAction.calls);\n System.debug('STATIC_ACTION_OBSERVATION|'+JSON.serialize(row));\n}\nOwnedStaticAction.calls=0;OwnedOtherStaticAction.calls=0;OwnedInstanceAction.calls=0;OwnedUnrelatedAction.calls=0;\nMap<String,Object> direct=new Map<String,Object>{'kind'=>'directStatic','stage'=>'primaryStatic'};\ntry {OwnedStaticAction.run();direct.put('stage','otherStatic');OwnedOtherStaticAction.run();direct.put('stage','complete');}\ncatch(Exception issue){direct.put('exceptionType',issue.getTypeName());direct.put('exceptionMessage',issue.getMessage());}\ndirect.put('primaryCalls',OwnedStaticAction.calls);direct.put('otherCalls',OwnedOtherStaticAction.calls);direct.put('instanceCalls',OwnedInstanceAction.calls);direct.put('unrelatedCalls',OwnedUnrelatedAction.calls);System.debug('STATIC_ACTION_OBSERVATION|'+JSON.serialize(direct));\nOwnedStaticAction.calls=0;OwnedOtherStaticAction.calls=0;OwnedInstanceAction.calls=0;OwnedUnrelatedAction.calls=0;\nMap<String,Object> nil=new Map<String,Object>{'kind'=>'nullInterface','stage'=>'castNull'};\ntry {Object value=null;OwnedAction action=(OwnedAction)value;nil.put('castIsNull',action==null);nil.put('stage','invokeInterface');action.run();nil.put('stage','complete');}\ncatch(Exception issue){nil.put('exceptionType',issue.getTypeName());nil.put('exceptionMessage',issue.getMessage());}\nnil.put('primaryCalls',OwnedStaticAction.calls);nil.put('otherCalls',OwnedOtherStaticAction.calls);nil.put('instanceCalls',OwnedInstanceAction.calls);nil.put('unrelatedCalls',OwnedUnrelatedAction.calls);System.debug('STATIC_ACTION_OBSERVATION|'+JSON.serialize(nil));\n",
+        "sha256": "a78ee6dfb17cf874f65e59c4100df9f96950e68a2bc81201fd518d45171bccfb"
+      },
+      "execution": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      }
+    },
+    {
+      "context": "anonymous-api67",
+      "sourceAPI": "67.0",
+      "callerAPI": "67.0",
+      "projectAPI": "62.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "testClass": "",
+      "marker": "STATIC_ACTION_OBSERVATION|",
+      "sourceAPIs": {
+        "OwnedOtherStaticAction": "67.0",
+        "OwnedInstanceAction": "67.0",
+        "OwnedAction": "67.0",
+        "OwnedUnrelatedAction": "67.0",
+        "OwnedStaticAction": "67.0"
+      },
+      "deploymentReceipt": "setup-result.json",
+      "deployment": {
+        "id": "0Afdq00000EWvBCCA1",
+        "status": "Succeeded",
+        "done": true,
+        "checkOnly": false,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 0,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 0
+      },
+      "sources": {
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "project/force-app/main/default/classes/OwnedOtherStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        },
+        "project/force-app/main/default/classes/OwnedStaticAction.cls": {
+          "source": "public class OwnedStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f"
+        },
+        "project/force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        },
+        "project/force-app/main/default/classes/OwnedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        },
+        "project/force-app/main/default/classes/OwnedAction.cls": {
+          "source": "public interface OwnedAction {\n    void run();\n}\n",
+          "sha256": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199"
+        },
+        "project/force-app/main/default/classes/OwnedOtherStaticAction.cls": {
+          "source": "public class OwnedOtherStaticAction implements OwnedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "6727ca557de6aab5d518e782480625f4b4d8627243cfc6f44aa5026c23d0d701"
+        },
+        "project/force-app/main/default/classes/OwnedUnrelatedAction.cls": {
+          "source": "public class OwnedUnrelatedAction {\n    public static Integer calls=0;\n    public static void run() { calls++; }\n}\n",
+          "sha256": "ccac85185d9ceeacdb0484cb520708e22a5c3e989328856e73bed2d934afc495"
+        },
+        "project/force-app/main/default/classes/OwnedUnrelatedAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        },
+        "project/force-app/main/default/classes/OwnedInstanceAction.cls": {
+          "source": "public class OwnedInstanceAction implements OwnedAction {\n    public static Integer calls=0;\n    public void run() { calls++; }\n}\n",
+          "sha256": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1"
+        },
+        "project/force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        }
+      },
+      "sourceDigests": {
+        "observe.apex": "a78ee6dfb17cf874f65e59c4100df9f96950e68a2bc81201fd518d45171bccfb",
+        "project/sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9",
+        "project/force-app/main/default/classes/OwnedOtherStaticAction.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "project/force-app/main/default/classes/OwnedStaticAction.cls": "d5121459840ce8b405edfc0121397769fbf5de8f943c1d1cc475a9dd5ea31b4f",
+        "project/force-app/main/default/classes/OwnedInstanceAction.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "project/force-app/main/default/classes/OwnedAction.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "project/force-app/main/default/classes/OwnedAction.cls": "068abc5b62c0fee01eb98ee29e2f77d9d4c2f880a95263f48a15b162b6626199",
+        "project/force-app/main/default/classes/OwnedOtherStaticAction.cls": "6727ca557de6aab5d518e782480625f4b4d8627243cfc6f44aa5026c23d0d701",
+        "project/force-app/main/default/classes/OwnedUnrelatedAction.cls": "ccac85185d9ceeacdb0484cb520708e22a5c3e989328856e73bed2d934afc495",
+        "project/force-app/main/default/classes/OwnedUnrelatedAction.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "project/force-app/main/default/classes/OwnedInstanceAction.cls": "203b8ff66c01ec4407b97695f9e73775a8e21442c8641c36e30469754dde5cd1",
+        "project/force-app/main/default/classes/OwnedStaticAction.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "850b1b0e7ccd44a229c7f3b77a91580359f2724771033338b9dfcd3304df2f99",
+        "org.tsv": "9677bdc52bd2dd9717b11297839ea4bffb437d61637b6434d412a762857266dd",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "deploy-retry.command.json": "c1f4766e35723c3faf66bf6ab0049405cb59d3e091f40a881a2f6a9edb5fb338",
+        "source.apex": "a78ee6dfb17cf874f65e59c4100df9f96950e68a2bc81201fd518d45171bccfb",
+        "setup-result.json": "9d26670bf2aed21ef678bbbfa91d5d502a6646b3cc47673916cca4f10fbd62a2",
+        "deploy-retry.json": "2e379bd8659ed4dbd09897fb4c9cfa17b7519d3b9405a2bccdfa3c801c280e04",
+        "run.json": "393794a14b7b60e3d0eae862f881a365a71328408e3accbd64d103e113130f19",
+        "ORG-RUN.txt": "1edc4892b991e72ea35570fc4c4da110ff9c2d2793e8f086469c20fb25876800",
+        "deploy-retry.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "8695907122ca9eba92dcd37712e7d879fafb5e6f58aad3c47090fb341436b2ab",
+        "observe.apex": "a78ee6dfb17cf874f65e59c4100df9f96950e68a2bc81201fd518d45171bccfb"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 1,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedStaticAction",
+            "kind": "reflection"
+          }
+        },
+        {
+          "id": "1",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 1,
+            "primaryCalls": 0,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedOtherStaticAction",
+            "kind": "reflection"
+          }
+        },
+        {
+          "id": "2",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 1,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "castNonNull": true,
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "complete",
+            "target": "OwnedInstanceAction",
+            "kind": "reflection"
+          }
+        },
+        {
+          "id": "3",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "exceptionMessage": "Invalid conversion from runtime type OwnedUnrelatedAction to OwnedAction",
+            "exceptionType": "System.TypeException",
+            "instanceNonNull": true,
+            "typeFound": true,
+            "stage": "castInterface",
+            "target": "OwnedUnrelatedAction",
+            "kind": "reflection"
+          }
+        },
+        {
+          "id": "4",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 1,
+            "primaryCalls": 1,
+            "stage": "complete",
+            "kind": "directStatic"
+          }
+        },
+        {
+          "id": "5",
+          "native": {
+            "unrelatedCalls": 0,
+            "instanceCalls": 0,
+            "otherCalls": 0,
+            "primaryCalls": 0,
+            "exceptionMessage": "Attempt to de-reference a null object",
+            "exceptionType": "System.NullPointerException",
+            "castIsNull": true,
+            "stage": "invokeInterface",
+            "kind": "nullInterface"
+          }
+        }
+      ],
+      "source": {
+        "source": "for(String target : new List<String>{'OwnedStaticAction','OwnedOtherStaticAction','OwnedInstanceAction','OwnedUnrelatedAction'}) {\n OwnedStaticAction.calls=0; OwnedOtherStaticAction.calls=0; OwnedInstanceAction.calls=0; OwnedUnrelatedAction.calls=0;\n Map<String,Object> row=new Map<String,Object>{'kind'=>'reflection','target'=>target,'stage'=>'typeForName'};\n try {\n  Type token=Type.forName(target);row.put('typeFound',token!=null);row.put('stage','newInstance');\n  Object value=token.newInstance();row.put('instanceNonNull',value!=null);row.put('stage','castInterface');\n  OwnedAction action=(OwnedAction)value;row.put('castNonNull',action!=null);row.put('stage','invokeInterface');action.run();row.put('stage','complete');\n } catch(Exception issue) {row.put('exceptionType',issue.getTypeName());row.put('exceptionMessage',issue.getMessage());}\n row.put('primaryCalls',OwnedStaticAction.calls);row.put('otherCalls',OwnedOtherStaticAction.calls);row.put('instanceCalls',OwnedInstanceAction.calls);row.put('unrelatedCalls',OwnedUnrelatedAction.calls);\n System.debug('STATIC_ACTION_OBSERVATION|'+JSON.serialize(row));\n}\nOwnedStaticAction.calls=0;OwnedOtherStaticAction.calls=0;OwnedInstanceAction.calls=0;OwnedUnrelatedAction.calls=0;\nMap<String,Object> direct=new Map<String,Object>{'kind'=>'directStatic','stage'=>'primaryStatic'};\ntry {OwnedStaticAction.run();direct.put('stage','otherStatic');OwnedOtherStaticAction.run();direct.put('stage','complete');}\ncatch(Exception issue){direct.put('exceptionType',issue.getTypeName());direct.put('exceptionMessage',issue.getMessage());}\ndirect.put('primaryCalls',OwnedStaticAction.calls);direct.put('otherCalls',OwnedOtherStaticAction.calls);direct.put('instanceCalls',OwnedInstanceAction.calls);direct.put('unrelatedCalls',OwnedUnrelatedAction.calls);System.debug('STATIC_ACTION_OBSERVATION|'+JSON.serialize(direct));\nOwnedStaticAction.calls=0;OwnedOtherStaticAction.calls=0;OwnedInstanceAction.calls=0;OwnedUnrelatedAction.calls=0;\nMap<String,Object> nil=new Map<String,Object>{'kind'=>'nullInterface','stage'=>'castNull'};\ntry {Object value=null;OwnedAction action=(OwnedAction)value;nil.put('castIsNull',action==null);nil.put('stage','invokeInterface');action.run();nil.put('stage','complete');}\ncatch(Exception issue){nil.put('exceptionType',issue.getTypeName());nil.put('exceptionMessage',issue.getMessage());}\nnil.put('primaryCalls',OwnedStaticAction.calls);nil.put('otherCalls',OwnedOtherStaticAction.calls);nil.put('instanceCalls',OwnedInstanceAction.calls);nil.put('unrelatedCalls',OwnedUnrelatedAction.calls);System.debug('STATIC_ACTION_OBSERVATION|'+JSON.serialize(nil));\n",
+        "sha256": "a78ee6dfb17cf874f65e59c4100df9f96950e68a2bc81201fd518d45171bccfb"
+      },
+      "execution": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      }
+    }
+  ]
+}

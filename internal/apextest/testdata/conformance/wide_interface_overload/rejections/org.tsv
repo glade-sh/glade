@@ -1,0 +1,7 @@
+source_api	route	observation
+62.0	named	"{""compiled"":false,""messages"":[""Illegal conversion from PlanBase.Writer to TextPlan""]}"
+62.0	anonymous	"{""compiled"":false,""message"":""Illegal assignment from PlanBase.Writer to TextPlan""}"
+67.0	named	"{""compiled"":false,""messages"":[""Illegal conversion from PlanBase.Writer to TextPlan""]}"
+67.0	anonymous	"{""compiled"":false,""message"":""Illegal assignment from PlanBase.Writer to TextPlan""}"
+68.0	named	"{""compiled"":false,""messages"":[""Illegal conversion from PlanBase.Writer to TextPlan""]}"
+68.0	anonymous	"{""compiled"":false,""message"":""Illegal assignment from PlanBase.Writer to TextPlan""}"

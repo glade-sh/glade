@@ -34,7 +34,21 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.getId expects 0 arguments")
 		}
-		return vm.standardControllerID(record), receiver, false, true, nil
+		// Owned API66 named observations return a 15-character String for
+		// inserted records and records supplied with either ID width.
+		if _, id, ok := objectFieldValue(record, "Id"); ok {
+			if text, ok := idValueText(id); ok && (len(text) == 15 || len(text) == 18) {
+				return String(text[:15]), receiver, false, true, nil
+			}
+		}
+		identity := vm.standardControllerID(record)
+		if identity.Kind == ValueNull {
+			return identity, receiver, false, true, nil
+		}
+		// The public getter returns String; retain the identity value for the
+		// controller's internal navigation and record operations.
+		text, err := vm.displayStringValue(identity, result)
+		return text, receiver, false, true, err
 	case "getRecord":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.getRecord expects 0 arguments")
@@ -129,6 +143,16 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 		page := vm.standardControllerNavigationPage(record)
 		if method == "edit" {
 			page = vm.standardControllerEditPage(record)
+		}
+		// Owned native observations return a short record ID for cancel/view,
+		// including caller, queried and manually supplied 15/18-character IDs.
+		// Save/edit and request-only records retain their separate paths.
+		if method == "cancel" || method == "view" {
+			if _, id, present := objectFieldValue(record, "Id"); present {
+				if text, ok := idValueText(id); ok && (len(text) == 15 || len(text) == 18) {
+					page.Fields["url"] = String("/" + text[:15])
+				}
+			}
 		}
 		appendStandardControllerActionTrace(result, "start", method, record, nil)
 		appendStandardControllerActionTrace(result, "complete", method, record, map[string]any{
@@ -827,15 +851,15 @@ func (vm *VM) callFormulaBuilderMember(receiver Value, method string, args []Val
 		if templateMode && !strings.EqualFold(returnType, "STRING") {
 			return Null, receiver, false, true, newExceptionError("IllegalArgumentException", "The only supported return type for template mode is STRING.")
 		}
+		if message := vm.formulaApexTypeContextValidation(receiver.Fields["contextType"]); message != "" {
+			return Null, receiver, false, true, newExceptionError("FormulaValidationException", message)
+		}
+		if message := vm.formulaApexTypeMemberValidation(formulaContextTypeName(receiver.Fields["contextType"]), formula, templateMode); message != "" {
+			return Null, receiver, false, true, newExceptionError("FormulaValidationException", message)
+		}
 		definition := vm.formulaContextDefinition(formulaContextTypeName(receiver.Fields["contextType"]), make(map[string]bool))
 		if message := dml.ValidateFormulaInstance(formula, vm.Org, definition, returnType, templateMode); message != "" {
 			return Null, receiver, false, true, newExceptionError("FormulaValidationException", message)
-		}
-		if contextType, ok := receiver.Fields["contextType"]; ok {
-			typeName := typeValueName(contextType)
-			if class, found := vm.lookupClass(typeName); found && !strings.EqualFold(class.Access, "global") && vm.typeMatches(typeName, "TriggerRecord", make(map[string]bool)) {
-				return Null, receiver, false, true, newExceptionError("FormulaValidationException", typeName+" must be global to be used as a formula context")
-			}
 		}
 		instance := Object("formulaeval.FormulaInstance")
 		for field, value := range receiver.Fields {
@@ -1174,7 +1198,7 @@ func (vm *VM) formulaContextDefinition(typeName string, active map[string]bool) 
 		return definition
 	}
 	for name, field := range class.Fields {
-		if field.Static {
+		if field.Static || !formulaApexTypeFieldVisible(class, field) {
 			continue
 		}
 		typ := storage.FieldString
@@ -1224,6 +1248,13 @@ func (vm *VM) formulaInstanceRecord(context Value, definition storage.ObjectDefi
 			if current.Kind != ValueObject {
 				current = Null
 				break
+			}
+			if value, handled, err := vm.formulaApexTypeGetter(current, part); handled {
+				if err != nil {
+					return record, false
+				}
+				current = value
+				continue
 			}
 			if _, value, ok := objectFieldValue(current, part); ok {
 				current = value

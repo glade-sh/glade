@@ -114,6 +114,9 @@ func renderApexPageBlock(node *MarkupNode, ctx *RenderContext) (string, error) {
 // multi-row layouts keep their existing paths until rendered controls cover
 // them; in particular this path does not change record/input-field projection.
 func renderApexPageBlockSection(node *MarkupNode, ctx *RenderContext) (string, error) {
+	if sectionContainsControllerField(node, ctx) {
+		return renderControllerFieldSection(node, ctx)
+	}
 	if !ctx.presentationSingleSection {
 		return renderApexContainer(node, "div", "pbSubsection", ctx)
 	}

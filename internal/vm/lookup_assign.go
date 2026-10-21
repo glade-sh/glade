@@ -90,9 +90,15 @@ func (vm *VM) lookup(name string) (Value, error) {
 		}
 		if resolved, ok := vm.resolveClassName(className); ok {
 			if class, ok := vm.lookupClass(resolved); ok {
-				return vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: vm.classTypeToken(class)}, vm.classTypeToken(class)), nil
+				return vm.lexicalClassLiteralToken(className, vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: vm.classTypeToken(class)}, vm.classTypeToken(class))), nil
 			}
-			return vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: resolved}, resolved), nil
+			return vm.lexicalClassLiteralToken(className, vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: resolved}, resolved)), nil
+		}
+		if value, handled, err := vm.enclosingClassLiteral(className); handled || err != nil {
+			return value, err
+		}
+		if strings.EqualFold(className, "UserInfo") {
+			return vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: "System.UserInfo"}, "System.UserInfo"), nil
 		}
 		// Salesforce exposes an unresolved Flow.Interview.<name> class literal
 		// as the Flow.Interview base type. This lets callers distinguish a
@@ -100,7 +106,7 @@ func (vm *VM) lookup(name string) (Value, error) {
 		if strings.HasPrefix(strings.ToLower(className), "flow.interview.") {
 			return vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: "Flow.Interview"}, "Flow.Interview"), nil
 		}
-		return vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: className}, className), nil
+		return vm.lexicalClassLiteralToken(className, vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: className}, className)), nil
 	}
 	parts := strings.Split(name, ".")
 	if token, ok := vm.lookupSObjectSharingReasonToken(parts); ok {
@@ -111,6 +117,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 	// segment. SObjectType is the one object-level member and must win before
 	// the custom-object field synthesizer can mistake it for a field token.
 	if len(parts) == 3 && strings.EqualFold(parts[0], "Schema") {
+		if token, ok := vm.sObjectTypeFieldToken(parts); ok {
+			return token, nil
+		}
 		if token, ok := vm.lookupSObjectTypeToken(parts); ok {
 			return token, nil
 		}
@@ -138,6 +147,20 @@ func (vm *VM) lookup(name string) (Value, error) {
 	if len(parts) > 1 {
 		if strings.EqualFold(parts[0], "super") {
 			if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
+				if field, owner, ok := vm.lookupSuperField(parts[1]); ok {
+					if err := vm.checkMemberAccess(owner, field.Access, owner+"."+parts[1], field.Modifiers); err != nil {
+						return Null, err
+					}
+					_, value, _ := vm.instanceFieldValue(this, owner, field)
+					if field.Getter != nil {
+						var err error
+						value, err = vm.callGetter(owner, field, this)
+						if err != nil {
+							return Null, err
+						}
+					}
+					return vm.lookupPath(value, parts[2:])
+				}
 				return vm.lookupPath(this, parts[1:])
 			}
 		}
@@ -212,6 +235,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 				return vm.lookupPath(root, parts[1:])
 			}
 		}
+		if token, ok := vm.sObjectTypeFieldToken(parts); ok {
+			return token, nil
+		}
 		if token, ok := vm.lookupSObjectTypeToken(parts); ok {
 			return token, nil
 		}
@@ -249,9 +275,13 @@ func (vm *VM) lookup(name string) (Value, error) {
 		if token, ok := vm.lookupSObjectFieldToken(parts); ok {
 			return token, nil
 		}
-		if len(parts) == 2 {
-			if strings.EqualFold(parts[0], "Page") {
-				pageName := parts[1]
+		if len(parts) == 2 || len(parts) == 3 && strings.EqualFold(parts[0], "System") {
+			pageParts := parts
+			if len(pageParts) == 3 {
+				pageParts = pageParts[1:]
+			}
+			if strings.EqualFold(pageParts[0], "Page") {
+				pageName := pageParts[1]
 				if vm.pageReferences != nil {
 					// A namespaced package's Apex source refers to its own
 					// Visualforce pages without the namespace prefix, while the
@@ -278,6 +308,8 @@ func (vm *VM) lookup(name string) (Value, error) {
 				}
 				return newPageTokenReference("/apex/" + pageName), nil
 			}
+		}
+		if len(parts) == 2 {
 			if value, ok := builtinStaticField(parts[0], parts[1]); ok {
 				return value, nil
 			}
@@ -399,6 +431,12 @@ func (vm *VM) lookup(name string) (Value, error) {
 		if value, ok := selectorBindParamValue(this, name); ok {
 			return value, nil
 		}
+		if key, value, field, owner, ok := vm.lookupDeclaredThisFieldValue(this, name); ok && isLexicalInstanceFieldStorage(key) {
+			if err := vm.checkMemberAccess(owner, field.Access, owner+"."+name, field.Modifiers); err != nil {
+				return Null, err
+			}
+			return value, nil
+		}
 		if actualName, value, ok := objectFieldValue(this, name); ok {
 			if field, owner, ok := vm.lookupReceiverField(this.Type, actualName); ok {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+actualName, field.Modifiers); err != nil {
@@ -406,9 +444,13 @@ func (vm *VM) lookup(name string) (Value, error) {
 				}
 				if field.Getter != nil {
 					if vm.isCurrentGetter(field.Getter) {
+						_, value, _ = objectFieldValue(this, sourcePropertyStorageName(field, actualName))
 						return vm.currentGetterStoredValue(owner, field, value), nil
 					}
 					return vm.callGetter(owner, field, this)
+				}
+				if storageName := vm.instanceFieldStorageName(runtimeObjectType(this), owner, field); isInheritedInstanceFieldStorage(storageName) || (plainInstanceField(field) && storageName != field.Name) || sourcePropertyStorageName(field, field.Name) != field.Name {
+					_, value, _ = vm.instanceFieldValue(this, owner, field)
 				}
 			}
 			return value, nil
@@ -419,6 +461,10 @@ func (vm *VM) lookup(name string) (Value, error) {
 			}
 			if field.Getter != nil {
 				return vm.callGetter(owner, field, this)
+			}
+			if storageName := vm.instanceFieldStorageName(runtimeObjectType(this), owner, field); isInheritedInstanceFieldStorage(storageName) || (plainInstanceField(field) && storageName != field.Name) || sourcePropertyStorageName(field, field.Name) != field.Name {
+				_, value, _ := vm.instanceFieldValue(this, owner, field)
+				return value, nil
 			}
 			return defaultValue(field.Type, field.InitialValue), nil
 		}
@@ -644,8 +690,14 @@ func (vm *VM) lookupDeclaredThisFieldValue(this Value, name string) (string, Val
 	if field.StorageName != "" {
 		actualName = field.StorageName
 	}
+	storageName := vm.instanceFieldStorageName(runtimeObjectType(this), owner, field)
+	lexicalName := vm.lexicalInstanceFieldStorageName(this, owner, field, actualName)
+	if isLexicalInstanceFieldStorage(lexicalName) {
+		storageName = lexicalName
+		actualName = lexicalName
+	}
 	if this.Fields != nil {
-		if value, ok := this.Fields[actualName]; ok {
+		if value, ok := this.Fields[storageName]; ok {
 			return actualName, value, field, owner, true
 		}
 	}
@@ -659,6 +711,12 @@ func (vm *VM) lookupNestedInstanceFieldRoot(this Value, parts []string) (Value, 
 	outer := vm.currentClass[:strings.IndexByte(vm.currentClass, '.')]
 	if !strings.EqualFold(parts[0], outer) {
 		return Null, Field{}, "", false
+	}
+	// An explicitly qualified outer static member must use normal static lookup.
+	if class, ok := vm.lookupClass(outer); ok {
+		if _, ok := vm.lookupFieldInMapWithOptions(class.StaticFields, parts[1], vm.currentMethod.Dependency); ok {
+			return Null, Field{}, "", false
+		}
 	}
 	return vm.lookupThisFieldRoot(this, parts[1])
 }
@@ -726,8 +784,10 @@ func (vm *VM) setObjectFieldValue(object *Value, name string, value Value) {
 	if object == nil {
 		return
 	}
+	previous := object.Fields[name]
 	vm.markCollectionRefsEscaped(value)
 	vm.setGraphFieldValue(object, name, value)
+	vm.rememberPublishedObjectFieldRefs(*object, previous, value)
 	if object.Kind != ValueObject || vm.isSObjectLikeType(object.Type) {
 		return
 	}
@@ -875,7 +935,7 @@ func isSafeNavigationNull(value Value) bool {
 }
 
 func isRelationshipNull(value Value) bool {
-	return value.Kind == ValueNull && value.Runtime == relationshipNullRuntime
+	return value.Kind == ValueNull && (value.Runtime == relationshipNullRuntime || value.Runtime == sharingHiddenParentNullRuntime)
 }
 
 func isImplicitCurrentPageNull(value Value) bool {
@@ -944,16 +1004,11 @@ func (vm *VM) lookupThisSimpleField(name string) (Value, bool, error) {
 }
 
 func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, error) {
+	// The Stub API does not intercept property accessors. A property read on a
+	// stub runs the declared accessor; non-private methods it calls on the stub
+	// still reach the provider through method dispatch.
 	if field.Getter == nil {
-		if isStubProxy(receiver) {
-			value, handled, err := vm.callStubProxyGetter(receiver, field.Name, field.Type)
-			if handled || err != nil {
-				if err != nil || value.Kind != ValueNull || (collectionBase(field.Type) == "" && !isMapType(field.Type)) {
-					return value, err
-				}
-			}
-		}
-		if _, value, ok := objectFieldValue(receiver, field.Name); ok {
+		if _, value, ok := objectFieldValue(receiver, sourcePropertyStorageName(field, field.Name)); ok {
 			return value, nil
 		}
 		return field.Value, nil
@@ -963,20 +1018,10 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 		fieldName = strings.TrimPrefix(field.Getter.Name, owner+".")
 		fieldName = strings.TrimSuffix(fieldName, ".get")
 	}
-	if isStubProxy(receiver) {
-		value, handled, err := vm.callStubProxyGetter(receiver, fieldName, field.Type)
-		if handled || err != nil {
-			if err != nil || value.Kind != ValueNull {
-				return value, err
-			}
-			if vm.stubProviderRecordingMode(vm.currentStubProvider(receiver)) {
-				return value, nil
-			}
-		}
-	}
+	storageName := sourcePropertyStorageName(field, fieldName)
 	if strings.EqualFold(fieldName, "rows") {
 		if _, validated, ok := objectFieldValue(receiver, "areRowsValidated"); ok && validated.Kind == ValueBool && validated.Bool {
-			if _, value, ok := objectFieldValue(receiver, fieldName); ok {
+			if _, value, ok := objectFieldValue(receiver, storageName); ok {
 				return value, nil
 			}
 		}
@@ -986,9 +1031,20 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 			return value, nil
 		}
 	}
-	key := getterCallKey(owner, fieldName, receiver)
-	if vm.activeGetters[key] > 0 {
-		if _, value, ok := objectFieldValue(receiver, fieldName); ok {
+	key := getterCallKey(owner, storageName, receiver)
+	// Owned observations execute finite instance Set and static Map getters
+	// again when a declaring-class helper reads them behind a recursion guard.
+	// Preserve backing-storage fallback for direct self-access and deeper
+	// recursion; only one helper-mediated reentry is observed.
+	allowHelperReentry := vm.activeGetters[key] == 1 &&
+		len(field.Getter.Program.Instructions) > 0 &&
+		strings.EqualFold(vm.currentMethod.ClassName, field.Getter.ClassName) &&
+		!propertyAccessorMethod(vm.currentMethod) &&
+		((receiver.projectClass && collectionBase(field.Type) == "Set" && field.Setter != nil &&
+			len(field.Setter.Program.Instructions) > 0) ||
+			(receiver.Kind == ValueNull && field.Static && isMapType(field.Type) && field.HasSetter))
+	if vm.activeGetters[key] > 0 && !allowHelperReentry {
+		if _, value, ok := objectFieldValue(receiver, storageName); ok {
 			return vm.currentGetterStoredValue(owner, field, value), nil
 		}
 		return field.Value, nil
@@ -1082,51 +1138,6 @@ func stubProxyCanInterceptMethod(method Method) bool {
 		return false
 	}
 	return !strings.EqualFold(strings.TrimSpace(method.Access), "private")
-}
-
-func (vm *VM) callStubProxyGetter(receiver Value, fieldName, returnType string) (Value, bool, error) {
-	provider := vm.currentStubProvider(receiver)
-	resolvedReturnType := vm.resolveTypeNameInClass(receiver.Type, returnType)
-	if resolvedReturnType == "" {
-		resolvedReturnType = "Object"
-	}
-	metadataArgs := []Value{
-		receiver,
-		String(fieldName),
-		platformScalar("Type", resolvedReturnType),
-		{Kind: ValueList, Type: "List<Type>"},
-		{Kind: ValueList, Type: "List<String>"},
-		{Kind: ValueList, Type: "List<Object>"},
-	}
-	handler, ok, ambiguous := vm.resolveInstanceMethodForArgs(provider.Type, "handleMethodCall", metadataArgs)
-	if ambiguous {
-		return Null, true, vm.ambiguousOverloadError(provider.Type+".handleMethodCall", metadataArgs)
-	}
-	if !ok {
-		return Null, true, fmt.Errorf("StubProvider %s must implement handleMethodCall", provider.Type)
-	}
-	value, err := vm.callMethodWithReceiver(handler, provider, metadataArgs, resultForLookup())
-	if err != nil {
-		return Null, true, err
-	}
-	coerced, err := vm.coerceAssignable(returnType, value)
-	if err != nil {
-		return Null, true, fmt.Errorf("stubbed %s.%s return: %w", receiver.Type, fieldName, err)
-	}
-	return coerced, true, nil
-}
-
-func (vm *VM) stubProviderRecordingMode(provider Value) bool {
-	for _, name := range []string{"Stubbing", "Verifying", "verifying", "Recording"} {
-		if _, value, ok := objectFieldValue(provider, name); ok && value.Kind == ValueBool && value.Bool {
-			return true
-		}
-		value, err := vm.lookupPath(provider, []string{name})
-		if err == nil && value.Kind == ValueBool && value.Bool {
-			return true
-		}
-	}
-	return false
 }
 
 func getterCallKey(owner, fieldName string, receiver Value) string {
@@ -1229,6 +1240,14 @@ func (vm *VM) fieldPathTargetType(typeName string, parts []string) string {
 			// to the declaring field owner, including inherited and shadowed fields.
 			typeName = vm.resolveTypeNameInClass(owner, field.Type)
 			continue
+		}
+		// Platform properties also have declared types in the generated public
+		// surface, even when a safe-navigation receiver contains no value.
+		if class, known := vm.lookupClass(typeName); !known || class.PlatformType {
+			if field, owner, ok := vm.generatedPlatformField(typeName, part, false); ok {
+				typeName = vm.resolveTypeNameInClass(owner.Name, field.Type)
+				continue
+			}
 		}
 		if vm.Org != nil {
 			if parentType, ok := vm.parentRelationshipObjectType(typeName, part); ok {
@@ -1378,6 +1397,9 @@ func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
 	if strings.EqualFold(objectName, "AggregateResult") {
 		return sObjectTypeToken("AggregateResult"), true
 	}
+	if event, ok := standardChangeEventName(objectName); ok {
+		return sObjectTypeToken(event), true
+	}
 	if vm.Org != nil {
 		if canonical, ok := vm.resolveObjectName(objectName); ok {
 			return sObjectTypeToken(canonical), true
@@ -1392,6 +1414,39 @@ func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
 	return Null, false
 }
 
+// sObjectTypeFieldToken resolves <Object>.SObjectType and
+// Schema.<Object>.SObjectType to the object's SobjectType field token, after
+// locals and fields named like the object have had their turn. Native at 62.0
+// and 67.0, RecordType: an argument (PB05, H1XT5-A), a Schema.SObjectField
+// local (PB06, H1XT6-A, lowercase H1XT10-A), an assignment (H1XT15-A), an
+// Object (H1XT14-A) and a call receiver (H1XT8-A getDescribe, H1XT9-A
+// newSObject rejected); Schema.RecordType.SObjectType (H1XT11-A); and
+// ObjectPermissions.SobjectType (H1XT13-A). Contact has no SobjectType field
+// and keeps the type token (M1 S16). Other objects with an SobjectType field
+// have no row and keep the type token.
+func (vm *VM) sObjectTypeFieldToken(parts []string) (Value, bool) {
+	objectName := ""
+	switch {
+	case len(parts) == 2 && strings.EqualFold(parts[1], "SObjectType"):
+		objectName = parts[0]
+	case len(parts) == 3 && strings.EqualFold(parts[0], "Schema") && strings.EqualFold(parts[2], "SObjectType"):
+		objectName = parts[1]
+	default:
+		return Null, false
+	}
+	if !strings.EqualFold(objectName, "RecordType") && !strings.EqualFold(objectName, "ObjectPermissions") {
+		return Null, false
+	}
+	token, ok := vm.lookupSObjectFieldToken([]string{objectName, "SobjectType"})
+	if !ok {
+		return Null, false
+	}
+	if field, found := token.Fields["field"]; !found || field.Kind != ValueString || !strings.EqualFold(field.Text, "SObjectType") {
+		return Null, false
+	}
+	return token, true
+}
+
 func (vm *VM) sObjectTypeTokenForName(objectName string) (Value, bool) {
 	if rest, ok := strings.CutPrefix(objectName, "Schema."); ok {
 		objectName = rest
@@ -1401,6 +1456,9 @@ func (vm *VM) sObjectTypeTokenForName(objectName string) (Value, bool) {
 	}
 	if strings.EqualFold(objectName, "AggregateResult") {
 		return sObjectTypeToken("AggregateResult"), true
+	}
+	if event, ok := standardChangeEventName(objectName); ok {
+		return sObjectTypeToken(event), true
 	}
 	if vm.Org != nil {
 		if canonical, ok := vm.resolveObjectName(objectName); ok {
@@ -1435,7 +1493,12 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 		return Null, false
 	}
 	if len(parts) == 3 && !strings.EqualFold(parts[0], "Schema") && !strings.EqualFold(parts[1], "Fields") {
-		return vm.lookupSObjectRelationshipFieldToken(parts[0], parts[1], parts[2])
+		if token, ok := vm.lookupSObjectRelationshipFieldToken(parts[0], parts[1], parts[2]); ok || !strings.EqualFold(parts[1], "Field") {
+			return token, ok
+		}
+		// Singular Field also qualifies a field token. Keep existing declared
+		// relationship traversal ahead of this shorthand.
+		parts = []string{parts[0], "Fields", parts[2]}
 	}
 	objectName := parts[0]
 	fieldName := ""
@@ -2003,7 +2066,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 		}
 		if current.Kind == ValueList {
 			if len(current.List) == 0 {
-				return Null, newExceptionError("QueryException", "List has no rows for assignment to SObject")
+				return Null, vm.emptySObjectQueryError(current)
 			}
 			if len(current.List) > 1 {
 				return Null, fmt.Errorf("cannot access %s on list", part)
@@ -2122,6 +2185,11 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			}
 		}
 		currentType := runtimeObjectType(current)
+		if strings.EqualFold(currentType, "FieldDefinition") && strings.EqualFold(part, "EntityDefinition") {
+			if err := vm.unqueriedSObjectFieldError(current, part, false); err != nil {
+				return Null, err
+			}
+		}
 		if current.Text != "" {
 			switch {
 			case strings.EqualFold(part, "name"):
@@ -2136,12 +2204,17 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				}
 			}
 		}
+		if current.Fields[sobjectModifiedSinceQueryField].Bool && vm.legacyModifiedQueryCanReadNull(current, vm.resolveSObjectFieldName(current.Type, part)) {
+			current = Null
+			continue
+		}
 		if field, owner, ok := vm.lookupReceiverField(currentType, part); ok {
+			field.Name = vm.lexicalInstanceFieldStorageName(current, owner, field, field.Name)
 			if err := vm.checkMemberAccess(owner, field.Access, owner+"."+part, field.Modifiers); err != nil {
 				return Null, err
 			}
 			if field.Getter != nil && vm.isCurrentGetter(field.Getter) {
-				if _, value, ok := objectFieldValue(current, field.Name); ok {
+				if _, value, ok := objectFieldValue(current, sourcePropertyStorageName(field, field.Name)); ok {
 					current = vm.currentGetterStoredValue(owner, field, value)
 					continue
 				}
@@ -2153,7 +2226,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				continue
 			}
 			if field.Getter != nil && !field.HasSetter {
-				if _, value, ok := objectFieldValue(current, field.Name); ok && value.Kind != ValueNull {
+				if _, value, ok := objectFieldValue(current, sourcePropertyStorageName(field, field.Name)); ok && value.Kind != ValueNull {
 					current = value
 					continue
 				}
@@ -2166,7 +2239,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				current = value
 				continue
 			}
-			if _, value, ok := objectFieldValue(current, field.Name); ok {
+			if _, value, ok := vm.instanceFieldValue(current, owner, field); ok {
 				if relationship, isRelationship := vm.typedParentRelationshipFieldValue(current, field.Name, value); isRelationship {
 					current = relationship
 					continue
@@ -2242,6 +2315,12 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				return Null, err
 			}
 		}
+		if ok && value.Kind == ValueNull && value.Runtime == sharingHiddenParentNullRuntime {
+			// Preserve the projection boundary before field coercion can erase
+			// its marker and rebuild a shell from the retained foreign key.
+			current = value
+			continue
+		}
 		if ok {
 			if relationship, isRelationship := vm.typedParentRelationshipFieldValue(current, canonicalPart, value); isRelationship {
 				current = relationship
@@ -2275,7 +2354,10 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			}
 			if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists {
 				value = coerceReadSchemaFieldIdentity(current, value, fieldDef)
-				if fieldDef.Type == storage.FieldSummary && !isExplicitSObjectField(current, canonicalPart) && !vm.queriedSObjectFieldsIncludes(current, canonicalPart) {
+				// Preserve the supplied COUNT snapshot on trigger records. Other
+				// rollup operations retain their existing read path until captured.
+				triggerCountSnapshot := isTriggerSObject(current) && strings.EqualFold(fieldDef.SummaryOperation, "count")
+				if fieldDef.Type == storage.FieldSummary && !triggerCountSnapshot && !isExplicitSObjectField(current, canonicalPart) && !vm.queriedSObjectFieldsIncludes(current, canonicalPart) {
 					if summaryValue, hasSummary := vm.evaluateSummaryField(current, fieldDef); hasSummary {
 						value = vmValueFromStorage(summaryValue)
 						current = value
@@ -2557,8 +2639,18 @@ func (vm *VM) currentGetterStoredValue(owner string, field Field, value Value) V
 }
 
 func (vm *VM) assign(name string, value Value) error {
+	return vm.assignValue(name, value, true)
+}
+
+// Receiver and DML result stores mutate a reference without rebinding the local.
+func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 	value = plainNull(value)
 	if actual, ok := vm.lookupGlobalName(name); ok {
+		initialized, final := vm.finalLocals[actual]
+		if rebind && final && initialized {
+			// source syntax and version rules C094/F02/F07/F08/F10: this raw error bypasses Apex catches.
+			return &RuntimeError{Type: "System.FinalException", Message: "Final variable has already been initialized"}
+		}
 		if typeName := vm.VarTypes[actual]; typeName != "" {
 			coerced, err := vm.coerceAssignable(typeName, value)
 			if err != nil {
@@ -2568,6 +2660,9 @@ func (vm *VM) assign(name string, value Value) error {
 			value.Static = typeName
 		}
 		vm.Globals[actual] = value
+		if rebind && final {
+			vm.finalLocals[actual] = true
+		}
 		return nil
 	}
 	if ok, err := vm.assignRestContextField(name, value); ok || err != nil {
@@ -2578,24 +2673,26 @@ func (vm *VM) assign(name string, value Value) error {
 		if strings.EqualFold(parts[0], "super") {
 			if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
 				if len(parts) == 2 {
-					if class, ok := vm.lookupClass(this.Type); ok && class.SuperClass != "" {
-						if field, owner, ok := vm.lookupField(class.SuperClass, parts[1]); ok {
-							actualName := field.Name
-							if actualName == "" {
-								actualName = parts[1]
-							}
-							if err := vm.checkMemberAccess(owner, field.Access, owner+"."+actualName, field.Modifiers); err != nil {
-								return err
-							}
-							fieldType := vm.resolveTypeNameInClass(owner, field.Type)
-							coerced, err := vm.coerceAssignable(fieldType, value)
-							if err != nil {
-								return fmt.Errorf("%s.%s: %w", owner, actualName, err)
-							}
-							vm.setObjectFieldValue(&this, actualName, coerced)
-							vm.Globals["this"] = this
-							return nil
+					if field, owner, ok := vm.lookupSuperField(parts[1]); ok {
+						actualName := field.Name
+						if actualName == "" {
+							actualName = parts[1]
 						}
+						if err := vm.checkMemberAccess(owner, field.Access, owner+"."+actualName, field.Modifiers); err != nil {
+							return err
+						}
+						fieldType := vm.resolveTypeNameInClass(owner, field.Type)
+						coerced, err := vm.coerceAssignable(fieldType, value)
+						if err != nil {
+							return fmt.Errorf("%s.%s: %w", owner, actualName, err)
+						}
+						storageName := vm.instanceFieldStorageName(runtimeObjectType(this), owner, field)
+						if lexical := vm.lexicalInstanceFieldStorageName(this, owner, field, actualName); isLexicalInstanceFieldStorage(lexical) {
+							storageName = lexical
+						}
+						vm.setObjectFieldValue(&this, storageName, coerced)
+						vm.Globals["this"] = this
+						return nil
 					}
 				}
 				return vm.assignPath(this, parts[1:], value)
@@ -2713,7 +2810,12 @@ func (vm *VM) assign(name string, value Value) error {
 		}
 		if actualName, field, ok := objectFieldValue(this, name); ok {
 			if def, owner, ok := vm.lookupReceiverField(this.Type, actualName); ok {
+				actualName = sourcePropertyStorageName(def, actualName)
+				actualName = vm.lexicalInstanceFieldStorageName(this, owner, def, actualName)
 				if err := vm.checkMemberAccess(owner, def.Access, owner+"."+name, def.Modifiers); err != nil {
+					return err
+				}
+				if err := vm.inheritedFinalConstructorWrite(this, def, owner); err != nil {
 					return err
 				}
 				fieldType := vm.resolveTypeNameInClass(owner, def.Type)
@@ -2722,6 +2824,9 @@ func (vm *VM) assign(name string, value Value) error {
 					return fmt.Errorf("%s.%s: %w", this.Type, name, err)
 				}
 				value = coerced
+				if storageName := vm.instanceFieldStorageName(runtimeObjectType(this), owner, def); isInheritedInstanceFieldStorage(storageName) || (plainInstanceField(def) && storageName != def.Name && !isLexicalInstanceFieldStorage(actualName)) {
+					actualName = storageName
+				}
 				if def.Setter != nil {
 					if vm.isCurrentGetter(def.Getter) {
 						vm.setObjectFieldValue(&this, actualName, value)
@@ -2765,6 +2870,7 @@ func (vm *VM) assign(name string, value Value) error {
 			if actualName == "" {
 				actualName = name
 			}
+			actualName = sourcePropertyStorageName(def, actualName)
 			if err := vm.checkMemberAccess(owner, def.Access, owner+"."+actualName, def.Modifiers); err != nil {
 				return err
 			}
@@ -2774,6 +2880,9 @@ func (vm *VM) assign(name string, value Value) error {
 				return fmt.Errorf("%s.%s: %w", this.Type, name, err)
 			}
 			value = coerced
+			if storageName := vm.instanceFieldStorageName(runtimeObjectType(this), owner, def); isInheritedInstanceFieldStorage(storageName) || (plainInstanceField(def) && storageName != def.Name && !isLexicalInstanceFieldStorage(actualName)) {
+				actualName = storageName
+			}
 			if def.Setter != nil {
 				if vm.isCurrentGetter(def.Getter) {
 					vm.setObjectFieldValue(&this, actualName, value)
@@ -2885,6 +2994,10 @@ func (vm *VM) writeStaticFieldValue(owner, memberName string, class Class, field
 }
 
 func (vm *VM) assignPath(root Value, parts []string, value Value) error {
+	return vm.assignPathWithStaticIndexDelta(root, parts, value, nil)
+}
+
+func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value Value, delta *staticAliasIndexDelta) error {
 	if len(parts) == 0 {
 		return fmt.Errorf("empty assignment target")
 	}
@@ -2892,15 +3005,25 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	previousRoot := snapshotAlias(root)
 	current := root
 	previousLeaf := aliasSnapshot{}
+	var previousLeafValue Value
 	type pathParent struct {
 		object Value
 		field  string
 	}
 	parents := make([]pathParent, 0, len(parts)-1)
 	propagate := func(updated Value) {
+		vm.advanceMapPutParentContainment(delta, updated)
+		skipScopePropagation := len(parents) == 0 && previousLeaf.valid() && vm.shouldElideRecordScopeWalk(previousLeafValue, updated)
 		if previousLeaf.valid() {
-			vm.propagateAliasSnapshotToScope(vm.Globals, previousLeaf, updated)
-			vm.propagateAliasSnapshotToStatics(previousLeaf, updated)
+			if !skipScopePropagation {
+				vm.propagateAliasSnapshotToScopeWithMapPutParent(vm.Globals, previousLeaf, updated, delta)
+			}
+			vm.propagateAliasSnapshotToStaticsWithIndexDelta(previousLeaf, updated, delta)
+		}
+		// A direct field write has one snapshot, shared by the leaf and root.
+		// Its aliases were just updated; a second pass repeats the same work.
+		if len(parents) == 0 && previousLeaf.valid() && previousLeaf.ref == previousRoot.ref && previousLeaf.kind == previousRoot.kind {
+			return
 		}
 		for i := len(parents) - 1; i >= 0; i-- {
 			parent := parents[i]
@@ -2910,7 +3033,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			updated = parent.object
 		}
 		vm.propagateAliasSnapshotToScope(vm.Globals, previousRoot, updated)
-		vm.propagateAliasSnapshotToStatics(previousRoot, updated)
+		vm.propagateAliasSnapshotToStaticsWithIndexDelta(previousRoot, updated, delta)
 	}
 	for i, part := range parts[:len(parts)-1] {
 		if current.Kind == ValueNull {
@@ -2933,14 +3056,25 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 						current = refreshed
 					}
 				}
-				if next.Kind != ValueObject {
+				if next.Kind != ValueObject && next.Kind != ValueNull {
 					return fmt.Errorf("unknown field %q on %s", part, current.Type)
 				}
 				actualName := field.Name
 				if actualName == "" {
 					actualName = part
 				}
+				actualName = sourcePropertyStorageName(field, actualName)
 				parents = append(parents, pathParent{object: current, field: actualName})
+				current = next
+				continue
+			}
+			storageName := vm.instanceFieldStorageName(runtimeObjectType(current), owner, field)
+			if isInheritedInstanceFieldStorage(storageName) || (plainInstanceField(field) && storageName != field.Name) || sourcePropertyStorageName(field, field.Name) != field.Name {
+				_, next, _ := vm.instanceFieldValue(current, owner, field)
+				if next.Kind != ValueObject && next.Kind != ValueNull {
+					return fmt.Errorf("unknown field %q on %s", part, current.Type)
+				}
+				parents = append(parents, pathParent{object: current, field: storageName})
 				current = next
 				continue
 			}
@@ -2954,7 +3088,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 				actualName = resolved
 			}
 		}
-		if !ok || next.Kind != ValueObject {
+		if !ok || (next.Kind != ValueObject && next.Kind != ValueNull) {
 			if generated, generatedOK := vm.generatedPlatformInstanceField(current, part); generatedOK && generated.Kind == ValueObject {
 				vm.setGraphFieldValue(&current, part, generated)
 				parents = append(parents, pathParent{object: current, field: part})
@@ -2997,6 +3131,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			}
 		}
 	}
+	previousLeafValue = current
 	previousLeaf = snapshotAlias(current)
 	if reason, ok := sobjectReadOnlyReason(current); ok {
 		if isTriggerSObject(current) {
@@ -3043,6 +3178,8 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		if actualName == "" {
 			actualName = fieldName
 		}
+		actualName = sourcePropertyStorageName(def, actualName)
+		actualName = vm.lexicalInstanceFieldStorageName(current, owner, def, actualName)
 		if vm.Org != nil {
 			if objectName, ok := vm.resolveObjectName(current.Type); ok {
 				definition := vm.Org.Objects[objectName].Definition
@@ -3055,12 +3192,25 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		if err := vm.checkMemberAccess(owner, def.Access, owner+"."+actualName, def.Modifiers); err != nil {
 			return err
 		}
+		if len(parts) == 1 && def.InitializerLine == 0 {
+			if err := vm.inheritedFinalConstructorWrite(current, def, owner); err != nil {
+				return err
+			}
+		}
 		fieldType := vm.resolveTypeNameInClass(owner, def.Type)
-		coerced, err := vm.coerceAssignable(fieldType, value)
+		coerced, err := vm.coerceDMLLocaleProperty(current, fieldName, fieldType, value)
 		if err != nil {
 			return fmt.Errorf("%s.%s: %w", current.Type, fieldName, err)
 		}
 		value = coerced
+		if delta != nil && !staticAliasIndexDeltaMatchesMap(value, delta) {
+			// A coercion that rebuilds the map can introduce references beyond
+			// the key and value covered by the original mutation.
+			delta = nil
+		}
+		if storageName := vm.instanceFieldStorageName(runtimeObjectType(current), owner, def); isInheritedInstanceFieldStorage(storageName) || (plainInstanceField(def) && storageName != def.Name && !isLexicalInstanceFieldStorage(actualName)) {
+			actualName = storageName
+		}
 		if vm.assignSingleEmailRecipientField(&current, actualName, value) {
 			propagate(current)
 			return nil
@@ -3115,7 +3265,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		if actualName == "" {
 			actualName = fieldName
 		}
-		coerced, err := vm.coerceAssignable(def.Type, value)
+		coerced, err := vm.coerceDMLLocaleProperty(current, fieldName, def.Type, value)
 		if err != nil {
 			return fmt.Errorf("%s.%s: %w", current.Type, fieldName, err)
 		}
@@ -3147,4 +3297,17 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	markQueriedSObjectField(&current, resolvedField)
 	propagate(current)
 	return nil
+}
+
+// super is relative to the executing declaration, including on a more-derived receiver.
+func (vm *VM) lookupSuperField(name string) (Field, string, bool) {
+	className := vm.currentMethod.ClassName
+	if className == "" {
+		className = vm.currentClass
+	}
+	class, ok := vm.lookupClass(className)
+	if !ok {
+		return Field{}, "", false
+	}
+	return vm.lookupField(vm.resolvedSuperClassName(class), name)
 }

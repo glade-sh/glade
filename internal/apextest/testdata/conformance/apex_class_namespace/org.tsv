@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"className":"NamespaceLookupProbe","constructed":true,"namespaceNull":true,"profileNamePresent":true,"resolved":true}
+62.0	isTest	{"className":"NamespaceLookupProbe","constructed":true,"namespaceNull":true,"profileNamePresent":true,"resolved":true}
+67.0	anonymous	{"className":"NamespaceLookupProbe","constructed":true,"namespaceNull":true,"profileNamePresent":true,"resolved":true}
+67.0	isTest	{"className":"NamespaceLookupProbe","constructed":true,"namespaceNull":true,"profileNamePresent":true,"resolved":true}

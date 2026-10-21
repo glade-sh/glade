@@ -45,8 +45,8 @@ use the tools actually exposed by the active client.
 
 ## Local prerequisites
 
-Run from the checkout being changed. Use the Go version in `go.mod`, a C
-compiler, and CGO for normal builds and tests:
+Run from the checkout being changed. Use Go `1.26.10` (the version in `go.mod`),
+a C compiler, and CGO for normal builds and tests:
 
 ```bash
 go version

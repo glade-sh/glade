@@ -1,0 +1,7 @@
+case	shape
+insert	Single-record System.Database.insert and typed return
+upsert	Single-record System.Database.upsert and typed return
+delete	Single-record System.Database.delete and typed return
+result_tokens	Class tokens and JSON deserialize for SaveResult, UpsertResult, DeleteResult, LeadConvertResult
+list_tokens	Class tokens and JSON deserialize for lists of result types
+shadow	Empty source class Database remains separate from the Database result namespace

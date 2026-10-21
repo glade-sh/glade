@@ -1,0 +1,15 @@
+source_api	method	observation
+62.0	capture_identity	{"amountPreserved":true,"identityPreserved":true}
+62.0	capture_null	{"amountNull":true,"identityNull":true}
+62.0	card_identity	{"identityPreserved":true}
+62.0	notification_declined	{"message":"No records found for given gatewayProviderId null and gatewayReferenceNumber synthetic-reference","success":false,"status":400}
+62.0	notification_empty	{"message":"Amount should be set in Notification object","exception":"commercepayments.PaymentsApiException"}
+62.0	notification_null	{"message":"Attempt to de-reference a null object","exception":"System.NullPointerException"}
+62.0	reversal_identity	{"amountPreserved":true,"identityPreserved":true}
+67.0	capture_identity	{"amountPreserved":true,"identityPreserved":true}
+67.0	capture_null	{"amountNull":true,"identityNull":true}
+67.0	card_identity	{"identityPreserved":true}
+67.0	notification_declined	{"message":"No records found for given gatewayProviderId null and gatewayReferenceNumber synthetic-reference","success":false,"status":400}
+67.0	notification_empty	{"message":"Amount should be set in Notification object","exception":"commercepayments.PaymentsApiException"}
+67.0	notification_null	{"message":"Attempt to de-reference a null object","exception":"System.NullPointerException"}
+67.0	reversal_identity	{"amountPreserved":true,"identityPreserved":true}

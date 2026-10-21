@@ -114,7 +114,7 @@ func CompileAnonymousWithOptions(source string, options CompileOptions) (ir.Prog
 	if err != nil {
 		return ir.Program{}, classifyCompileError(source, err)
 	}
-	p := parser{tokens: tokens, prefixCandidates: options.PrefixStatementCandidates, approvedPrefix: options.ApprovedPrefixStatements}
+	p := parser{tokens: tokens, apiVersion: options.APIVersion, prefixCandidates: options.PrefixStatementCandidates, approvedPrefix: options.ApprovedPrefixStatements}
 	program, err := p.parseProgram()
 	if err != nil {
 		return ir.Program{}, classifyCompileError(source, err)
@@ -284,6 +284,11 @@ func lexWithAnnotations(source string, annotations bool) ([]token, error) {
 			if err != nil {
 				return nil, err
 			}
+			if isSOQLBindSourceStringArgument(tokens) {
+				if syntax := SOQLBindSourceStringLineBreak(source, i, next); syntax != nil {
+					return nil, syntax
+				}
+			}
 			tokens = append(tokens, tok)
 			i = next
 		case source[i] == '%':
@@ -449,6 +454,7 @@ func apexUnicodeEscapeEnd(source string, start int) int {
 type parser struct {
 	tokens           []token
 	pos              int
+	apiVersion       string
 	prefixCandidates bool
 	approvedPrefix   map[int]bool
 }
@@ -752,9 +758,31 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 		return inst, nil
 	}
 
+	if syntax := p.finalCollectionArrayDeclaration(); syntax != nil {
+		return ir.Instruction{}, syntax
+	}
 	if p.peek(tokenIdent, "final") && p.isDeclarationStartAfterFinal() {
 		p.advance()
-		return p.parseDeclaration(start.pos)
+		inst, err := p.parseDeclaration(start.pos)
+		if inst.Op == ir.OpDeclare {
+			inst.Final = true
+		} else if inst.Op == ir.OpDeclGroup {
+			for i := range inst.Then {
+				inst.Then[i].Final = true
+			}
+		}
+		return inst, err
+	}
+
+	// Method-local transient variables use ordinary local storage; the
+	// serialization modifier only affects fields.
+	if p.peek(tokenIdent, "transient") {
+		save := p.pos
+		p.advance()
+		if p.isDeclarationStart() {
+			return p.parseDeclaration(start.pos)
+		}
+		p.pos = save
 	}
 
 	if p.isDeclarationStart() {
@@ -890,9 +918,13 @@ func (p *parser) parseFor(pos int) (ir.Instruction, error) {
 	if _, err := p.expect(tokenSymbol, ")"); err != nil {
 		return ir.Instruction{}, err
 	}
-	body, err := p.parseStatementBlock()
-	if err != nil {
-		return ir.Instruction{}, err
+	var body []ir.Instruction
+	if !p.match(tokenSymbol, ";") {
+		parsedBody, err := p.parseStatementBlock()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		body = parsedBody
 	}
 	return ir.Instruction{Op: ir.OpFor, Expr: condition, Init: init, Inits: inits, Update: update, Updates: updates, Then: body, Pos: pos}, nil
 }
@@ -931,6 +963,9 @@ func (p *parser) parseForDeclarationParts() ([]ir.Instruction, error) {
 	for {
 		name, err := p.expect(tokenIdent, "")
 		if err != nil {
+			return nil, err
+		}
+		if err := soqlBindReservedLocalError(typeName, name); err != nil {
 			return nil, err
 		}
 		if err := validateLocalIdentifier(name); err != nil {
@@ -995,6 +1030,9 @@ func (p *parser) parseForDeclarationPart(pos int) (ir.Instruction, error) {
 	}
 	name, err := p.expect(tokenIdent, "")
 	if err != nil {
+		return ir.Instruction{}, err
+	}
+	if err := soqlBindReservedLocalError(typeName, name); err != nil {
 		return ir.Instruction{}, err
 	}
 	if err := validateLocalIdentifier(name); err != nil {
@@ -1099,7 +1137,7 @@ func (p *parser) parseComplexAssignmentLike(requireSemicolon bool) (ir.Instructi
 	}
 	if left.Kind == ir.ExprCall && left.Callee == "get" && left.Left != nil && len(left.Args) == 1 {
 		receiver := *left.Left
-		return ir.Instruction{Op: ir.OpExpr, Expr: ir.Expr{Kind: ir.ExprCall, Callee: "set", Left: &receiver, Args: []ir.Expr{left.Args[0], value}}, Pos: start.pos}, true, nil
+		return ir.Instruction{Op: ir.OpExpr, Expr: ir.Expr{Kind: ir.ExprCall, Callee: "set", Operator: "[]=", Left: &receiver, Args: []ir.Expr{left.Args[0], value}}, Pos: start.pos}, true, nil
 	}
 	if left.Kind != ir.ExprCall || !strings.HasPrefix(left.Callee, "__field:") || left.Left == nil {
 		p.pos = save
@@ -1160,6 +1198,9 @@ func (p *parser) prefixCandidate(start int, name string) bool {
 	if field {
 		target = *target.Left
 	}
+	if finalCollectionPrefixCandidate(target, name, mapGet, field) {
+		return true
+	}
 	if mapGet {
 		if !field || target.Kind != ir.ExprCall || target.Callee != name || target.Left != nil || len(target.Args) != 1 {
 			return false
@@ -1219,7 +1260,7 @@ func (p *parser) parseAssignmentExpression() (ir.Expr, error) {
 	}
 	if left.Callee == "get" && len(left.Args) == 1 {
 		receiver := *left.Left
-		return ir.Expr{Kind: ir.ExprCall, Callee: "set", Left: &receiver, Args: []ir.Expr{left.Args[0], value}}, nil
+		return ir.Expr{Kind: ir.ExprCall, Callee: "set", Operator: "[]=", Left: &receiver, Args: []ir.Expr{left.Args[0], value}}, nil
 	}
 	field := strings.TrimPrefix(left.Callee, "__field:")
 	receiver := *left.Left
@@ -1825,7 +1866,7 @@ func (p *parser) parseTypeSuffix(name string) (string, error) {
 		}
 		name += "<" + strings.Join(args, ",") + ">"
 	}
-	if p.match(tokenSymbol, "[") {
+	for p.match(tokenSymbol, "[") {
 		if _, err := p.expect(tokenSymbol, "]"); err != nil {
 			return "", err
 		}
@@ -1866,7 +1907,14 @@ func (p *parser) parseNewTypeName() (string, *ir.Expr, error) {
 	}
 	if p.match(tokenSymbol, "[") {
 		if p.match(tokenSymbol, "]") {
-			return name + "[]", nil, nil
+			name += "[]"
+			for p.match(tokenSymbol, "[") {
+				if _, err := p.expect(tokenSymbol, "]"); err != nil {
+					return "", nil, err
+				}
+				name += "[]"
+			}
+			return name, nil, nil
 		}
 		size, err := p.parseExpression()
 		if err != nil {
@@ -1899,7 +1947,7 @@ func (p *parser) parseCastExpression() (ir.Expr, bool, error) {
 	if err != nil {
 		return ir.Expr{}, true, err
 	}
-	return ir.Expr{Kind: ir.ExprCall, Callee: "__cast:" + typeName, Args: []ir.Expr{expr}}, true, nil
+	return ir.Expr{Kind: ir.ExprCall, Callee: "__cast:" + typeName, Args: []ir.Expr{expr}, CastQueryOperand: listSObjectCastDirectQueryOperand(expr)}, true, nil
 }
 
 func (p *parser) startsExpression() bool {
@@ -1984,6 +2032,7 @@ func parseNumberTokenText(text string) (string, bool) {
 func (p *parser) parseSOQLLiteral(pos int) (ir.Expr, error) {
 	depth := 1
 	var parts []string
+	var queryTokens []token
 	for !p.peek(tokenEOF, "") {
 		tok := p.advance()
 		if tok.kind == tokenSymbol {
@@ -1995,12 +2044,14 @@ func (p *parser) parseSOQLLiteral(pos int) (ir.Expr, error) {
 				if depth == 0 {
 					parts = compactSOQLDateLiteralParts(parts)
 					if len(parts) > 0 && strings.EqualFold(parts[0], "FIND") {
+						parts = compactCapturedInlineReturningParts(parts, queryTokens, p.apiVersion)
 						parts = compactSOSLWindowParts(parts)
 					}
 					return ir.Expr{Kind: ir.ExprSOQL, Value: strings.Join(parts, " ")}, nil
 				}
 			}
 		}
+		queryTokens = append(queryTokens, tok)
 		if tok.kind == tokenString {
 			parts = append(parts, soqlStringLiteralFromTokenText(tok.text, tok.escapedBackslashOffsets))
 		} else {
@@ -2179,7 +2230,7 @@ func (p *parser) parseQualifiedName() (string, error) {
 		}
 		name += "<" + strings.Join(args, ",") + ">"
 	}
-	if p.match(tokenSymbol, "[") {
+	for p.match(tokenSymbol, "[") {
 		if _, err := p.expect(tokenSymbol, "]"); err != nil {
 			return "", err
 		}

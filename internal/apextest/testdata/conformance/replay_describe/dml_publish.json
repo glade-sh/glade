@@ -1,0 +1,3873 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "dml_publish",
+  "shapeCount": 18,
+  "nativeObservationCount": 144,
+  "assertedObservationCount": 144,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C168RP_055",
+      "group": "dml-publish",
+      "role": "boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "14ce8c44a458b0e52e681c21bd5df21e5a73fb785408ee5c5b899f49bdc0bfe0",
+          "sourceSha256": {
+            "anonymous": "1773adf19c92eb732219f14f68e6ae8ea4e02b948aaa16e1eb0925a9ad95e785"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_055');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "14ce8c44a458b0e52e681c21bd5df21e5a73fb785408ee5c5b899f49bdc0bfe0",
+          "sourceSha256": {
+            "class:C168C168RP055Test": "d7b0e0e7aa8640c3c10c3db3b68fcca3c008ad3c6713f4a06a48782088a9b5a2"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP055Test": "@IsTest private class C168C168RP055Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_055');}}"
+          },
+          "tests": [
+            "C168C168RP055Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_056",
+      "group": "dml-publish",
+      "role": "boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "ab397a3071c291223148150e00794ffd8a5a80132b5baf0a6ca89efb2a7a044f",
+          "sourceSha256": {
+            "anonymous": "5fb04f013e110bc18a475e4d50cf81d74350caf8ae79f1fbb4905b336619a937"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_056');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "ab397a3071c291223148150e00794ffd8a5a80132b5baf0a6ca89efb2a7a044f",
+          "sourceSha256": {
+            "class:C168C168RP056Test": "ced6fb88228f886ba6e9c71dc3f96da86f5224ee9bfe16a2287b584724243dfb"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP056Test": "@IsTest private class C168C168RP056Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_056');}}"
+          },
+          "tests": [
+            "C168C168RP056Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_057",
+      "group": "dml-publish",
+      "role": "positive",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();s.put('Text__c','text');Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "8debc5acc52be360d410c2032d050e1aac0d9fac75a0cf578ec0b4556a2b6f34",
+          "sourceSha256": {
+            "anonymous": "621449b4d4e14b0fc57eddcf1069403e6cae2cfb2324f8e27dcbcf322f740898"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();s.put('Text__c','text');Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_057');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();s.put('Text__c','text');Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "8debc5acc52be360d410c2032d050e1aac0d9fac75a0cf578ec0b4556a2b6f34",
+          "sourceSha256": {
+            "class:C168C168RP057Test": "c51f8c135fe7b88bc507df8d52059b61456086509e381116532673a3188f3bca"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\"}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP057Test": "@IsTest private class C168C168RP057Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();s.put('Text__c','text');Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_057');}}"
+          },
+          "tests": [
+            "C168C168RP057Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_058",
+      "group": "dml-publish",
+      "role": "positive",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();s.put('Text__c','text');Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "b7b340913ee8f991c8479775bb52c92fac958b6b285e829147fe5e6421876c5b",
+          "sourceSha256": {
+            "anonymous": "ef8811fe6d23b36a80ce8466d20c381bd93e13f8637ad6fc3a9154af4f2772cf"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text",
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\",\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text",
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\",\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text",
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\",\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text",
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\",\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();s.put('Text__c','text');Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_058');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();s.put('Text__c','text');Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "b7b340913ee8f991c8479775bb52c92fac958b6b285e829147fe5e6421876c5b",
+          "sourceSha256": {
+            "class:C168C168RP058Test": "d6e5da11911050025977dd249bd582c5da00c3d3841844e02263259383f7a944"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text",
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\",\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text",
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\",\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text",
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\",\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text",
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":\"text\",\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP058Test": "@IsTest private class C168C168RP058Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();s.put('Text__c','text');Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_058');}}"
+          },
+          "tests": [
+            "C168C168RP058Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_059",
+      "group": "dml-publish",
+      "role": "boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();s.put('Text__c',null);Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "b0fad2de82e6061e55cfb5f50ec278f2e1eac140468d2ec4462cbc54178861c4",
+          "sourceSha256": {
+            "anonymous": "d620e955f35f0a4bed381aa42876a847ceac8627b90d723b7d744aec0d3cea58"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();s.put('Text__c',null);Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_059');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();s.put('Text__c',null);Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "b0fad2de82e6061e55cfb5f50ec278f2e1eac140468d2ec4462cbc54178861c4",
+          "sourceSha256": {
+            "class:C168C168RP059Test": "accca8824e6dadba26bae2178d72049b77813059f3b400acfff362bc2d7bab6d"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP059Test": "@IsTest private class C168C168RP059Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();s.put('Text__c',null);Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_059');}}"
+          },
+          "tests": [
+            "C168C168RP059Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_060",
+      "group": "dml-publish",
+      "role": "boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();s.put('Text__c',null);Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "b8cde0b9f4c882255a465d3e4f12a4c0a135494fe31d733f4b3b1c510496dc56",
+          "sourceSha256": {
+            "anonymous": "4eb82d437f4bdb50e989ce6a7532f4d679fd597c29046bf456636e9ca4d460ec"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null,
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null,\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null,
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null,\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null,
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null,\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null,
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null,\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();s.put('Text__c',null);Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_060');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();s.put('Text__c',null);Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "b8cde0b9f4c882255a465d3e4f12a4c0a135494fe31d733f4b3b1c510496dc56",
+          "sourceSha256": {
+            "class:C168C168RP060Test": "d8f5bbd94f56d6071d9a89c1570a09e8c1ad94c2dc029bc5b94db9ba8e73216f"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null,
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null,\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null,
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null,\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null,
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null,\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "e00"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": null,
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"e00\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"Text__c\":null,\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP060Test": "@IsTest private class C168C168RP060Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();s.put('Text__c',null);Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_060');}}"
+          },
+          "tests": [
+            "C168C168RP060Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_061",
+      "group": "dml-publish",
+      "role": "rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('ReplayId','1');stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "f6c3166b0b34f1e313c01bc6f50474318589fe11062403d71f24e382b99a91df",
+          "sourceSha256": {
+            "anonymous": "1c4d849236782bd25368c25d941be3563062b5cd5c26ee9d03e48a94903cade4"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('ReplayId','1');stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_061');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('ReplayId','1');stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "f6c3166b0b34f1e313c01bc6f50474318589fe11062403d71f24e382b99a91df",
+          "sourceSha256": {
+            "class:C168C168RP061Test": "3a995a40503441e90ffa0fc50d58adfd5c5a771c96532f4ac6b77cd8316f3474"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP061Test": "@IsTest private class C168C168RP061Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('ReplayId','1');stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_061');}}"
+          },
+          "tests": [
+            "C168C168RP061Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_062",
+      "group": "dml-publish",
+      "role": "rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('ReplayId','1');stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "08a656536fa173fc078b1fdcae188fca937f9157f6f00425fcdcc8bc103bcc66",
+          "sourceSha256": {
+            "anonymous": "a14af3c7d745ba354e21fe9586eca1473d29c60bdfbc27a7b2fd7067418f0647"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('ReplayId','1');stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_062');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('ReplayId','1');stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "08a656536fa173fc078b1fdcae188fca937f9157f6f00425fcdcc8bc103bcc66",
+          "sourceSha256": {
+            "class:C168C168RP062Test": "6901fc0dc74065dbb0ef91272669ad31481e46cc2bd11d952fe572d61c3f93f5"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 30,
+                      "text": "Field ReplayId is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":30,\"text\":\"Field ReplayId is not editable\"},\"record\":{}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP062Test": "@IsTest private class C168C168RP062Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('ReplayId','1');stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_062');}}"
+          },
+          "tests": [
+            "C168C168RP062Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_063",
+      "group": "dml-publish",
+      "role": "rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('EventUuid','00000000-0000-4000-8000-000000000001');stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "838f0230aff165bd86039ec600dc895ca25d6ef83e0efee31b5357b58db95cd2",
+          "sourceSha256": {
+            "anonymous": "46c1d9d813d59a0c4cd455440af1d5a26834da277f504cafad9a5fa61e5e1080"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('EventUuid','00000000-0000-4000-8000-000000000001');stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_063');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('EventUuid','00000000-0000-4000-8000-000000000001');stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "838f0230aff165bd86039ec600dc895ca25d6ef83e0efee31b5357b58db95cd2",
+          "sourceSha256": {
+            "class:C168C168RP063Test": "6c48dac1ff96345709d77d890c61f4dcad8522b6cc53e719b8147263d2bbd236"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP063Test": "@IsTest private class C168C168RP063Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('EventUuid','00000000-0000-4000-8000-000000000001');stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_063');}}"
+          },
+          "tests": [
+            "C168C168RP063Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_064",
+      "group": "dml-publish",
+      "role": "rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('EventUuid','00000000-0000-4000-8000-000000000001');stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "ee19be95c1f4cf733e209628f328b2f86f1f0e5738f01ec7e642bb4168a69c0e",
+          "sourceSha256": {
+            "anonymous": "04be9eb333b29fd2d0714fa4c7d91c4aca09a1da2cc71289532b16208596e4c5"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('EventUuid','00000000-0000-4000-8000-000000000001');stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_064');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('EventUuid','00000000-0000-4000-8000-000000000001');stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "ee19be95c1f4cf733e209628f328b2f86f1f0e5738f01ec7e642bb4168a69c0e",
+          "sourceSha256": {
+            "class:C168C168RP064Test": "fb5eecde28736c72036df0c14ab5d2578b2a1a05721fb246ea29a3da87a70661"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 31,
+                      "text": "Field EventUuid is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":31,\"text\":\"Field EventUuid is not editable\"},\"record\":{}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP064Test": "@IsTest private class C168C168RP064Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('EventUuid','00000000-0000-4000-8000-000000000001');stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_064');}}"
+          },
+          "tests": [
+            "C168C168RP064Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_065",
+      "group": "dml-publish",
+      "role": "rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedDate',Datetime.newInstanceGmt(2024,1,15,12,0,0));stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "495bb516c912ff0ccf20c9dfab9053f29c7cf6f8748f7e9adb8f7936d0267ec4",
+          "sourceSha256": {
+            "anonymous": "d93876c8c848a496fb56b64a2e3e1dad3362c606d114a3445cb61051fb0c6b5e"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedDate',Datetime.newInstanceGmt(2024,1,15,12,0,0));stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_065');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedDate',Datetime.newInstanceGmt(2024,1,15,12,0,0));stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "495bb516c912ff0ccf20c9dfab9053f29c7cf6f8748f7e9adb8f7936d0267ec4",
+          "sourceSha256": {
+            "class:C168C168RP065Test": "38290e478d90bf6fff5184702f95bd55f9883efa60ec4215a9d7aaed3abfd1c4"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP065Test": "@IsTest private class C168C168RP065Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedDate',Datetime.newInstanceGmt(2024,1,15,12,0,0));stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_065');}}"
+          },
+          "tests": [
+            "C168C168RP065Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_066",
+      "group": "dml-publish",
+      "role": "rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedDate',Datetime.newInstanceGmt(2024,1,15,12,0,0));stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "50f51034fe0c6e99df263aecdae3fe0cdf17e9cf59009916b171517cfd8c5d40",
+          "sourceSha256": {
+            "anonymous": "4c32f1aa914c4d05a38126c972923bbb8a94480ea7330aabdef52f0ec99e7717"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedDate',Datetime.newInstanceGmt(2024,1,15,12,0,0));stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_066');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedDate',Datetime.newInstanceGmt(2024,1,15,12,0,0));stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "50f51034fe0c6e99df263aecdae3fe0cdf17e9cf59009916b171517cfd8c5d40",
+          "sourceSha256": {
+            "class:C168C168RP066Test": "e4c2b71b14c74b6655fe8927d6f1cf1017e37d97efe20aa64e8593bd9b289ba5"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedDate is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedDate is not editable\"},\"record\":{}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP066Test": "@IsTest private class C168C168RP066Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedDate',Datetime.newInstanceGmt(2024,1,15,12,0,0));stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_066');}}"
+          },
+          "tests": [
+            "C168C168RP066Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_067",
+      "group": "dml-publish",
+      "role": "rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedById',UserInfo.getUserId());stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "9619519720eb39b4c7d55ba494c7b2f2934c0a1134c435002557c93b1c33b871",
+          "sourceSha256": {
+            "anonymous": "2a73dc414c7e26e6c145225d5a75da73443b8f1fe7b9ceb438184a997a24fd25"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedById',UserInfo.getUserId());stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_067');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedById',UserInfo.getUserId());stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "9619519720eb39b4c7d55ba494c7b2f2934c0a1134c435002557c93b1c33b871",
+          "sourceSha256": {
+            "class:C168C168RP067Test": "400f328c15baf9247e85056b175b2db11a42762e63e4366e498668203b0494d1"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP067Test": "@IsTest private class C168C168RP067Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedById',UserInfo.getUserId());stage='insert';Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_067');}}"
+          },
+          "tests": [
+            "C168C168RP067Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_068",
+      "group": "dml-publish",
+      "role": "rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedById',UserInfo.getUserId());stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "306f3b2c313a52d56b8176555979d6a35dce2ee462a5c1e84125ee2567244690",
+          "sourceSha256": {
+            "anonymous": "d63160737122755af77a755c8700c2a09e078469ef22054bf82a360336efd006"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedById',UserInfo.getUserId());stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_068');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedById',UserInfo.getUserId());stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}",
+          "originalApexSha256": "306f3b2c313a52d56b8176555979d6a35dce2ee462a5c1e84125ee2567244690",
+          "sourceSha256": {
+            "class:C168C168RP068Test": "1cd9d9ff3f12f89f27eb421c96d0fd4af90d57cc699226f54c094228fb2c65f6"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "stage": "put",
+                    "exceptionType": "System.SObjectException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 33,
+                      "text": "Field CreatedById is not editable"
+                    },
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"stage\":\"put\",\"exceptionType\":\"System.SObjectException\",\"exceptionMessage\":{\"truncated\":false,\"length\":33,\"text\":\"Field CreatedById is not editable\"},\"record\":{}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP068Test": "@IsTest private class C168C168RP068Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e();String stage='put';try{s.put('CreatedById',UserInfo.getUserId());stage='publish';Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'stage'=>stage,'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage(),'record'=>s.getPopulatedFieldsAsMap()};}}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_068');}}"
+          },
+          "tests": [
+            "C168C168RP068Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_069",
+      "group": "dml-publish",
+      "role": "rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(Text__c='text');Database.SaveResult sr=Database.update(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "5cb5a0bd68d8dfc8d48a1bdd4820b0b12ecdc96e1ad28f6052c998fad323a754",
+          "sourceSha256": {
+            "anonymous": "5fcf7d6676e9f3d26938a0a3806f9d3e4566a68d7104d3b106225ea0aaf250d8"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 59,
+                      "text": "DML operation UPDATE not allowed on SyntheticEvent__e"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":59,\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 59,
+                      "text": "DML operation UPDATE not allowed on SyntheticEvent__e"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":59,\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 59,
+                      "text": "DML operation UPDATE not allowed on SyntheticEvent__e"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":59,\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 59,
+                      "text": "DML operation UPDATE not allowed on SyntheticEvent__e"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":59,\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(Text__c='text');Database.SaveResult sr=Database.update(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_069');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(Text__c='text');Database.SaveResult sr=Database.update(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "5cb5a0bd68d8dfc8d48a1bdd4820b0b12ecdc96e1ad28f6052c998fad323a754",
+          "sourceSha256": {
+            "class:C168C168RP069Test": "e52ca8e7f7391af398b5a572ef77a5325b94f5770f3bc62b12996910fd0e1a5f"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 59,
+                      "text": "DML operation UPDATE not allowed on SyntheticEvent__e"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":59,\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 59,
+                      "text": "DML operation UPDATE not allowed on SyntheticEvent__e"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":59,\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": false,
+                    "id": {
+                      "isNull": true
+                    },
+                    "errors": [
+                      {
+                        "status": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                        "message": {
+                          "truncated": false,
+                          "length": 59,
+                          "text": "DML operation UPDATE not allowed on SyntheticEvent__e"
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":false,\"id\":{\"isNull\":true},\"errors\":[{\"status\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\",\"message\":{\"truncated\":false,\"length\":59,\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\"},\"fields\":[]}],\"record\":{\"Text__c\":\"text\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": false,
+                    "id": {
+                      "isNull": true
+                    },
+                    "errors": [
+                      {
+                        "status": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                        "message": {
+                          "truncated": false,
+                          "length": 59,
+                          "text": "DML operation UPDATE not allowed on SyntheticEvent__e"
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "Text__c": "text"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":false,\"id\":{\"isNull\":true},\"errors\":[{\"status\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\",\"message\":{\"truncated\":false,\"length\":59,\"text\":\"DML operation UPDATE not allowed on SyntheticEvent__e\"},\"fields\":[]}],\"record\":{\"Text__c\":\"text\"}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP069Test": "@IsTest private class C168C168RP069Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(Text__c='text');Database.SaveResult sr=Database.update(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_069');}}"
+          },
+          "tests": [
+            "C168C168RP069Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_070",
+      "group": "dml-publish",
+      "role": "rejection-candidate",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=new RpEvent__e(Text__c='text');Database.DeleteResult dr=Database.delete(s,false);List<Object> errors=new List<Object>();for(Database.Error e:dr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>dr.isSuccess(),'errors'=>errors};",
+          "originalApexSha256": "3c785288173eb08f178903ce60080734ce67a5eaef64b8b80596ed24c5a96c16",
+          "sourceSha256": {
+            "anonymous": "795c0275f82eb9c2516ecb95e0c5ca221365e375de23008ae31f03dee3f1d13c"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.DmlException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 89,
+                      "text": "Argument must be of internal sObject type. use deleteAsync() or [ID]() instead"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.DmlException\",\"exceptionMessage\":{\"truncated\":false,\"length\":89,\"text\":\"Argument must be of internal sObject type. use deleteAsync() or [ID]() instead\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.DmlException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 89,
+                      "text": "Argument must be of internal sObject type. use deleteAsync() or [ID]() instead"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.DmlException\",\"exceptionMessage\":{\"truncated\":false,\"length\":89,\"text\":\"Argument must be of internal sObject type. use deleteAsync() or [ID]() instead\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.DmlException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 89,
+                      "text": "Argument must be of internal sObject type. use deleteAsync() or [ID]() instead"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.DmlException\",\"exceptionMessage\":{\"truncated\":false,\"length\":89,\"text\":\"Argument must be of internal sObject type. use deleteAsync() or [ID]() instead\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.DmlException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 89,
+                      "text": "Argument must be of internal sObject type. use deleteAsync() or [ID]() instead"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.DmlException\",\"exceptionMessage\":{\"truncated\":false,\"length\":89,\"text\":\"Argument must be of internal sObject type. use deleteAsync() or [ID]() instead\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=new RpEvent__e(Text__c='text');Database.DeleteResult dr=Database.delete(s,false);List<Object> errors=new List<Object>();for(Database.Error e:dr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>dr.isSuccess(),'errors'=>errors};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_070');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=new RpEvent__e(Text__c='text');Database.DeleteResult dr=Database.delete(s,false);List<Object> errors=new List<Object>();for(Database.Error e:dr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>dr.isSuccess(),'errors'=>errors};",
+          "originalApexSha256": "3c785288173eb08f178903ce60080734ce67a5eaef64b8b80596ed24c5a96c16",
+          "sourceSha256": {
+            "class:C168C168RP070Test": "7c64bcaafd61882263e3b4ed03e60979087ae6b5d11f2fccc82ae321d40c4924"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.DmlException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 89,
+                      "text": "Argument must be of internal sObject type. use deleteAsync() or [ID]() instead"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.DmlException\",\"exceptionMessage\":{\"truncated\":false,\"length\":89,\"text\":\"Argument must be of internal sObject type. use deleteAsync() or [ID]() instead\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.DmlException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 89,
+                      "text": "Argument must be of internal sObject type. use deleteAsync() or [ID]() instead"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.DmlException\",\"exceptionMessage\":{\"truncated\":false,\"length\":89,\"text\":\"Argument must be of internal sObject type. use deleteAsync() or [ID]() instead\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.DmlException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 89,
+                      "text": "Argument must be of internal sObject type. use deleteAsync() or [ID]() instead"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.DmlException\",\"exceptionMessage\":{\"truncated\":false,\"length\":89,\"text\":\"Argument must be of internal sObject type. use deleteAsync() or [ID]() instead\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.DmlException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 89,
+                      "text": "Argument must be of internal sObject type. use deleteAsync() or [ID]() instead"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.DmlException\",\"exceptionMessage\":{\"truncated\":false,\"length\":89,\"text\":\"Argument must be of internal sObject type. use deleteAsync() or [ID]() instead\"}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP070Test": "@IsTest private class C168C168RP070Test{@IsTest static void observe(){Object v;try{SObject s=new RpEvent__e(Text__c='text');Database.DeleteResult dr=Database.delete(s,false);List<Object> errors=new List<Object>();for(Database.Error e:dr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>dr.isSuccess(),'errors'=>errors};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_070');}}"
+          },
+          "tests": [
+            "C168C168RP070Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_071",
+      "group": "dml-publish",
+      "role": "positive",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "RpEvent__e s=new RpEvent__e(Text__c='text');List<Database.SaveResult> rs=EventBus.publish(new List<RpEvent__e>{s});List<Object> out=new List<Object>();for(Database.SaveResult sr:rs){List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage()});}out.add(new Map<String,Object>{'success'=>sr.isSuccess(),'errors'=>errors});}v=out;",
+          "originalApexSha256": "99aacd55cccb24bf78534b7ea4bf8684e5a4f9e2d3e9e59f1a7d80290894fe61",
+          "sourceSha256": {
+            "anonymous": "38def3d3e1c2a2c98f28041e9145a545b13373d1e418ca0ac2926945a1287a7f"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": [
+                    {
+                      "success": true,
+                      "errors": [
+                        {
+                          "status": "OPERATION_ENQUEUED",
+                          "message": {
+                            "uuidShaped": true,
+                            "length": 36
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[{\"success\":true,\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36}}]}]}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": [
+                    {
+                      "success": true,
+                      "errors": [
+                        {
+                          "status": "OPERATION_ENQUEUED",
+                          "message": {
+                            "uuidShaped": true,
+                            "length": 36
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[{\"success\":true,\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36}}]}]}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": [
+                    {
+                      "success": true,
+                      "errors": [
+                        {
+                          "status": "OPERATION_ENQUEUED",
+                          "message": {
+                            "uuidShaped": true,
+                            "length": 36
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[{\"success\":true,\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36}}]}]}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": [
+                    {
+                      "success": true,
+                      "errors": [
+                        {
+                          "status": "OPERATION_ENQUEUED",
+                          "message": {
+                            "uuidShaped": true,
+                            "length": 36
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[{\"success\":true,\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36}}]}]}"
+            }
+          },
+          "anonymous": "Object v;try{RpEvent__e s=new RpEvent__e(Text__c='text');List<Database.SaveResult> rs=EventBus.publish(new List<RpEvent__e>{s});List<Object> out=new List<Object>();for(Database.SaveResult sr:rs){List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage()});}out.add(new Map<String,Object>{'success'=>sr.isSuccess(),'errors'=>errors});}v=out;}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_071');"
+        },
+        "isTest": {
+          "originalApex": "RpEvent__e s=new RpEvent__e(Text__c='text');List<Database.SaveResult> rs=EventBus.publish(new List<RpEvent__e>{s});List<Object> out=new List<Object>();for(Database.SaveResult sr:rs){List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage()});}out.add(new Map<String,Object>{'success'=>sr.isSuccess(),'errors'=>errors});}v=out;",
+          "originalApexSha256": "99aacd55cccb24bf78534b7ea4bf8684e5a4f9e2d3e9e59f1a7d80290894fe61",
+          "sourceSha256": {
+            "class:C168C168RP071Test": "81f2f218fdc349cdd42dfd2d712729a30620acb91dbaa724fce8e948dbf79881"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": [
+                    {
+                      "success": true,
+                      "errors": [
+                        {
+                          "status": "OPERATION_ENQUEUED",
+                          "message": {
+                            "uuidShaped": true,
+                            "length": 36
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[{\"success\":true,\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36}}]}]}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": [
+                    {
+                      "success": true,
+                      "errors": [
+                        {
+                          "status": "OPERATION_ENQUEUED",
+                          "message": {
+                            "uuidShaped": true,
+                            "length": 36
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[{\"success\":true,\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36}}]}]}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": [
+                    {
+                      "success": true,
+                      "errors": [
+                        {
+                          "status": "OPERATION_ENQUEUED",
+                          "message": {
+                            "uuidShaped": true,
+                            "length": 36
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[{\"success\":true,\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36}}]}]}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": [
+                    {
+                      "success": true,
+                      "errors": [
+                        {
+                          "status": "OPERATION_ENQUEUED",
+                          "message": {
+                            "uuidShaped": true,
+                            "length": 36
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[{\"success\":true,\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36}}]}]}"
+            }
+          },
+          "classes": {
+            "C168C168RP071Test": "@IsTest private class C168C168RP071Test{@IsTest static void observe(){Object v;try{RpEvent__e s=new RpEvent__e(Text__c='text');List<Database.SaveResult> rs=EventBus.publish(new List<RpEvent__e>{s});List<Object> out=new List<Object>();for(Database.SaveResult sr:rs){List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage()});}out.add(new Map<String,Object>{'success'=>sr.isSuccess(),'errors'=>errors});}v=out;}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_071');}}"
+          },
+          "tests": [
+            "C168C168RP071Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_072",
+      "group": "dml-publish",
+      "role": "boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "v=EventBus.publish(new List<RpEvent__e>());",
+          "originalApexSha256": "2b45a0e302620b1b2d924ab0cdde09705a7657d5c0ab171aaa73d8aa33ea4e8e",
+          "sourceSha256": {
+            "anonymous": "4bce56d4ac47a402bb31c9a7138c980e995a5f379dfef4f99f7b940304855778"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": []
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[]}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": []
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[]}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": []
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[]}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": []
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[]}"
+            }
+          },
+          "anonymous": "Object v;try{v=EventBus.publish(new List<RpEvent__e>());}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_072');"
+        },
+        "isTest": {
+          "originalApex": "v=EventBus.publish(new List<RpEvent__e>());",
+          "originalApexSha256": "2b45a0e302620b1b2d924ab0cdde09705a7657d5c0ab171aaa73d8aa33ea4e8e",
+          "sourceSha256": {
+            "class:C168C168RP072Test": "4076878259c208ec40b5cc625a65b5556a416db7de73189a34a23bdd465e5a05"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": []
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[]}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": []
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[]}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": []
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[]}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": []
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":[]}"
+            }
+          },
+          "classes": {
+            "C168C168RP072Test": "@IsTest private class C168C168RP072Test{@IsTest static void observe(){Object v;try{v=EventBus.publish(new List<RpEvent__e>());}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_072');}}"
+          },
+          "tests": [
+            "C168C168RP072Test"
+          ]
+        }
+      }
+    }
+  ]
+}

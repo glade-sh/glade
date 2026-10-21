@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Pair__c</fullName><defaultValue>"left" &amp; "right"</defaultValue><label>Pair__c</label><length>15</length><type>Text</type></CustomField>

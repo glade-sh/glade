@@ -1,0 +1,15 @@
+source_api	method	observation
+62.0	changedIdOperations	{"replace":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":false,"stringInstanceof":true},"replaceAll":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":false,"stringInstanceof":true}}
+62.0	noopIdOperations	{"castString":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":true,"stringInstanceof":true},"original":{"cast":"Invalid conversion from runtime type Id to System.SelectOption","idInstanceof":true,"stringInstanceof":true},"replace":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":true,"stringInstanceof":true},"replaceAll":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":true,"stringInstanceof":true}}
+62.0	ordinaryStringOperations	{"original":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":true,"stringInstanceof":true},"replace":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":true,"stringInstanceof":true},"replaceAll":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":true,"stringInstanceof":true}}
+62.0	rawCastIdStringAssertion	{"accepted":true}
+62.0	rawOrdinary15Assertion	{"accepted":true}
+62.0	rawOrdinary18Assertion	{"accepted":true}
+62.0	rawStringIdAssertion	{"unexpectedlyAccepted":true}
+67.0	changedIdOperations	{"replace":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":false,"stringInstanceof":true},"replaceAll":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":false,"stringInstanceof":true}}
+67.0	noopIdOperations	{"castString":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":true,"stringInstanceof":true},"original":{"cast":"Invalid conversion from runtime type Id to System.SelectOption","idInstanceof":true,"stringInstanceof":true},"replace":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":true,"stringInstanceof":true},"replaceAll":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":true,"stringInstanceof":true}}
+67.0	ordinaryStringOperations	{"original":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":true,"stringInstanceof":true},"replace":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":true,"stringInstanceof":true},"replaceAll":{"cast":"Invalid conversion from runtime type String to System.SelectOption","idInstanceof":true,"stringInstanceof":true}}
+67.0	rawCastIdStringAssertion	{"accepted":true}
+67.0	rawOrdinary15Assertion	{"accepted":true}
+67.0	rawOrdinary18Assertion	{"accepted":true}
+67.0	rawStringIdAssertion	{"unexpectedlyAccepted":true}

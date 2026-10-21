@@ -1,0 +1,1745 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "g2_before",
+  "shapeCount": 5,
+  "nativeObservationCount": 30,
+  "assertedObservationCount": 30,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C194S006",
+      "label": "Integer before integer-for",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "c4effa9c7b905c9417e8b16f619159f02202c54e1612d23ec1cb7b5804df84fa"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S006",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S006|{\"sum\":55}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sum": 55
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"sum\":55}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S006",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S006|{\"sum\":55}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sum": 55
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"sum\":55}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S006",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S006|{\"sum\":55}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sum": 55
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"sum\":55}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();Integer counter=1;Integer total=0;for(Integer counter=1;counter<=10;counter++){total+=counter;}observed.put('sum',total);throw new Scope194MarkerException('C126_RESULT|C194S006|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S006Test": "b304a4705ca3e4129fdeeabe2f2f09e957bfef2ecb0ab65a05348efa9882901e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S006",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S006Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 1,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S006Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 1,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S006",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S006Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 1,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S006Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 1,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S006",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S006Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 1,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S006Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 1,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            }
+          },
+          "classes": {
+            "C194S006Test": "@IsTest public class C194S006Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Integer counter=1;Integer total=0;for(Integer counter=1;counter<=10;counter++){total+=counter;}observed.put('sum',total);throw new Scope194MarkerException('C126_RESULT|C194S006|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S006Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S007",
+      "label": "String before integer-for",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "fdba39f87e6cee434ee7cadc09209e6bceb4ae16b260d20ca3506441199b4204"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S007",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S007|{\"sum\":55}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sum": 55
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"sum\":55}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S007",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S007|{\"sum\":55}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sum": 55
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"sum\":55}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S007",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S007|{\"sum\":55}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sum": 55
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"sum\":55}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();String counter='one';Integer total=0;for(Integer counter=1;counter<=10;counter++){total+=counter;}observed.put('sum',total);throw new Scope194MarkerException('C126_RESULT|C194S007|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S007Test": "99ce6da89109e825cc76d064baaa5af063171f3c155f239904ecd8150b91217e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S007",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S007Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S007Test",
+                      "problem": "Comparison arguments must be compatible types: String, Integer",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S007Test",
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: String",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S007Test",
+                      "problem": "Illegal assignment from String to Integer",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 4,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S007Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S007Test",
+                        "problem": "Comparison arguments must be compatible types: String, Integer",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S007Test",
+                        "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: String",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S007Test",
+                        "problem": "Illegal assignment from String to Integer",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 4,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S007",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S007Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S007Test",
+                      "problem": "Comparison arguments must be compatible types: String, Integer",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S007Test",
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: String",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S007Test",
+                      "problem": "Illegal assignment from String to Integer",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 4,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S007Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S007Test",
+                        "problem": "Comparison arguments must be compatible types: String, Integer",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S007Test",
+                        "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: String",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S007Test",
+                        "problem": "Illegal assignment from String to Integer",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 4,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S007",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S007Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S007Test",
+                      "problem": "Comparison arguments must be compatible types: String, Integer",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S007Test",
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: String",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S007Test",
+                      "problem": "Illegal assignment from String to Integer",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 4,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S007Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S007Test",
+                        "problem": "Comparison arguments must be compatible types: String, Integer",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S007Test",
+                        "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: String",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S007Test",
+                        "problem": "Illegal assignment from String to Integer",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 4,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            }
+          },
+          "classes": {
+            "C194S007Test": "@IsTest public class C194S007Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();String counter='one';Integer total=0;for(Integer counter=1;counter<=10;counter++){total+=counter;}observed.put('sum',total);throw new Scope194MarkerException('C126_RESULT|C194S007|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S007Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S008",
+      "label": "ScopeBox194 before integer-for",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "6c55474aa303b04209cc24f080acf011d26c33e5765a1798211f0d08ef08abdb"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S008",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S008|{\"sum\":55}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sum": 55
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"sum\":55}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S008",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S008|{\"sum\":55}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sum": 55
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"sum\":55}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S008",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S008|{\"sum\":55}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sum": 55
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"sum\":55}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }Map<String,Object> observed=new Map<String,Object>();ScopeBox194 counter=new ScopeBox194();Integer total=0;for(Integer counter=1;counter<=10;counter++){total+=counter;}observed.put('sum',total);throw new Scope194MarkerException('C126_RESULT|C194S008|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S008Test": "b6416b8d1a1e98fe19a614a0b63fd17bc665a9f2a243c10be4b2bd740542184e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S008",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S008Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S008Test",
+                      "problem": "Comparison arguments must be compatible types: C194S008Test.ScopeBox194, Integer",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S008Test",
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: C194S008Test.ScopeBox194",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S008Test",
+                      "problem": "Arithmetic expressions must use numeric arguments",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 4,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S008Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S008Test",
+                        "problem": "Comparison arguments must be compatible types: C194S008Test.ScopeBox194, Integer",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S008Test",
+                        "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: C194S008Test.ScopeBox194",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S008Test",
+                        "problem": "Arithmetic expressions must use numeric arguments",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 4,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S008",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S008Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S008Test",
+                      "problem": "Comparison arguments must be compatible types: C194S008Test.ScopeBox194, Integer",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S008Test",
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: C194S008Test.ScopeBox194",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S008Test",
+                      "problem": "Arithmetic expressions must use numeric arguments",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 4,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S008Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S008Test",
+                        "problem": "Comparison arguments must be compatible types: C194S008Test.ScopeBox194, Integer",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S008Test",
+                        "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: C194S008Test.ScopeBox194",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S008Test",
+                        "problem": "Arithmetic expressions must use numeric arguments",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 4,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S008",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S008Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S008Test",
+                      "problem": "Comparison arguments must be compatible types: C194S008Test.ScopeBox194, Integer",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S008Test",
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: C194S008Test.ScopeBox194",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S008Test",
+                      "problem": "Arithmetic expressions must use numeric arguments",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 4,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S008Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S008Test",
+                        "problem": "Comparison arguments must be compatible types: C194S008Test.ScopeBox194, Integer",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S008Test",
+                        "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: C194S008Test.ScopeBox194",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S008Test",
+                        "problem": "Arithmetic expressions must use numeric arguments",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 4,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            }
+          },
+          "classes": {
+            "C194S008Test": "@IsTest public class C194S008Test {public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();ScopeBox194 counter=new ScopeBox194();Integer total=0;for(Integer counter=1;counter<=10;counter++){total+=counter;}observed.put('sum',total);throw new Scope194MarkerException('C126_RESULT|C194S008|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S008Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S009",
+      "label": "String before same-type for",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "b5bd4599e44cc69b3bd4d87064d37cc58e736b4ef7fac5ff3c467a521e68f670"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S009",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S009|{\"iterations\":1}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 1
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":1}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S009",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S009|{\"iterations\":1}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 1
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":1}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S009",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S009|{\"iterations\":1}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 1
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":1}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();String counter='one';Integer total=0;for(String counter='one';total<1;total++){}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S009|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S009Test": "d051a66aad90cd3ad69c5e042183b8f3117aa97f2f8a41bc1e13ff3c6c70b71b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S009",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S009Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 1,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S009Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 1,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S009",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S009Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 1,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S009Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 1,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S009",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S009Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 1,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S009Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 1,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            }
+          },
+          "classes": {
+            "C194S009Test": "@IsTest public class C194S009Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();String counter='one';Integer total=0;for(String counter='one';total<1;total++){}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S009|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S009Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S010",
+      "label": "ScopeBox194 before same-type for",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "23438a8bc5617bfc0379cf06cdf6c051a7eeca95e7e749d35c0a513bd2c8c22e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S010",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S010|{\"iterations\":1}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 1
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":1}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S010",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S010|{\"iterations\":1}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 1
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":1}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S010",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S010|{\"iterations\":1}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 1
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":1}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }Map<String,Object> observed=new Map<String,Object>();ScopeBox194 counter=new ScopeBox194();Integer total=0;for(ScopeBox194 counter=new ScopeBox194();total<1;total++){}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S010|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S010Test": "ea97f85a4cbac2183a08092eb1acf4ccef95d005dafff598a75a2a510e43425d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S010",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S010Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 1,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S010Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 1,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S010",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S010Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 1,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S010Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 1,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S010",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S010Test",
+                      "problem": "Duplicate variable: counter",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 1,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S010Test",
+                        "problem": "Duplicate variable: counter",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 1,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: counter"
+            }
+          },
+          "classes": {
+            "C194S010Test": "@IsTest public class C194S010Test {public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();ScopeBox194 counter=new ScopeBox194();Integer total=0;for(ScopeBox194 counter=new ScopeBox194();total<1;total++){}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S010|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S010Test"
+          ]
+        }
+      }
+    }
+  ]
+}

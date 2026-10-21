@@ -1,0 +1,14 @@
+{
+  "status": 0,
+  "result": {
+    "success": true,
+    "compiled": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "exceptionStackTrace": "",
+    "line": -1,
+    "column": -1,
+    "logs": "68.0 APEX_CODE,DEBUG;APEX_PROFILING,INFO\nExecute Anonymous: System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor68.observe('SINGLE')));\n[USER_INFO REDACTED]\n17:38:31.102 (102860001)|EXECUTION_STARTED\n17:38:31.102 (102906181)|CODE_UNIT_STARTED|[EXTERNAL]|execute_anonymous_apex\n17:38:31.102 (116924781)|USER_DEBUG|[1]|ERROR|NATIVE_RESULT&#124;SINGLE&#124;{\"size\":2,\"marks\":[\"list\"]}\n17:38:31.117 (117104603)|CUMULATIVE_LIMIT_USAGE\n17:38:31.117 (117104603)|LIMIT_USAGE_FOR_NS|(default)|\n  Number of SOQL queries: 0 out of 100\n  Number of query rows: 0 out of 50000\n  Number of SOSL queries: 0 out of 20\n  Number of DML statements: 0 out of 150\n  Number of Publish Immediate DML: 0 out of 150\n  Number of DML rows: 0 out of 10000\n  Maximum CPU time: 0 out of 10000\n  Maximum heap size: 0 out of 10000000\n  Number of callouts: 0 out of 100\n  Number of Email Invocations: 0 out of 10\n  Number of future calls: 0 out of 50\n  Number of queueable jobs added to the queue: 0 out of 50\n  Number of Mobile Apex push calls: 0 out of 10\n\n17:38:31.117 (117104603)|CUMULATIVE_LIMIT_USAGE_END\n\n17:38:31.102 (117229814)|CODE_UNIT_FINISHED|execute_anonymous_apex\n17:38:31.102 (117251715)|EXECUTION_FINISHED\n"
+  },
+  "warnings": []
+}

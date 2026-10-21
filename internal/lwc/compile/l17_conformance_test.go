@@ -44,15 +44,21 @@ type l17Case struct {
 	Method             string            `json:"method"`
 	Expected           map[string]string `json:"expected"`
 	DiagnosticExpected map[string]string `json:"diagnostic_expected"`
+	UnresolvedCarry    map[string]struct {
+		Field, Reason, Source string
+		Owner, Task           string
+		RawEntry              json.RawMessage `json:"raw_entry"`
+	} `json:"unresolved_carry"`
 }
 
-// TestL17SalesforceConformance replays the complete owned native API 59/67
+// TestL17SalesforceConformance replays the complete owned native API 59/67/68
 // oracle and isolated resource-reference controls. One hook
 // effect is unobservable; every captured DOM field is still asserted, with
 // source-qualified host console exclusions only. Capture mode measures the
 // product tree without turning behavioral mismatches into failures.
 func TestL17SalesforceConformance(t *testing.T) {
 	capture := os.Getenv("GLADE_L17_CAPTURE") != ""
+	apis := []string{"59.0", "67.0", "68.0"}
 	data, err := os.ReadFile("testdata/l17_salesforce.json")
 	if err != nil {
 		t.Fatal(err)
@@ -68,7 +74,7 @@ func TestL17SalesforceConformance(t *testing.T) {
 			t.Fatalf("invalid or duplicate L17 input %q", c.ID)
 		}
 		seen[c.ID], groups[c.Group] = true, true
-		for _, api := range []string{"59.0", "67.0"} {
+		for _, api := range apis {
 			want, ok := c.Expected[api]
 			if !ok || (c.Kind == "compile" && want != "COMPILE_OK" && want != "COMPILE_ERROR") || (c.Kind == "runtime" && !strings.HasPrefix(want, "DOM|")) {
 				t.Fatalf("missing native %s answer: %s API %s", c.Kind, c.ID, api)
@@ -127,18 +133,18 @@ func TestL17SalesforceConformance(t *testing.T) {
 	report.WriteString("API\tID\tKIND\tSTATUS\tACTUAL\tEXPECTED\tREASON\n")
 	matches, total, compileMatches, domMatches, observedDOM := 0, 0, 0, 0, 0
 	excluded := 0
-	hostConsoleExcluded := 0
+	hostConsoleExcluded, qualified, carried := 0, 0, 0
 	diagnosticMatches, diagnosticTotal := 0, 0
 	compileOutcomeMatches := 0
 	l17ResourceControls(t, &report, capture)
-	for _, api := range []string{"59.0", "67.0"} {
+	for _, api := range apis {
 		p, names := l17Project(t, api, compilerCases, false)
 		compiled, err := compile.CompileBatch(p, compile.Options{OutDir: filepath.Join(p.Root, "dist"), Namespace: "c"})
 		if err != nil {
 			t.Fatal(err)
 		}
 		dom, domErrors, domErr := l17ObserveDOM(t, api, runtimeCases, dependencies)
-		compileIndex, apiMatches := 0, 0
+		compileIndex, apiMatches, apiQualified, apiCarried := 0, 0, 0, 0
 		for _, c := range cases {
 			if c.Excluded != "" {
 				if c.ID != "dom_style_base_button_hook" || c.Kind != "runtime" {
@@ -215,10 +221,25 @@ func TestL17SalesforceConformance(t *testing.T) {
 				}
 				reason += consoleReason
 			}
+			unresolved := false
+			if carry, ok := c.UnresolvedCarry[api]; ok {
+				const message = "[ORCHESTRATION] In-App Guidance is disabled. To enable In-App Guidance, visit the settings modal on the In-App Guidance Setup Page."
+				var entry struct{ ID, Type, Message string }
+				if err := json.Unmarshal(carry.RawEntry, &entry); err != nil || api != "68.0" || (c.ID != "dom_repeat_loadScript_sequential3" && c.ID != "dom_repeat_loadScript_parallel2") || carry.Field != "console" || carry.Owner != "resource loading and styling resource-loading owner" || carry.Task != "resource loading and styling" || carry.Reason == "" || entry.ID != c.ID || entry.Type != "warning" || entry.Message != message {
+					t.Fatalf("invalid unresolved native console carry %s API %s", c.ID, api)
+				}
+				unresolved = true
+				reason = fmt.Sprintf("%s (%s): %s", carry.Owner, carry.Task, carry.Reason)
+				if got != want {
+					// Remove only this literal native entry for an unresolved
+					// evidence carry; every other field/diagnostic remains exact.
+					comparisonWant = l17WithoutHostConsole(t, want, []l17ConsoleExclusion{{Entry: carry.RawEntry}})
+				}
+			}
 			status := "MISMATCH"
 			if got == want {
 				status = "MATCH"
-				if c.Excluded == "" {
+				if c.Excluded == "" && !unresolved {
 					matches++
 					apiMatches++
 					if c.Kind == "compile" {
@@ -228,9 +249,18 @@ func TestL17SalesforceConformance(t *testing.T) {
 					}
 				}
 			}
-			if got != want {
+			if got != want || unresolved {
 				if got == comparisonWant {
 					status = "HOST_CONSOLE_EXCLUDED"
+					if unresolved {
+						status = "CARRIED_UNRESOLVED"
+						carried++
+						apiCarried++
+					}
+					if c.Excluded == "" && !unresolved {
+						qualified++
+						apiQualified++
+					}
 				}
 			}
 			reportedStatus := status
@@ -249,19 +279,19 @@ func TestL17SalesforceConformance(t *testing.T) {
 				t.Errorf("%s API %s expected <%s> actual <%s>: %s", c.ID, api, want, got, reason)
 			}
 		}
-		fmt.Fprintf(&report, "API_TOTAL\t%s\t%d/213\n", api, apiMatches)
-		t.Logf("L17 API %s matches %d/213", api, apiMatches)
+		fmt.Fprintf(&report, "API_TOTAL\t%s\t%d/213\nAPI_QUALIFIED\t%s\t%d\nAPI_CARRIED_UNRESOLVED\t%s\t%d\n", api, apiMatches, api, apiQualified, api, apiCarried)
+		t.Logf("L17 API %s exact matches %d/213; qualified %d; carried/unresolved %d", api, apiMatches, apiQualified, apiCarried)
 		if domErr != nil {
 			t.Logf("L17 API %s browser: %v", api, domErr)
 		}
 	}
-	fmt.Fprintf(&report, "TOTAL\t%d/%d\nCOMPILE_TOTAL\t%d/276\nDOM_TOTAL\t%d/150\nLOCAL_DOM_ROWS\t%d/152\n", matches, total, compileMatches, domMatches, observedDOM)
-	fmt.Fprintf(&report, "CARRIED_TOTAL\t0\nEXCLUDED_TOTAL\t%d\n", excluded)
+	fmt.Fprintf(&report, "TOTAL\t%d/%d\nCOMPILE_TOTAL\t%d/%d\nDOM_TOTAL\t%d/%d\nLOCAL_DOM_ROWS\t%d/%d\n", matches, total, compileMatches, len(compilerCases)*len(apis), domMatches, (len(runtimeCases)-1)*len(apis), observedDOM, len(runtimeCases)*len(apis))
+	fmt.Fprintf(&report, "QUALIFIED_TOTAL\t%d\nCARRIED_TOTAL\t%d\nEXCLUDED_TOTAL\t%d\n", qualified, carried, excluded)
 	fmt.Fprintf(&report, "HOST_CONSOLE_EXCLUDED_TOTAL\t%d\n", hostConsoleExcluded)
-	fmt.Fprintf(&report, "COMPILE_OUTCOME_TOTAL\t%d/276\n", compileOutcomeMatches)
+	fmt.Fprintf(&report, "COMPILE_OUTCOME_TOTAL\t%d/%d\n", compileOutcomeMatches, len(compilerCases)*len(apis))
 	fmt.Fprintf(&report, "DIAGNOSTIC_TOTAL\t%d/%d\n", diagnosticMatches, diagnosticTotal)
-	t.Logf("L17 matches %d/%d; compile/metadata %d/276; native-vs-local DOM %d/150; observed DOM %d/152", matches, total, compileMatches, domMatches, observedDOM)
-	t.Logf("L17 carried 0; excluded %d; diagnostics %d/%d", excluded, diagnosticMatches, diagnosticTotal)
+	t.Logf("L17 matches %d/%d; compile/metadata %d/%d; native-vs-local DOM %d/%d; observed DOM %d/%d", matches, total, compileMatches, len(compilerCases)*len(apis), domMatches, (len(runtimeCases)-1)*len(apis), observedDOM, len(runtimeCases)*len(apis))
+	t.Logf("L17 qualified %d; carried/unresolved %d; excluded %d; diagnostics %d/%d", qualified, carried, excluded, diagnosticMatches, diagnosticTotal)
 	t.Logf("L17 unobservable effect rows %d; all captured fields compared strictly", excluded)
 	t.Logf("L17 native host console entries excluded %d; raw native rows and full-row match counts retained", hostConsoleExcluded)
 	if path := os.Getenv("GLADE_L17_REPORT"); path != "" {
@@ -291,9 +321,12 @@ func l17LoadConsoleExclusions(t *testing.T, cases []l17Case) map[string]map[stri
 	for _, c := range cases {
 		byID[c.ID] = c
 	}
-	for _, api := range []string{"59.0", "67.0"} {
-		if len(controls.Captured[api]) != 14 || len(controls.Exclusions[api]) != 3 {
+	for _, api := range []string{"59.0", "67.0", "68.0"} {
+		if _, ok := controls.Exclusions[api]; !ok || len(controls.Captured[api]) != 14 {
 			t.Fatalf("missing L17 console provenance controls API %s", api)
+		}
+		if api != "68.0" && len(controls.Exclusions[api]) != 3 {
+			t.Fatalf("L17 needs three captured host warning rows API %s", api)
 		}
 		count := 0
 		for id, entries := range controls.Exclusions[api] {
@@ -316,11 +349,13 @@ func l17LoadConsoleExclusions(t *testing.T, cases []l17Case) map[string]map[stri
 					t.Fatalf("host console exclusion is not a qualified native warning: %s API %s", id, api)
 				}
 				var evidence struct {
-					Kind, Type, Message, ArgumentText, NativeSource string
-					Stack                                           struct {
+					Kind, Type, Message, ArgumentText, NativeSource, ID, Phase string
+					Stack                                                      struct {
 						CallFrames []struct {
-							Source struct{ Path string }
+							FunctionName string
+							Source       struct{ Path string }
 						}
+						Parent json.RawMessage
 					}
 				}
 				if err := json.Unmarshal(entry.Evidence, &evidence); err != nil {
@@ -333,6 +368,16 @@ func l17LoadConsoleExclusions(t *testing.T, cases []l17Case) map[string]map[stri
 				frames := evidence.Stack.CallFrames
 				if !found || evidence.Type != "warning" || len(frames) == 0 {
 					t.Fatalf("uncaptured host warning source %s API %s", id, api)
+				}
+				// This captured host diagnostic has its own exact source guard;
+				// other auraCmpDef warnings remain part of strict comparison.
+				if api == "68.0" && id == "dom_repeat_loadScript_sequential2" && diagnostic.Message == "[ORCHESTRATION] In-App Guidance is disabled. To enable In-App Guidance, visit the settings modal on the In-App Guidance Setup Page." {
+					const path = "/usa432s.sfdc-lywfpd/auraCmpDef"
+					if evidence.Kind != "console-api" || evidence.ArgumentText != diagnostic.Message || evidence.ID != id || evidence.Phase != "component-row" || len(frames) != 2 || frames[0].FunctionName != "e.publishDiagnostics" || frames[1].FunctionName != "init" || frames[0].Source.Path != path || frames[1].Source.Path != path || string(evidence.Stack.Parent) != "null" {
+						t.Fatalf("unqualified native In-App Guidance warning %s API %s", id, api)
+					}
+					count++
+					continue
 				}
 				for _, frame := range frames {
 					if !strings.Contains(frame.Source.Path, "/auraFW/") && !strings.Contains(frame.Source.Path, "/aurafile/") {
@@ -357,7 +402,10 @@ func l17LoadConsoleExclusions(t *testing.T, cases []l17Case) map[string]map[stri
 			// row's original native console, with its original ID and text.
 			l17WithoutHostConsole(t, c.Expected[api], entries)
 		}
-		if count != 5 {
+		if api == "68.0" && (len(controls.Exclusions[api]) != 1 || count != 1) {
+			t.Fatalf("L17 needs one captured API 68 host warning row/entry, got %d/%d", len(controls.Exclusions[api]), count)
+		}
+		if api != "68.0" && count != 5 {
 			t.Fatalf("L17 needs five captured host warning entries API %s, got %d", api, count)
 		}
 	}
@@ -419,7 +467,7 @@ func l17ResourceControls(t *testing.T, report *strings.Builder, capture bool) {
 	if len(controls.Cases) != 8 {
 		t.Fatalf("L17 needs eight isolated resource controls, got %d", len(controls.Cases))
 	}
-	for _, api := range []string{"59.0", "67.0"} {
+	for _, api := range []string{"59.0", "67.0", "68.0"} {
 		p, names := l17Project(t, api, controls.Cases, false)
 		results, err := compile.CompileBatch(p, compile.Options{OutDir: filepath.Join(p.Root, "dist"), Namespace: "c"})
 		if err != nil {
@@ -637,8 +685,11 @@ func TestL17HostConsoleExclusionsRemainScoped(t *testing.T) {
 		t.Fatal(err)
 	}
 	exclusions := l17LoadConsoleExclusions(t, cases)
-	for _, api := range []string{"59.0", "67.0"} {
+	for _, api := range []string{"59.0", "67.0", "68.0"} {
 		id := "dom_repeat_loadScript_once"
+		if api == "68.0" {
+			id = "dom_repeat_loadScript_sequential2"
+		}
 		entries := exclusions[api][id]
 		http := `{"id":"` + id + `","type":"error","message":"Failed to load resource: the server responded with a status of 404 ()"}`
 		blob := `{"id":"` + id + `","type":"error","message":"Not allowed to load local resource: blob:[URL withheld]"}`
@@ -666,6 +717,57 @@ func TestL17HostConsoleExclusionsRemainScoped(t *testing.T) {
 		if l17CarriedDifference(t, want, strings.ReplaceAll(want, `"value":null`, `"value":"null"`), nil) {
 			t.Fatal("host warning exclusion must preserve raw native null")
 		}
+	}
+}
+
+func TestL17UnresolvedConsoleCarriesRemainScoped(t *testing.T) {
+	data, err := os.ReadFile("testdata/l17_salesforce.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases []l17Case
+	if err := json.Unmarshal(data, &cases); err != nil {
+		t.Fatal(err)
+	}
+	count := 0
+	for _, c := range cases {
+		carry, ok := c.UnresolvedCarry["68.0"]
+		if !ok {
+			continue
+		}
+		count++
+		if carry.Owner != "resource loading and styling resource-loading owner" || carry.Task != "resource loading and styling" {
+			t.Fatalf("unresolved native console carry %s must name its L17 owner and resource loading and styling", c.ID)
+		}
+		http := `{"id":"` + c.ID + `","type":"error","message":"Failed to load resource: the server responded with a status of 404 ()"}`
+		blob := `{"id":"` + c.ID + `","type":"error","message":"Not allowed to load local resource: blob:[URL withheld]"}`
+		expected := `DOM|{"value":null,"console":[` + string(carry.RawEntry) + `,` + http + `,` + blob + `]}`
+		comparison := l17WithoutHostConsole(t, expected, []l17ConsoleExclusion{{Entry: carry.RawEntry}})
+		for _, row := range []struct {
+			name, console string
+			matches       bool
+		}{
+			{"only_native_entry_absent", http + `,` + blob, true},
+			{"missing_http", blob, false},
+			{"changed_http", strings.ReplaceAll(http, "Failed", "failed") + `,` + blob, false},
+			{"duplicate_http", http + `,` + http + `,` + blob, false},
+			{"missing_blob", http, false},
+			{"reordered_diagnostics", blob + `,` + http, false},
+			{"local_warning_not_carried", http + `,` + string(carry.RawEntry) + `,` + blob, false},
+		} {
+			t.Run(c.ID+"/"+row.name, func(t *testing.T) {
+				actual := `DOM|{"value":null,"console":[` + row.console + `]}`
+				if got := l17CarriedDifference(t, comparison, actual, nil); got != row.matches {
+					t.Fatalf("unresolved native entry carry accepted=%v want=%v", got, row.matches)
+				}
+			})
+		}
+		if l17CarriedDifference(t, comparison, strings.ReplaceAll(comparison, `"value":null`, `"value":"null"`), nil) {
+			t.Fatal("unresolved native console carry changed a non-console field")
+		}
+	}
+	if count != 2 {
+		t.Fatalf("expected exactly two unresolved API68 native console rows, got %d", count)
 	}
 }
 

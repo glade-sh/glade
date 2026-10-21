@@ -1,0 +1,5 @@
+observation	expected
+explicit deliver	one receiver invocation
+stopTest forwarded list	one receiver invocation
+stopTest scalar	one receiver invocation
+previous delivered event	no duplicate invocation

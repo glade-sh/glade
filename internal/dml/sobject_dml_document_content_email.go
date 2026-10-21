@@ -1,10 +1,25 @@
 package dml
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
+
+// EmailMessage.Name is readonly and derives from the first 255 characters of
+// Subject (Salesforce Object Reference, API 56+). Empty localized subjects are
+// kept on their existing path until locale-specific rows are available.
+func materializeEmailMessageName(record *storage.Record) {
+	if record == nil || !strings.EqualFold(record.Object, "EmailMessage") {
+		return
+	}
+	subject, ok := record.GetField("Subject")
+	if !ok || subject.Kind != storage.ValueString || subject.String == "" {
+		return
+	}
+	record.Fields["Name"] = storage.StringValue(truncateRunes(subject.String, 255))
+}
 
 func (e *Engine) applyFileInsertDefaults(objectName string, definition storage.ObjectDefinition, record *storage.Record) {
 	if record == nil || !strings.EqualFold(objectName, "Document") {
@@ -52,7 +67,7 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 		}
 		if path, ok := version.Fields["PathOnClient"]; ok {
 			extension := fileExtension(path.String)
-			document.Fields["FileExtension"] = storage.StringValue(extension)
+			setContentFileExtension(&document, extension)
 			if fileType := contentDocumentFileType(extension); fileType != "" {
 				document.Fields["FileType"] = storage.StringValue(fileType)
 			}
@@ -97,7 +112,7 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 		}
 		if path, ok := version.Fields["PathOnClient"]; ok {
 			extension := fileExtension(path.String)
-			document.Fields["FileExtension"] = storage.StringValue(extension)
+			setContentFileExtension(&document, extension)
 			if fileType := contentDocumentFileType(extension); fileType != "" {
 				document.Fields["FileType"] = storage.StringValue(fileType)
 			}
@@ -149,7 +164,7 @@ func (e *Engine) updateContentVersionDerivedFields(version storage.Record) {
 	}
 	if path, ok := version.Fields["PathOnClient"]; ok {
 		extension := fileExtension(path.String)
-		stored.Fields["FileExtension"] = storage.StringValue(extension)
+		setContentFileExtension(&stored, extension)
 		if fileType := contentDocumentFileType(extension); fileType != "" {
 			stored.Fields["FileType"] = storage.StringValue(fileType)
 		}
@@ -268,6 +283,15 @@ func contentVersionSize(version storage.Record) (int64, bool) {
 func (e *Engine) markLatestContentVersion(contentDocumentID storage.ID, latestVersionID storage.ID) {
 	storage.EnsureMutableObjectRecords(e.Org, "ContentVersion")
 	contentVersionObject := e.Org.Objects["ContentVersion"]
+	nextNumber := 1
+	for id, stored := range contentVersionObject.Records {
+		if id == latestVersionID || idFromStorageValue(stored.Fields["ContentDocumentId"]) != contentDocumentID {
+			continue
+		}
+		if number, err := strconv.Atoi(stored.Fields["VersionNumber"].String); err == nil && number >= nextNumber {
+			nextNumber = number + 1
+		}
+	}
 	changed := false
 	for id, stored := range contentVersionObject.Records {
 		if idFromStorageValue(stored.Fields["ContentDocumentId"]) != contentDocumentID {
@@ -280,6 +304,9 @@ func (e *Engine) markLatestContentVersion(contentDocumentID storage.ID, latestVe
 			stored.Fields = make(map[string]storage.Value)
 		}
 		stored.Fields["IsLatest"] = storage.BooleanValue(id == latestVersionID)
+		if id == latestVersionID {
+			stored.Fields["VersionNumber"] = storage.StringValue(strconv.Itoa(nextNumber))
+		}
 		contentVersionObject.Records[id] = stored
 		changed = true
 	}
@@ -314,4 +341,16 @@ func contentDocumentFileType(extension string) string {
 	default:
 		return strings.ToUpper(extension)
 	}
+}
+
+// An extensionless path describes a null extension. Keep that generated null
+// absent from the stored payload so update hydration cannot turn it into an
+// authored write to a readonly field.
+func setContentFileExtension(record *storage.Record, extension string) {
+	delete(record.ExplicitNulls, "FileExtension")
+	if extension == "" {
+		delete(record.Fields, "FileExtension")
+		return
+	}
+	record.Fields["FileExtension"] = storage.StringValue(extension)
 }

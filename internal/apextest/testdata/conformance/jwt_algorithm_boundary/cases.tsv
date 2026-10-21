@@ -1,0 +1,2 @@
+case	shape
+jwt_algorithm_boundary	HS256 rejection with malformed and RSA keys, valid raw and RSA-key HMAC signatures, and an RSA-signed header control

@@ -1,0 +1,2482 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "shapeCount": 17,
+  "nativeObservationCount": 84,
+  "plainExecutableCount": 84,
+  "plainCarryCount": 0,
+  "namespaceCarryCount": 42,
+  "provenance": "Owned Salesforce black-box measurements, captured 2026-10-14 at each requested API on the same release; plain scratch orgs, running administrator; named tests SeeAllData=false. Literal-address email control succeeded at each API. Sending-email rows are test-only.",
+  "normalization": "Only synthetic class/page identifiers and the sanitized literal email identity are replaced with descriptive local names. The mixed-case qualified type remains mixed case. Page identity spelling changes together in source and URL answers; lowercase URL casing, forwarding, parameters and literal preservation remain measured. CLI/chunk/context envelopes are removed; the measured payload including null exception fields is retained. Namespace carry entries contain plain-reference native values, never namespace answers.",
+  "rows": [
+    {
+      "id": "B01",
+      "question": "Plain Page token spelling and forwarding; namespace not established",
+      "routes": {
+        "anonymous": {
+          "id": "B01",
+          "stage": "observed",
+          "classes": {
+            "CompassRoute": "public class CompassRoute{public static PageReference target(){return Page.CompassPage;}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "forwarded": "/apex/compasspage",
+                "parameter": "/apex/compasspage?mode=north",
+                "direct": "/apex/compasspage",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "forwarded": "/apex/compasspage",
+                "parameter": "/apex/compasspage?mode=north",
+                "direct": "/apex/compasspage",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "forwarded": "/apex/compasspage",
+                "parameter": "/apex/compasspage?mode=north",
+                "direct": "/apex/compasspage",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{PageReference pageValue=Page.CompassPage;payload.put('direct',pageValue.getUrl());pageValue.getParameters().put('mode','north');payload.put('parameter',pageValue.getUrl());payload.put('forwarded',CompassRoute.target().getUrl());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B01|'+JSON.serialize(payload));",
+          "pages": [
+            "CompassPage"
+          ]
+        },
+        "isTest": {
+          "id": "B01",
+          "stage": "observed",
+          "classes": {
+            "CompassRoute": "public class CompassRoute{public static PageReference target(){return Page.CompassPage;}}",
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{PageReference pageValue=Page.CompassPage;payload.put('direct',pageValue.getUrl());pageValue.getParameters().put('mode','north');payload.put('parameter',pageValue.getUrl());payload.put('forwarded',CompassRoute.target().getUrl());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B01|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "forwarded": "/apex/compasspage",
+                "parameter": "/apex/compasspage?mode=north",
+                "direct": "/apex/compasspage",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "forwarded": "/apex/compasspage",
+                "parameter": "/apex/compasspage?mode=north",
+                "direct": "/apex/compasspage",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "forwarded": "/apex/compasspage",
+                "parameter": "/apex/compasspage?mode=north",
+                "direct": "/apex/compasspage",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ],
+          "pages": [
+            "CompassPage"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B02",
+      "question": "Literal URL must-not-rewrite twin",
+      "routes": {
+        "anonymous": {
+          "id": "B02",
+          "stage": "observed",
+          "classes": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "url": "/apex/compasspage",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "url": "/apex/compasspage",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "url": "/apex/compasspage",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{PageReference pageValue=new PageReference('/apex/compasspage');payload.put('url',pageValue.getUrl());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B02|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "B02",
+          "stage": "observed",
+          "classes": {
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{PageReference pageValue=new PageReference('/apex/compasspage');payload.put('url',pageValue.getUrl());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B02|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "url": "/apex/compasspage",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "url": "/apex/compasspage",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "url": "/apex/compasspage",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B03",
+      "question": "Short / qualified / casing / explicit hash twins",
+      "routes": {
+        "anonymous": {
+          "id": "B03",
+          "stage": "observed",
+          "classes": {
+            "ShortSetProjection": "public class ShortSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}public Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static List<Object> observe(){Token left=new Token(3);Token right=new Token(3);Set<Token> values=new Set<Token>{left,right};return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),values.size()};}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('labels',new List<String>{'equals','hashEqual','size'});payload.put('value',ShortSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B03|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "B03",
+          "stage": "observed",
+          "classes": {
+            "ShortSetProjection": "public class ShortSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}public Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static List<Object> observe(){Token left=new Token(3);Token right=new Token(3);Set<Token> values=new Set<Token>{left,right};return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),values.size()};}}",
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('labels',new List<String>{'equals','hashEqual','size'});payload.put('value',ShortSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B03|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B04",
+      "question": "Short / qualified / casing / explicit hash twins",
+      "routes": {
+        "anonymous": {
+          "id": "B04",
+          "stage": "observed",
+          "classes": {
+            "QualifiedSetProjection": "public class QualifiedSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}public Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static List<Object> observe(){Token left=new Token(3);Token right=new Token(3);Set<QualifiedSetProjection.Token> values=new Set<QualifiedSetProjection.Token>{left,right};return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),values.size()};}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('labels',new List<String>{'equals','hashEqual','size'});payload.put('value',QualifiedSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B04|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "B04",
+          "stage": "observed",
+          "classes": {
+            "QualifiedSetProjection": "public class QualifiedSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}public Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static List<Object> observe(){Token left=new Token(3);Token right=new Token(3);Set<QualifiedSetProjection.Token> values=new Set<QualifiedSetProjection.Token>{left,right};return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),values.size()};}}",
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('labels',new List<String>{'equals','hashEqual','size'});payload.put('value',QualifiedSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B04|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B05",
+      "question": "Short / qualified / casing / explicit hash twins",
+      "routes": {
+        "anonymous": {
+          "id": "B05",
+          "stage": "observed",
+          "classes": {
+            "CaseSetProjection": "public class CaseSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}public Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static List<Object> observe(){Token left=new Token(3);Token right=new Token(3);Set<casesetprojection.tOkEn> values=new Set<casesetprojection.tOkEn>{left,right};return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),values.size()};}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('labels',new List<String>{'equals','hashEqual','size'});payload.put('value',CaseSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B05|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "B05",
+          "stage": "observed",
+          "classes": {
+            "CaseSetProjection": "public class CaseSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}public Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static List<Object> observe(){Token left=new Token(3);Token right=new Token(3);Set<casesetprojection.tOkEn> values=new Set<casesetprojection.tOkEn>{left,right};return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),values.size()};}}",
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('labels',new List<String>{'equals','hashEqual','size'});payload.put('value',CaseSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B05|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B06",
+      "question": "Short / qualified / casing / explicit hash twins",
+      "routes": {
+        "anonymous": {
+          "id": "B06",
+          "stage": "observed",
+          "classes": {
+            "HashedSetProjection": "public class HashedSetProjection{public class HashedToken{public Integer amount;public HashedToken(Integer amount){this.amount=amount;}public Boolean equals(Object candidate){return candidate instanceof HashedToken && amount==((HashedToken)candidate).amount;}public Integer hashCode(){return 17;}}public static List<Object> observe(){HashedToken left=new HashedToken(3);HashedToken right=new HashedToken(3);Set<HashedToken> values=new Set<HashedToken>{left,right};return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),values.size()};}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  true,
+                  1
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  true,
+                  1
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  true,
+                  1
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('labels',new List<String>{'equals','hashEqual','size'});payload.put('value',HashedSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B06|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "B06",
+          "stage": "observed",
+          "classes": {
+            "HashedSetProjection": "public class HashedSetProjection{public class HashedToken{public Integer amount;public HashedToken(Integer amount){this.amount=amount;}public Boolean equals(Object candidate){return candidate instanceof HashedToken && amount==((HashedToken)candidate).amount;}public Integer hashCode(){return 17;}}public static List<Object> observe(){HashedToken left=new HashedToken(3);HashedToken right=new HashedToken(3);Set<HashedToken> values=new Set<HashedToken>{left,right};return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),values.size()};}}",
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('labels',new List<String>{'equals','hashEqual','size'});payload.put('value',HashedSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B06|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  true,
+                  1
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  true,
+                  1
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  true,
+                  1
+                ],
+                "labels": [
+                  "equals",
+                  "hashEqual",
+                  "size"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B03D",
+      "question": "Default-access equals/hashCode versus public short/qualified/hash twins",
+      "routes": {
+        "anonymous": {
+          "id": "B03D",
+          "stage": "observed",
+          "classes": {
+            "ImplicitShortSetProjection": "public class ImplicitShortSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static List<Object> observe(){Token left=new Token(3);Token right=new Token(3);return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),new Set<Token>{left,right}.size()};}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('value',ImplicitShortSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B03D|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "B03D",
+          "stage": "observed",
+          "classes": {
+            "ImplicitShortSetProjection": "public class ImplicitShortSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static List<Object> observe(){Token left=new Token(3);Token right=new Token(3);return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),new Set<Token>{left,right}.size()};}}",
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('value',ImplicitShortSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B03D|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B04D",
+      "question": "Default-access equals/hashCode versus public short/qualified/hash twins",
+      "routes": {
+        "anonymous": {
+          "id": "B04D",
+          "stage": "observed",
+          "classes": {
+            "ImplicitQualifiedSetProjection": "public class ImplicitQualifiedSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static List<Object> observe(){Token left=new Token(3);Token right=new Token(3);return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),new Set<ImplicitQualifiedSetProjection.Token>{left,right}.size()};}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('value',ImplicitQualifiedSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B04D|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "B04D",
+          "stage": "observed",
+          "classes": {
+            "ImplicitQualifiedSetProjection": "public class ImplicitQualifiedSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static List<Object> observe(){Token left=new Token(3);Token right=new Token(3);return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),new Set<ImplicitQualifiedSetProjection.Token>{left,right}.size()};}}",
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('value',ImplicitQualifiedSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B04D|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  false,
+                  2
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B06D",
+      "question": "Default-access equals/hashCode versus public short/qualified/hash twins",
+      "routes": {
+        "anonymous": {
+          "id": "B06D",
+          "stage": "observed",
+          "classes": {
+            "ImplicitHashedSetProjection": "public class ImplicitHashedSetProjection{public class HashedToken{public Integer amount;public HashedToken(Integer amount){this.amount=amount;}Boolean equals(Object candidate){return candidate instanceof HashedToken && amount==((HashedToken)candidate).amount;}Integer hashCode(){return 17;}}public static List<Object> observe(){HashedToken left=new HashedToken(3);HashedToken right=new HashedToken(3);return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),new Set<HashedToken>{left,right}.size()};}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  true,
+                  1
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  true,
+                  1
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  true,
+                  1
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('value',ImplicitHashedSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B06D|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "B06D",
+          "stage": "observed",
+          "classes": {
+            "ImplicitHashedSetProjection": "public class ImplicitHashedSetProjection{public class HashedToken{public Integer amount;public HashedToken(Integer amount){this.amount=amount;}Boolean equals(Object candidate){return candidate instanceof HashedToken && amount==((HashedToken)candidate).amount;}Integer hashCode(){return 17;}}public static List<Object> observe(){HashedToken left=new HashedToken(3);HashedToken right=new HashedToken(3);return new List<Object>{left.equals(right),left.hashCode()==right.hashCode(),new Set<HashedToken>{left,right}.size()};}}",
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('value',ImplicitHashedSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B06D|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  true,
+                  1
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  true,
+                  1
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  true,
+                  true,
+                  1
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B07",
+      "question": "Same-reference and null uniqueness must-not-apply",
+      "routes": {
+        "anonymous": {
+          "id": "B07",
+          "stage": "observed",
+          "classes": {
+            "ReferenceSetProjection": "public class ReferenceSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}public Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static Map<String,Object> observe(){Token x=new Token(3);Set<Token> values=new Set<Token>{x,x,null};return new Map<String,Object>{'size'=>values.size(),'sameContains'=>values.contains(x),'nullContains'=>values.contains(null),'sameRemove'=>values.remove(x),'afterRemove'=>values.size()};}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": {
+                  "afterRemove": 1,
+                  "sameRemove": true,
+                  "nullContains": true,
+                  "sameContains": true,
+                  "size": 2
+                },
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": {
+                  "afterRemove": 1,
+                  "sameRemove": true,
+                  "nullContains": true,
+                  "sameContains": true,
+                  "size": 2
+                },
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": {
+                  "afterRemove": 1,
+                  "sameRemove": true,
+                  "nullContains": true,
+                  "sameContains": true,
+                  "size": 2
+                },
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('value',ReferenceSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B07|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "B07",
+          "stage": "observed",
+          "classes": {
+            "ReferenceSetProjection": "public class ReferenceSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}public Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static Map<String,Object> observe(){Token x=new Token(3);Set<Token> values=new Set<Token>{x,x,null};return new Map<String,Object>{'size'=>values.size(),'sameContains'=>values.contains(x),'nullContains'=>values.contains(null),'sameRemove'=>values.remove(x),'afterRemove'=>values.size()};}}",
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('value',ReferenceSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B07|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": {
+                  "afterRemove": 1,
+                  "sameRemove": true,
+                  "nullContains": true,
+                  "sameContains": true,
+                  "size": 2
+                },
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": {
+                  "afterRemove": 1,
+                  "sameRemove": true,
+                  "nullContains": true,
+                  "sameContains": true,
+                  "size": 2
+                },
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": {
+                  "afterRemove": 1,
+                  "sameRemove": true,
+                  "nullContains": true,
+                  "sameContains": true,
+                  "size": 2
+                },
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B16",
+      "question": "Bulk/copy and fresh equal instance boundary",
+      "routes": {
+        "anonymous": {
+          "id": "B16",
+          "stage": "observed",
+          "classes": {
+            "BulkSetProjection": "public class BulkSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}public Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static List<Object> observe(){Token a=new Token(3);Token b=new Token(3);Set<Token> values=new Set<Token>();values.addAll(new List<Token>{a,b});Set<Token> copied=new Set<Token>(values);return new List<Object>{values.size(),copied.size(),values.contains(new Token(3)),values.remove(new Token(3)),values.size()};}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  2,
+                  2,
+                  false,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "addAllSize",
+                  "copySize",
+                  "freshContains",
+                  "freshRemove",
+                  "afterRemove"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  2,
+                  2,
+                  false,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "addAllSize",
+                  "copySize",
+                  "freshContains",
+                  "freshRemove",
+                  "afterRemove"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  2,
+                  2,
+                  false,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "addAllSize",
+                  "copySize",
+                  "freshContains",
+                  "freshRemove",
+                  "afterRemove"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('labels',new List<String>{'addAllSize','copySize','freshContains','freshRemove','afterRemove'});payload.put('value',BulkSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B16|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "B16",
+          "stage": "observed",
+          "classes": {
+            "BulkSetProjection": "public class BulkSetProjection{public class Token{public Integer amount;public Token(Integer amount){this.amount=amount;}public Boolean equals(Object candidate){return candidate instanceof Token && amount==((Token)candidate).amount;}}public static List<Object> observe(){Token a=new Token(3);Token b=new Token(3);Set<Token> values=new Set<Token>();values.addAll(new List<Token>{a,b});Set<Token> copied=new Set<Token>(values);return new List<Object>{values.size(),copied.size(),values.contains(new Token(3)),values.remove(new Token(3)),values.size()};}}",
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{payload.put('labels',new List<String>{'addAllSize','copySize','freshContains','freshRemove','afterRemove'});payload.put('value',BulkSetProjection.observe());}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B16|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  2,
+                  2,
+                  false,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "addAllSize",
+                  "copySize",
+                  "freshContains",
+                  "freshRemove",
+                  "afterRemove"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  2,
+                  2,
+                  false,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "addAllSize",
+                  "copySize",
+                  "freshContains",
+                  "freshRemove",
+                  "afterRemove"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": [
+                  2,
+                  2,
+                  false,
+                  false,
+                  2
+                ],
+                "labels": [
+                  "addAllSize",
+                  "copySize",
+                  "freshContains",
+                  "freshRemove",
+                  "afterRemove"
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B-CTRL",
+      "question": "Plain test-only email recipient boundary; transaction rolled back",
+      "routes": {
+        "isTest": {
+          "id": "B-CTRL",
+          "stage": "observed",
+          "classes": {
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Messaging.SingleEmailMessage messageValue=new Messaging.SingleEmailMessage();messageValue.setToAddresses(new List<String>{'synthetic@example.invalid'});messageValue.setSubject('Synthetic');messageValue.setPlainTextBody('Synthetic');Messaging.SendEmailResult[] results=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{messageValue},false);List<Object> outcomes=new List<Object>();for(Messaging.SendEmailResult resultValue:results){List<Object> errors=new List<Object>();for(Messaging.SendEmailError errorValue:resultValue.getErrors()){errors.add(new Map<String,Object>{'code'=>String.valueOf(errorValue.getStatusCode()),'fields'=>errorValue.getFields(),'message'=>errorValue.getMessage()});}outcomes.add(new Map<String,Object>{'success'=>resultValue.isSuccess(),'errors'=>errors});}payload.put('results',outcomes);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B-CTRL|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [],
+                    "success": true
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [],
+                    "success": true
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [],
+                    "success": true
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B13SAVE",
+      "question": "Plain test-only email recipient boundary; transaction rolled back",
+      "routes": {
+        "isTest": {
+          "id": "B13SAVE",
+          "stage": "observed",
+          "classes": {
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Messaging.SingleEmailMessage messageValue=new Messaging.SingleEmailMessage();messageValue.setTargetObjectId(UserInfo.getUserId());messageValue.setSaveAsActivity(false);messageValue.setSubject('Synthetic');messageValue.setPlainTextBody('Synthetic');Messaging.SendEmailResult[] results=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{messageValue},false);List<Object> outcomes=new List<Object>();for(Messaging.SendEmailResult resultValue:results){List<Object> errors=new List<Object>();for(Messaging.SendEmailError errorValue:resultValue.getErrors()){errors.add(new Map<String,Object>{'code'=>String.valueOf(errorValue.getStatusCode()),'fields'=>errorValue.getFields(),'message'=>errorValue.getMessage()});}outcomes.add(new Map<String,Object>{'success'=>resultValue.isSuccess(),'errors'=>errors});}payload.put('results',outcomes);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B13SAVE|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [],
+                    "success": true
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [],
+                    "success": true
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [],
+                    "success": true
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B12",
+      "question": "Plain test-only email recipient boundary; transaction rolled back",
+      "routes": {
+        "isTest": {
+          "id": "B12",
+          "stage": "observed",
+          "classes": {
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Messaging.SingleEmailMessage messageValue=new Messaging.SingleEmailMessage();messageValue.setToAddresses(new List<String>{UserInfo.getUserId()});messageValue.setSubject('Synthetic');messageValue.setPlainTextBody('Synthetic');Messaging.SendEmailResult[] results=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{messageValue},false);List<Object> outcomes=new List<Object>();for(Messaging.SendEmailResult resultValue:results){List<Object> errors=new List<Object>();for(Messaging.SendEmailError errorValue:resultValue.getErrors()){errors.add(new Map<String,Object>{'code'=>String.valueOf(errorValue.getStatusCode()),'fields'=>errorValue.getFields(),'message'=>errorValue.getMessage()});}outcomes.add(new Map<String,Object>{'success'=>resultValue.isSuccess(),'errors'=>errors});}payload.put('results',outcomes);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B12|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [],
+                    "success": true
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [],
+                    "success": true
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [],
+                    "success": true
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B13",
+      "question": "Plain test-only email recipient boundary; transaction rolled back",
+      "routes": {
+        "isTest": {
+          "id": "B13",
+          "stage": "observed",
+          "classes": {
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Messaging.SingleEmailMessage messageValue=new Messaging.SingleEmailMessage();messageValue.setTargetObjectId(UserInfo.getUserId());messageValue.setSubject('Synthetic');messageValue.setPlainTextBody('Synthetic');Messaging.SendEmailResult[] results=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{messageValue},false);List<Object> outcomes=new List<Object>();for(Messaging.SendEmailResult resultValue:results){List<Object> errors=new List<Object>();for(Messaging.SendEmailError errorValue:resultValue.getErrors()){errors.add(new Map<String,Object>{'code'=>String.valueOf(errorValue.getStatusCode()),'fields'=>errorValue.getFields(),'message'=>errorValue.getMessage()});}outcomes.add(new Map<String,Object>{'success'=>resultValue.isSuccess(),'errors'=>errors});}payload.put('results',outcomes);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B13|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [
+                      {
+                        "message": "saveAsActivity must be false when sending mail to users.",
+                        "fields": [
+                          "saveAsActivity",
+                          "true"
+                        ],
+                        "code": "INVALID_SAVE_AS_ACTIVITY_FLAG"
+                      }
+                    ],
+                    "success": false
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [
+                      {
+                        "message": "saveAsActivity must be false when sending mail to users.",
+                        "fields": [
+                          "saveAsActivity",
+                          "true"
+                        ],
+                        "code": "INVALID_SAVE_AS_ACTIVITY_FLAG"
+                      }
+                    ],
+                    "success": false
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [
+                      {
+                        "message": "saveAsActivity must be false when sending mail to users.",
+                        "fields": [
+                          "saveAsActivity",
+                          "true"
+                        ],
+                        "code": "INVALID_SAVE_AS_ACTIVITY_FLAG"
+                      }
+                    ],
+                    "success": false
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B14",
+      "question": "Plain test-only email recipient boundary; transaction rolled back",
+      "routes": {
+        "isTest": {
+          "id": "B14",
+          "stage": "observed",
+          "classes": {
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Messaging.SingleEmailMessage messageValue=new Messaging.SingleEmailMessage();messageValue.setToAddresses(new List<String>{null});messageValue.setSubject('Synthetic');messageValue.setPlainTextBody('Synthetic');Messaging.SendEmailResult[] results=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{messageValue},false);List<Object> outcomes=new List<Object>();for(Messaging.SendEmailResult resultValue:results){List<Object> errors=new List<Object>();for(Messaging.SendEmailError errorValue:resultValue.getErrors()){errors.add(new Map<String,Object>{'code'=>String.valueOf(errorValue.getStatusCode()),'fields'=>errorValue.getFields(),'message'=>errorValue.getMessage()});}outcomes.add(new Map<String,Object>{'success'=>resultValue.isSuccess(),'errors'=>errors});}payload.put('results',outcomes);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B14|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [
+                      {
+                        "message": "Email address is invalid: null",
+                        "fields": [
+                          "toAddresses",
+                          null
+                        ],
+                        "code": "INVALID_EMAIL_ADDRESS"
+                      }
+                    ],
+                    "success": false
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [
+                      {
+                        "message": "Email address is invalid: null",
+                        "fields": [
+                          "toAddresses",
+                          null
+                        ],
+                        "code": "INVALID_EMAIL_ADDRESS"
+                      }
+                    ],
+                    "success": false
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [
+                      {
+                        "message": "Email address is invalid: null",
+                        "fields": [
+                          "toAddresses",
+                          null
+                        ],
+                        "code": "INVALID_EMAIL_ADDRESS"
+                      }
+                    ],
+                    "success": false
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B15",
+      "question": "Plain test-only email recipient boundary; transaction rolled back",
+      "routes": {
+        "isTest": {
+          "id": "B15",
+          "stage": "observed",
+          "classes": {
+            "SetEmailObservation": "@IsTest(SeeAllData=false) private without sharing class SetEmailObservation {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Messaging.SingleEmailMessage messageValue=new Messaging.SingleEmailMessage();messageValue.setToAddresses(new List<String>{UserInfo.getUserId()});messageValue.setSubject('Synthetic');messageValue.setPlainTextBody('Synthetic');Messaging.SendEmailResult[] results=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{messageValue},true);List<Object> outcomes=new List<Object>();for(Messaging.SendEmailResult resultValue:results){List<Object> errors=new List<Object>();for(Messaging.SendEmailError errorValue:resultValue.getErrors()){errors.add(new Map<String,Object>{'code'=>String.valueOf(errorValue.getStatusCode()),'fields'=>errorValue.getFields(),'message'=>errorValue.getMessage()});}outcomes.add(new Map<String,Object>{'success'=>resultValue.isSuccess(),'errors'=>errors});}payload.put('results',outcomes);}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|B15|'+JSON.serialize(payload));}}"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [],
+                    "success": true
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [],
+                    "success": true
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "results": [
+                  {
+                    "errors": [],
+                    "success": true
+                  }
+                ],
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "tests": [
+            "SetEmailObservation"
+          ]
+        }
+      }
+    }
+  ],
+  "namespaceCarries": [
+    {
+      "id": "B01",
+      "route": "anonymous",
+      "referenceRow": "B01",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced execution was captured; the plain token/type observation cannot establish namespace qualification behavior.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "forwarded": "/apex/compasspage",
+            "parameter": "/apex/compasspage?mode=north",
+            "direct": "/apex/compasspage",
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "forwarded": "/apex/compasspage",
+            "parameter": "/apex/compasspage?mode=north",
+            "direct": "/apex/compasspage",
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "forwarded": "/apex/compasspage",
+            "parameter": "/apex/compasspage?mode=north",
+            "direct": "/apex/compasspage",
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B01",
+      "route": "isTest",
+      "referenceRow": "B01",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced execution was captured; the plain token/type observation cannot establish namespace qualification behavior.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "forwarded": "/apex/compasspage",
+            "parameter": "/apex/compasspage?mode=north",
+            "direct": "/apex/compasspage",
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "forwarded": "/apex/compasspage",
+            "parameter": "/apex/compasspage?mode=north",
+            "direct": "/apex/compasspage",
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "forwarded": "/apex/compasspage",
+            "parameter": "/apex/compasspage?mode=north",
+            "direct": "/apex/compasspage",
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B03",
+      "route": "anonymous",
+      "referenceRow": "B03",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced execution was captured; the plain token/type observation cannot establish namespace qualification behavior.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B03",
+      "route": "isTest",
+      "referenceRow": "B03",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced execution was captured; the plain token/type observation cannot establish namespace qualification behavior.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B04",
+      "route": "anonymous",
+      "referenceRow": "B04",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced execution was captured; the plain token/type observation cannot establish namespace qualification behavior.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B04",
+      "route": "isTest",
+      "referenceRow": "B04",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced execution was captured; the plain token/type observation cannot establish namespace qualification behavior.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B05",
+      "route": "anonymous",
+      "referenceRow": "B05",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced execution was captured; the plain token/type observation cannot establish namespace qualification behavior.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B05",
+      "route": "isTest",
+      "referenceRow": "B05",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced execution was captured; the plain token/type observation cannot establish namespace qualification behavior.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              false,
+              2
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B06",
+      "route": "anonymous",
+      "referenceRow": "B06",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced execution was captured; the plain token/type observation cannot establish namespace qualification behavior.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              true,
+              1
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              true,
+              1
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              true,
+              1
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B06",
+      "route": "isTest",
+      "referenceRow": "B06",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced execution was captured; the plain token/type observation cannot establish namespace qualification behavior.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              true,
+              1
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              true,
+              1
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "value": [
+              true,
+              true,
+              1
+            ],
+            "labels": [
+              "equals",
+              "hashEqual",
+              "size"
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B08",
+      "route": "isTest",
+      "referenceRow": "B12",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced email execution was captured; this unnamespaced recipient twin is a reference only.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "results": [
+              {
+                "errors": [],
+                "success": true
+              }
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "results": [
+              {
+                "errors": [],
+                "success": true
+              }
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "results": [
+              {
+                "errors": [],
+                "success": true
+              }
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B09",
+      "route": "isTest",
+      "referenceRow": "B13",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced email execution was captured; this unnamespaced recipient twin is a reference only.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "results": [
+              {
+                "errors": [
+                  {
+                    "message": "saveAsActivity must be false when sending mail to users.",
+                    "fields": [
+                      "saveAsActivity",
+                      "true"
+                    ],
+                    "code": "INVALID_SAVE_AS_ACTIVITY_FLAG"
+                  }
+                ],
+                "success": false
+              }
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "results": [
+              {
+                "errors": [
+                  {
+                    "message": "saveAsActivity must be false when sending mail to users.",
+                    "fields": [
+                      "saveAsActivity",
+                      "true"
+                    ],
+                    "code": "INVALID_SAVE_AS_ACTIVITY_FLAG"
+                  }
+                ],
+                "success": false
+              }
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "results": [
+              {
+                "errors": [
+                  {
+                    "message": "saveAsActivity must be false when sending mail to users.",
+                    "fields": [
+                      "saveAsActivity",
+                      "true"
+                    ],
+                    "code": "INVALID_SAVE_AS_ACTIVITY_FLAG"
+                  }
+                ],
+                "success": false
+              }
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B10",
+      "route": "isTest",
+      "referenceRow": "B14",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced email execution was captured; this unnamespaced recipient twin is a reference only.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "results": [
+              {
+                "errors": [
+                  {
+                    "message": "Email address is invalid: null",
+                    "fields": [
+                      "toAddresses",
+                      null
+                    ],
+                    "code": "INVALID_EMAIL_ADDRESS"
+                  }
+                ],
+                "success": false
+              }
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "results": [
+              {
+                "errors": [
+                  {
+                    "message": "Email address is invalid: null",
+                    "fields": [
+                      "toAddresses",
+                      null
+                    ],
+                    "code": "INVALID_EMAIL_ADDRESS"
+                  }
+                ],
+                "success": false
+              }
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "results": [
+              {
+                "errors": [
+                  {
+                    "message": "Email address is invalid: null",
+                    "fields": [
+                      "toAddresses",
+                      null
+                    ],
+                    "code": "INVALID_EMAIL_ADDRESS"
+                  }
+                ],
+                "success": false
+              }
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "B11",
+      "route": "isTest",
+      "referenceRow": "B15",
+      "referenceContext": "plain",
+      "carryReason": "No namespaced email execution was captured; this unnamespaced recipient twin is a reference only.",
+      "plainReferenceByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "results": [
+              {
+                "errors": [],
+                "success": true
+              }
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "results": [
+              {
+                "errors": [],
+                "success": true
+              }
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "results": [
+              {
+                "errors": [],
+                "success": true
+              }
+            ],
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    }
+  ]
+}

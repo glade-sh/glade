@@ -1,0 +1,123 @@
+{
+  "api": "61.0",
+  "utc": "2026-10-19T03:01:42.913925+00:00",
+  "deployId": "0Afhs000000lt5vCAA",
+  "deployStatus": "Succeeded",
+  "testRunId": "",
+  "rows": [
+    {
+      "api": "61.0",
+      "id": "concrete_system",
+      "outcome": "Fail",
+      "observed": {
+        "callbacksAfter": 0,
+        "callbacksBefore": 0,
+        "records": 0,
+        "rows": 0,
+        "statements": 0,
+        "hasId": false,
+        "resultDetails": [],
+        "results": -1,
+        "exceptionMessage": "Asynchronous DML not allowed on Account",
+        "exceptionType": "System.TypeException"
+      }
+    },
+    {
+      "api": "61.0",
+      "id": "concrete_user",
+      "outcome": "Fail",
+      "observed": {
+        "callbacksAfter": 0,
+        "callbacksBefore": 0,
+        "records": 0,
+        "rows": 0,
+        "statements": 0,
+        "hasId": false,
+        "resultDetails": [
+          {
+            "errors": [
+              {
+                "fields": [],
+                "message": "Asynchronous DML not allowed on Account",
+                "status": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"
+              }
+            ],
+            "hasId": false,
+            "success": false
+          }
+        ],
+        "results": 1,
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "api": "61.0",
+      "id": "generic_system",
+      "outcome": "Fail",
+      "observed": {
+        "callbacksAfter": 0,
+        "callbacksBefore": 0,
+        "records": 0,
+        "rows": 0,
+        "statements": 0,
+        "hasId": false,
+        "resultDetails": [],
+        "results": -1,
+        "exceptionMessage": "Invalid entity type in input for this operation",
+        "exceptionType": "System.TypeException"
+      }
+    },
+    {
+      "api": "61.0",
+      "id": "generic_user",
+      "outcome": "Fail",
+      "observed": {
+        "callbacksAfter": 0,
+        "callbacksBefore": 0,
+        "records": 0,
+        "rows": 0,
+        "statements": 0,
+        "hasId": false,
+        "resultDetails": [],
+        "results": -1,
+        "exceptionMessage": "Invalid entity type in input for this operation",
+        "exceptionType": "System.TypeException"
+      }
+    },
+    {
+      "api": "61.0",
+      "id": "outside_system",
+      "outcome": "Fail",
+      "observed": {
+        "callbacksAfter": 0,
+        "callbacksBefore": 0,
+        "records": 0,
+        "rows": 0,
+        "statements": 0,
+        "hasId": false,
+        "resultDetails": [],
+        "results": -1,
+        "exceptionMessage": "Invalid entity type in input for this operation",
+        "exceptionType": "System.TypeException"
+      }
+    },
+    {
+      "api": "61.0",
+      "id": "outside_user",
+      "outcome": "Fail",
+      "observed": {
+        "callbacksAfter": 0,
+        "callbacksBefore": 0,
+        "records": 0,
+        "rows": 0,
+        "statements": 0,
+        "hasId": false,
+        "resultDetails": [],
+        "results": -1,
+        "exceptionMessage": "Invalid entity type in input for this operation",
+        "exceptionType": "System.TypeException"
+      }
+    }
+  ]
+}

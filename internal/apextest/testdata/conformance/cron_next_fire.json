@@ -1,0 +1,2622 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "shapeCount": 16,
+  "nativeObservationCount": 96,
+  "provenance": {
+    "caseTableSHA256": "ab7eb4defb76791cd56d526adbe3e1fba953587cf40854e0f6ed8b66a7ca1f2e",
+    "captures": {
+      "primary": "Initial owned scratch-org capture; all API62 anonymous cells and API62 named S00-S09.",
+      "recovery": "Replacement owned scratch-org capture; remaining API62 named cells and all API67/68 cells. Merged successful retries retain their native marker hashes."
+    },
+    "clock": "Each cell runs at its captured now in its captured running-user time zone; before and after values are asserted literally. Anonymous after is not-applicable.",
+    "anonymousCleanup": "The native anonymous wrapper calls System.abortJob after its snapshot. Replay omits this cleanup in a disposable VM. Successful anonymous complete=true is retained as a partial carry, not asserted; all cron snapshot fields are asserted.",
+    "scope": "Only scheduling rows are exported; unrelated string, query and temporal-cast rows belong to their own families."
+  },
+  "helpers": {
+    "ClockJobFixture": "public class ClockJobFixture implements Schedulable {public void execute(SchedulableContext context){} }",
+    "SnapshotSeed": "public class SnapshotSeed {public static Map<String,Object> get(String key){CronTrigger c=[SELECT CronExpression,State,TimesTriggered,NextFireTime FROM CronTrigger WHERE Id=:key];Map<String,Object> x=new Map<String,Object>{'state'=>c.State,'times'=>c.TimesTriggered,'next'=>c.NextFireTime,'null'=>c.NextFireTime==null};if(c.NextFireTime!=null){x.put('utc',c.NextFireTime.formatGmt('yyyy-MM-dd HH:mm:ss'));x.put('local',c.NextFireTime.format('yyyy-MM-dd HH:mm:ss'));}try{x.put('minute',c.NextFireTime.minute());}catch(Exception e){x.put('type',e.getTypeName());x.put('message',e.getMessage());}return x;} }"
+  },
+  "helperSHA256": {
+    "ClockJobFixture": "f9a4776396758442cdcb27442861b6077cdc8ae3024974b3b57d67339591a776",
+    "SnapshotSeed": "e3b8a044dedbc69be5fd18950a6242019c7ca5c862422b0d692bd86f144953ba"
+  },
+  "testClass": "@IsTest private class CronNextFireObservation {\n@IsTest static void observeS00(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * ? * * *',new ClockJobFixture());observed.put('expression','0 17 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS01(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 3 ? * * *',new ClockJobFixture());observed.put('expression','0 17 3 ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS02(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 0 * ? * * *',new ClockJobFixture());observed.put('expression','0 0 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS03(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 59 * ? * * *',new ClockJobFixture());observed.put('expression','0 59 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS04(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * ? * *',new ClockJobFixture());observed.put('expression','0 17 * ? * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS05(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * * * ? *',new ClockJobFixture());observed.put('expression','0 17 * * * ? *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS06(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * ? * MON *',new ClockJobFixture());observed.put('expression','0 17 * ? * MON *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS07(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * ? * mon *',new ClockJobFixture());observed.put('expression','0 17 * ? * mon *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS08(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 0/15 * ? * * *',new ClockJobFixture());observed.put('expression','0 0/15 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS09(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 * * ? * * *',new ClockJobFixture());observed.put('expression','0 * * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS10(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 3 1 1 ? 2099',new ClockJobFixture());observed.put('expression','0 17 3 1 1 ? 2099');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS11(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 60 * ? * * *',new ClockJobFixture());observed.put('expression','0 60 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS12(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 24 ? * * *',new ClockJobFixture());observed.put('expression','0 17 24 ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS13_UTC(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * ? * * *',new ClockJobFixture());observed.put('expression','0 17 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS13_LA(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * ? * * *',new ClockJobFixture());observed.put('expression','0 17 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n@IsTest static void observeS14(){Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 * ? * * *',new ClockJobFixture());observed.put('expression','0 17 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.startTest();Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));}\n}",
+  "rows": [
+    {
+      "id": "S00",
+      "sourceRow": "C5_S00",
+      "expression": "0 17 * ? * * *",
+      "method": "observeS00",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 * ? * * *',new ClockJobFixture());observed.put('expression','0 17 * ? * * *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * ? * * *',new ClockJobFixture());observed.put('expression','0 17 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "e17c4284f848478a11b21bc4e6547cc267d128eb9f3cf0e1702bbafbf8b8a240",
+        "named": "e007314df0fbdeeda59edffccfe0c5a9baae09514709acaacc0ab5a0a9a477e9"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "4826982642786df1686ccec3e5b5f70da954485b931c9f681c26a2aec307ca13",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:53:57.010Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "primary",
+          "markerSHA256": "dbc7456aec0e0808088be6584960df4f5b4fd9310ddac99210a4b87f6ba4f088",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:58:20.898Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "f20cae8c9e5ede77dc593cf2ca3e57327416d962a66e63917f8a82ff1dffe228",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:01.145Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "80954b7c489dfc13c5227933b3f3700a26db7ce75fd6a5808c86590aab5cb741",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:18:07.611Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "ea9508eff77bc39295857ada4d009af1c2fb720bc76f1f194a152a37aeb3b0c1",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:20.534Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "c835f4dda11959c39fac83e7515c12741b255debb89d73ddd60901154e5653ad",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:22:19.842Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S01",
+      "sourceRow": "C5_S01",
+      "expression": "0 17 3 ? * * *",
+      "method": "observeS01",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 3 ? * * *',new ClockJobFixture());observed.put('expression','0 17 3 ? * * *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 3 ? * * *',new ClockJobFixture());observed.put('expression','0 17 3 ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "2c333c1c367ffcb117b6e6a8d0a97dcafa406c089299249005a686829c275cf0",
+        "named": "4c450dd2a6e762df4bbcf0923252231118f0f30662a5a4d91785e1bdd8942458"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "1beda0a415371ef17c6ade39ef2b01eae0dbf2cd2a08ec800e23a9b4faee1c2c",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-14 03:17:00",
+              "utc": "2026-10-14 10:17:00",
+              "null": false,
+              "next": "2026-10-14T10:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 3 ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:54:02.000Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "primary",
+          "markerSHA256": "a6103b63c5a4ae9326c3a0dcb2a46d81c9a844d552a54f723baff798308281be",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-14 03:17:00",
+              "utc": "2026-10-14 10:17:00",
+              "null": false,
+              "next": "2026-10-14T10:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-14 03:17:00",
+              "utc": "2026-10-14 10:17:00",
+              "null": false,
+              "next": "2026-10-14T10:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 3 ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:58:27.626Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "f6609b02ebeacb0be20fec85b35bf8870769bf9627015158908ebe313709a56c",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-14 03:17:00",
+              "utc": "2026-10-14 10:17:00",
+              "null": false,
+              "next": "2026-10-14T10:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 3 ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:02.873Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "5c414b678629f54da57b63837eb208afed5a92c3912bd0fed0b20bf4cb64aa71",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-14 03:17:00",
+              "utc": "2026-10-14 10:17:00",
+              "null": false,
+              "next": "2026-10-14T10:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-14 03:17:00",
+              "utc": "2026-10-14 10:17:00",
+              "null": false,
+              "next": "2026-10-14T10:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 3 ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:18:12.464Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "1c418ec23e91ee4f8a70b2337c585ce256d10ed3fb3c5b87ea800d3301b2d645",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-14 03:17:00",
+              "utc": "2026-10-14 10:17:00",
+              "null": false,
+              "next": "2026-10-14T10:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 3 ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:21.775Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "77cae0f8db230e8db77a8be981f4d24f0842b7e5431436c0d9c404bafc876b73",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-14 03:17:00",
+              "utc": "2026-10-14 10:17:00",
+              "null": false,
+              "next": "2026-10-14T10:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-14 03:17:00",
+              "utc": "2026-10-14 10:17:00",
+              "null": false,
+              "next": "2026-10-14T10:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 3 ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:22:23.356Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "sourceRow": "C5_S02",
+      "expression": "0 0 * ? * * *",
+      "method": "observeS02",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 0 * ? * * *',new ClockJobFixture());observed.put('expression','0 0 * ? * * *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 0 * ? * * *',new ClockJobFixture());observed.put('expression','0 0 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "150ecb525b25c0ef03eb80e032ee381c154347b6fc7a7063f257f6ae5f1a47f5",
+        "named": "729609dacb5fe450316b8b65c1908d5ca0f142ef4d5dec046efd4612e61f5b01"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "a415b1063aad26f01c9ce60f7adf29083ccb9ad90f785de1c5bae319a04370bb",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 0,
+              "local": "2026-10-13 21:00:00",
+              "utc": "2026-10-14 04:00:00",
+              "null": false,
+              "next": "2026-10-14T04:00:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 0 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:54:07.855Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "primary",
+          "markerSHA256": "da61c85f9dfa076fee5cc45ee05684b3df5423a9d2c501a5050bf56e042b92ba",
+          "native": {
+            "after": {
+              "minute": 0,
+              "local": "2026-10-13 21:00:00",
+              "utc": "2026-10-14 04:00:00",
+              "null": false,
+              "next": "2026-10-14T04:00:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 0,
+              "local": "2026-10-13 21:00:00",
+              "utc": "2026-10-14 04:00:00",
+              "null": false,
+              "next": "2026-10-14T04:00:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 0 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:58:33.777Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "0c5bf946d77bf73b3fb3c69b4257537c3fc2aa56cd5908380c8d6d8173f6d4fe",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 0,
+              "local": "2026-10-13 22:00:00",
+              "utc": "2026-10-14 05:00:00",
+              "null": false,
+              "next": "2026-10-14T05:00:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 0 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:05.087Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "f82122c0d52a447599512c816d9bb1ef5c859e9f545a60d193f44fd6082dc3be",
+          "native": {
+            "after": {
+              "minute": 0,
+              "local": "2026-10-13 22:00:00",
+              "utc": "2026-10-14 05:00:00",
+              "null": false,
+              "next": "2026-10-14T05:00:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 0,
+              "local": "2026-10-13 22:00:00",
+              "utc": "2026-10-14 05:00:00",
+              "null": false,
+              "next": "2026-10-14T05:00:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 0 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:18:18.307Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "ac16083662f6048bd3c3d00c5b10041f13f3a8f0add9a5cc60c61b517a719778",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 0,
+              "local": "2026-10-13 22:00:00",
+              "utc": "2026-10-14 05:00:00",
+              "null": false,
+              "next": "2026-10-14T05:00:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 0 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:23.003Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "7df8b4a9234ac45ceef54ca11e16d7c3e1e0f407eaf237ab4c23aaf6955af1a5",
+          "native": {
+            "after": {
+              "minute": 0,
+              "local": "2026-10-13 22:00:00",
+              "utc": "2026-10-14 05:00:00",
+              "null": false,
+              "next": "2026-10-14T05:00:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 0,
+              "local": "2026-10-13 22:00:00",
+              "utc": "2026-10-14 05:00:00",
+              "null": false,
+              "next": "2026-10-14T05:00:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 0 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:22:26.443Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "sourceRow": "C5_S03",
+      "expression": "0 59 * ? * * *",
+      "method": "observeS03",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 59 * ? * * *',new ClockJobFixture());observed.put('expression','0 59 * ? * * *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 59 * ? * * *',new ClockJobFixture());observed.put('expression','0 59 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "bacea8891a8098e29f028710d9698f1590c6ddc2a267b62c6a10797d7ebf2b1f",
+        "named": "ecdf2c87a9cf2e83ad407ff70c7a28ff0ed36bc9eab70be1696d7b7372913f68"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "58828fea00a74175f4e0e2bc48b1f4393d5829000ee85d957c38398e4b62151c",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 59,
+              "local": "2026-10-13 20:59:00",
+              "utc": "2026-10-14 03:59:00",
+              "null": false,
+              "next": "2026-10-14T03:59:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 59 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:54:13.906Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "primary",
+          "markerSHA256": "aefb352d4983eb91180957d4dc7398214d1556bb3279440e706477cd5fc5f695",
+          "native": {
+            "after": {
+              "minute": 59,
+              "local": "2026-10-13 20:59:00",
+              "utc": "2026-10-14 03:59:00",
+              "null": false,
+              "next": "2026-10-14T03:59:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 59,
+              "local": "2026-10-13 20:59:00",
+              "utc": "2026-10-14 03:59:00",
+              "null": false,
+              "next": "2026-10-14T03:59:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 59 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:58:40.727Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "0177400e289bfb4d87bc3fae86e16cc6e032a2cfad1bb5e1b582752df7302139",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 59,
+              "local": "2026-10-13 21:59:00",
+              "utc": "2026-10-14 04:59:00",
+              "null": false,
+              "next": "2026-10-14T04:59:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 59 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:07.471Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "2399857cdd69c2eb354c1acc8a3a17d6938eb53af2a04aed575ef453840d6300",
+          "native": {
+            "after": {
+              "minute": 59,
+              "local": "2026-10-13 21:59:00",
+              "utc": "2026-10-14 04:59:00",
+              "null": false,
+              "next": "2026-10-14T04:59:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 59,
+              "local": "2026-10-13 21:59:00",
+              "utc": "2026-10-14 04:59:00",
+              "null": false,
+              "next": "2026-10-14T04:59:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 59 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:18:24.666Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "ffbcb4c43175d08c096b64aec72520f65c0c5eb5f1fce36fc3fae9202d4db5d5",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 59,
+              "local": "2026-10-13 21:59:00",
+              "utc": "2026-10-14 04:59:00",
+              "null": false,
+              "next": "2026-10-14T04:59:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 59 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:24.120Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "85f2d5dd2dd5e2af0728bcc6d9038f839af1a5a6c3b42bccf1555e2118551299",
+          "native": {
+            "after": {
+              "minute": 59,
+              "local": "2026-10-13 21:59:00",
+              "utc": "2026-10-14 04:59:00",
+              "null": false,
+              "next": "2026-10-14T04:59:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 59,
+              "local": "2026-10-13 21:59:00",
+              "utc": "2026-10-14 04:59:00",
+              "null": false,
+              "next": "2026-10-14T04:59:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 59 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:22:29.325Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "sourceRow": "C5_S04",
+      "expression": "0 17 * ? * *",
+      "method": "observeS04",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 * ? * *',new ClockJobFixture());observed.put('expression','0 17 * ? * *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * ? * *',new ClockJobFixture());observed.put('expression','0 17 * ? * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "023b38bf582a204ba96ead42b0f7f858b3c41fb849435e9975ab8a3517a0a282",
+        "named": "f1a9a0d93f0c62014b5422876a0540550d3fbf255934344a557f50065ad0f058"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "d97f0323d6ab0fa3a426f9473ff3fe8ef7e5853657b9abe0c0fcdc6623822b15",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:54:20.028Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "primary",
+          "markerSHA256": "7e61ef3b180c1c91a7ad0d1047daeac4bba1db2a7fbd5fc10a715e23066f8d15",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:58:47.468Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "97cd9ea14e00ce85dae4a7f95cc1b50bbd4ef5428f7e40dbea6a4063b6250410",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:09.762Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "26f9af7f375593b2d476713fef17972489215851277628d085b122b27af42e10",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:18:27.444Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "25bd61eb9fd24cdd42f2b33efbd84203278a3bfd3b664ae29ba71b5c2d6527ea",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:22:40.451Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "d545f14cac759e7061b38f6982d0641bda5dc1512260d4e5f031f1dfae438afd",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:22:32.559Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "sourceRow": "C5_S05",
+      "expression": "0 17 * * * ? *",
+      "method": "observeS05",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 * * * ? *',new ClockJobFixture());observed.put('expression','0 17 * * * ? *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * * * ? *',new ClockJobFixture());observed.put('expression','0 17 * * * ? *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "38362005fc3a4635c7eca3704e5d8f31787f9691d2905ec5ef3838a44c02bfe6",
+        "named": "c68ab50d1d72586fa20450e3a8d90405fad8f9d217fde5b26796c3736175445a"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "174b57a36a68ec17c07b833bd61c62e44936bf1848f373ba23b283ae1d3b5522",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * * * ? *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:54:26.151Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "primary",
+          "markerSHA256": "b62b14b8f2584be99e3e8a12df801c0227b98d5ecac14ac280e7dfe7274b51c7",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * * * ? *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:58:55.343Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "543777199baa35b5eebfc06ded403acabe2ff8b61dafc4d0f42ece9375174826",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * * * ? *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:11.022Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "8af60e2d6d30255280aa79bb991fd3facf76980b5a56c7b213facaa3bf43ed39",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * * * ? *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:18:32.193Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "b451d1351009792f6f84de6e23aab3c4bd8d8f54d57030d31831a624065281fe",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * * * ? *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:26.426Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "b4c9eae961cc5424732921100165fbd95fed432820194dcadbe14758b81fa165",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * * * ? *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:22:39.658Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "sourceRow": "C5_S06",
+      "expression": "0 17 * ? * MON *",
+      "method": "observeS06",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 * ? * MON *',new ClockJobFixture());observed.put('expression','0 17 * ? * MON *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * ? * MON *',new ClockJobFixture());observed.put('expression','0 17 * ? * MON *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "7fe082e372437a7534c1f02f3f43e84807c1285d98a1e260db85afce3f3a6955",
+        "named": "c3ffbd335109c23f8ca622d71ebb269ec2370645f8603d1c9025105de96e17d8"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "d0759b6487a1b4c12a410efb5f0729733de7d9083c797ababd2aaafe50087bd0",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * MON *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:54:34.400Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "primary",
+          "markerSHA256": "3fa2ee9949be6ed951414f9ef1886de53a5149a2086da59c93708b7c3c67c19a",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * MON *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:59:03.379Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "15a6eb49649cf39b58d699034d90a93719ec8d6f2fa0d8d0bdb8b1dec3034f73",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * MON *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:12.513Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "7465361f38efb0549e1ac397bff5346ec57d372585dc595893a207f821cb54a8",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * MON *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:18:35.070Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "7c1cb882a709ca9ebc811c5c6ed4a745edc85d9c1f4c540e7e837857589fb280",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * MON *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:27.720Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "764588552acaafc04779848f557861c3b2ca84da295259dfc24f2b088b5f4878",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * MON *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:22:44.284Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "sourceRow": "C5_S07",
+      "expression": "0 17 * ? * mon *",
+      "method": "observeS07",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 * ? * mon *',new ClockJobFixture());observed.put('expression','0 17 * ? * mon *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * ? * mon *',new ClockJobFixture());observed.put('expression','0 17 * ? * mon *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "241ba742f955a903193e83b710ae361b863a11c9ff383aec019e8ad39d9ee601",
+        "named": "db279892a109c94d2ca5a8a39fb1269558245ad0b4723a7645f98b3765a8c951"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "ee2cee90535adf8208875f9ab5d0cfa0d78d9c4195d6c92001b5d3647ffde62d",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * mon *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:54:42.426Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "primary",
+          "markerSHA256": "0885916751d0b3170667ac7eeeefe69eb93cd0cc840bf834e4ee748238963f9e",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * mon *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:59:08.914Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "5ecd34e10fa19cef03672a7f566ab73faf3f3cf85394193ee0be6e5cdf833f54",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * mon *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:14.824Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "4f8d664e60da91cf167cd0f11d373256ae926688852dba7f091503f54c0bad12",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * mon *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:18:43.815Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "d8b60c93aff090dbf67d3424e5bde3d919546f9d926e6fb1d093298e664d5078",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * mon *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:28.906Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "d82869b03eb2385d5d96930c74c4c26926deffa8beaf6e3791631801d9d13e52",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-19 00:17:00",
+              "utc": "2026-10-19 07:17:00",
+              "null": false,
+              "next": "2026-10-19T07:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * mon *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:22:48.803Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S08",
+      "sourceRow": "C5_S08",
+      "expression": "0 0/15 * ? * * *",
+      "method": "observeS08",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 0/15 * ? * * *',new ClockJobFixture());observed.put('expression','0 0/15 * ? * * *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 0/15 * ? * * *',new ClockJobFixture());observed.put('expression','0 0/15 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "81ccc08fb53b65a6a8064b38c65a485b2b24bb683579bec7347923a218face53",
+        "named": "75f87d22225e964af61b7d0fd0d9ccb273d6b53c8c4d25e1aa3b76d24dabee62"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "a6ed0e7c60924c778b18ba344aed89a11deebfb7fbaf1ece3a002510faf95f89",
+          "native": {
+            "message": "Seconds and minutes must be specified as integers: 0 0/15 * ? * * *",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:54:51.051Z"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "primary",
+          "markerSHA256": "531e8e7ed22b7e35b8170ec8d76bce77b6ec8c3249355bb75a405cb2f45c4b8c",
+          "native": {
+            "message": "Seconds and minutes must be specified as integers: 0 0/15 * ? * * *",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:59:13.982Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "3bc5fc32e8ff050a1d8e730c4c9540f3bfc0b4855449b813deb37d669d2ae16f",
+          "native": {
+            "message": "Seconds and minutes must be specified as integers: 0 0/15 * ? * * *",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:16.819Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "323c1b122a0f77abd9ffe0368ebe2bb2dd552163d50dab52fab3b5ccdb750f5b",
+          "native": {
+            "message": "Seconds and minutes must be specified as integers: 0 0/15 * ? * * *",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:18:49.646Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "58c80efc6e007bb4e70535eb0049cd6cb2935f66e79a6ea2ce01d273a5d9b177",
+          "native": {
+            "message": "Seconds and minutes must be specified as integers: 0 0/15 * ? * * *",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:30.125Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "afb51e57bcdf1e8f2d9c3681800940c3cf2e78ff98c80a15def8012124c13fbc",
+          "native": {
+            "message": "Seconds and minutes must be specified as integers: 0 0/15 * ? * * *",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:22:52.559Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S09",
+      "sourceRow": "C5_S09",
+      "expression": "0 * * ? * * *",
+      "method": "observeS09",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 * * ? * * *',new ClockJobFixture());observed.put('expression','0 * * ? * * *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 * * ? * * *',new ClockJobFixture());observed.put('expression','0 * * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "1a1c6b9f50bc089da6856188ed777ee21c9614da58c6cc181e70d2fdb09623c5",
+        "named": "e6b91b4f31bd6c77dffc6b7f6ddbfc62c78d99b8ea454f5194a8ea482ef9df4c"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "458b9ecc9bd4d8a3cd8ef46d175690b661e4eb0618724044c18fd38b7c86ccaa",
+          "native": {
+            "message": "Seconds and minutes must be specified as integers: 0 * * ? * * *",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:54:59.928Z"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "primary",
+          "markerSHA256": "c0a9375425c982c819f1089dd40e7a71cd9cfef41c336711ca2b114b696910ce",
+          "native": {
+            "message": "Seconds and minutes must be specified as integers: 0 * * ? * * *",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:59:22.384Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "0a314f19473afae080306113ed10253018796cdb39666a1a9b4446360caf42c4",
+          "native": {
+            "message": "Seconds and minutes must be specified as integers: 0 * * ? * * *",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:19.275Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "59da8d6e5258d58aa2de7a2ba59d7140a7d4ec05740c5ababa982fc0bc89bd32",
+          "native": {
+            "message": "Seconds and minutes must be specified as integers: 0 * * ? * * *",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:18:55.753Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "11f7bded74fb3f20ba81c01aa2bb4b59e95900acfe9912c4e2326cfefb8be855",
+          "native": {
+            "message": "Seconds and minutes must be specified as integers: 0 * * ? * * *",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:31.381Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "374f1e1cacd51140359f0fbcc2d8395a32b79984900bf8a14da5ca71bf55c6c3",
+          "native": {
+            "message": "Seconds and minutes must be specified as integers: 0 * * ? * * *",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:22:57.500Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "sourceRow": "C5_S10",
+      "expression": "0 17 3 1 1 ? 2099",
+      "method": "observeS10",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 3 1 1 ? 2099',new ClockJobFixture());observed.put('expression','0 17 3 1 1 ? 2099');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 3 1 1 ? 2099',new ClockJobFixture());observed.put('expression','0 17 3 1 1 ? 2099');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "fd45dc849cb9894e0b577c160c7a3310d7585d0ccd3835a37b9919536f99dbe6",
+        "named": "1f41e071b648c46cbc1ec1ee3001419ad3ca9096617860a55f32ff7ae589ce3e"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "f2f38267b96a6a1736e3e0d625cb7f7b271a9a626286cbb5a34e799d89c26bb8",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2099-01-01 03:17:00",
+              "utc": "2099-01-01 11:17:00",
+              "null": false,
+              "next": "2099-01-01T11:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 3 1 1 ? 2099",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:55:06.807Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "caf3af6fba00f748a35b448c55fda94c0e0a24ee794ba49a7d42496e8986b9f9",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2099-01-01 03:17:00",
+              "utc": "2099-01-01 11:17:00",
+              "null": false,
+              "next": "2099-01-01T11:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2099-01-01 03:17:00",
+              "utc": "2099-01-01 11:17:00",
+              "null": false,
+              "next": "2099-01-01T11:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 3 1 1 ? 2099",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:12:51.006Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "821d5df60fdba27943f2d04e6c5061f96e7173faac479452c1246b9994f94871",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2099-01-01 03:17:00",
+              "utc": "2099-01-01 11:17:00",
+              "null": false,
+              "next": "2099-01-01T11:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 3 1 1 ? 2099",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:21.444Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "d904ec9189507bd70261e45ef81bc179c6ae9b93f60f0b0cdc20f91d7d9cd4e5",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2099-01-01 03:17:00",
+              "utc": "2099-01-01 11:17:00",
+              "null": false,
+              "next": "2099-01-01T11:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2099-01-01 03:17:00",
+              "utc": "2099-01-01 11:17:00",
+              "null": false,
+              "next": "2099-01-01T11:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 3 1 1 ? 2099",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:19:00.163Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "280cc59bc001b194d12731a8aedda4d96e993c364c9ba2f7a50d5827472ce56b",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2099-01-01 03:17:00",
+              "utc": "2099-01-01 11:17:00",
+              "null": false,
+              "next": "2099-01-01T11:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 3 1 1 ? 2099",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:32.332Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "f911f49dcf43db1447bd0cfa420b252062409830490323cd996215194d80adf2",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2099-01-01 03:17:00",
+              "utc": "2099-01-01 11:17:00",
+              "null": false,
+              "next": "2099-01-01T11:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2099-01-01 03:17:00",
+              "utc": "2099-01-01 11:17:00",
+              "null": false,
+              "next": "2099-01-01T11:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 3 1 1 ? 2099",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:23:01.251Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S11",
+      "sourceRow": "C5_S11",
+      "expression": "0 60 * ? * * *",
+      "method": "observeS11",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 60 * ? * * *',new ClockJobFixture());observed.put('expression','0 60 * ? * * *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 60 * ? * * *',new ClockJobFixture());observed.put('expression','0 60 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "8b94eb6ef049e1caa042515c07c814fc7e8255fbc1ae3858978485dcc56d04d7",
+        "named": "221bdb592ee34c33b58ec4d2ec163a162aedb6799007f9927034962b4dd81b3e"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "70289afbcb99528b44977f35277429dd4de001703afeb822b1d9dc11cf32bc7e",
+          "native": {
+            "message": "Minute and Second values must be between 0 and 59",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:55:17.386Z"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "aea3c55b789d0c0f3cbd579c7f6bf6351da0a935767a1295ae59b40c6c90d0b4",
+          "native": {
+            "message": "Minute and Second values must be between 0 and 59",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:13:02.886Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "60f0d63cc3d7f51f4d80f39e0acd6e5506854ae332fce3e873b67a798f86c034",
+          "native": {
+            "message": "Minute and Second values must be between 0 and 59",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:22.896Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "bf4f3b9a976324feea7191693a2772610fe492c0f4e1fcfddf97255e1c16695b",
+          "native": {
+            "message": "Minute and Second values must be between 0 and 59",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:19:04.550Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "afde036cc938d345cfea3ac82927e0c9b7d704eca4872e2fd28f113ffce7b409",
+          "native": {
+            "message": "Minute and Second values must be between 0 and 59",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:22:43.793Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "d26dfa602be95b16d48f196c3065a182469d7f501f0329181e8540d5d3d1cd39",
+          "native": {
+            "message": "Minute and Second values must be between 0 and 59",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:23:22.741Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S12",
+      "sourceRow": "C5_S12",
+      "expression": "0 17 24 ? * * *",
+      "method": "observeS12",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 24 ? * * *',new ClockJobFixture());observed.put('expression','0 17 24 ? * * *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 24 ? * * *',new ClockJobFixture());observed.put('expression','0 17 24 ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "61a4494374c77329bd4f5c817ff4997ca459d38716f562c0a20b1de6db77e184",
+        "named": "d83fad3be1af2419631af417cc28cc8cf958bcf25c1f1aa14a1a6d8a939d04e3"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "c4ded7be1dc3d76d527e6d1f1285233234ab6e135bb04502c3f99cf0fe820cf9",
+          "native": {
+            "message": "Hour values must be between 0 and 23",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:55:21.581Z"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "bce87ee4cc9f10611fa487ce0d6599664e4031f488429059ad31c1d6c360ba2f",
+          "native": {
+            "message": "Hour values must be between 0 and 23",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:13:35.420Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "670d1d2d349f7e58fda6ade7ffe4048eba660377f8437b3f429eb4ad860386fc",
+          "native": {
+            "message": "Hour values must be between 0 and 23",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:24.259Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "f05cd249694977a37f1022f25ceadd37ca9f2d6fb7ffb4d23a0fb29958760031",
+          "native": {
+            "message": "Hour values must be between 0 and 23",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:19:08.722Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "607f3c21249958e41bf763a33c6b5460669491f7b32e111b94b46133f2a21c43",
+          "native": {
+            "message": "Hour values must be between 0 and 23",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:35.102Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "14f1ce8682702ead963a5f8847a2b4fe57955fb2df8e913e2601786a503ca5cb",
+          "native": {
+            "message": "Hour values must be between 0 and 23",
+            "type": "System.StringException",
+            "complete": false,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:23:27.015Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S13_UTC",
+      "sourceRow": "C5_S13_UTC",
+      "expression": "0 17 * ? * * *",
+      "method": "observeS13_UTC",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 * ? * * *',new ClockJobFixture());observed.put('expression','0 17 * ? * * *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * ? * * *',new ClockJobFixture());observed.put('expression','0 17 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "e17c4284f848478a11b21bc4e6547cc267d128eb9f3cf0e1702bbafbf8b8a240",
+        "named": "e007314df0fbdeeda59edffccfe0c5a9baae09514709acaacc0ab5a0a9a477e9"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "dd0ab5560ba2952e7f1d9e2b74c9bf25f0b349a52bbea10e2594cb6a154309a3",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-14 04:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "GMT",
+            "now": "2026-10-14T03:55:36.228Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "7757d3f49933e0667317fb826f29ab36dd350f9021af0c021dd9cbbc7b25b0e3",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-14 04:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-14 04:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "GMT",
+            "now": "2026-10-14T04:13:48.965Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "6d3aec083321813083cef238d5dbc403bcafacc3ec53c707ce8d2b93f7f28028",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-14 04:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "GMT",
+            "now": "2026-10-14T04:16:30.707Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "79b417f6edd580be3a5e053aa9462eb90cc12d78b8f20a0c8b03921816ff235f",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-14 05:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-14 05:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "GMT",
+            "now": "2026-10-14T04:19:16.100Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "0ea7520d48d9ea70e6ef5ac5f4581ab6e37af8f48dc4ed3bdd762e04f7f7f93d",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-14 05:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "GMT",
+            "now": "2026-10-14T04:20:39.011Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "c7e74ee866d41659902cada4df18bf41b3315bb91d14df3f5745dcae1a386faa",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-14 05:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-14 05:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "GMT",
+            "now": "2026-10-14T04:23:32.824Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S13_LA",
+      "sourceRow": "C5_S13_LA",
+      "expression": "0 17 * ? * * *",
+      "method": "observeS13_LA",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 * ? * * *',new ClockJobFixture());observed.put('expression','0 17 * ? * * *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{Test.startTest();String key=System.schedule('capture-clock-unique','0 17 * ? * * *',new ClockJobFixture());observed.put('expression','0 17 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "e17c4284f848478a11b21bc4e6547cc267d128eb9f3cf0e1702bbafbf8b8a240",
+        "named": "e007314df0fbdeeda59edffccfe0c5a9baae09514709acaacc0ab5a0a9a477e9"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "39737a9891a953629cb398a55ff7af48558d73f4873c113ee6355efd1a7a2f8f",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:55:52.215Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "a88e2f35fe60744aaad4e1de4dd59aacf8bd0694bb53324b31aa1e439237d3f7",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:14:07.178Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "61f91f8eade04a94827ef6aab6c20c32c4fc2a98bbc1d1437537070547bf7655",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:36.821Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "83251871675c52539157d7952a1d293eacb0ad122258ccaf1907ae3c79c3f6ee",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:19:22.939Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "9855281034ce0f3e6bed4e6606be0f32bd285b97c4afc8c8daef903bdb368dff",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:43.758Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "5792073ba9674c0b86965e946139b2eb349758a69b078659696c001694e32e89",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:23:43.982Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S14",
+      "sourceRow": "C5_S14",
+      "expression": "0 17 * ? * * *",
+      "method": "observeS14",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 * ? * * *',new ClockJobFixture());observed.put('expression','0 17 * ? * * *');observed.put('before',SnapshotSeed.get(key));observed.put('after','not-applicable');observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "named": "Map<String,Object> observed=new Map<String,Object>{'now'=>Datetime.now(),'timezone'=>UserInfo.getTimeZone().getID(),'complete'=>false};try{String key=System.schedule('capture-clock-unique','0 17 * ? * * *',new ClockJobFixture());observed.put('expression','0 17 * ? * * *');observed.put('before',SnapshotSeed.get(key));Test.startTest();Test.stopTest();observed.put('after',SnapshotSeed.get(key));observed.put('complete',true);}catch(Exception failure){observed.put('type',failure.getTypeName());observed.put('message',failure.getMessage());}System.debug('CRON_NEXT_FIRE|'+JSON.serialize(observed));",
+      "sourceSHA256": {
+        "anonymous": "e17c4284f848478a11b21bc4e6547cc267d128eb9f3cf0e1702bbafbf8b8a240",
+        "named": "95487935e356f774cbe58c06743b0f50de09cb74a8864c90839e1be7dd793056"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "sourceCapture": "primary",
+          "markerSHA256": "235074e9cce94465ea823f8676b6d37f745781484bb2a807aebb65b9bfb065e8",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T03:55:57.409Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "dfe4025a0ac45658f458e32ac25ba61e9d4a0b312402c8f6c6014f9405a4731b",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:14:22.716Z"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "072718035be1d1c371fbfd2f478a6c41da38adb8d64f19d735bf2d8d9a38b9ab",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 21:17:00",
+              "utc": "2026-10-14 04:17:00",
+              "null": false,
+              "next": "2026-10-14T04:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:16:38.241Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "e6156281d20dab138dfffa98944ec584567b8e981c60c84dbc573757fba62bb8",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:19:26.358Z"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "sourceCapture": "recovery",
+          "markerSHA256": "72b82a75e9b46da4dc510364db50782023f782a7dd53e48692d7ce924a8b8fe2",
+          "native": {
+            "after": "not-applicable",
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:20:45.896Z"
+          },
+          "carryReason": "Native anonymous wrapper aborts the scheduled job after taking its snapshot. Local anonymous abort is an unsupported async boundary; replay omits only cleanup and carries its completion cell.",
+          "carryOwner": "local async abort boundary",
+          "carriedFields": [
+            "complete"
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "sourceCapture": "recovery",
+          "markerSHA256": "4ec2027d18dd6255a8f7c92b2c4f672f683bbbf2a3b0045fc23f466eaac0ea92",
+          "native": {
+            "after": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "before": {
+              "minute": 17,
+              "local": "2026-10-13 22:17:00",
+              "utc": "2026-10-14 05:17:00",
+              "null": false,
+              "next": "2026-10-14T05:17:00.000Z",
+              "times": 0,
+              "state": "WAITING"
+            },
+            "expression": "0 17 * ? * * *",
+            "complete": true,
+            "timezone": "America/Los_Angeles",
+            "now": "2026-10-14T04:23:47.370Z"
+          }
+        }
+      ]
+    }
+  ]
+}

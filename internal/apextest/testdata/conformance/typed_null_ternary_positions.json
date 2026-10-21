@@ -1,0 +1,1266 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "cluster": "ternary-positions",
+  "shapeCount": 10,
+  "nativeObservationCount": 60,
+  "capturedObservationCount": 60,
+  "packetRowsSha256": "fd89c1212d2e4ba87aad001ff72bea54d0e8f28a0bdb393af72cc51d4c5a54b3",
+  "nativeAnswersSha256": "4651a770309cb61b6f66e523aa069debcea95293c26ac3e83a358a9d1971ac5c",
+  "sourceManifestSha256": "3164f5fc42dba3b344bd172d8721f1722f20f6b35478029ce7a8af178c933d2b",
+  "evidenceSHA256": {
+    "62.0@anonymous": {
+      "tsvSha256": "d3207f68db5632bc09eeaf61fec7c6d6bae3382f0098852aa2a9a6edfeab2a48",
+      "runSha256": "9d44838be7a34c062803ffb7e279b73acfa28d865463335a136ecea977246f75"
+    },
+    "62.0@istest": {
+      "tsvSha256": "47f690e6680100b77ab3a9de63df17971769f4aa6931d8bc4ebc3db4e2165396",
+      "runSha256": "9ac070e9bd71ab3b9ba4d32aadb8227584a4e24627530f904f51e16302d7518b"
+    },
+    "67.0@anonymous": {
+      "tsvSha256": "d3207f68db5632bc09eeaf61fec7c6d6bae3382f0098852aa2a9a6edfeab2a48",
+      "runSha256": "35639d89ccfe1b78301dbd5576a8c4b0677de0d20da54c559b7629c935839139"
+    },
+    "67.0@istest": {
+      "tsvSha256": "47f690e6680100b77ab3a9de63df17971769f4aa6931d8bc4ebc3db4e2165396",
+      "runSha256": "c539330592ce3c9d5f99d9825563969279ea660a4c6b3c1062dc81a2bf67aeff"
+    },
+    "68.0@anonymous": {
+      "tsvSha256": "d3207f68db5632bc09eeaf61fec7c6d6bae3382f0098852aa2a9a6edfeab2a48",
+      "runSha256": "6d2142dc8227613e0c73792d581ec1f5b56f109228603907192d8e128a66a017"
+    },
+    "68.0@istest": {
+      "tsvSha256": "47f690e6680100b77ab3a9de63df17971769f4aa6931d8bc4ebc3db4e2165396",
+      "runSha256": "4afe1949540dcb7373065039fb5b913d605a2126f779ca15bff62adeb8a7a0d6"
+    }
+  },
+  "rows": [
+    {
+      "id": "C156TN_022",
+      "question": "String true flag?null:v",
+      "role": "boundary",
+      "twin": "C156TN_006",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN022Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }\nString r;Boolean flag=true;String v='kept';r=new TN022Dispatch().pick(flag?null:v);System.assert(false,'C156_RESULT|C156TN_022|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "b24de035f96b9aba3eb8400ba61758557ac3a72313c05350d1bdc75cbc8b8548"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_022|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "67.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_022|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "68.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_022|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN022Observe": "@IsTest private class TN022Observe{@IsTest static void observe(){String r;Boolean flag=true;String v='kept';r=new TN022Dispatch().pick(flag?null:v);System.assert(false,'C156_RESULT|C156TN_022|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN022Dispatch": "public class TN022Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }"
+          },
+          "tests": [
+            "TN022Observe"
+          ],
+          "sourceSha256": {
+            "class:TN022Observe": "3918de25724f4c238e1dac956c41122146741cf51133c20ddf81847dfd8c62df",
+            "class:TN022Dispatch": "f4090b9f3b8f81a2dbaf426f40420342d80495d3e93b5bceca71078d6606291a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN022Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_022|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN022Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_022|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN022Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_022|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_023",
+      "question": "String true flag?v:null",
+      "role": "boundary",
+      "twin": "C156TN_006",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN023Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }\nString r;Boolean flag=true;String v='kept';r=new TN023Dispatch().pick(flag?v:null);System.assert(false,'C156_RESULT|C156TN_023|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "543b6ee2ce8524ec4854f173cc6364a601a8b501d255a99e424c452406b3c351"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_023|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "67.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_023|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "68.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_023|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN023Observe": "@IsTest private class TN023Observe{@IsTest static void observe(){String r;Boolean flag=true;String v='kept';r=new TN023Dispatch().pick(flag?v:null);System.assert(false,'C156_RESULT|C156TN_023|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN023Dispatch": "public class TN023Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }"
+          },
+          "tests": [
+            "TN023Observe"
+          ],
+          "sourceSha256": {
+            "class:TN023Observe": "2b1b9d36f30feddb617cdf259dcd17bdd52e4a19ad5f17227a337ed21cbb67f4",
+            "class:TN023Dispatch": "3bf4f5e43ba4327ac25f813397fdd4bcff1fc597e45e3ac5f78e2fb610a0df28"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN023Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_023|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN023Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_023|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN023Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_023|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_024",
+      "question": "String false flag?null:v",
+      "role": "boundary",
+      "twin": "C156TN_006",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN024Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }\nString r;Boolean flag=false;String v='kept';r=new TN024Dispatch().pick(flag?null:v);System.assert(false,'C156_RESULT|C156TN_024|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "5082cd2a9ef8940dc20fe579c255ac628185370d11dac2daca62a031b40dda3f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_024|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "67.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_024|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "68.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_024|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN024Observe": "@IsTest private class TN024Observe{@IsTest static void observe(){String r;Boolean flag=false;String v='kept';r=new TN024Dispatch().pick(flag?null:v);System.assert(false,'C156_RESULT|C156TN_024|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN024Dispatch": "public class TN024Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }"
+          },
+          "tests": [
+            "TN024Observe"
+          ],
+          "sourceSha256": {
+            "class:TN024Observe": "4e2cf4d649474aed939faf2e4d5ec6e80e548ad21e0c834bda6d8c558e730007",
+            "class:TN024Dispatch": "ec1ed7849d19d066314c7c5910cbf7a73c0ae315fac1aabe4665dac14d040ec2"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN024Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_024|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN024Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_024|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN024Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_024|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_025",
+      "question": "String false flag?v:null",
+      "role": "boundary",
+      "twin": "C156TN_006",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN025Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }\nString r;Boolean flag=false;String v='kept';r=new TN025Dispatch().pick(flag?v:null);System.assert(false,'C156_RESULT|C156TN_025|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "8d83b566b7aa34e35931e3c5c0238c127a9b93adc8037e0d44526a4334854e9a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_025|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "67.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_025|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "68.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_025|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN025Observe": "@IsTest private class TN025Observe{@IsTest static void observe(){String r;Boolean flag=false;String v='kept';r=new TN025Dispatch().pick(flag?v:null);System.assert(false,'C156_RESULT|C156TN_025|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN025Dispatch": "public class TN025Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }"
+          },
+          "tests": [
+            "TN025Observe"
+          ],
+          "sourceSha256": {
+            "class:TN025Observe": "71f571ad09b7350fe2342c5de2b4eaacec24b2b380d07ff3cd9e18200812b3dd",
+            "class:TN025Dispatch": "34b251a364d9a9322c919b43bf3606d6c4e4c5b82ce463af7edf6c148c505f2d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN025Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_025|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN025Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_025|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN025Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_025|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_026",
+      "question": "List<Integer> true flag?null:v",
+      "role": "boundary",
+      "twin": "C156TN_006",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN026Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }\nString r;Boolean flag=true;List<Integer> v=new List<Integer>{7};r=new TN026Dispatch().pick(flag?null:v);System.assert(false,'C156_RESULT|C156TN_026|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "f6fbadf0be86ee3266fdba10d62b1ad97b087ea7db0b769ebbe0946a6d5ba8be"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_026|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "67.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_026|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "68.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_026|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN026Observe": "@IsTest private class TN026Observe{@IsTest static void observe(){String r;Boolean flag=true;List<Integer> v=new List<Integer>{7};r=new TN026Dispatch().pick(flag?null:v);System.assert(false,'C156_RESULT|C156TN_026|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN026Dispatch": "public class TN026Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }"
+          },
+          "tests": [
+            "TN026Observe"
+          ],
+          "sourceSha256": {
+            "class:TN026Observe": "5cebf518b778f069ab2b50fdd5d9d86348b5cec24b3e4536629c2ba58dbb9b1f",
+            "class:TN026Dispatch": "9b2612a0adb670b56b91afc7acfbbbd2e86f2ff9307c53d21bdcbf537ecd4982"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN026Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_026|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN026Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_026|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN026Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_026|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_027",
+      "question": "List<Integer> true flag?v:null",
+      "role": "boundary",
+      "twin": "C156TN_006",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN027Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }\nString r;Boolean flag=true;List<Integer> v=new List<Integer>{7};r=new TN027Dispatch().pick(flag?v:null);System.assert(false,'C156_RESULT|C156TN_027|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "d18cb45f712abf3f7e7a9ba616ed5ce18e438b7e19f2d5df0ef63d67b33f77a0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_027|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "67.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_027|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "68.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_027|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN027Observe": "@IsTest private class TN027Observe{@IsTest static void observe(){String r;Boolean flag=true;List<Integer> v=new List<Integer>{7};r=new TN027Dispatch().pick(flag?v:null);System.assert(false,'C156_RESULT|C156TN_027|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN027Dispatch": "public class TN027Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }"
+          },
+          "tests": [
+            "TN027Observe"
+          ],
+          "sourceSha256": {
+            "class:TN027Observe": "0671aebe12bccd0340b689a3678922f792e5c5fd219f7e538de759ecc2ba4b3a",
+            "class:TN027Dispatch": "878c8f023cad9f59013d01c613bb642f6c8f7577b82ea16ce6eb747621345ee1"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN027Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_027|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN027Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_027|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN027Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_027|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_028",
+      "question": "List<Integer> false flag?null:v",
+      "role": "boundary",
+      "twin": "C156TN_006",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN028Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }\nString r;Boolean flag=false;List<Integer> v=new List<Integer>{7};r=new TN028Dispatch().pick(flag?null:v);System.assert(false,'C156_RESULT|C156TN_028|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "30c01650a8dd0679fb5b0cd1959803356c43ba3e55de3ba8ef765ce3817c4b5b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_028|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "67.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_028|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "68.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_028|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN028Observe": "@IsTest private class TN028Observe{@IsTest static void observe(){String r;Boolean flag=false;List<Integer> v=new List<Integer>{7};r=new TN028Dispatch().pick(flag?null:v);System.assert(false,'C156_RESULT|C156TN_028|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN028Dispatch": "public class TN028Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }"
+          },
+          "tests": [
+            "TN028Observe"
+          ],
+          "sourceSha256": {
+            "class:TN028Observe": "df1583bc29605429c2f11344b2cd28ba1166215b9642b4f1f563329608fc979c",
+            "class:TN028Dispatch": "ca0cd2566749c0bef646640c2b1129c2586d0101ffa9ed0b694ca9826c5931d0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN028Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_028|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN028Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_028|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN028Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_028|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_029",
+      "question": "List<Integer> false flag?v:null",
+      "role": "boundary",
+      "twin": "C156TN_006",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN029Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }\nString r;Boolean flag=false;List<Integer> v=new List<Integer>{7};r=new TN029Dispatch().pick(flag?v:null);System.assert(false,'C156_RESULT|C156TN_029|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "ee216e9fe449160ce04da6dfbdefd7bbda1fbab1780520d3af1f982a9c440544"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_029|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "67.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_029|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "68.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_029|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN029Observe": "@IsTest private class TN029Observe{@IsTest static void observe(){String r;Boolean flag=false;List<Integer> v=new List<Integer>{7};r=new TN029Dispatch().pick(flag?v:null);System.assert(false,'C156_RESULT|C156TN_029|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN029Dispatch": "public class TN029Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }"
+          },
+          "tests": [
+            "TN029Observe"
+          ],
+          "sourceSha256": {
+            "class:TN029Observe": "8ed6f36028eaa1dd29b3fa36ff1fade5eff9b8213a20cebeac2e36bb03ad8f12",
+            "class:TN029Dispatch": "0d2419c1ce8464683485f8a0b63f08175470ea980593ec0e0e39869f5ae9d0ed"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN029Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_029|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN029Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_029|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN029Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_029|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_030",
+      "question": "two typed null String branches",
+      "role": "positive",
+      "twin": "C156TN_006",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN030Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }\nString r;Boolean flag=true;String a=null;String b=null;r=new TN030Dispatch().pick(flag?a:b);System.assert(false,'C156_RESULT|C156TN_030|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "4229c17d5fb0a3a54c0ee26678f66012c7ddfc4e4ec761621d0965722f88dee8"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_030|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "67.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_030|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "68.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_030|{\"r\":\"string\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN030Observe": "@IsTest private class TN030Observe{@IsTest static void observe(){String r;Boolean flag=true;String a=null;String b=null;r=new TN030Dispatch().pick(flag?a:b);System.assert(false,'C156_RESULT|C156TN_030|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN030Dispatch": "public class TN030Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }"
+          },
+          "tests": [
+            "TN030Observe"
+          ],
+          "sourceSha256": {
+            "class:TN030Observe": "2e3b016606cb0991663113db244033269809d4de6972f5a2dc03ab03ced723a7",
+            "class:TN030Dispatch": "1dbff9a3d8dbced1b1ebbbd34a8fabc818a48201410b4de427a63e0c75042c05"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN030Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_030|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN030Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_030|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN030Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_030|{\"r\":\"string\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"string\"}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_031",
+      "question": "two typed null list branches",
+      "role": "positive",
+      "twin": "C156TN_006",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN031Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }\nString r;Boolean flag=false;List<Integer> a=null;List<Integer> b=null;r=new TN031Dispatch().pick(flag?a:b);System.assert(false,'C156_RESULT|C156TN_031|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "a5d59c1a1c15b5d636063c976cae74a6ca016c29436be391309290aba65a1d22"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_031|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "67.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_031|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "68.0": {
+              "native": {
+                "compiled": true,
+                "compileProblem": null,
+                "line": 2,
+                "column": 1,
+                "success": false,
+                "exceptionMessage": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_031|{\"r\":\"integers\"}"
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN031Observe": "@IsTest private class TN031Observe{@IsTest static void observe(){String r;Boolean flag=false;List<Integer> a=null;List<Integer> b=null;r=new TN031Dispatch().pick(flag?a:b);System.assert(false,'C156_RESULT|C156TN_031|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN031Dispatch": "public class TN031Dispatch { public String pick(String v){return 'string';} public String pick(List<Integer> v){return 'integers';} }"
+          },
+          "tests": [
+            "TN031Observe"
+          ],
+          "sourceSha256": {
+            "class:TN031Observe": "9c48c3dc8b7b4a05e86bc5548914be87874f0a7a3c3b4a1d18a00e43aba5e823",
+            "class:TN031Dispatch": "267b5b7e99bc1c2eb4a28779bcb92187e08dbfa3ad1d96f911f07905878c38f2"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN031Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_031|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN031Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_031|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [],
+                "testFailures": [
+                  {
+                    "cls": "TN031Observe",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: C156_RESULT|C156TN_031|{\"r\":\"integers\"}"
+                  }
+                ],
+                "testPasses": []
+              },
+              "outcome": "runtime",
+              "value": "{\"r\":\"integers\"}"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

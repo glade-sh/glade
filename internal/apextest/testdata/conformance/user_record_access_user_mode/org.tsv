@@ -1,0 +1,5 @@
+source_api	case_id	route	observation
+62.0	implicit_static	istest	ok|true|1
+62.0	explicit_user_mode	istest	ok|true|1
+67.0	implicit_static	istest	ok|true|1
+67.0	explicit_user_mode	istest	ok|true|1

@@ -1,0 +1,7 @@
+variant	query_shape
+scalar_group	(NOT (Id IN :ids)) AND Id IN :scope
+semi_group	(NOT (Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope))) AND Id IN :scope
+scalar_ungrouped	NOT Id IN :ids AND Id IN :scope
+semi_ungrouped	NOT Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope) AND Id IN :scope
+scalar_static	static twin of scalar_group
+semi_static	static twin of semi_group

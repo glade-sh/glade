@@ -58,9 +58,10 @@ type v10Case struct {
 // GET/postback DOM row at API 59/67, including exact diagnostic text. Owned
 // fixtures include repeat, identity, region and ordinary-command controls.
 // Request runtime, form binding, view state and partial rendering use product
-// code. The adapter observes textContent and controls and submits only rendered
-// successful controls; it supplies no Apex getters, setters, validation or
-// action behavior. CI reads testdata without credentials or a browser.
+// code. The adapter observes textContent and controls and submits rendered
+// successful controls plus emitted AJAX options; it supplies no Apex getters,
+// setters, validation or action behavior. CI reads testdata without credentials
+// or a browser.
 // GLADE_V10_CAPTURE=1 writes differences without failing on row mismatches;
 // GLADE_V10_REPORT selects the per-row TSV output path.
 func TestV10SalesforceConformance(t *testing.T) {
@@ -379,6 +380,9 @@ func v10Execute(t *testing.T, root, name string, c v10Case) (string, []v10Diagno
 		if scope != form {
 			v10AppendAjaxFormControls(t, doc, form, values)
 		}
+		if len(ajax) == 3 {
+			v10AppendAjaxCommand(t, doc, hook, values)
+		}
 		values[visualforce.ViewStateActionFieldName()] = action
 		if len(ajax) == 3 {
 			values["__vf_ajax"], values["__vf_rerender"] = "1", targets
@@ -681,6 +685,31 @@ func v10AppendAjaxFormControls(t *testing.T, doc, form *html.Node, values map[st
 	}
 }
 
+// AJAX overrides any collected command marker with the rendered option. Read
+// both the option and the shipped assignment, without mutating the form DOM.
+func v10AppendAjaxCommand(t *testing.T, doc *html.Node, hook string, values map[string]string) {
+	t.Helper()
+	option := v10AjaxCommandOption.FindStringSubmatch(hook)
+	if len(option) != 2 {
+		if strings.Contains(hook, "command:") {
+			t.Fatal("rendered AJAX command option has unsupported syntax")
+		}
+		return
+	}
+	script := v10Find(doc, func(n *html.Node) bool {
+		return n.Type == html.ElementNode && n.Data == "script" && strings.Contains(v10Text(n), "window.GLADEVF.submit=function(form,action,targets,options)")
+	})
+	assignment := v10AjaxCommandAssignment.FindStringSubmatch(v10Text(script))
+	if len(assignment) != 2 {
+		t.Fatal("rendered AJAX transport has no supported command assignment")
+	}
+	if option[1] != "" {
+		values[assignment[1]] = option[1]
+	}
+}
+
+var v10AjaxCommandOption = regexp.MustCompile(`var o=\{(?:status:'[^'\\]*',)?command:'([^'\\]*)'`)
+var v10AjaxCommandAssignment = regexp.MustCompile(`if\(options\.command\)\{data\.set\("([^"]+)",options\.command\);\}`)
 var v10CommandFieldHook = regexp.MustCompile(`c\.name='([^']+)';f\.appendChild\(c\);\}c\.value=e\.getAttribute\('([^']+)'\)`)
 var v10AjaxFormFields = regexp.MustCompile(`function appendFormControlFields\(data,form\)\{\s*(\[[^\]]*\])\.forEach\(function\(name\)\{`)
 

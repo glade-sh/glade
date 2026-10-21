@@ -201,11 +201,14 @@ func schemaDisplayTypeStaticValue(name string) (Value, bool) {
 }
 
 func schemaDisplayTypeValue(name string) Value {
-	// Salesforce exposes Blob fields through Schema.DisplayType.BASE64. The
-	// storage catalog uses BLOB as its internal field type, so normalize that
-	// spelling at the platform boundary.
-	if strings.EqualFold(strings.TrimSpace(name), "BLOB") {
+	// Preserve detailed storage field kinds internally while returning the
+	// public enum: Blob is BASE64, and rich text shares TEXTAREA. The HTML
+	// distinction remains available through isHtmlFormatted().
+	switch strings.ToUpper(strings.TrimSpace(name)) {
+	case "BLOB":
 		name = "BASE64"
+	case "RICHTEXTAREA":
+		name = "TEXTAREA"
 	}
 	value, ok := namedEnumStaticValue("Schema.DisplayType", schemaDisplayTypeNames, "Schema.DisplayType."+name)
 	if ok {
@@ -425,13 +428,15 @@ func (vm *VM) flowInterviewCreate(args []Value) (Value, error) {
 		name = args[0].Text + "." + name
 	}
 	if _, found := vm.autolaunchedFlowRule(name); !found {
-		return Null, newExceptionError("System.TypeException", "Invalid type: "+name)
+		if _, declared := vm.flowDeclaration(name); !declared {
+			return Null, newExceptionError("System.TypeException", "Invalid type: "+name)
+		}
 	}
 	interview := Object("Flow.Interview")
 	if offset == 1 {
 		interview.Fields["namespace"] = args[0]
 	}
-	interview.Fields["flowName"] = args[offset]
+	interview.Fields["flowName"] = String(name)
 	interview.Fields["variables"] = args[offset+1]
 	interview.Fields["status"] = String("NotStarted")
 	interview.Fields["started"] = Bool(false)
@@ -652,13 +657,27 @@ func (vm *VM) applyCustomMetadataDeployment(item Value) error {
 	if objectName == "" || developerName == "" {
 		return fmt.Errorf("Metadata.CustomMetadata.fullName must be Type.Record")
 	}
+	// A subscriber deployment cannot create a missing type from a qualified
+	// record fullName. Fail before the state helper can synthesize that type;
+	// enqueueDeployment rolls back the candidate org on this component failure.
+	if vm.Org.Namespace == "" && vm.currentCallerNamespace() == "" && storage.StripAnyNamespaceToken(objectName) != objectName {
+		if _, exists := vm.Org.Objects[objectName]; !exists {
+			return fmt.Errorf("Custom metadata type %s is not available in this organization.", objectName)
+		}
+	}
 	state := vm.metadataCustomMetadataState(objectName)
 	definition := state.Definition
+	recordNamespace := storage.StringValue(metadataNamespacePrefix(vm.Org.Namespace, definition.APIName))
+	// A record created by a non-namespaced subscriber of a packaged type has
+	// no owner namespace. Its type namespace does not turn null into a string.
+	if vm.Org.Namespace == "" && vm.currentCallerNamespace() == "" && storage.StripAnyNamespaceToken(definition.APIName) != definition.APIName {
+		recordNamespace = storage.NullValue()
+	}
 	recordFields := map[string]storage.Value{
 		"DeveloperName":    storage.StringValue(developerName),
 		"MasterLabel":      storage.StringValue(metadataLabelOrDefault(item, developerName)),
 		"Label":            storage.StringValue(metadataLabelOrDefault(item, developerName)),
-		"NamespacePrefix":  storage.StringValue(metadataNamespacePrefix(vm.Org.Namespace, definition.APIName)),
+		"NamespacePrefix":  recordNamespace,
 		"QualifiedApiName": storage.StringValue(metadataQualifiedAPIName(vm.Org.Namespace, definition.APIName, developerName)),
 	}
 	values := item.Fields["values"]
@@ -921,45 +940,19 @@ func (vm *VM) metadataRetrieve(args []Value) (Value, error) {
 	return result, nil
 }
 
-// metadataLayoutObject provides the local shape returned by Metadata.retrieve
-// for a layout. The runner has schema fields but no deployable layout store, so
-// expose a deterministic single-section layout derived from the target object.
+// metadataLayoutObject retrieves only a declared layout. Schema fields do not
+// establish that a requested layout exists or determine its section order.
 func (vm *VM) metadataLayoutObject(fullName string) Value {
-	objectName, _, ok := strings.Cut(strings.TrimSpace(fullName), "-")
-	if !ok || strings.TrimSpace(objectName) == "" || vm == nil || vm.Org == nil {
+	fullName = strings.TrimSpace(fullName)
+	if vm == nil || vm.Org == nil || fullName == "" {
 		return Null
 	}
-	resolved, ok := vm.resolveObjectName(strings.TrimSpace(objectName))
-	if !ok {
-		return Null
-	}
-	state, ok := vm.Org.Objects[resolved]
-	if !ok {
-		return Null
-	}
-	fieldNames := make([]string, 0, len(state.Definition.Fields))
-	for name, field := range state.Definition.Fields {
-		if strings.TrimSpace(field.APIName) != "" {
-			name = field.APIName
-		}
-		if strings.TrimSpace(name) != "" {
-			fieldNames = append(fieldNames, name)
+	for _, layout := range vm.Org.Metadata.Layouts {
+		if layout.FullName == fullName {
+			return declaredMetadataLayout(layout)
 		}
 	}
-	sort.Strings(fieldNames)
-	items := make([]Value, 0, len(fieldNames))
-	for _, fieldName := range fieldNames {
-		item := Object("Metadata.LayoutItem")
-		item.Fields["field"] = String(fieldName)
-		items = append(items, item)
-	}
-	column := Object("Metadata.LayoutColumn")
-	column.Fields["layoutItems"] = List(items...)
-	section := Object("Metadata.LayoutSection")
-	section.Fields["layoutColumns"] = List(column)
-	layout := Object("Metadata.Layout")
-	layout.Fields["layoutSections"] = List(section)
-	return layout
+	return Null
 }
 
 func metadataCustomMetadataObject(definition storage.ObjectDefinition, record storage.Record) Value {
@@ -1433,12 +1426,24 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 		receiverType = rest
 	}
 	if strings.EqualFold(receiverType, "AccessLevel") && strings.EqualFold(method, "withPermissionSetId") {
-		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueNull) {
+		if len(args) != 1 {
 			return Null, true, fmt.Errorf("AccessLevel.withPermissionSetId expects String")
 		}
+		permissionSetID := args[0]
+		if text, ok := typedIDValueText(permissionSetID); ok {
+			permissionSetID = String(displayIDText(text))
+		}
+		if permissionSetID.Kind != ValueString && permissionSetID.Kind != ValueNull {
+			return Null, true, fmt.Errorf("AccessLevel.withPermissionSetId expects String")
+		}
+		if permissionSetID.Kind == ValueString && strings.TrimSpace(permissionSetID.Text) != "" {
+			if err := vm.validateUserModePermissionSetFeature(); err != nil {
+				return Null, true, err
+			}
+		}
 		value := accessLevelClone(receiver)
-		value.Fields["permissionSetId"] = cloneValue(args[0])
-		if args[0].Kind == ValueNull {
+		value.Fields["permissionSetId"] = cloneValue(permissionSetID)
+		if permissionSetID.Kind == ValueNull {
 			value.Fields["currentAccessPermissions"] = String(strings.ToUpper(strings.TrimSpace(receiver.Text)))
 		} else {
 			value.Fields["currentAccessPermissions"] = String("CUSTOM")

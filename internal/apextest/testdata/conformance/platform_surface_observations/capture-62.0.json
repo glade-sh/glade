@@ -1,0 +1,168 @@
+{
+  "api": "62.0",
+  "utc": "2026-10-19T02:59:56.672565+00:00",
+  "deployId": "0Afhs000000lvsTCAQ",
+  "deployStatus": "Succeeded",
+  "testRunId": "",
+  "rows": [
+    {
+      "api": "62.0",
+      "id": "crypto_key",
+      "outcome": "Fail",
+      "observed": {
+        "roundtrip": true,
+        "distinct": true,
+        "length256": 32,
+        "length192": 24,
+        "length128": 16
+      }
+    },
+    {
+      "api": "62.0",
+      "id": "finalizer_predicate",
+      "outcome": "Fail",
+      "observed": {
+        "root": {
+          "queueable": false,
+          "future": false,
+          "batch": false,
+          "scheduled": false,
+          "test": true
+        },
+        "finalizer2": {
+          "queueable": false,
+          "future": false,
+          "batch": false,
+          "scheduled": false,
+          "test": true
+        },
+        "finalizer1": {
+          "queueable": false,
+          "future": false,
+          "batch": false,
+          "scheduled": false,
+          "test": true
+        },
+        "finalizer0": {
+          "queueable": false,
+          "future": false,
+          "batch": false,
+          "scheduled": false,
+          "test": true
+        },
+        "body2": {
+          "queueable": true,
+          "future": false,
+          "batch": false,
+          "scheduled": false,
+          "test": true
+        },
+        "body1": {
+          "queueable": true,
+          "future": false,
+          "batch": false,
+          "scheduled": false,
+          "test": true
+        },
+        "body0": {
+          "queueable": true,
+          "future": false,
+          "batch": false,
+          "scheduled": false,
+          "test": true
+        }
+      }
+    },
+    {
+      "api": "62.0",
+      "id": "lead_defaults",
+      "outcome": "Fail",
+      "observed": {
+        "changed": [
+          true,
+          true,
+          true
+        ],
+        "initial": [
+          false,
+          false,
+          false
+        ]
+      }
+    },
+    {
+      "api": "62.0",
+      "id": "protected_reflection",
+      "outcome": "Fail",
+      "observed": {
+        "child": {
+          "message": "ProtectedSurfaceProduct does not have a no-arg constructor",
+          "type": "System.TypeException"
+        },
+        "owner": {
+          "message": "ProtectedSurfaceProduct does not have a no-arg constructor",
+          "type": "System.TypeException"
+        },
+        "external": {
+          "message": "ProtectedSurfaceProduct does not have a no-arg constructor",
+          "type": "System.TypeException"
+        }
+      }
+    },
+    {
+      "api": "62.0",
+      "id": "serialization",
+      "outcome": "Fail",
+      "observed": {
+        "acyclicControl": true,
+        "sharedAliasControl": true,
+        "concreteControl": "leaf",
+        "transientControl": true,
+        "nullInterfaceControl": true,
+        "abstractField": {
+          "message": "Cannot deserialize JSON as abstract type: GraphSerializationProbe.Base",
+          "type": "System.TypeException"
+        },
+        "customInterfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: GraphSerializationProbe.Marker",
+          "type": "System.TypeException"
+        },
+        "interfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: System.Comparable",
+          "type": "System.TypeException"
+        },
+        "treeCycle": {
+          "message": "Cycle detected.",
+          "type": "System.JSONException"
+        },
+        "suppressedCycle": {
+          "message": "Cycle detected.",
+          "type": "System.JSONException"
+        },
+        "prettyCycle": {
+          "message": "Cycle detected.",
+          "type": "System.JSONException"
+        },
+        "selfCycle": {
+          "message": "Cycle detected.",
+          "type": "System.JSONException"
+        }
+      }
+    },
+    {
+      "api": "62.0",
+      "id": "stub_property",
+      "outcome": "Fail",
+      "observed": {
+        "calls": [
+          "value"
+        ],
+        "fieldAfter": "field",
+        "plainAfter": "stored",
+        "explicit": "answer",
+        "fieldBefore": null,
+        "plainBefore": null
+      }
+    }
+  ]
+}

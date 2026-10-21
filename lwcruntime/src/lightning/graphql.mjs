@@ -1,5 +1,5 @@
 import { parseDocument } from "./graphql-document.mjs";
-import { executeQuery } from "./graphql-query.mjs";
+import { executeQuery, NO_WIRE_PROVISION } from "./graphql-query.mjs";
 
 const documents = new Map();
 const provisions = new WeakMap();
@@ -62,8 +62,8 @@ graphql.prototype.update = function (config) {
     this.generation++; return;
   }
   const generation = ++this.generation;
-  this.pending = executeQuery(config.query, config.variables ?? {}, config.operationName).then(value => {
-    if (!this.connected || generation !== this.generation) return;
+  this.pending = executeQuery(config.query, config.variables ?? {}, config.operationName, true).then(value => {
+    if (!this.connected || generation !== this.generation || value === NO_WIRE_PROVISION) return;
     publish(this, value);
   }).catch(error => {
     if (!this.connected || generation !== this.generation) return;
@@ -77,8 +77,8 @@ export function refreshGraphQL(value) {
   // Refresh settles without emitting an unchanged cached result (native
   // r_envelope_refresh and r_pages_refresh_page). Changed data is provisioned.
   const generation = adapter.generation;
-  return executeQuery(adapter.config.query, adapter.config.variables ?? {}, adapter.config.operationName).then(next => {
-    if (generation === adapter.generation && JSON.stringify(next) !== JSON.stringify(adapter.value) && adapter.connected) {
+  return executeQuery(adapter.config.query, adapter.config.variables ?? {}, adapter.config.operationName, true).then(next => {
+    if (next !== NO_WIRE_PROVISION && generation === adapter.generation && JSON.stringify(next) !== JSON.stringify(adapter.value) && adapter.connected) {
       publish(adapter, next);
     }
   });

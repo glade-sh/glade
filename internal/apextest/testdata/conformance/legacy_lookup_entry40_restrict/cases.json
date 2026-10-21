@@ -1,0 +1,169 @@
+{
+  "api": "62.0",
+  "entryAPI": "40.0",
+  "route": "istest",
+  "context": "plain",
+  "sourcePins": {
+    "LegacyOmissionQuery": "24.0",
+    "LegacyOmissionWrite": "39.0",
+    "LegacyOmissionRead": "40.0",
+    "LegacyOmissionObserver": "40.0"
+  },
+  "sourceSHA256": {
+    "ProjectionTile__c.object": "56d2a14b3f206f721a0c23be63d55cf298d1ecb0a0fc8889bf2296d72470d658",
+    "classes/LegacyOmissionObserver.cls": "0da9333c9bcfbb5a767b292f8b5cfdb8a1e82005ba6d7a4e6958c4dd95eee992",
+    "classes/LegacyOmissionObserver.cls-meta.xml": "736b59ea9c1b5f59cd8b65c9425620d3681865e057dcc4bcfe60d7892c7587f2",
+    "classes/LegacyOmissionQuery.cls": "2a944bd67fdabf3f716be4a44f691b92192bb93abec5be380853df0379a63030",
+    "classes/LegacyOmissionQuery.cls-meta.xml": "45ddc03dcd3caf164fecd732835b53a53d25ebb48dd5b51f62b677872e26d6c4",
+    "classes/LegacyOmissionRead.cls": "70e7d5787ca3ccc89675224c578743c25e232cd80f7e30d126a3e65823352c94",
+    "classes/LegacyOmissionRead.cls-meta.xml": "736b59ea9c1b5f59cd8b65c9425620d3681865e057dcc4bcfe60d7892c7587f2",
+    "classes/LegacyOmissionWrite.cls": "b8dcd404eb9a39af3c43c526525f0bfa4c1b26f44f3f8cbb895a2c5ccc7c88a3",
+    "classes/LegacyOmissionWrite.cls-meta.xml": "c2a6805fa907675e8ba80de58a77e033ae89217ca0868eca839fd6de8b7d500c"
+  },
+  "rows": [
+    {
+      "id": "A01L",
+      "native": {
+        "reads": {
+          "token": {
+            "message": "SObject row was retrieved via SOQL without querying the requested field: ProjectionTile__c.ParentAccount__c",
+            "type": "System.SObjectException",
+            "ok": false
+          },
+          "string": {
+            "message": "SObject row was retrieved via SOQL without querying the requested field: ProjectionTile__c.ParentAccount__c",
+            "type": "System.SObjectException",
+            "ok": false
+          },
+          "direct": {
+            "message": "SObject row was retrieved via SOQL without querying the requested field: ProjectionTile__c.ParentAccount__c",
+            "type": "System.SObjectException",
+            "ok": false
+          }
+        },
+        "amount": 12.0,
+        "sourcePins": [
+          24,
+          39,
+          40
+        ],
+        "row": "A01L",
+        "outcome": "complete"
+      }
+    },
+    {
+      "id": "A02L",
+      "native": {
+        "reads": {
+          "token": {
+            "value": null,
+            "ok": true
+          },
+          "string": {
+            "value": null,
+            "ok": true
+          },
+          "direct": {
+            "value": null,
+            "ok": true
+          }
+        },
+        "amount": 15.0,
+        "sourcePins": [
+          24,
+          39,
+          40
+        ],
+        "row": "A02L",
+        "outcome": "complete"
+      }
+    },
+    {
+      "id": "A03L",
+      "native": {
+        "reads": {
+          "token": {
+            "value": null,
+            "ok": true
+          },
+          "string": {
+            "value": null,
+            "ok": true
+          },
+          "direct": {
+            "value": null,
+            "ok": true
+          }
+        },
+        "amount": 9.0,
+        "sourcePins": [
+          24,
+          39,
+          40
+        ],
+        "row": "A03L",
+        "outcome": "complete"
+      }
+    },
+    {
+      "id": "A10L",
+      "native": {
+        "reads": {
+          "token": {
+            "value": null,
+            "ok": true
+          },
+          "string": {
+            "value": null,
+            "ok": true
+          },
+          "direct": {
+            "value": null,
+            "ok": true
+          }
+        },
+        "amount": 12.0,
+        "sourcePins": [
+          24,
+          39,
+          40
+        ],
+        "row": "A10L",
+        "outcome": "complete"
+      }
+    },
+    {
+      "id": "SELECTED_L",
+      "native": {
+        "reads": {
+          "token": {
+            "value": null,
+            "ok": true
+          },
+          "string": {
+            "value": null,
+            "ok": true
+          },
+          "direct": {
+            "value": null,
+            "ok": true
+          }
+        },
+        "amount": 15.0,
+        "sourcePins": [
+          24,
+          39,
+          40
+        ],
+        "row": "SELECTED_L",
+        "outcome": "complete"
+      }
+    }
+  ],
+  "carries": [
+    {
+      "count": 5,
+      "reason": "Owning-namespace twins in the accepted ten-cell extension remain unanswered; plain observations must not enable that context. Original five-of-sixty observations and fifty-five carries remain separate."
+    }
+  ]
+}

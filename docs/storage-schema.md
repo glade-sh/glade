@@ -50,6 +50,21 @@ seed data, and the SQLite persistence adapter.
 The canonical key for an object is its API name, such as `Account` or
 `Invoice__c`. The canonical key for a record is its Salesforce-like ID string.
 
+## Local identity defaults
+
+A newly seeded local org uses Organization ID `00D000000000mH2`
+(`00D000000000mH2EAI` in 18-character display form) unless fixture `orgId`
+chooses another identity. The seeded current user is `005000000000001`.
+Automated Process defaults to `005000000000lo1`; an existing imported Automated
+Process user is reused. These are deterministic local fixture values, not IDs
+from a connected Salesforce org. A fabricated next-counter User ID is not a
+reliable way to select a seeded platform user.
+
+The default current user uses `America/Los_Angeles`; Automated Process uses
+`UTC`. Set inserted users' `TimeZoneSidKey` explicitly. Fixture `domainUrl` or
+`glade.yml` `org.domainUrl` supplies the canonical org origin used by
+`URL.getOrgDomainUrl()`, independently of the incoming HTTP request origin.
+
 ## Object And Field Definitions
 
 `ObjectDefinition` carries the storage-facing subset of object metadata:

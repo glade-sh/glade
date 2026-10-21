@@ -1,0 +1,7 @@
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Catalog Product Read</label>
+    <objectPermissions>
+        <allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords><object>Product2</object><viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+</PermissionSet>

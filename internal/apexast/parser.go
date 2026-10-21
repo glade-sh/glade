@@ -88,7 +88,7 @@ func (p *Parser) ParseSource(path, source string) File {
 	defer runtime.KeepAlive(p)
 	file := p.parser.ParseSource(path, source)
 	file.Diagnostics = p.refineInlineSOSLDiagnostics(path, source, file.Diagnostics)
-	return withSharingDeclarationDiagnostics(nativePropertySyntax(nativeAnnotationSyntax(convertFile(file), source), source), source)
+	return nativeReservedStaticPriority(withSharingDeclarationDiagnostics(nativePropertySyntax(nativeAnnotationSyntax(convertFile(file), source), source), source))
 }
 
 func (p *Parser) ParseSourceAST(path, source string) ASTFile {

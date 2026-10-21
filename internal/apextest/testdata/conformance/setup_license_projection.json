@@ -1,0 +1,864 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "provenance": "Owned black-box Salesforce observations captured 2026-10-14 on the current release, each requested API and invocation route; plain Developer scratch org, running Standard principal, no runAs, named tests SeeAllData=false.",
+  "normalization": "Capture execution-context metadata (principal/profile fingerprints, locale, timezone, UserType and isTest) and CLI/intentional assertion envelopes are excluded. Measured payload fields, values, nulls, runtime types, equality relations and key-prefix casing are unchanged. The measurement source is unchanged; only the enclosing context observer and assertion transport are replaced with local synthetic wrappers.",
+  "scope": "TotalLicenses=2 is the observed default Salesforce license capacity in these plain Developer fixtures, not a universal org or user-license assertion. Other licenses and caller-supplied fixture values are outside these rows.",
+  "rows": [
+    {
+      "id": "A01",
+      "question": "Relationship selected values; arrays=[value,isNull,runtimeType].",
+      "routes": {
+        "anonymous": {
+          "id": "A01",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "values": {
+                  "TotalLicenses": [
+                    2,
+                    false,
+                    "Integer"
+                  ],
+                  "LicenseDefinitionKey": [
+                    "SFDC",
+                    false,
+                    "String"
+                  ],
+                  "MasterLabel": [
+                    "Salesforce",
+                    false,
+                    "String"
+                  ],
+                  "Status": [
+                    "Active",
+                    false,
+                    "String"
+                  ],
+                  "Name": [
+                    "Salesforce",
+                    false,
+                    "String"
+                  ]
+                },
+                "relationshipPresent": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "values": {
+                  "TotalLicenses": [
+                    2,
+                    false,
+                    "Integer"
+                  ],
+                  "LicenseDefinitionKey": [
+                    "SFDC",
+                    false,
+                    "String"
+                  ],
+                  "MasterLabel": [
+                    "Salesforce",
+                    false,
+                    "String"
+                  ],
+                  "Status": [
+                    "Active",
+                    false,
+                    "String"
+                  ],
+                  "Name": [
+                    "Salesforce",
+                    false,
+                    "String"
+                  ]
+                },
+                "relationshipPresent": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "values": {
+                  "TotalLicenses": [
+                    2,
+                    false,
+                    "Integer"
+                  ],
+                  "LicenseDefinitionKey": [
+                    "SFDC",
+                    false,
+                    "String"
+                  ],
+                  "MasterLabel": [
+                    "Salesforce",
+                    false,
+                    "String"
+                  ],
+                  "Status": [
+                    "Active",
+                    false,
+                    "String"
+                  ],
+                  "Name": [
+                    "Salesforce",
+                    false,
+                    "String"
+                  ]
+                },
+                "relationshipPresent": true
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectFired'=>true};\ntry{\nId k=UserInfo.getProfileId(); Profile p=[SELECT UserLicense.Name,UserLicense.Status,UserLicense.MasterLabel,UserLicense.LicenseDefinitionKey,UserLicense.TotalLicenses FROM Profile WHERE Id=:k]; UserLicense l=p.UserLicense; payload.put('relationshipPresent',l!=null); Map<String,Object> values=new Map<String,Object>(); for(String f:new List<String>{'Name','Status','MasterLabel','LicenseDefinitionKey','TotalLicenses'}){Object v=l.get(f);values.put(f,new List<Object>{v,v==null,(v==null?null:(v instanceof String?'String':(v instanceof Integer?'Integer':(v instanceof Decimal?'Decimal':(v instanceof Long?'Long':'other')))))});}payload.put('values',values);\n}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'SETUP_LICENSE_RESULT|A01|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "A01",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "values": {
+                  "TotalLicenses": [
+                    2,
+                    false,
+                    "Integer"
+                  ],
+                  "LicenseDefinitionKey": [
+                    "SFDC",
+                    false,
+                    "String"
+                  ],
+                  "MasterLabel": [
+                    "Salesforce",
+                    false,
+                    "String"
+                  ],
+                  "Status": [
+                    "Active",
+                    false,
+                    "String"
+                  ],
+                  "Name": [
+                    "Salesforce",
+                    false,
+                    "String"
+                  ]
+                },
+                "relationshipPresent": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "values": {
+                  "TotalLicenses": [
+                    2,
+                    false,
+                    "Integer"
+                  ],
+                  "LicenseDefinitionKey": [
+                    "SFDC",
+                    false,
+                    "String"
+                  ],
+                  "MasterLabel": [
+                    "Salesforce",
+                    false,
+                    "String"
+                  ],
+                  "Status": [
+                    "Active",
+                    false,
+                    "String"
+                  ],
+                  "Name": [
+                    "Salesforce",
+                    false,
+                    "String"
+                  ]
+                },
+                "relationshipPresent": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "values": {
+                  "TotalLicenses": [
+                    2,
+                    false,
+                    "Integer"
+                  ],
+                  "LicenseDefinitionKey": [
+                    "SFDC",
+                    false,
+                    "String"
+                  ],
+                  "MasterLabel": [
+                    "Salesforce",
+                    false,
+                    "String"
+                  ],
+                  "Status": [
+                    "Active",
+                    false,
+                    "String"
+                  ],
+                  "Name": [
+                    "Salesforce",
+                    false,
+                    "String"
+                  ]
+                },
+                "relationshipPresent": true
+              }
+            }
+          },
+          "classes": {
+            "SetupLicenseProjectionObserver": "@IsTest(SeeAllData=false) private class SetupLicenseProjectionObserver { @IsTest static void observe(){\nMap<String,Object> payload=new Map<String,Object>{'effectFired'=>true};\ntry{\nId k=UserInfo.getProfileId(); Profile p=[SELECT UserLicense.Name,UserLicense.Status,UserLicense.MasterLabel,UserLicense.LicenseDefinitionKey,UserLicense.TotalLicenses FROM Profile WHERE Id=:k]; UserLicense l=p.UserLicense; payload.put('relationshipPresent',l!=null); Map<String,Object> values=new Map<String,Object>(); for(String f:new List<String>{'Name','Status','MasterLabel','LicenseDefinitionKey','TotalLicenses'}){Object v=l.get(f);values.put(f,new List<Object>{v,v==null,(v==null?null:(v instanceof String?'String':(v instanceof Integer?'Integer':(v instanceof Decimal?'Decimal':(v instanceof Long?'Long':'other')))))});}payload.put('values',values);\n}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'SETUP_LICENSE_RESULT|A01|'+JSON.serialize(payload));\n}}"
+          },
+          "tests": [
+            "SetupLicenseProjectionObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "A02",
+      "question": "Direct projection; arrays=[directValue,isNull,runtimeType,equalsRelationship]; sameLicense compares IDs.",
+      "routes": {
+        "anonymous": {
+          "id": "A02",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "values": {
+                  "TotalLicenses": [
+                    2,
+                    false,
+                    "Integer",
+                    true
+                  ],
+                  "LicenseDefinitionKey": [
+                    "SFDC",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "MasterLabel": [
+                    "Salesforce",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "Status": [
+                    "Active",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "Name": [
+                    "Salesforce",
+                    false,
+                    "String",
+                    true
+                  ]
+                },
+                "sameLicense": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "values": {
+                  "TotalLicenses": [
+                    2,
+                    false,
+                    "Integer",
+                    true
+                  ],
+                  "LicenseDefinitionKey": [
+                    "SFDC",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "MasterLabel": [
+                    "Salesforce",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "Status": [
+                    "Active",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "Name": [
+                    "Salesforce",
+                    false,
+                    "String",
+                    true
+                  ]
+                },
+                "sameLicense": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "values": {
+                  "TotalLicenses": [
+                    2,
+                    false,
+                    "Integer",
+                    true
+                  ],
+                  "LicenseDefinitionKey": [
+                    "SFDC",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "MasterLabel": [
+                    "Salesforce",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "Status": [
+                    "Active",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "Name": [
+                    "Salesforce",
+                    false,
+                    "String",
+                    true
+                  ]
+                },
+                "sameLicense": true
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectFired'=>true};\ntry{\nId k=UserInfo.getProfileId(); Profile p=[SELECT UserLicenseId,UserLicense.Name,UserLicense.Status,UserLicense.MasterLabel,UserLicense.LicenseDefinitionKey,UserLicense.TotalLicenses FROM Profile WHERE Id=:k]; UserLicense l=[SELECT Name,Status,MasterLabel,LicenseDefinitionKey,TotalLicenses FROM UserLicense WHERE Id=:p.UserLicenseId];payload.put('sameLicense',l.Id==p.UserLicenseId);Map<String,Object> values=new Map<String,Object>();for(String f:new List<String>{'Name','Status','MasterLabel','LicenseDefinitionKey','TotalLicenses'}){Object v=l.get(f);values.put(f,new List<Object>{v,v==null,(v==null?null:(v instanceof String?'String':(v instanceof Integer?'Integer':(v instanceof Decimal?'Decimal':(v instanceof Long?'Long':'other'))))),v==p.UserLicense.get(f)});}payload.put('values',values);\n}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'SETUP_LICENSE_RESULT|A02|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "A02",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "values": {
+                  "TotalLicenses": [
+                    2,
+                    false,
+                    "Integer",
+                    true
+                  ],
+                  "LicenseDefinitionKey": [
+                    "SFDC",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "MasterLabel": [
+                    "Salesforce",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "Status": [
+                    "Active",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "Name": [
+                    "Salesforce",
+                    false,
+                    "String",
+                    true
+                  ]
+                },
+                "sameLicense": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "values": {
+                  "TotalLicenses": [
+                    2,
+                    false,
+                    "Integer",
+                    true
+                  ],
+                  "LicenseDefinitionKey": [
+                    "SFDC",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "MasterLabel": [
+                    "Salesforce",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "Status": [
+                    "Active",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "Name": [
+                    "Salesforce",
+                    false,
+                    "String",
+                    true
+                  ]
+                },
+                "sameLicense": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "values": {
+                  "TotalLicenses": [
+                    2,
+                    false,
+                    "Integer",
+                    true
+                  ],
+                  "LicenseDefinitionKey": [
+                    "SFDC",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "MasterLabel": [
+                    "Salesforce",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "Status": [
+                    "Active",
+                    false,
+                    "String",
+                    true
+                  ],
+                  "Name": [
+                    "Salesforce",
+                    false,
+                    "String",
+                    true
+                  ]
+                },
+                "sameLicense": true
+              }
+            }
+          },
+          "classes": {
+            "SetupLicenseProjectionObserver": "@IsTest(SeeAllData=false) private class SetupLicenseProjectionObserver { @IsTest static void observe(){\nMap<String,Object> payload=new Map<String,Object>{'effectFired'=>true};\ntry{\nId k=UserInfo.getProfileId(); Profile p=[SELECT UserLicenseId,UserLicense.Name,UserLicense.Status,UserLicense.MasterLabel,UserLicense.LicenseDefinitionKey,UserLicense.TotalLicenses FROM Profile WHERE Id=:k]; UserLicense l=[SELECT Name,Status,MasterLabel,LicenseDefinitionKey,TotalLicenses FROM UserLicense WHERE Id=:p.UserLicenseId];payload.put('sameLicense',l.Id==p.UserLicenseId);Map<String,Object> values=new Map<String,Object>();for(String f:new List<String>{'Name','Status','MasterLabel','LicenseDefinitionKey','TotalLicenses'}){Object v=l.get(f);values.put(f,new List<Object>{v,v==null,(v==null?null:(v instanceof String?'String':(v instanceof Integer?'Integer':(v instanceof Decimal?'Decimal':(v instanceof Long?'Long':'other'))))),v==p.UserLicense.get(f)});}payload.put('values',values);\n}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'SETUP_LICENSE_RESULT|A02|'+JSON.serialize(payload));\n}}"
+          },
+          "tests": [
+            "SetupLicenseProjectionObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "A03",
+      "question": "Unpopulated relationship nullness and value or exception.",
+      "routes": {
+        "anonymous": {
+          "id": "A03",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "isNull": true,
+                "relationship": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "isNull": true,
+                "relationship": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "isNull": true,
+                "relationship": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectFired'=>true};\ntry{\nProfile p=new Profile();payload.put('relationship',p.UserLicense);payload.put('isNull',p.UserLicense==null);\n}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'SETUP_LICENSE_RESULT|A03|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "A03",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "isNull": true,
+                "relationship": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "isNull": true,
+                "relationship": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "isNull": true,
+                "relationship": null
+              }
+            }
+          },
+          "classes": {
+            "SetupLicenseProjectionObserver": "@IsTest(SeeAllData=false) private class SetupLicenseProjectionObserver { @IsTest static void observe(){\nMap<String,Object> payload=new Map<String,Object>{'effectFired'=>true};\ntry{\nProfile p=new Profile();payload.put('relationship',p.UserLicense);payload.put('isNull',p.UserLicense==null);\n}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'SETUP_LICENSE_RESULT|A03|'+JSON.serialize(payload));\n}}"
+          },
+          "tests": [
+            "SetupLicenseProjectionObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "A04",
+      "question": "UserLicense.Status describe nillability and field type.",
+      "routes": {
+        "anonymous": {
+          "id": "A04",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "type": "PICKLIST",
+                "isNillable": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "type": "PICKLIST",
+                "isNillable": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "type": "PICKLIST",
+                "isNillable": false
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectFired'=>true};\ntry{\npayload.put('isNillable',UserLicense.Status.getDescribe().isNillable());payload.put('type',String.valueOf(UserLicense.Status.getDescribe().getType()));\n}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'SETUP_LICENSE_RESULT|A04|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "A04",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "type": "PICKLIST",
+                "isNillable": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "type": "PICKLIST",
+                "isNillable": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "type": "PICKLIST",
+                "isNillable": false
+              }
+            }
+          },
+          "classes": {
+            "SetupLicenseProjectionObserver": "@IsTest(SeeAllData=false) private class SetupLicenseProjectionObserver { @IsTest static void observe(){\nMap<String,Object> payload=new Map<String,Object>{'effectFired'=>true};\ntry{\npayload.put('isNillable',UserLicense.Status.getDescribe().isNillable());payload.put('type',String.valueOf(UserLicense.Status.getDescribe().getType()));\n}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'SETUP_LICENSE_RESULT|A04|'+JSON.serialize(payload));\n}}"
+          },
+          "tests": [
+            "SetupLicenseProjectionObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "A05",
+      "question": "Prefix arrays=[value,isNull,length]; exact casing preserved.",
+      "routes": {
+        "anonymous": {
+          "id": "A05",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "Lead": [
+                  "00Q",
+                  false,
+                  3
+                ],
+                "UserRecordAccess": [
+                  null,
+                  true,
+                  null
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "Lead": [
+                  "00Q",
+                  false,
+                  3
+                ],
+                "UserRecordAccess": [
+                  null,
+                  true,
+                  null
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "Lead": [
+                  "00Q",
+                  false,
+                  3
+                ],
+                "UserRecordAccess": [
+                  null,
+                  true,
+                  null
+                ]
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectFired'=>true};\ntry{\nString a=UserRecordAccess.SObjectType.getDescribe().getKeyPrefix();String b=Lead.SObjectType.getDescribe().getKeyPrefix();payload.put('UserRecordAccess',new List<Object>{a,a==null,a==null?null:a.length()});payload.put('Lead',new List<Object>{b,b==null,b==null?null:b.length()});\n}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'SETUP_LICENSE_RESULT|A05|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "A05",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "Lead": [
+                  "00Q",
+                  false,
+                  3
+                ],
+                "UserRecordAccess": [
+                  null,
+                  true,
+                  null
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "Lead": [
+                  "00Q",
+                  false,
+                  3
+                ],
+                "UserRecordAccess": [
+                  null,
+                  true,
+                  null
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "Lead": [
+                  "00Q",
+                  false,
+                  3
+                ],
+                "UserRecordAccess": [
+                  null,
+                  true,
+                  null
+                ]
+              }
+            }
+          },
+          "classes": {
+            "SetupLicenseProjectionObserver": "@IsTest(SeeAllData=false) private class SetupLicenseProjectionObserver { @IsTest static void observe(){\nMap<String,Object> payload=new Map<String,Object>{'effectFired'=>true};\ntry{\nString a=UserRecordAccess.SObjectType.getDescribe().getKeyPrefix();String b=Lead.SObjectType.getDescribe().getKeyPrefix();payload.put('UserRecordAccess',new List<Object>{a,a==null,a==null?null:a.length()});payload.put('Lead',new List<Object>{b,b==null,b==null?null:b.length()});\n}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'SETUP_LICENSE_RESULT|A05|'+JSON.serialize(payload));\n}}"
+          },
+          "tests": [
+            "SetupLicenseProjectionObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "A06",
+      "question": "Lowercase global describe lookup; comparison with A05 direct lookup.",
+      "routes": {
+        "anonymous": {
+          "id": "A06",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "equalsDirect": true,
+                "length": null,
+                "isNull": true,
+                "prefix": null,
+                "lookupPresent": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "equalsDirect": true,
+                "length": null,
+                "isNull": true,
+                "prefix": null,
+                "lookupPresent": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "equalsDirect": true,
+                "length": null,
+                "isNull": true,
+                "prefix": null,
+                "lookupPresent": true
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectFired'=>true};\ntry{\nSObjectType t=Schema.getGlobalDescribe().get('userrecordaccess');payload.put('lookupPresent',t!=null);String a=t.getDescribe().getKeyPrefix();payload.put('prefix',a);payload.put('isNull',a==null);payload.put('length',a==null?null:a.length());payload.put('equalsDirect',a==UserRecordAccess.SObjectType.getDescribe().getKeyPrefix());\n}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'SETUP_LICENSE_RESULT|A06|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "A06",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "equalsDirect": true,
+                "length": null,
+                "isNull": true,
+                "prefix": null,
+                "lookupPresent": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "equalsDirect": true,
+                "length": null,
+                "isNull": true,
+                "prefix": null,
+                "lookupPresent": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "effectFired": true,
+                "equalsDirect": true,
+                "length": null,
+                "isNull": true,
+                "prefix": null,
+                "lookupPresent": true
+              }
+            }
+          },
+          "classes": {
+            "SetupLicenseProjectionObserver": "@IsTest(SeeAllData=false) private class SetupLicenseProjectionObserver { @IsTest static void observe(){\nMap<String,Object> payload=new Map<String,Object>{'effectFired'=>true};\ntry{\nSObjectType t=Schema.getGlobalDescribe().get('userrecordaccess');payload.put('lookupPresent',t!=null);String a=t.getDescribe().getKeyPrefix();payload.put('prefix',a);payload.put('isNull',a==null);payload.put('length',a==null?null:a.length());payload.put('equalsDirect',a==UserRecordAccess.SObjectType.getDescribe().getKeyPrefix());\n}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'SETUP_LICENSE_RESULT|A06|'+JSON.serialize(payload));\n}}"
+          },
+          "tests": [
+            "SetupLicenseProjectionObserver"
+          ]
+        }
+      }
+    }
+  ]
+}

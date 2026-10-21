@@ -1,0 +1,2434 @@
+{
+  "cluster": "populated",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "rows": [
+    {
+      "id": "C183ID_075",
+      "group": "POPULATED_ID",
+      "label": "Opportunity.Id seeded ID and key",
+      "role": "boundary",
+      "twin": "C183ID_003",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=Opportunity.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;Opportunity seed=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));insert seed;seed=[SELECT Id FROM Opportunity WHERE Id=:seed.Id];keyValue=seed.get('Id');{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.Id=seed.Id;rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.Id=seed.Id;rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_075|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "021f1fc9385c37ecff748dbdcf9645eb496074985e8f15cb75aa39e378f85fba"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID075Test": "@IsTest private class KeyObserveC183ID075Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=Opportunity.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;Opportunity seed=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));insert seed;seed=[SELECT Id FROM Opportunity WHERE Id=:seed.Id];keyValue=seed.get('Id');{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.Id=seed.Id;rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.Id=seed.Id;rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_075|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID075Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID075Test": "c0148b9b35a70ea81ae07e87739901c8295a0fd312941bc576bee8ee2b194ae3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C183ID_076",
+      "group": "POPULATED_ID",
+      "label": "Account.Id seeded ID and key",
+      "role": "boundary",
+      "twin": "C183ID_007",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=Account.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;Account seed=new Account(Name='Synthetic key');insert seed;seed=[SELECT Id FROM Account WHERE Id=:seed.Id];keyValue=seed.get('Id');{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Account rec=new Account(Name='Synthetic key');rec.Id=seed.Id;rec.put('Id',keyValue);List<Account> records=new List<Account>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{Account rec=new Account(Name='Synthetic key');rec.Id=seed.Id;rec.put('Id',keyValue);List<Account> records=new List<Account>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_076|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "decd0c5f7cf1af3e73bbd7f2a59f4c2ac4d7759af0b8a106674318e5853b8fa0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID076Test": "@IsTest private class KeyObserveC183ID076Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=Account.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;Account seed=new Account(Name='Synthetic key');insert seed;seed=[SELECT Id FROM Account WHERE Id=:seed.Id];keyValue=seed.get('Id');{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Account rec=new Account(Name='Synthetic key');rec.Id=seed.Id;rec.put('Id',keyValue);List<Account> records=new List<Account>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{Account rec=new Account(Name='Synthetic key');rec.Id=seed.Id;rec.put('Id',keyValue);List<Account> records=new List<Account>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_076|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID076Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID076Test": "aff5360231e91a06f0ddae8d2a6b2aa268f1129091bb86197b18dd753e1afa0f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C183ID_077",
+      "group": "POPULATED_ID",
+      "label": "Contact.Id seeded ID and key",
+      "role": "boundary",
+      "twin": "C183ID_011",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=Contact.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;Contact seed=new Contact(LastName='Synthetic key');insert seed;seed=[SELECT Id FROM Contact WHERE Id=:seed.Id];keyValue=seed.get('Id');{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Contact rec=new Contact(LastName='Synthetic key');rec.Id=seed.Id;rec.put('Id',keyValue);List<Contact> records=new List<Contact>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{Contact rec=new Contact(LastName='Synthetic key');rec.Id=seed.Id;rec.put('Id',keyValue);List<Contact> records=new List<Contact>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_077|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "a74ca4514998268a7ae5f405a8fc64d932d658fa34249c107e756798bafaa774"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID077Test": "@IsTest private class KeyObserveC183ID077Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=Contact.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;Contact seed=new Contact(LastName='Synthetic key');insert seed;seed=[SELECT Id FROM Contact WHERE Id=:seed.Id];keyValue=seed.get('Id');{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Contact rec=new Contact(LastName='Synthetic key');rec.Id=seed.Id;rec.put('Id',keyValue);List<Contact> records=new List<Contact>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{Contact rec=new Contact(LastName='Synthetic key');rec.Id=seed.Id;rec.put('Id',keyValue);List<Contact> records=new List<Contact>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_077|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID077Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID077Test": "97c7b3384079ffe1b77ce23b32db38a66a370db7a86457b4773f87f24e15cc73"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C183ID_078",
+      "group": "POPULATED_ID",
+      "label": "KeyFixture__c.Id seeded ID and key",
+      "role": "boundary",
+      "twin": "C183ID_021",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=KeyFixture__c.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;KeyFixture__c seed=new KeyFixture__c(Name='Synthetic key');insert seed;seed=[SELECT Id,Name,PlainText__c FROM KeyFixture__c WHERE Id=:seed.Id];keyValue=seed.get('Id');{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.Id=seed.Id;rec.put('Id',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.Id=seed.Id;rec.put('Id',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_078|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "a84928892232f34a55020d283176249522505c679f9216c94046e6b5d56cb48b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID078Test": "@IsTest private class KeyObserveC183ID078Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=KeyFixture__c.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;KeyFixture__c seed=new KeyFixture__c(Name='Synthetic key');insert seed;seed=[SELECT Id,Name,PlainText__c FROM KeyFixture__c WHERE Id=:seed.Id];keyValue=seed.get('Id');{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.Id=seed.Id;rec.put('Id',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.Id=seed.Id;rec.put('Id',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_078|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID078Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID078Test": "c0e53173df9ce4cef426d2724ad18742cdf954347eab4c9b35dcb318b0c2b5f2"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C183ID_079",
+      "group": "POPULATED_ID",
+      "label": "KeyFixture__c.ExtText__c seeded ID and key",
+      "role": "boundary",
+      "twin": "C183ID_023",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=KeyFixture__c.ExtText__c;Object keyValue='Synthetic key';List<Object> steps=new List<Object>();Id previousId;KeyFixture__c seed=new KeyFixture__c(Name='Synthetic key');seed.put('ExtText__c',keyValue);insert seed;seed=[SELECT Id,ExtText__c,Name,PlainText__c FROM KeyFixture__c WHERE Id=:seed.Id];keyValue=seed.get('ExtText__c');{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.Id=seed.Id;rec.put('ExtText__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.Id=seed.Id;rec.put('ExtText__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_079|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "29d6ecabca49ee5e7d563482c96166f0bd48a71ea0f6c221e407c471b5dab59b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID079Test": "@IsTest private class KeyObserveC183ID079Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=KeyFixture__c.ExtText__c;Object keyValue='Synthetic key';List<Object> steps=new List<Object>();Id previousId;KeyFixture__c seed=new KeyFixture__c(Name='Synthetic key');seed.put('ExtText__c',keyValue);insert seed;seed=[SELECT Id,ExtText__c,Name,PlainText__c FROM KeyFixture__c WHERE Id=:seed.Id];keyValue=seed.get('ExtText__c');{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.Id=seed.Id;rec.put('ExtText__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.Id=seed.Id;rec.put('ExtText__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_079|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID079Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID079Test": "6a2dec8f41c270aa79b770a0cc17b2f86783ddee744bc607884defb704018560"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C183ID_080",
+      "group": "POPULATED_ID",
+      "label": "Contact.Email seeded ID and key",
+      "role": "boundary",
+      "twin": "C183ID_013",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=Contact.Email;Object keyValue='key.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid';List<Object> steps=new List<Object>();Id previousId;Contact seed=new Contact(LastName='Synthetic key');seed.put('Email',keyValue);insert seed;seed=[SELECT Id,Email FROM Contact WHERE Id=:seed.Id];keyValue=seed.get('Email');{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Contact rec=new Contact(LastName='Synthetic key');rec.Id=seed.Id;rec.put('Email',keyValue);List<Contact> records=new List<Contact>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{Contact rec=new Contact(LastName='Synthetic key');rec.Id=seed.Id;rec.put('Email',keyValue);List<Contact> records=new List<Contact>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_080|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "23a61f6d9aef104a828effe6516f7b2dd4ddf503b73b070a2eeca09078cedae6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID080Test": "@IsTest private class KeyObserveC183ID080Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=Contact.Email;Object keyValue='key.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid';List<Object> steps=new List<Object>();Id previousId;Contact seed=new Contact(LastName='Synthetic key');seed.put('Email',keyValue);insert seed;seed=[SELECT Id,Email FROM Contact WHERE Id=:seed.Id];keyValue=seed.get('Email');{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Contact rec=new Contact(LastName='Synthetic key');rec.Id=seed.Id;rec.put('Email',keyValue);List<Contact> records=new List<Contact>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{Contact rec=new Contact(LastName='Synthetic key');rec.Id=seed.Id;rec.put('Email',keyValue);List<Contact> records=new List<Contact>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_080|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID080Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID080Test": "1ecc1fa1d1ad47b904f7583957b483ede824bfcf4cc06fe334237918725ed54d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "cases": [
     {
@@ -1980,7 +1981,7 @@
       "floorExpected": "EXC|System.NullPointerException|Deploy container is null",
       "nativeNull": false,
       "namedOwner": "A30",
-      "namedReason": "Anonymous null-container result is asserted; native @IsTest deploy-guard precedence has not been captured at API 62/67."
+      "namedReason": "Anonymous null-container result is asserted; native @IsTest deploy-guard precedence has not been captured at API 62/67/68."
     },
     {
       "id": "R219",

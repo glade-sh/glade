@@ -1,0 +1,132 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "isTest"
+  ],
+  "nativeObservationCount": 6,
+  "assertedObservationCount": 3,
+  "carriedObservationCount": 3,
+  "route": {
+    "id": "MT01T",
+    "stage": "runtime",
+    "classes": {
+      "MockedTransportCaller": "public class MockedTransportCaller {\n public static HttpResponse send(){\n  HttpRequest request=new HttpRequest();\n  request.setEndpoint('https://owned.invalid/mock-only');\n  request.setMethod('POST');request.setBody('owned-request');\n  return send(request);\n }\n public static HttpResponse send(HttpRequest request){return new CommercePayments.PaymentsHttp().send(request);}\n}\n",
+      "MockedTransportSpec": "@IsTest private class MockedTransportSpec {\n private static Integer calls=0;\n private class MemoryMock implements HttpCalloutMock {\n  public HttpResponse respond(HttpRequest request){\n   MockedTransportSpec.calls++;\n   HttpResponse response=new HttpResponse();response.setStatusCode(209);\n   response.setBody(request==null?'null-request':request.getMethod()+':'+request.getBody());return response;\n  }\n }\n private static String describe(HttpResponse response){return 'response:'+response.getStatusCode()+':'+response.getBody();}\n @IsTest static void observe(){\n  Test.setMock(HttpCalloutMock.class,new MemoryMock());\n  String valid;String blank;\n  try{valid=describe(MockedTransportCaller.send());}catch(Exception e){valid='error:'+e.getTypeName()+':'+e.getMessage();}\n  try{blank=describe(MockedTransportCaller.send(new HttpRequest()));}catch(Exception e){blank='error:'+e.getTypeName()+':'+e.getMessage();}\n  System.assert(false,'P|MT01T|valid:'+valid+'|blank:'+blank+'|calls:'+calls);\n }\n}\n"
+    },
+    "tests": [
+      "MockedTransportSpec"
+    ],
+    "sourceSha256": {
+      "class:MockedTransportCaller": "3c894aed2c7dcb8b8d2ce0c4caf0cab98de9a6987db12a92b9d3af99b11b77c9",
+      "class:MockedTransportSpec": "f7e38efcb847d6c0671556524a2342f6e2951dd4cbe55daf413adcca7c41b63a"
+    },
+    "fixedClassAPIVersions": {
+      "MockedTransportCaller": "60.0"
+    }
+  },
+  "expectedNative": "valid:response:209:POST:owned-request|blank:response:209:null:|calls:2",
+  "cells": [
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "native": "valid:response:209:POST:owned-request|blank:response:209:null:|calls:2",
+      "nativeSHA256": "ccfb21db4dcc51e9c47b7ee3beec2630abfecdca19380e03a2ddcaa558928b84",
+      "rawReceiptSHA256": "1658df430b41a14531c7b1acf81a0c1eaae6effc2ebbc07c3aa87d7212ae6a7d"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "native": "valid:response:209:POST:owned-request|blank:response:209:null:|calls:2",
+      "nativeSHA256": "ccfb21db4dcc51e9c47b7ee3beec2630abfecdca19380e03a2ddcaa558928b84",
+      "rawReceiptSHA256": "56386a87c24f73ea0c56c43cb7009ab540248dc2a673ca7be28760e015096370"
+    },
+    {
+      "api": "68.0",
+      "route": "isTest",
+      "native": "valid:response:209:POST:owned-request|blank:response:209:null:|calls:2",
+      "nativeSHA256": "ccfb21db4dcc51e9c47b7ee3beec2630abfecdca19380e03a2ddcaa558928b84",
+      "rawReceiptSHA256": "e99129679e2c7cef532371381c11ecc150c194936b67685e4d60793a25925947"
+    }
+  ],
+  "classMetadataByAPI": {
+    "62.0": {
+      "MockedTransportCaller": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>60.0</apiVersion><status>Active</status></ApexClass>\n",
+      "MockedTransportSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "67.0": {
+      "MockedTransportCaller": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>60.0</apiVersion><status>Active</status></ApexClass>\n",
+      "MockedTransportSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "68.0": {
+      "MockedTransportCaller": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>60.0</apiVersion><status>Active</status></ApexClass>\n",
+      "MockedTransportSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+    }
+  },
+  "classMetadataSHA256": {
+    "62.0": {
+      "MockedTransportCaller": "f7ea5c546ce40b12d915d6cb01c581debce5f111e65f8c004a5e74794c0cf6c5",
+      "MockedTransportSpec": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+    },
+    "67.0": {
+      "MockedTransportCaller": "f7ea5c546ce40b12d915d6cb01c581debce5f111e65f8c004a5e74794c0cf6c5",
+      "MockedTransportSpec": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+    },
+    "68.0": {
+      "MockedTransportCaller": "f7ea5c546ce40b12d915d6cb01c581debce5f111e65f8c004a5e74794c0cf6c5",
+      "MockedTransportSpec": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+    }
+  },
+  "anonymous": {
+    "expectedNative": null,
+    "reason": "No anonymous transport was invoked; the observed path requires a registered test mock."
+  },
+  "nullRequestCarry": {
+    "comparison": "carried",
+    "reason": "The native null request terminates the named test with an uncatchable platform exception; null forwarding is outside the supported mock path.",
+    "source": {
+      "id": "MT01T",
+      "stage": "runtime",
+      "classes": {
+        "MockedTransportCaller": "public class MockedTransportCaller {\n public static HttpResponse send(){\n  HttpRequest request=new HttpRequest();\n  request.setEndpoint('https://owned.invalid/mock-only');\n  request.setMethod('POST');request.setBody('owned-request');\n  return send(request);\n }\n public static HttpResponse send(HttpRequest request){return new CommercePayments.PaymentsHttp().send(request);}\n}\n",
+        "MockedTransportSpec": "@IsTest private class MockedTransportSpec {\n private static Integer calls=0;\n private class MemoryMock implements HttpCalloutMock {\n  public HttpResponse respond(HttpRequest request){\n   MockedTransportSpec.calls++;\n   HttpResponse response=new HttpResponse();response.setStatusCode(209);\n   response.setBody(request==null?'null-request':request.getMethod()+':'+request.getBody());return response;\n  }\n }\n private static String describe(HttpResponse response){return 'response:'+response.getStatusCode()+':'+response.getBody();}\n @IsTest static void observe(){\n  Test.setMock(HttpCalloutMock.class,new MemoryMock());\n  String valid;String blank;String absent;\n  try{valid=describe(MockedTransportCaller.send());}catch(Exception e){valid='error:'+e.getTypeName()+':'+e.getMessage();}\n  try{blank=describe(MockedTransportCaller.send(new HttpRequest()));}catch(Exception e){blank='error:'+e.getTypeName()+':'+e.getMessage();}\n  try{absent=describe(MockedTransportCaller.send(null));}catch(Exception e){absent='error:'+e.getTypeName()+':'+e.getMessage();}\n  System.assert(false,'P|MT01T|valid:'+valid+'|blank:'+blank+'|null:'+absent+'|calls:'+calls);\n }\n}\n"
+      },
+      "tests": [
+        "MockedTransportSpec"
+      ],
+      "sourceSha256": {
+        "class:MockedTransportCaller": "3c894aed2c7dcb8b8d2ce0c4caf0cab98de9a6987db12a92b9d3af99b11b77c9",
+        "class:MockedTransportSpec": "4f4916c97cd5c15f6404e23f69c14f74e2f6c91ca00f3eaeb95b9c76798d8866"
+      },
+      "fixedClassAPIVersions": {
+        "MockedTransportCaller": "60.0"
+      }
+    },
+    "cells": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "native": "System.UnexpectedException: Cannot invoke \"common.apex.api.net.HttpRequest.toString()\" because \"req\" is null",
+        "nativeSHA256": "a9dfad4380b71c77d316b500841976cb45ea2bcf31f2cd37a06310f12155e454",
+        "rawReceiptSHA256": "3a12d93f0e05e269fe01cb1ef52b788d5da85a236f00c1b220ebbe7a364b6791"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "native": "System.UnexpectedException: Cannot invoke \"common.apex.api.net.HttpRequest.toString()\" because \"req\" is null",
+        "nativeSHA256": "a9dfad4380b71c77d316b500841976cb45ea2bcf31f2cd37a06310f12155e454",
+        "rawReceiptSHA256": "aed1500eda46254c3f584af998dabc792b17327ade3f2f72f799701f719b4cca"
+      },
+      {
+        "api": "68.0",
+        "route": "isTest",
+        "native": "System.UnexpectedException: Cannot invoke \"common.apex.api.net.HttpRequest.toString()\" because \"req\" is null",
+        "nativeSHA256": "a9dfad4380b71c77d316b500841976cb45ea2bcf31f2cd37a06310f12155e454",
+        "rawReceiptSHA256": "7e149c458faf4781b9d53f7a9c93386275c60fd4ef651895d3e8ead13508dd11"
+      }
+    ]
+  }
+}

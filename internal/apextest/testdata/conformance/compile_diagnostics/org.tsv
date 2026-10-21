@@ -1,0 +1,105 @@
+id	api	route	message	line
+assignment_boolean	62.0	anonymous	Illegal assignment from Boolean to Integer	1
+assignment_string	62.0	anonymous	Illegal assignment from String to Integer	1
+assignment_field	62.0	anonymous	Illegal assignment from String to Schema.SObjectField	1
+assignment_type	62.0	anonymous	Illegal assignment from System.Type to Integer	1
+assignment_token	62.0	anonymous	Illegal assignment from Schema.SObjectField to Integer	1
+assignment_records	62.0	anonymous	Illegal assignment from List<Account> to List<Contact>	1
+assignment_object	62.0	anonymous	Illegal assignment from Account to Contact	1
+date_fraction	62.0	anonymous	Date expressions must use Integer or Long	1
+datetime_add	62.0	anonymous	Date/time expressions must use Integer or Double or Decimal	1
+datetime_subtract	62.0	anonymous	Date/time expressions must use Integer or Double or Decimal	1
+unknown_call	62.0	anonymous	Variable does not exist: MissingDiagnosticType	1
+unknown_field	62.0	anonymous	Variable does not exist: MissingDiagnosticType	1
+known_call	62.0	anonymous	Method does not exist or incorrect signature: void missingDiagnosticMethod() from the type String	1
+missing_label	62.0	anonymous	External string does not exist: MissingDiagnosticLabel	1
+local_describe	62.0	anonymous	Method does not exist or incorrect signature: void getDescribe() from the type String	1
+missing_field	62.0	anonymous	Variable does not exist: MissingDiagnosticField__c	1
+missing_field_write	62.0	anonymous	Variable does not exist: MissingDiagnosticField__c	1
+constructor_token	62.0	anonymous	Field does not exist: HasOptedOutOfEmail on Contact	1
+constructor_boolean	62.0	anonymous	Field does not exist: HasOptedOutOfEmail on Contact	1
+control_assignment	62.0	anonymous	compiled	0
+control_date	62.0	anonymous	compiled	0
+control_token	62.0	anonymous	compiled	0
+control_describe	62.0	anonymous	compiled	0
+control_constructor	62.0	anonymous	Field does not exist: HasOptedOutOfEmail on Contact	1
+assignment_boolean_target	62.0	anonymous	Illegal assignment from String to Boolean	1
+assignment_boolean	62.0	isTest	Illegal assignment from Boolean to Integer	3
+assignment_string	62.0	isTest	Illegal assignment from String to Integer	3
+assignment_field	62.0	isTest	Illegal assignment from String to Schema.SObjectField	3
+assignment_type	62.0	isTest	Illegal assignment from System.Type to Integer	3
+assignment_token	62.0	isTest	Illegal assignment from Schema.SObjectField to Integer	3
+assignment_records	62.0	isTest	Illegal assignment from List<Account> to List<Contact>	3
+assignment_object	62.0	isTest	Illegal assignment from Account to Contact	3
+date_fraction	62.0	isTest	Date expressions must use Integer or Long	3
+datetime_add	62.0	isTest	Date/time expressions must use Integer or Double or Decimal	3
+datetime_subtract	62.0	isTest	Date/time expressions must use Integer or Double or Decimal	3
+unknown_call	62.0	isTest	Variable does not exist: MissingDiagnosticType	3
+unknown_field	62.0	isTest	Variable does not exist: MissingDiagnosticType	3
+known_call	62.0	isTest	Method does not exist or incorrect signature: void missingDiagnosticMethod() from the type String	3
+missing_label	62.0	isTest	External string does not exist: MissingDiagnosticLabel	3
+local_describe	62.0	isTest	Method does not exist or incorrect signature: void getDescribe() from the type String	3
+missing_field	62.0	isTest	Variable does not exist: MissingDiagnosticField__c	3
+missing_field_write	62.0	isTest	Variable does not exist: MissingDiagnosticField__c	3
+constructor_token	62.0	isTest	Illegal assignment from Schema.SObjectField to Boolean	3
+constructor_boolean	62.0	isTest	Illegal assignment from String to Boolean	3
+control_assignment	62.0	isTest	compiled	0
+control_date	62.0	isTest	compiled	0
+control_token	62.0	isTest	compiled	0
+control_describe	62.0	isTest	compiled	0
+control_constructor	62.0	isTest	compiled	0
+duplicate_method	62.0	isTest	Method already defined: one Integer DiagnosticDuplicate.one() from the type DiagnosticDuplicate	3
+assignment_boolean_target	62.0	isTest	Illegal assignment from String to Boolean	3
+invalid_version	62.0	isTest	Invalid api version:99.0	0
+assignment_boolean	67.0	anonymous	Illegal assignment from Boolean to Integer	1
+assignment_string	67.0	anonymous	Illegal assignment from String to Integer	1
+assignment_field	67.0	anonymous	Illegal assignment from String to Schema.SObjectField	1
+assignment_type	67.0	anonymous	Illegal assignment from System.Type to Integer	1
+assignment_token	67.0	anonymous	Illegal assignment from Schema.SObjectField to Integer	1
+assignment_records	67.0	anonymous	Illegal assignment from List<Account> to List<Contact>	1
+assignment_object	67.0	anonymous	Illegal assignment from Account to Contact	1
+date_fraction	67.0	anonymous	Date expressions must use Integer or Long	1
+datetime_add	67.0	anonymous	Date/time expressions must use Integer or Double or Decimal	1
+datetime_subtract	67.0	anonymous	Date/time expressions must use Integer or Double or Decimal	1
+unknown_call	67.0	anonymous	Variable does not exist: MissingDiagnosticType	1
+unknown_field	67.0	anonymous	Variable does not exist: MissingDiagnosticType	1
+known_call	67.0	anonymous	Method does not exist or incorrect signature: void missingDiagnosticMethod() from the type String	1
+missing_label	67.0	anonymous	External string does not exist: MissingDiagnosticLabel	1
+local_describe	67.0	anonymous	Method does not exist or incorrect signature: void getDescribe() from the type String	1
+missing_field	67.0	anonymous	Variable does not exist: MissingDiagnosticField__c	1
+missing_field_write	67.0	anonymous	Variable does not exist: MissingDiagnosticField__c	1
+constructor_token	67.0	anonymous	Field does not exist: HasOptedOutOfEmail on Contact	1
+constructor_boolean	67.0	anonymous	Field does not exist: HasOptedOutOfEmail on Contact	1
+control_assignment	67.0	anonymous	compiled	0
+control_date	67.0	anonymous	compiled	0
+control_token	67.0	anonymous	compiled	0
+control_describe	67.0	anonymous	compiled	0
+control_constructor	67.0	anonymous	Field does not exist: HasOptedOutOfEmail on Contact	1
+assignment_boolean_target	67.0	anonymous	Illegal assignment from String to Boolean	1
+assignment_boolean	67.0	isTest	Illegal assignment from Boolean to Integer	3
+assignment_string	67.0	isTest	Illegal assignment from String to Integer	3
+assignment_field	67.0	isTest	Illegal assignment from String to Schema.SObjectField	3
+assignment_type	67.0	isTest	Illegal assignment from System.Type to Integer	3
+assignment_token	67.0	isTest	Illegal assignment from Schema.SObjectField to Integer	3
+assignment_records	67.0	isTest	Illegal assignment from List<Account> to List<Contact>	3
+assignment_object	67.0	isTest	Illegal assignment from Account to Contact	3
+date_fraction	67.0	isTest	Date expressions must use Integer or Long	3
+datetime_add	67.0	isTest	Date/time expressions must use Integer or Double or Decimal	3
+datetime_subtract	67.0	isTest	Date/time expressions must use Integer or Double or Decimal	3
+unknown_call	67.0	isTest	Variable does not exist: MissingDiagnosticType	3
+unknown_field	67.0	isTest	Variable does not exist: MissingDiagnosticType	3
+known_call	67.0	isTest	Method does not exist or incorrect signature: void missingDiagnosticMethod() from the type String	3
+missing_label	67.0	isTest	External string does not exist: MissingDiagnosticLabel	3
+local_describe	67.0	isTest	Method does not exist or incorrect signature: void getDescribe() from the type String	3
+missing_field	67.0	isTest	Variable does not exist: MissingDiagnosticField__c	3
+missing_field_write	67.0	isTest	Variable does not exist: MissingDiagnosticField__c	3
+constructor_token	67.0	isTest	Illegal assignment from Schema.SObjectField to Boolean	3
+constructor_boolean	67.0	isTest	Illegal assignment from String to Boolean	3
+control_assignment	67.0	isTest	compiled	0
+control_date	67.0	isTest	compiled	0
+control_token	67.0	isTest	compiled	0
+control_describe	67.0	isTest	compiled	0
+control_constructor	67.0	isTest	compiled	0
+duplicate_method	67.0	isTest	Method already defined: one Integer DiagnosticDuplicate.one() from the type DiagnosticDuplicate	3
+assignment_boolean_target	67.0	isTest	Illegal assignment from String to Boolean	3
+invalid_version	67.0	isTest	Invalid api version:99.0	0

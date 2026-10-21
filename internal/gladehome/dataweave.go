@@ -204,7 +204,7 @@ func loadDataWeaveInstallation() (string, dataWeaveInstallation, error) {
 	path := filepath.Join(root, "installation.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return root, dataWeaveInstallation{}, fmt.Errorf("DataWeave toolchain unavailable; run glade toolchain install dataweave --java-home <Java17-JDK>: %w", err)
+		return root, dataWeaveInstallation{}, fmt.Errorf("DataWeave is unsupported in Glade; toolchain unavailable: %w", err)
 	}
 	var manifest dataWeaveInstallation
 	decoder := json.NewDecoder(bytes.NewReader(data))

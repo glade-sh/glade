@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	idAssertions	{"defaultIdAssert":"pass","defaultIdInstanceof":true,"defaultIdPresent":true,"invalidIdInstanceof":false,"stringIdInstanceof":true,"typedIdAssert":"pass","typedIdInstanceof":true,"typedIdStringAssert":"pass"}
+62.0	locationAssertions	{"bareAssert":"pass","bareInstanceof":true,"bareName":"System.Location","qualifiedAssert":"pass","qualifiedInstanceof":true,"qualifiedName":"System.Location","stringControl":false}
+62.0	selectOptionNames	{"bare":"System.SelectOption","constructed":"pass","qualified":"System.SelectOption"}
+67.0	idAssertions	{"defaultIdAssert":"pass","defaultIdInstanceof":true,"defaultIdPresent":true,"invalidIdInstanceof":false,"stringIdInstanceof":true,"typedIdAssert":"pass","typedIdInstanceof":true,"typedIdStringAssert":"pass"}
+67.0	locationAssertions	{"bareAssert":"pass","bareInstanceof":true,"bareName":"System.Location","qualifiedAssert":"pass","qualifiedInstanceof":true,"qualifiedName":"System.Location","stringControl":false}
+67.0	selectOptionNames	{"bare":"System.SelectOption","constructed":"pass","qualified":"System.SelectOption"}

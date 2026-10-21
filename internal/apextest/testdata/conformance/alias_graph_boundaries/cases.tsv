@@ -1,0 +1,17 @@
+variant	purpose
+direct	shared inserted list
+knownChild	new descendants in known child
+backReference	inserted parent back reference
+cycle	cyclic static graph
+replacement	replaced map backing
+property	getter mutation setter count
+throwingProperty	throwing setter not called by getter mutation
+setter	explicit setter replacement
+keyFailure	throwing custom key hash
+coercion	concrete list through widened alias
+unqualifiedProperty	Collection getter mutation preserves getter count and bypasses setter
+externalProperty	Collection getter mutation preserves getter count and bypasses setter
+nestedProperty	Collection getter mutation preserves getter count and bypasses setter
+staticProperty	Collection getter mutation preserves getter count and bypasses setter
+listProperty	Collection getter mutation preserves getter count and bypasses setter
+setProperty	Collection getter mutation preserves getter count and bypasses setter

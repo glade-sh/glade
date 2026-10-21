@@ -17,13 +17,17 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Owned API 62/67 observations, including controls for lazy iterator accounting.
+// Owned API 62/67/68 observations, including controls for lazy iterator accounting.
+// Uncaptured API68 supplementary and named routes remain local regressions.
 // Each route uses a clone of one linked API runner, with fresh seeded records.
 func TestQueryLocatorsOrgConformance(t *testing.T) {
 	type familyCase struct {
-		ID, Code, Expected  string
-		Compile, NativeNull bool
-		DiagnosticLine      int
+		ID, Code, Expected                                  string
+		Compile, NativeNull                                 bool
+		DiagnosticLine                                      int
+		ExpectedByAPI                                       map[string]string
+		DiagnosticLineByAPI                                 map[string]int
+		API68AnonymousObserved, API68NamedCheckOnlyObserved bool
 	}
 	var data struct {
 		APIVersions  []string `json:"apiVersions"`
@@ -39,15 +43,25 @@ func TestQueryLocatorsOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 289 || len(data.Remaining) != 23 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 289 || len(data.Remaining) != 23 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle matrix: %d asserted, %d carried, APIs %v", len(data.Cases), len(data.Remaining), data.APIVersions)
 	}
 	seen := map[string]bool{}
+	anonymous68, named68 := 0, 0
 	for _, row := range data.Cases {
 		if seen[row.ID] || row.ID == "" || row.Expected == "?" {
 			t.Fatalf("invalid/repeated asserted row: %#v", row)
 		}
 		seen[row.ID] = true
+		if row.API68AnonymousObserved {
+			anonymous68++
+		}
+		if row.API68NamedCheckOnlyObserved {
+			named68++
+		}
+	}
+	if anonymous68 != 241 || named68 != 3 {
+		t.Fatalf("API68 native route observations: anonymous=%d named checkOnly=%d", anonymous68, named68)
 	}
 	for _, row := range data.Remaining {
 		if seen[row.ID] || row.ID == "" || row.Owner == "" || row.Owner == "query locators" || row.Reason == "" {
@@ -105,6 +119,18 @@ func TestQueryLocatorsOrgConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "query locators", api)
+			cases := append([]familyCase(nil), data.Cases...)
+			for i := range cases {
+				if expected, ok := cases[i].ExpectedByAPI[api]; ok {
+					cases[i].Expected = expected
+				}
+				if line, ok := cases[i].DiagnosticLineByAPI[api]; ok {
+					cases[i].DiagnosticLine = line
+				}
+			}
+			if api == "68.0" {
+				t.Log("A34 API68: 239 primary and 2 supplementary anonymous observations; 23 existing A28 route carries. Three named rows have native checkOnly observations; 48 supplementary anonymous and 286 named checks are local legacy regressions.")
+			}
 			root := t.TempDir()
 			declarations := map[string]string{"P": helper}
 			for name, source := range data.Declarations {
@@ -144,7 +170,7 @@ func TestQueryLocatorsOrgConformance(t *testing.T) {
 			var namedSource strings.Builder
 			namedSource.WriteString("@IsTest private class QueryLocatorsProbe {\n")
 			executable := 0
-			for _, row := range data.Cases {
+			for _, row := range cases {
 				if strings.HasPrefix(row.Expected, "COMPILE_ERROR\t") {
 					continue
 				}
@@ -177,14 +203,23 @@ func TestQueryLocatorsOrgConformance(t *testing.T) {
 				}
 				byID[strings.TrimPrefix(tc.MethodName, "observed")] = tc
 			}
-			for _, row := range data.Cases {
+			for _, row := range cases {
 				t.Run(row.ID, func(t *testing.T) {
 					for _, route := range []string{"anonymous", "isTest"} {
 						countRoute := route
 						if route == "isTest" {
 							countRoute = "@IsTest"
 						}
-						counts.run(t, route, countRoute, "exact", func(t *testing.T) {
+						kind := "exact"
+						if api == "68.0" {
+							if route == "anonymous" && !row.API68AnonymousObserved || route == "isTest" && !row.API68NamedCheckOnlyObserved {
+								kind = "legacy"
+							}
+							if route == "isTest" && row.API68NamedCheckOnlyObserved {
+								countRoute = "@IsTest-checkOnly"
+							}
+						}
+						counts.run(t, route, countRoute, kind, func(t *testing.T) {
 							if strings.HasPrefix(row.Expected, "COMPILE_ERROR\t") {
 								// Put the intact row at the native capture's line, preserving
 								// both diagnostic text and line number on each route.

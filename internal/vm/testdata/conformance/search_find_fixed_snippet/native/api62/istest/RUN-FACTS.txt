@@ -1,0 +1,10 @@
+api=62.0
+context=istest
+route=istest
+rows=1
+native_complete=true
+deployment_success=true
+test_class=OwnedSearchSnippet62
+test_method=noArgumentSnippetAfterFixedSearchResults
+test_api=62.0
+test_result=Pass

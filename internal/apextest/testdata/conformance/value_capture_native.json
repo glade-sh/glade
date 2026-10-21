@@ -1,0 +1,1527 @@
+{
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "sourcesByAPI": {
+    "62.0": {
+      "helperName": "CaptureOrderOracle62",
+      "helperSource": "public class CaptureOrderOracle62 {\n private static Object observe(String source,String input){\n  Matcher m=Pattern.compile(source).matcher(input);Map<String,Object> out=new Map<String,Object>();Boolean matched=m.matches();out.put('matched',matched);out.put('count',m.groupCount());\n  if(matched){List<Object> groups=new List<Object>();for(Integer i=0;i<=m.groupCount();i++){groups.add(new Map<String,Object>{'value'=>m.group(i),'start'=>m.start(i),'end'=>m.end(i)});}out.put('groups',groups);}return out;\n }\n public static String regexSnapshot(){\n  Map<String,Object> out=new Map<String,Object>();\n  out.put('namedFirst',observe('^(?<head>a)(b)$','ab'));\n  out.put('namedLast',observe('^(a)(?<tail>b)$','ab'));\n  out.put('optionalPresent',observe('^(?<stem>[0-9]+)(\\\\.([0-9]+))?$','7.8'));\n  out.put('optionalAbsent',observe('^(?<stem>[0-9]+)(\\\\.([0-9]+))?$','7'));\n  out.put('interleaved',observe('^(?<first>[0-9]+)(\\\\.([0-9]+))?(\\\\.(?<last>[0-9]+))?$','7.8.9'));\n  out.put('plain',observe('^(a)(b)$','ab'));\n  out.put('namedOnly',observe('^(?<head>a)(?<tail>b)$','ab'));\n  out.put('numericReplacement',Pattern.compile('(?<head>a)(b)').matcher('ab').replaceAll('$2$1'));\n  out.put('namedReplacement',Pattern.compile('(?<head>a)(b)').matcher('ab').replaceAll('${head}-$2'));\n  out.put('grapheme',observe('^(\\\\X)(?<tail>b)(c)$','ábc'));\n  out.put('scopedFlags',observe('(?i:(?<word>a))(b)(?=c)c','Abc'));\n  return JSON.serialize(out);\n }\n public static String mapSnapshot(){\n  Map<String,Object> a=new Map<String,Object>{'slot'=>'north'};\n  Map<String,Object> same=new Map<String,Object>{'slot'=>'north'};\n  Map<String,Object> mixed=new Map<String,Object>{'slot'=>'NORTH'};\n  Map<String,Object> keyMixed=new Map<String,Object>{'SLOT'=>'north'};\n  Map<String,Object> changed=new Map<String,Object>{'slot'=>'south'};\n  Object boxedA=a;Object boxedMixed=mixed;\n  Map<String,Object> out=new Map<String,Object>{\n   'sameOperator'=>a==same,'sameEquals'=>a.equals(same),\n   'mixedOperator'=>a==mixed,'mixedEquals'=>a.equals(mixed),\n   'boxedMixedOperator'=>boxedA==boxedMixed,'changedOperator'=>a==changed,\n   'keyMixedOperator'=>a==keyMixed,\n   'nestedMapMixed'=>new Map<String,Object>{'child'=>a}==new Map<String,Object>{'child'=>mixed},\n   'nestedListMixed'=>new Map<String,Object>{'child'=>new List<String>{'north'}}==new Map<String,Object>{'child'=>new List<String>{'NORTH'}},\n   'listMixed'=>new List<String>{'north'}==new List<String>{'NORTH'},\n   'scalarOperator'=>'north'=='NORTH','scalarEquals'=>'north'.equals('NORTH'),\n   'typedStringMixed'=>new Map<String,String>{'slot'=>'north'}==new Map<String,String>{'slot'=>'NORTH'},\n   'nullSame'=>new Map<String,Object>{'slot'=>null}==new Map<String,Object>{'slot'=>null},\n   'nullMissing'=>new Map<String,Object>{'slot'=>null}==new Map<String,Object>(),\n   'numericSame'=>new Map<String,Object>{'slot'=>1}==new Map<String,Object>{'slot'=>Decimal.valueOf('1.0')},\n   'booleanSame'=>new Map<String,Object>{'slot'=>true}==new Map<String,Object>{'slot'=>true}\n  };return JSON.serialize(out);\n }\n}\n",
+      "helperMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "testName": "CaptureOrderNative62",
+      "testSource": "@IsTest private class CaptureOrderNative62{@IsTest static void regexObserved(){System.assert(false,'CAPTURE_REGEX|'+CaptureOrderOracle62.regexSnapshot());}@IsTest static void mapObserved(){System.assert(false,'CAPTURE_MAP|'+CaptureOrderOracle62.mapSnapshot());}}",
+      "testMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'CAPTURE_REGEX|'+CaptureOrderOracle62.regexSnapshot());\nSystem.debug(LoggingLevel.ERROR,'CAPTURE_MAP|'+CaptureOrderOracle62.mapSnapshot());"
+    },
+    "67.0": {
+      "helperName": "CaptureOrderOracle67",
+      "helperSource": "public class CaptureOrderOracle67 {\n private static Object observe(String source,String input){\n  Matcher m=Pattern.compile(source).matcher(input);Map<String,Object> out=new Map<String,Object>();Boolean matched=m.matches();out.put('matched',matched);out.put('count',m.groupCount());\n  if(matched){List<Object> groups=new List<Object>();for(Integer i=0;i<=m.groupCount();i++){groups.add(new Map<String,Object>{'value'=>m.group(i),'start'=>m.start(i),'end'=>m.end(i)});}out.put('groups',groups);}return out;\n }\n public static String regexSnapshot(){\n  Map<String,Object> out=new Map<String,Object>();\n  out.put('namedFirst',observe('^(?<head>a)(b)$','ab'));\n  out.put('namedLast',observe('^(a)(?<tail>b)$','ab'));\n  out.put('optionalPresent',observe('^(?<stem>[0-9]+)(\\\\.([0-9]+))?$','7.8'));\n  out.put('optionalAbsent',observe('^(?<stem>[0-9]+)(\\\\.([0-9]+))?$','7'));\n  out.put('interleaved',observe('^(?<first>[0-9]+)(\\\\.([0-9]+))?(\\\\.(?<last>[0-9]+))?$','7.8.9'));\n  out.put('plain',observe('^(a)(b)$','ab'));\n  out.put('namedOnly',observe('^(?<head>a)(?<tail>b)$','ab'));\n  out.put('numericReplacement',Pattern.compile('(?<head>a)(b)').matcher('ab').replaceAll('$2$1'));\n  out.put('namedReplacement',Pattern.compile('(?<head>a)(b)').matcher('ab').replaceAll('${head}-$2'));\n  out.put('grapheme',observe('^(\\\\X)(?<tail>b)(c)$','ábc'));\n  out.put('scopedFlags',observe('(?i:(?<word>a))(b)(?=c)c','Abc'));\n  return JSON.serialize(out);\n }\n public static String mapSnapshot(){\n  Map<String,Object> a=new Map<String,Object>{'slot'=>'north'};\n  Map<String,Object> same=new Map<String,Object>{'slot'=>'north'};\n  Map<String,Object> mixed=new Map<String,Object>{'slot'=>'NORTH'};\n  Map<String,Object> keyMixed=new Map<String,Object>{'SLOT'=>'north'};\n  Map<String,Object> changed=new Map<String,Object>{'slot'=>'south'};\n  Object boxedA=a;Object boxedMixed=mixed;\n  Map<String,Object> out=new Map<String,Object>{\n   'sameOperator'=>a==same,'sameEquals'=>a.equals(same),\n   'mixedOperator'=>a==mixed,'mixedEquals'=>a.equals(mixed),\n   'boxedMixedOperator'=>boxedA==boxedMixed,'changedOperator'=>a==changed,\n   'keyMixedOperator'=>a==keyMixed,\n   'nestedMapMixed'=>new Map<String,Object>{'child'=>a}==new Map<String,Object>{'child'=>mixed},\n   'nestedListMixed'=>new Map<String,Object>{'child'=>new List<String>{'north'}}==new Map<String,Object>{'child'=>new List<String>{'NORTH'}},\n   'listMixed'=>new List<String>{'north'}==new List<String>{'NORTH'},\n   'scalarOperator'=>'north'=='NORTH','scalarEquals'=>'north'.equals('NORTH'),\n   'typedStringMixed'=>new Map<String,String>{'slot'=>'north'}==new Map<String,String>{'slot'=>'NORTH'},\n   'nullSame'=>new Map<String,Object>{'slot'=>null}==new Map<String,Object>{'slot'=>null},\n   'nullMissing'=>new Map<String,Object>{'slot'=>null}==new Map<String,Object>(),\n   'numericSame'=>new Map<String,Object>{'slot'=>1}==new Map<String,Object>{'slot'=>Decimal.valueOf('1.0')},\n   'booleanSame'=>new Map<String,Object>{'slot'=>true}==new Map<String,Object>{'slot'=>true}\n  };return JSON.serialize(out);\n }\n}\n",
+      "helperMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "testName": "CaptureOrderNative67",
+      "testSource": "@IsTest private class CaptureOrderNative67{@IsTest static void regexObserved(){System.assert(false,'CAPTURE_REGEX|'+CaptureOrderOracle67.regexSnapshot());}@IsTest static void mapObserved(){System.assert(false,'CAPTURE_MAP|'+CaptureOrderOracle67.mapSnapshot());}}",
+      "testMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'CAPTURE_REGEX|'+CaptureOrderOracle67.regexSnapshot());\nSystem.debug(LoggingLevel.ERROR,'CAPTURE_MAP|'+CaptureOrderOracle67.mapSnapshot());"
+    },
+    "68.0": {
+      "helperName": "CaptureOrderOracle68",
+      "helperSource": "public class CaptureOrderOracle68 {\n private static Object observe(String source,String input){\n  Matcher m=Pattern.compile(source).matcher(input);Map<String,Object> out=new Map<String,Object>();Boolean matched=m.matches();out.put('matched',matched);out.put('count',m.groupCount());\n  if(matched){List<Object> groups=new List<Object>();for(Integer i=0;i<=m.groupCount();i++){groups.add(new Map<String,Object>{'value'=>m.group(i),'start'=>m.start(i),'end'=>m.end(i)});}out.put('groups',groups);}return out;\n }\n public static String regexSnapshot(){\n  Map<String,Object> out=new Map<String,Object>();\n  out.put('namedFirst',observe('^(?<head>a)(b)$','ab'));\n  out.put('namedLast',observe('^(a)(?<tail>b)$','ab'));\n  out.put('optionalPresent',observe('^(?<stem>[0-9]+)(\\\\.([0-9]+))?$','7.8'));\n  out.put('optionalAbsent',observe('^(?<stem>[0-9]+)(\\\\.([0-9]+))?$','7'));\n  out.put('interleaved',observe('^(?<first>[0-9]+)(\\\\.([0-9]+))?(\\\\.(?<last>[0-9]+))?$','7.8.9'));\n  out.put('plain',observe('^(a)(b)$','ab'));\n  out.put('namedOnly',observe('^(?<head>a)(?<tail>b)$','ab'));\n  out.put('numericReplacement',Pattern.compile('(?<head>a)(b)').matcher('ab').replaceAll('$2$1'));\n  out.put('namedReplacement',Pattern.compile('(?<head>a)(b)').matcher('ab').replaceAll('${head}-$2'));\n  out.put('grapheme',observe('^(\\\\X)(?<tail>b)(c)$','ábc'));\n  out.put('scopedFlags',observe('(?i:(?<word>a))(b)(?=c)c','Abc'));\n  return JSON.serialize(out);\n }\n public static String mapSnapshot(){\n  Map<String,Object> a=new Map<String,Object>{'slot'=>'north'};\n  Map<String,Object> same=new Map<String,Object>{'slot'=>'north'};\n  Map<String,Object> mixed=new Map<String,Object>{'slot'=>'NORTH'};\n  Map<String,Object> keyMixed=new Map<String,Object>{'SLOT'=>'north'};\n  Map<String,Object> changed=new Map<String,Object>{'slot'=>'south'};\n  Object boxedA=a;Object boxedMixed=mixed;\n  Map<String,Object> out=new Map<String,Object>{\n   'sameOperator'=>a==same,'sameEquals'=>a.equals(same),\n   'mixedOperator'=>a==mixed,'mixedEquals'=>a.equals(mixed),\n   'boxedMixedOperator'=>boxedA==boxedMixed,'changedOperator'=>a==changed,\n   'keyMixedOperator'=>a==keyMixed,\n   'nestedMapMixed'=>new Map<String,Object>{'child'=>a}==new Map<String,Object>{'child'=>mixed},\n   'nestedListMixed'=>new Map<String,Object>{'child'=>new List<String>{'north'}}==new Map<String,Object>{'child'=>new List<String>{'NORTH'}},\n   'listMixed'=>new List<String>{'north'}==new List<String>{'NORTH'},\n   'scalarOperator'=>'north'=='NORTH','scalarEquals'=>'north'.equals('NORTH'),\n   'typedStringMixed'=>new Map<String,String>{'slot'=>'north'}==new Map<String,String>{'slot'=>'NORTH'},\n   'nullSame'=>new Map<String,Object>{'slot'=>null}==new Map<String,Object>{'slot'=>null},\n   'nullMissing'=>new Map<String,Object>{'slot'=>null}==new Map<String,Object>(),\n   'numericSame'=>new Map<String,Object>{'slot'=>1}==new Map<String,Object>{'slot'=>Decimal.valueOf('1.0')},\n   'booleanSame'=>new Map<String,Object>{'slot'=>true}==new Map<String,Object>{'slot'=>true}\n  };return JSON.serialize(out);\n }\n}\n",
+      "helperMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "testName": "CaptureOrderNative68",
+      "testSource": "@IsTest private class CaptureOrderNative68{@IsTest static void regexObserved(){System.assert(false,'CAPTURE_REGEX|'+CaptureOrderOracle68.regexSnapshot());}@IsTest static void mapObserved(){System.assert(false,'CAPTURE_MAP|'+CaptureOrderOracle68.mapSnapshot());}}",
+      "testMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'CAPTURE_REGEX|'+CaptureOrderOracle68.regexSnapshot());\nSystem.debug(LoggingLevel.ERROR,'CAPTURE_MAP|'+CaptureOrderOracle68.mapSnapshot());"
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "context": "anonymous",
+      "regex": {
+        "scopedFlags": {
+          "groups": [
+            {
+              "end": 3,
+              "start": 0,
+              "value": "Abc"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "A"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "grapheme": {
+          "groups": [
+            {
+              "end": 4,
+              "start": 0,
+              "value": "ábc"
+            },
+            {
+              "end": 2,
+              "start": 0,
+              "value": "á"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "b"
+            },
+            {
+              "end": 4,
+              "start": 3,
+              "value": "c"
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "namedReplacement": "a-b",
+        "numericReplacement": "ba",
+        "namedOnly": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "plain": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "interleaved": {
+          "groups": [
+            {
+              "end": 5,
+              "start": 0,
+              "value": "7.8.9"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 3,
+              "start": 1,
+              "value": ".8"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "8"
+            },
+            {
+              "end": 5,
+              "start": 3,
+              "value": ".9"
+            },
+            {
+              "end": 5,
+              "start": 4,
+              "value": "9"
+            }
+          ],
+          "count": 5,
+          "matched": true
+        },
+        "optionalAbsent": {
+          "groups": [
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": -1,
+              "start": -1,
+              "value": null
+            },
+            {
+              "end": -1,
+              "start": -1,
+              "value": null
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "optionalPresent": {
+          "groups": [
+            {
+              "end": 3,
+              "start": 0,
+              "value": "7.8"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 3,
+              "start": 1,
+              "value": ".8"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "8"
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "namedLast": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "namedFirst": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        }
+      },
+      "map": {
+        "booleanSame": true,
+        "numericSame": false,
+        "nullMissing": false,
+        "nullSame": true,
+        "typedStringMixed": false,
+        "scalarEquals": false,
+        "scalarOperator": true,
+        "listMixed": false,
+        "nestedListMixed": false,
+        "nestedMapMixed": false,
+        "keyMixedOperator": false,
+        "changedOperator": false,
+        "boxedMixedOperator": false,
+        "mixedEquals": false,
+        "mixedOperator": false,
+        "sameEquals": true,
+        "sameOperator": true
+      }
+    },
+    {
+      "api": "62.0",
+      "context": "istest",
+      "regex": {
+        "scopedFlags": {
+          "groups": [
+            {
+              "end": 3,
+              "start": 0,
+              "value": "Abc"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "A"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "grapheme": {
+          "groups": [
+            {
+              "end": 4,
+              "start": 0,
+              "value": "ábc"
+            },
+            {
+              "end": 2,
+              "start": 0,
+              "value": "á"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "b"
+            },
+            {
+              "end": 4,
+              "start": 3,
+              "value": "c"
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "namedReplacement": "a-b",
+        "numericReplacement": "ba",
+        "namedOnly": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "plain": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "interleaved": {
+          "groups": [
+            {
+              "end": 5,
+              "start": 0,
+              "value": "7.8.9"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 3,
+              "start": 1,
+              "value": ".8"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "8"
+            },
+            {
+              "end": 5,
+              "start": 3,
+              "value": ".9"
+            },
+            {
+              "end": 5,
+              "start": 4,
+              "value": "9"
+            }
+          ],
+          "count": 5,
+          "matched": true
+        },
+        "optionalAbsent": {
+          "groups": [
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": -1,
+              "start": -1,
+              "value": null
+            },
+            {
+              "end": -1,
+              "start": -1,
+              "value": null
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "optionalPresent": {
+          "groups": [
+            {
+              "end": 3,
+              "start": 0,
+              "value": "7.8"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 3,
+              "start": 1,
+              "value": ".8"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "8"
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "namedLast": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "namedFirst": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        }
+      },
+      "map": {
+        "booleanSame": true,
+        "numericSame": false,
+        "nullMissing": false,
+        "nullSame": true,
+        "typedStringMixed": false,
+        "scalarEquals": false,
+        "scalarOperator": true,
+        "listMixed": false,
+        "nestedListMixed": false,
+        "nestedMapMixed": false,
+        "keyMixedOperator": false,
+        "changedOperator": false,
+        "boxedMixedOperator": false,
+        "mixedEquals": false,
+        "mixedOperator": false,
+        "sameEquals": true,
+        "sameOperator": true
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "anonymous",
+      "regex": {
+        "scopedFlags": {
+          "groups": [
+            {
+              "end": 3,
+              "start": 0,
+              "value": "Abc"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "A"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "grapheme": {
+          "groups": [
+            {
+              "end": 4,
+              "start": 0,
+              "value": "ábc"
+            },
+            {
+              "end": 2,
+              "start": 0,
+              "value": "á"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "b"
+            },
+            {
+              "end": 4,
+              "start": 3,
+              "value": "c"
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "namedReplacement": "a-b",
+        "numericReplacement": "ba",
+        "namedOnly": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "plain": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "interleaved": {
+          "groups": [
+            {
+              "end": 5,
+              "start": 0,
+              "value": "7.8.9"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 3,
+              "start": 1,
+              "value": ".8"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "8"
+            },
+            {
+              "end": 5,
+              "start": 3,
+              "value": ".9"
+            },
+            {
+              "end": 5,
+              "start": 4,
+              "value": "9"
+            }
+          ],
+          "count": 5,
+          "matched": true
+        },
+        "optionalAbsent": {
+          "groups": [
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": -1,
+              "start": -1,
+              "value": null
+            },
+            {
+              "end": -1,
+              "start": -1,
+              "value": null
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "optionalPresent": {
+          "groups": [
+            {
+              "end": 3,
+              "start": 0,
+              "value": "7.8"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 3,
+              "start": 1,
+              "value": ".8"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "8"
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "namedLast": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "namedFirst": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        }
+      },
+      "map": {
+        "booleanSame": true,
+        "numericSame": false,
+        "nullMissing": false,
+        "nullSame": true,
+        "typedStringMixed": false,
+        "scalarEquals": false,
+        "scalarOperator": true,
+        "listMixed": false,
+        "nestedListMixed": false,
+        "nestedMapMixed": false,
+        "keyMixedOperator": false,
+        "changedOperator": false,
+        "boxedMixedOperator": false,
+        "mixedEquals": false,
+        "mixedOperator": false,
+        "sameEquals": true,
+        "sameOperator": true
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "istest",
+      "regex": {
+        "scopedFlags": {
+          "groups": [
+            {
+              "end": 3,
+              "start": 0,
+              "value": "Abc"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "A"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "grapheme": {
+          "groups": [
+            {
+              "end": 4,
+              "start": 0,
+              "value": "ábc"
+            },
+            {
+              "end": 2,
+              "start": 0,
+              "value": "á"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "b"
+            },
+            {
+              "end": 4,
+              "start": 3,
+              "value": "c"
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "namedReplacement": "a-b",
+        "numericReplacement": "ba",
+        "namedOnly": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "plain": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "interleaved": {
+          "groups": [
+            {
+              "end": 5,
+              "start": 0,
+              "value": "7.8.9"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 3,
+              "start": 1,
+              "value": ".8"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "8"
+            },
+            {
+              "end": 5,
+              "start": 3,
+              "value": ".9"
+            },
+            {
+              "end": 5,
+              "start": 4,
+              "value": "9"
+            }
+          ],
+          "count": 5,
+          "matched": true
+        },
+        "optionalAbsent": {
+          "groups": [
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": -1,
+              "start": -1,
+              "value": null
+            },
+            {
+              "end": -1,
+              "start": -1,
+              "value": null
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "optionalPresent": {
+          "groups": [
+            {
+              "end": 3,
+              "start": 0,
+              "value": "7.8"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 3,
+              "start": 1,
+              "value": ".8"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "8"
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "namedLast": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "namedFirst": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        }
+      },
+      "map": {
+        "booleanSame": true,
+        "numericSame": false,
+        "nullMissing": false,
+        "nullSame": true,
+        "typedStringMixed": false,
+        "scalarEquals": false,
+        "scalarOperator": true,
+        "listMixed": false,
+        "nestedListMixed": false,
+        "nestedMapMixed": false,
+        "keyMixedOperator": false,
+        "changedOperator": false,
+        "boxedMixedOperator": false,
+        "mixedEquals": false,
+        "mixedOperator": false,
+        "sameEquals": true,
+        "sameOperator": true
+      }
+    },
+    {
+      "api": "68.0",
+      "context": "anonymous",
+      "regex": {
+        "scopedFlags": {
+          "groups": [
+            {
+              "end": 3,
+              "start": 0,
+              "value": "Abc"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "A"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "grapheme": {
+          "groups": [
+            {
+              "end": 4,
+              "start": 0,
+              "value": "ábc"
+            },
+            {
+              "end": 2,
+              "start": 0,
+              "value": "á"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "b"
+            },
+            {
+              "end": 4,
+              "start": 3,
+              "value": "c"
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "namedReplacement": "a-b",
+        "numericReplacement": "ba",
+        "namedOnly": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "plain": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "interleaved": {
+          "groups": [
+            {
+              "end": 5,
+              "start": 0,
+              "value": "7.8.9"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 3,
+              "start": 1,
+              "value": ".8"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "8"
+            },
+            {
+              "end": 5,
+              "start": 3,
+              "value": ".9"
+            },
+            {
+              "end": 5,
+              "start": 4,
+              "value": "9"
+            }
+          ],
+          "count": 5,
+          "matched": true
+        },
+        "optionalAbsent": {
+          "groups": [
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": -1,
+              "start": -1,
+              "value": null
+            },
+            {
+              "end": -1,
+              "start": -1,
+              "value": null
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "optionalPresent": {
+          "groups": [
+            {
+              "end": 3,
+              "start": 0,
+              "value": "7.8"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 3,
+              "start": 1,
+              "value": ".8"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "8"
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "namedLast": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "namedFirst": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        }
+      },
+      "map": {
+        "booleanSame": true,
+        "numericSame": false,
+        "nullMissing": false,
+        "nullSame": true,
+        "typedStringMixed": false,
+        "scalarEquals": false,
+        "scalarOperator": true,
+        "listMixed": false,
+        "nestedListMixed": false,
+        "nestedMapMixed": false,
+        "keyMixedOperator": false,
+        "changedOperator": false,
+        "boxedMixedOperator": false,
+        "mixedEquals": false,
+        "mixedOperator": false,
+        "sameEquals": true,
+        "sameOperator": true
+      }
+    },
+    {
+      "api": "68.0",
+      "context": "istest",
+      "regex": {
+        "scopedFlags": {
+          "groups": [
+            {
+              "end": 3,
+              "start": 0,
+              "value": "Abc"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "A"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "grapheme": {
+          "groups": [
+            {
+              "end": 4,
+              "start": 0,
+              "value": "ábc"
+            },
+            {
+              "end": 2,
+              "start": 0,
+              "value": "á"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "b"
+            },
+            {
+              "end": 4,
+              "start": 3,
+              "value": "c"
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "namedReplacement": "a-b",
+        "numericReplacement": "ba",
+        "namedOnly": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "plain": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "interleaved": {
+          "groups": [
+            {
+              "end": 5,
+              "start": 0,
+              "value": "7.8.9"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 3,
+              "start": 1,
+              "value": ".8"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "8"
+            },
+            {
+              "end": 5,
+              "start": 3,
+              "value": ".9"
+            },
+            {
+              "end": 5,
+              "start": 4,
+              "value": "9"
+            }
+          ],
+          "count": 5,
+          "matched": true
+        },
+        "optionalAbsent": {
+          "groups": [
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": -1,
+              "start": -1,
+              "value": null
+            },
+            {
+              "end": -1,
+              "start": -1,
+              "value": null
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "optionalPresent": {
+          "groups": [
+            {
+              "end": 3,
+              "start": 0,
+              "value": "7.8"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "7"
+            },
+            {
+              "end": 3,
+              "start": 1,
+              "value": ".8"
+            },
+            {
+              "end": 3,
+              "start": 2,
+              "value": "8"
+            }
+          ],
+          "count": 3,
+          "matched": true
+        },
+        "namedLast": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        },
+        "namedFirst": {
+          "groups": [
+            {
+              "end": 2,
+              "start": 0,
+              "value": "ab"
+            },
+            {
+              "end": 1,
+              "start": 0,
+              "value": "a"
+            },
+            {
+              "end": 2,
+              "start": 1,
+              "value": "b"
+            }
+          ],
+          "count": 2,
+          "matched": true
+        }
+      },
+      "map": {
+        "booleanSame": true,
+        "numericSame": false,
+        "nullMissing": false,
+        "nullSame": true,
+        "typedStringMixed": false,
+        "scalarEquals": false,
+        "scalarOperator": true,
+        "listMixed": false,
+        "nestedListMixed": false,
+        "nestedMapMixed": false,
+        "keyMixedOperator": false,
+        "changedOperator": false,
+        "boxedMixedOperator": false,
+        "mixedEquals": false,
+        "mixedOperator": false,
+        "sameEquals": true,
+        "sameOperator": true
+      }
+    }
+  ],
+  "carries": [],
+  "capture": {
+    "orgIdSHA256": "ba416fd6e13f060ea5e8e70687daa8f507d274302a7a53d1a8a057211ec21d1e",
+    "transport": "Anonymous debug and named intentional observation assertions; two expected named observation failures per API, no other failures",
+    "authPathNormalization": "Scratch authentication HOME and org/dev-hub aliases normalized; owned source and observation payloads unchanged",
+    "commands": [
+      "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf org create scratch --target-dev-hub <dev-hub> --alias <scratch-org> --duration-days 3 --edition developer --wait 15 --json",
+      "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf project deploy start --target-org <scratch-org> --source-dir <owned-project>/force-app --wait 15 --json",
+      "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version <API> --file api<API>.apex --json",
+      "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names CaptureOrderNative<API> --synchronous --result-format json --wait 15"
+    ],
+    "ownedRows": "value_capture_native.tsv"
+  }
+}

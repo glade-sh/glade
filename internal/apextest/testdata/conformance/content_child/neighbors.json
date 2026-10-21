@@ -1,0 +1,1309 @@
+{
+  "cluster": "neighbors",
+  "shapeCount": 10,
+  "nativeObservationCount": 60,
+  "rows": [
+    {
+      "id": "CD04",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT Id,ContentDocumentId FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(ContentDocumentLink cdl:selected[0].ContentDocumentLinks){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('parents',selected.size());payload.put('children',selected[0].ContentDocumentLinks.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CD04|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "9c8d2b6c38a7977b563dbaf6ee3521b556b2d12ba9a1dd86831cd7244afd2bb0"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "children": 1,
+                "parents": 1
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT Id,ContentDocumentId FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(ContentDocumentLink cdl:selected[0].ContentDocumentLinks){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('parents',selected.size());payload.put('children',selected[0].ContentDocumentLinks.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CD04|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "9c8d2b6c38a7977b563dbaf6ee3521b556b2d12ba9a1dd86831cd7244afd2bb0"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "children": 1,
+                "parents": 1
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT Id,ContentDocumentId FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(ContentDocumentLink cdl:selected[0].ContentDocumentLinks){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('parents',selected.size());payload.put('children',selected[0].ContentDocumentLinks.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CD04|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "9c8d2b6c38a7977b563dbaf6ee3521b556b2d12ba9a1dd86831cd7244afd2bb0"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "children": 1,
+                "parents": 1
+              }
+            },
+            "outcome": "runtime"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveCD04Test": "@IsTest private class CdlObserveCD04Test{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT Id,ContentDocumentId FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(ContentDocumentLink cdl:selected[0].ContentDocumentLinks){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('parents',selected.size());payload.put('children',selected[0].ContentDocumentLinks.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>561){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CD04|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCD04Test"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCD04Test": "e003da9997434af7546210848541296a59a8fcc6937bfe9f9f60e468345e770e"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "children": 1,
+                "parents": 1
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveCD04Test": "@IsTest private class CdlObserveCD04Test{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT Id,ContentDocumentId FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(ContentDocumentLink cdl:selected[0].ContentDocumentLinks){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('parents',selected.size());payload.put('children',selected[0].ContentDocumentLinks.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>561){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CD04|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCD04Test"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCD04Test": "e003da9997434af7546210848541296a59a8fcc6937bfe9f9f60e468345e770e"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "children": 1,
+                "parents": 1
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveCD04Test": "@IsTest private class CdlObserveCD04Test{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT Id,ContentDocumentId FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(ContentDocumentLink cdl:selected[0].ContentDocumentLinks){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('parents',selected.size());payload.put('children',selected[0].ContentDocumentLinks.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>561){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CD04|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCD04Test"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCD04Test": "e003da9997434af7546210848541296a59a8fcc6937bfe9f9f60e468345e770e"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "children": 1,
+                "parents": 1
+              }
+            },
+            "outcome": "runtime"
+          }
+        }
+      }
+    },
+    {
+      "id": "CD05",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl6290c06315__c> selected=[SELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl6290c06315__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CD05|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "742d531abd4e3a3be94f27f3ec625cbe27ac0291e9669803b938d6a9322ca385"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "\nSELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl6290c06315__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'ContentDocumentLink' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 1,
+                "column": 993
+              }
+            },
+            "outcome": "reject",
+            "primary": "\nSELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl6290c06315__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'ContentDocumentLink' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl67b2270d69__c> selected=[SELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl67b2270d69__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CD05|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "34a7aa5f927456b5ae3a6dc35cbe46d97c8ecf2d360788fb8212868ae25c3516"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "\nSELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl67b2270d69__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'ContentDocumentLink' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 1,
+                "column": 993
+              }
+            },
+            "outcome": "reject",
+            "primary": "\nSELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl67b2270d69__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'ContentDocumentLink' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl68e2e44e96__c> selected=[SELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl68e2e44e96__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CD05|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "20dbc036d17625e4a8d8a814266cb6d4ec35338e9a2f63bb74bc7e10c2b16359"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "\nSELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl68e2e44e96__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'ContentDocumentLink' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 1,
+                "column": 993
+              }
+            },
+            "outcome": "reject",
+            "primary": "\nSELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl68e2e44e96__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'ContentDocumentLink' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveCD05Test": "@IsTest private class CdlObserveCD05Test{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl6290c06315__c> selected=[SELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl6290c06315__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>561){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CD05|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCD05Test"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCD05Test": "8f1a9bfc02fcff2e69e533053ffe08a4b2f66edde9fe431a3cd75c1b1a72068d"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveCD05Test",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "SELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl6290c06315__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'ContentDocumentLink' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "SELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl6290c06315__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'ContentDocumentLink' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveCD05Test": "@IsTest private class CdlObserveCD05Test{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl67b2270d69__c> selected=[SELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl67b2270d69__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>561){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CD05|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCD05Test"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCD05Test": "4f6d295b57bdff27c9af9cbc78b11c0e3414f995b00a78b5d400c6e8fa7bcfcb"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveCD05Test",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "SELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl67b2270d69__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'ContentDocumentLink' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "SELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl67b2270d69__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'ContentDocumentLink' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveCD05Test": "@IsTest private class CdlObserveCD05Test{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl68e2e44e96__c> selected=[SELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl68e2e44e96__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>561){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CD05|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCD05Test"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCD05Test": "2fef26d66c1ad6df1b12c0432a53f68209648f793f0e22f1fdb859599c2dc42f"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveCD05Test",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "SELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl68e2e44e96__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'ContentDocumentLink' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "SELECT Id,(SELECT Id FROM ContentDocumentLink) FROM Cdl68e2e44e96__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'ContentDocumentLink' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          }
+        }
+      }
+    },
+    {
+      "id": "REVERSE",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<ContentDocumentLink> links=[SELECT Id,LinkedEntityId,ContentDocumentId,ShareType,Visibility FROM ContentDocumentLink WHERE LinkedEntityId=:recId];Integer outside=0;List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){if(cdl.LinkedEntityId!=recId || !docs.contains(cdl.ContentDocumentId)){outside++;}values.add(new List<Object>{cdl.LinkedEntityId==recId,docs.contains(cdl.ContentDocumentId),cdl.ShareType,cdl.Visibility});}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('values',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|REVERSE|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "7ca043441fac5c20b528b404b8694d30e4d2bb0c59ad201b6e8c91dd8d1c5b73"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "values": [
+                  [
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ]
+                ]
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<ContentDocumentLink> links=[SELECT Id,LinkedEntityId,ContentDocumentId,ShareType,Visibility FROM ContentDocumentLink WHERE LinkedEntityId=:recId];Integer outside=0;List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){if(cdl.LinkedEntityId!=recId || !docs.contains(cdl.ContentDocumentId)){outside++;}values.add(new List<Object>{cdl.LinkedEntityId==recId,docs.contains(cdl.ContentDocumentId),cdl.ShareType,cdl.Visibility});}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('values',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|REVERSE|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "6ebe3cdf7a04ff0b64e26d8bcfb7be97d53f20a4e2483cd2663ecd78a65c4402"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "values": [
+                  [
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ]
+                ]
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<ContentDocumentLink> links=[SELECT Id,LinkedEntityId,ContentDocumentId,ShareType,Visibility FROM ContentDocumentLink WHERE LinkedEntityId=:recId];Integer outside=0;List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){if(cdl.LinkedEntityId!=recId || !docs.contains(cdl.ContentDocumentId)){outside++;}values.add(new List<Object>{cdl.LinkedEntityId==recId,docs.contains(cdl.ContentDocumentId),cdl.ShareType,cdl.Visibility});}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('values',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|REVERSE|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "01b17a1f5371e32a6ddfa9c4dbe57c6722be55a16038989daa1b89451505a3d5"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "values": [
+                  [
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ]
+                ]
+              }
+            },
+            "outcome": "runtime"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveREVERSETest": "@IsTest private class CdlObserveREVERSETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<ContentDocumentLink> links=[SELECT Id,LinkedEntityId,ContentDocumentId,ShareType,Visibility FROM ContentDocumentLink WHERE LinkedEntityId=:recId];Integer outside=0;List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){if(cdl.LinkedEntityId!=recId || !docs.contains(cdl.ContentDocumentId)){outside++;}values.add(new List<Object>{cdl.LinkedEntityId==recId,docs.contains(cdl.ContentDocumentId),cdl.ShareType,cdl.Visibility});}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('values',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>558){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|REVERSE|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveREVERSETest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveREVERSETest": "de80c7271b7a2925dab490943e501828d57c0c6c85b545f51cb8ea051c01d8dc"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "values": [
+                  [
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ]
+                ]
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveREVERSETest": "@IsTest private class CdlObserveREVERSETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<ContentDocumentLink> links=[SELECT Id,LinkedEntityId,ContentDocumentId,ShareType,Visibility FROM ContentDocumentLink WHERE LinkedEntityId=:recId];Integer outside=0;List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){if(cdl.LinkedEntityId!=recId || !docs.contains(cdl.ContentDocumentId)){outside++;}values.add(new List<Object>{cdl.LinkedEntityId==recId,docs.contains(cdl.ContentDocumentId),cdl.ShareType,cdl.Visibility});}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('values',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>558){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|REVERSE|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveREVERSETest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveREVERSETest": "9226974d99cc495a631e1af8042bd05e65804d864cc27c30ff23475748a2f7d1"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "values": [
+                  [
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ]
+                ]
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveREVERSETest": "@IsTest private class CdlObserveREVERSETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<ContentDocumentLink> links=[SELECT Id,LinkedEntityId,ContentDocumentId,ShareType,Visibility FROM ContentDocumentLink WHERE LinkedEntityId=:recId];Integer outside=0;List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){if(cdl.LinkedEntityId!=recId || !docs.contains(cdl.ContentDocumentId)){outside++;}values.add(new List<Object>{cdl.LinkedEntityId==recId,docs.contains(cdl.ContentDocumentId),cdl.ShareType,cdl.Visibility});}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('values',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>558){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|REVERSE|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveREVERSETest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveREVERSETest": "f8f3809da9add52f05d360066b6eb679abe617c75a356cb0c2dec0c546e94eef"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "values": [
+                  [
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ]
+                ]
+              }
+            },
+            "outcome": "runtime"
+          }
+        }
+      }
+    },
+    {
+      "id": "SEMIJOIN",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl6290c06315__c> selected=[SELECT Id FROM Cdl6290c06315__c WHERE Id=:recId AND Id IN (SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|SEMIJOIN|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "8621971799a49ae3f963b13ebafeb5708a31d1d0ec73fc0031a543b5634e2686"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "\n(SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)\n                                 ^\nERROR at Row:1:Column:92\nEntity 'ContentDocumentLink' is not supported for semi join inner selects",
+                "line": 1,
+                "column": 993
+              }
+            },
+            "outcome": "reject",
+            "primary": "\n(SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)\n                                 ^\nERROR at Row:1:Column:92\nEntity 'ContentDocumentLink' is not supported for semi join inner selects"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl67b2270d69__c> selected=[SELECT Id FROM Cdl67b2270d69__c WHERE Id=:recId AND Id IN (SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|SEMIJOIN|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "984cf6e388797dcf6d19ec05992626342dc07ac205f51ab08228214e6cba9c1b"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "\n(SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)\n                                 ^\nERROR at Row:1:Column:92\nEntity 'ContentDocumentLink' is not supported for semi join inner selects",
+                "line": 1,
+                "column": 993
+              }
+            },
+            "outcome": "reject",
+            "primary": "\n(SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)\n                                 ^\nERROR at Row:1:Column:92\nEntity 'ContentDocumentLink' is not supported for semi join inner selects"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl68e2e44e96__c> selected=[SELECT Id FROM Cdl68e2e44e96__c WHERE Id=:recId AND Id IN (SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|SEMIJOIN|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "dbbf9d652cf5e945b9fba31fcc3c5a5a1d86a2f809a63d5cf9bc90a0513af095"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "\n(SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)\n                                 ^\nERROR at Row:1:Column:92\nEntity 'ContentDocumentLink' is not supported for semi join inner selects",
+                "line": 1,
+                "column": 993
+              }
+            },
+            "outcome": "reject",
+            "primary": "\n(SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)\n                                 ^\nERROR at Row:1:Column:92\nEntity 'ContentDocumentLink' is not supported for semi join inner selects"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveSEMIJOINTest": "@IsTest private class CdlObserveSEMIJOINTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl6290c06315__c> selected=[SELECT Id FROM Cdl6290c06315__c WHERE Id=:recId AND Id IN (SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>557){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|SEMIJOIN|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveSEMIJOINTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveSEMIJOINTest": "f67b069917c05c3ce0b0367fb6293d028391ebf3c34d8c8cb82a93905ee031f8"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveSEMIJOINTest",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "(SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)\n                                 ^\nERROR at Row:1:Column:92\nEntity 'ContentDocumentLink' is not supported for semi join inner selects"
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "(SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)\n                                 ^\nERROR at Row:1:Column:92\nEntity 'ContentDocumentLink' is not supported for semi join inner selects"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveSEMIJOINTest": "@IsTest private class CdlObserveSEMIJOINTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl67b2270d69__c> selected=[SELECT Id FROM Cdl67b2270d69__c WHERE Id=:recId AND Id IN (SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>557){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|SEMIJOIN|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveSEMIJOINTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveSEMIJOINTest": "833d37509516aa463854ee58a38d3175cfcb952e26370f8eb3767e6eff433b78"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveSEMIJOINTest",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "(SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)\n                                 ^\nERROR at Row:1:Column:92\nEntity 'ContentDocumentLink' is not supported for semi join inner selects"
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "(SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)\n                                 ^\nERROR at Row:1:Column:92\nEntity 'ContentDocumentLink' is not supported for semi join inner selects"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveSEMIJOINTest": "@IsTest private class CdlObserveSEMIJOINTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl68e2e44e96__c> selected=[SELECT Id FROM Cdl68e2e44e96__c WHERE Id=:recId AND Id IN (SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>557){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|SEMIJOIN|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveSEMIJOINTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveSEMIJOINTest": "f820cdbd356001f4fa1de0d799c6579a18b38f7514b3f89cc44527023b2aeb90"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveSEMIJOINTest",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "(SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)\n                                 ^\nERROR at Row:1:Column:92\nEntity 'ContentDocumentLink' is not supported for semi join inner selects"
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "(SELECT LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId=:recId)\n                                 ^\nERROR at Row:1:Column:92\nEntity 'ContentDocumentLink' is not supported for semi join inner selects"
+          }
+        }
+      }
+    },
+    {
+      "id": "FOO",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl6290c06315__c> selected=[SELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl6290c06315__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|FOO|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "2590cc277ac7ee8962d7a99407a0c1ed6f2578a95c16f4026e6a0bac63799ddb"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "\nSELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl6290c06315__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'Foo__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 1,
+                "column": 993
+              }
+            },
+            "outcome": "reject",
+            "primary": "\nSELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl6290c06315__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'Foo__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl67b2270d69__c> selected=[SELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl67b2270d69__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|FOO|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "e63f912c4d00c52721b1daf10fe0766c7e88c297001b74ac93345baa162b170d"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "\nSELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl67b2270d69__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'Foo__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 1,
+                "column": 993
+              }
+            },
+            "outcome": "reject",
+            "primary": "\nSELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl67b2270d69__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'Foo__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl68e2e44e96__c> selected=[SELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl68e2e44e96__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|FOO|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "5fbe445ec5155a13c15360459190341a9f14979cad32c1c3f4b1158b795ad373"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "\nSELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl68e2e44e96__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'Foo__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 1,
+                "column": 993
+              }
+            },
+            "outcome": "reject",
+            "primary": "\nSELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl68e2e44e96__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'Foo__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveFOOTest": "@IsTest private class CdlObserveFOOTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl6290c06315__c> selected=[SELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl6290c06315__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>562){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|FOO|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveFOOTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveFOOTest": "e620a4d5890dd5b2fc36361d6befa770ae02f6f232fc7d013b573cf8499efd7c"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveFOOTest",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "SELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl6290c06315__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'Foo__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "SELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl6290c06315__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'Foo__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveFOOTest": "@IsTest private class CdlObserveFOOTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl67b2270d69__c> selected=[SELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl67b2270d69__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>562){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|FOO|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveFOOTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveFOOTest": "68782cfee251db784a00d5aad266d600e5d18d67803d0440de4f7a025b00e09d"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveFOOTest",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "SELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl67b2270d69__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'Foo__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "SELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl67b2270d69__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'Foo__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveFOOTest": "@IsTest private class CdlObserveFOOTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl68e2e44e96__c> selected=[SELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl68e2e44e96__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>562){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|FOO|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveFOOTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveFOOTest": "222d880c5347feb40f8995710cd240a13ba13e6f864e867e916d026f955f9135"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveFOOTest",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "SELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl68e2e44e96__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'Foo__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "SELECT Id,(SELECT Id FROM Foo__r.Bars) FROM Cdl68e2e44e96__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'Foo__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          }
+        }
+      }
+    },
+    {
+      "id": "NO_SUCH",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl6290c06315__c> selected=[SELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl6290c06315__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|NO_SUCH|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "4b970f3ee55f2208ef501db0c8328707a4f0f77f142da24d4aaf93301141d720"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "\nSELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl6290c06315__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'NoSuchLinks' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 1,
+                "column": 993
+              }
+            },
+            "outcome": "reject",
+            "primary": "\nSELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl6290c06315__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'NoSuchLinks' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl67b2270d69__c> selected=[SELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl67b2270d69__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|NO_SUCH|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "193b8a2fe5c404a1f711f0dedb11960faeb499d90be8264a59665bfeab7e594d"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "\nSELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl67b2270d69__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'NoSuchLinks' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 1,
+                "column": 993
+              }
+            },
+            "outcome": "reject",
+            "primary": "\nSELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl67b2270d69__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'NoSuchLinks' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl68e2e44e96__c> selected=[SELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl68e2e44e96__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|NO_SUCH|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "8f67c4979d5bf414ecf6e9bba0d7be86f9034ad54d490f14f93af38e11168ff5"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "\nSELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl68e2e44e96__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'NoSuchLinks' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 1,
+                "column": 993
+              }
+            },
+            "outcome": "reject",
+            "primary": "\nSELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl68e2e44e96__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'NoSuchLinks' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveNOSUCHTest": "@IsTest private class CdlObserveNOSUCHTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl6290c06315__c> selected=[SELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl6290c06315__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>558){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|NO_SUCH|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveNOSUCHTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveNOSUCHTest": "c48b6d58fa2c89a99bb38763ea6a242f2a1d5e7c0d800a04e62880449e5e6a90"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveNOSUCHTest",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "SELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl6290c06315__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'NoSuchLinks' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "SELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl6290c06315__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'NoSuchLinks' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveNOSUCHTest": "@IsTest private class CdlObserveNOSUCHTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl67b2270d69__c> selected=[SELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl67b2270d69__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>558){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|NO_SUCH|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveNOSUCHTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveNOSUCHTest": "16b012777ed9e86e752f2693ff4c51fbd18c54ab4b5086adc2eb5835dab50cf2"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveNOSUCHTest",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "SELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl67b2270d69__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'NoSuchLinks' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "SELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl67b2270d69__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'NoSuchLinks' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveNOSUCHTest": "@IsTest private class CdlObserveNOSUCHTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<1;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(1!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Cdl68e2e44e96__c> selected=[SELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl68e2e44e96__c WHERE Id=:recId];payload.put('size',selected.size());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>558){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|NO_SUCH|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveNOSUCHTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveNOSUCHTest": "33cbea6891b13a5fa6c7f9c97f681b289333e119315814565f5425dfac2e1243"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveNOSUCHTest",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "SELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl68e2e44e96__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'NoSuchLinks' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "SELECT Id,(SELECT Id FROM NoSuchLinks) FROM Cdl68e2e44e96__c\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'NoSuchLinks' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+          }
+        }
+      }
+    },
+    {
+      "id": "LOOKUP_ONE",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}List<Cdl6290c06315Child__c> kids=new List<Cdl6290c06315Child__c>();for(Integer j=0;j<1;j++){kids.add(new Cdl6290c06315Child__c(Name=stamp,Parent__c=recId));}insert kids;Set<Id> kidIds=new Set<Id>();for(Cdl6290c06315Child__c kid:kids){kidIds.add(kid.Id);}phase='behavior';List<Cdl6290c06315__c> selected=[SELECT Id,(SELECT Id,Parent__c FROM Children__r) FROM Cdl6290c06315__c WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(Cdl6290c06315Child__c kid:selected[0].Children__r){if(kid.Parent__c!=recId || !kidIds.contains(kid.Id)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('size',selected[0].Children__r.size());payload.put('empty',selected[0].Children__r.isEmpty());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|LOOKUP_ONE|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "65b9e8ea2994dc733c30ab5aaaabe5389296b7f8660db94f0c75288f49a5d26e"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "empty": false,
+                "size": 1
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}List<Cdl67b2270d69Child__c> kids=new List<Cdl67b2270d69Child__c>();for(Integer j=0;j<1;j++){kids.add(new Cdl67b2270d69Child__c(Name=stamp,Parent__c=recId));}insert kids;Set<Id> kidIds=new Set<Id>();for(Cdl67b2270d69Child__c kid:kids){kidIds.add(kid.Id);}phase='behavior';List<Cdl67b2270d69__c> selected=[SELECT Id,(SELECT Id,Parent__c FROM Children__r) FROM Cdl67b2270d69__c WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(Cdl67b2270d69Child__c kid:selected[0].Children__r){if(kid.Parent__c!=recId || !kidIds.contains(kid.Id)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('size',selected[0].Children__r.size());payload.put('empty',selected[0].Children__r.isEmpty());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|LOOKUP_ONE|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "b632fc3b01d32c620b7b91fa0c0f676658796f0d4c9cd689fba551dcd40edb55"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "empty": false,
+                "size": 1
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}List<Cdl68e2e44e96Child__c> kids=new List<Cdl68e2e44e96Child__c>();for(Integer j=0;j<1;j++){kids.add(new Cdl68e2e44e96Child__c(Name=stamp,Parent__c=recId));}insert kids;Set<Id> kidIds=new Set<Id>();for(Cdl68e2e44e96Child__c kid:kids){kidIds.add(kid.Id);}phase='behavior';List<Cdl68e2e44e96__c> selected=[SELECT Id,(SELECT Id,Parent__c FROM Children__r) FROM Cdl68e2e44e96__c WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(Cdl68e2e44e96Child__c kid:selected[0].Children__r){if(kid.Parent__c!=recId || !kidIds.contains(kid.Id)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('size',selected[0].Children__r.size());payload.put('empty',selected[0].Children__r.isEmpty());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|LOOKUP_ONE|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "ed478624a4237481370278092519ed86f41678182a33b6291f466155dbecab22"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "empty": false,
+                "size": 1
+              }
+            },
+            "outcome": "runtime"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveLOOKUPONETest": "@IsTest private class CdlObserveLOOKUPONETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}List<Cdl6290c06315Child__c> kids=new List<Cdl6290c06315Child__c>();for(Integer j=0;j<1;j++){kids.add(new Cdl6290c06315Child__c(Name=stamp,Parent__c=recId));}insert kids;Set<Id> kidIds=new Set<Id>();for(Cdl6290c06315Child__c kid:kids){kidIds.add(kid.Id);}phase='behavior';List<Cdl6290c06315__c> selected=[SELECT Id,(SELECT Id,Parent__c FROM Children__r) FROM Cdl6290c06315__c WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(Cdl6290c06315Child__c kid:selected[0].Children__r){if(kid.Parent__c!=recId || !kidIds.contains(kid.Id)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('size',selected[0].Children__r.size());payload.put('empty',selected[0].Children__r.isEmpty());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|LOOKUP_ONE|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveLOOKUPONETest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveLOOKUPONETest": "a76bb78b29d797e2be88ebb9bc2872a4dc371f871291a42d41f8a8cf75f07b9d"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "empty": false,
+                "size": 1
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveLOOKUPONETest": "@IsTest private class CdlObserveLOOKUPONETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}List<Cdl67b2270d69Child__c> kids=new List<Cdl67b2270d69Child__c>();for(Integer j=0;j<1;j++){kids.add(new Cdl67b2270d69Child__c(Name=stamp,Parent__c=recId));}insert kids;Set<Id> kidIds=new Set<Id>();for(Cdl67b2270d69Child__c kid:kids){kidIds.add(kid.Id);}phase='behavior';List<Cdl67b2270d69__c> selected=[SELECT Id,(SELECT Id,Parent__c FROM Children__r) FROM Cdl67b2270d69__c WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(Cdl67b2270d69Child__c kid:selected[0].Children__r){if(kid.Parent__c!=recId || !kidIds.contains(kid.Id)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('size',selected[0].Children__r.size());payload.put('empty',selected[0].Children__r.isEmpty());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|LOOKUP_ONE|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveLOOKUPONETest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveLOOKUPONETest": "e179f1a530356c3585b7d1e797b0e7c0affccd1cff4b87b687fdd7fef1f1ab9e"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "empty": false,
+                "size": 1
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveLOOKUPONETest": "@IsTest private class CdlObserveLOOKUPONETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}List<Cdl68e2e44e96Child__c> kids=new List<Cdl68e2e44e96Child__c>();for(Integer j=0;j<1;j++){kids.add(new Cdl68e2e44e96Child__c(Name=stamp,Parent__c=recId));}insert kids;Set<Id> kidIds=new Set<Id>();for(Cdl68e2e44e96Child__c kid:kids){kidIds.add(kid.Id);}phase='behavior';List<Cdl68e2e44e96__c> selected=[SELECT Id,(SELECT Id,Parent__c FROM Children__r) FROM Cdl68e2e44e96__c WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(Cdl68e2e44e96Child__c kid:selected[0].Children__r){if(kid.Parent__c!=recId || !kidIds.contains(kid.Id)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('size',selected[0].Children__r.size());payload.put('empty',selected[0].Children__r.isEmpty());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|LOOKUP_ONE|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveLOOKUPONETest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveLOOKUPONETest": "1c97f1291abbfe2abd7e619b87486d965de0b1806b68be244ac0d1675d85b757"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "empty": false,
+                "size": 1
+              }
+            },
+            "outcome": "runtime"
+          }
+        }
+      }
+    },
+    {
+      "id": "LOOKUP_ZERO",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}List<Cdl6290c06315Child__c> kids=new List<Cdl6290c06315Child__c>();for(Integer j=0;j<0;j++){kids.add(new Cdl6290c06315Child__c(Name=stamp,Parent__c=recId));}insert kids;Set<Id> kidIds=new Set<Id>();for(Cdl6290c06315Child__c kid:kids){kidIds.add(kid.Id);}phase='behavior';List<Cdl6290c06315__c> selected=[SELECT Id,(SELECT Id,Parent__c FROM Children__r) FROM Cdl6290c06315__c WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(Cdl6290c06315Child__c kid:selected[0].Children__r){if(kid.Parent__c!=recId || !kidIds.contains(kid.Id)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('size',selected[0].Children__r.size());payload.put('empty',selected[0].Children__r.isEmpty());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|LOOKUP_ZERO|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "c22b088751b198bfbe0313024ed094ec44f59a69e2215e94d543ac565e4b24c2"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "empty": true,
+                "size": 0
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}List<Cdl67b2270d69Child__c> kids=new List<Cdl67b2270d69Child__c>();for(Integer j=0;j<0;j++){kids.add(new Cdl67b2270d69Child__c(Name=stamp,Parent__c=recId));}insert kids;Set<Id> kidIds=new Set<Id>();for(Cdl67b2270d69Child__c kid:kids){kidIds.add(kid.Id);}phase='behavior';List<Cdl67b2270d69__c> selected=[SELECT Id,(SELECT Id,Parent__c FROM Children__r) FROM Cdl67b2270d69__c WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(Cdl67b2270d69Child__c kid:selected[0].Children__r){if(kid.Parent__c!=recId || !kidIds.contains(kid.Id)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('size',selected[0].Children__r.size());payload.put('empty',selected[0].Children__r.isEmpty());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|LOOKUP_ZERO|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "ec0e24f2c532ebf83addc602e1a3aab4d64e18596235ffc89dfa30303b708d35"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "empty": true,
+                "size": 0
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}List<Cdl68e2e44e96Child__c> kids=new List<Cdl68e2e44e96Child__c>();for(Integer j=0;j<0;j++){kids.add(new Cdl68e2e44e96Child__c(Name=stamp,Parent__c=recId));}insert kids;Set<Id> kidIds=new Set<Id>();for(Cdl68e2e44e96Child__c kid:kids){kidIds.add(kid.Id);}phase='behavior';List<Cdl68e2e44e96__c> selected=[SELECT Id,(SELECT Id,Parent__c FROM Children__r) FROM Cdl68e2e44e96__c WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(Cdl68e2e44e96Child__c kid:selected[0].Children__r){if(kid.Parent__c!=recId || !kidIds.contains(kid.Id)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('size',selected[0].Children__r.size());payload.put('empty',selected[0].Children__r.isEmpty());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|LOOKUP_ZERO|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "9d3d6484b0bf070c5ad3dca3b937aed3ad8f6f63d43a95c83f533251d2739047"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "empty": true,
+                "size": 0
+              }
+            },
+            "outcome": "runtime"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveLOOKUPZEROTest": "@IsTest private class CdlObserveLOOKUPZEROTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl6290c06315__c rec=new Cdl6290c06315__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}List<Cdl6290c06315Child__c> kids=new List<Cdl6290c06315Child__c>();for(Integer j=0;j<0;j++){kids.add(new Cdl6290c06315Child__c(Name=stamp,Parent__c=recId));}insert kids;Set<Id> kidIds=new Set<Id>();for(Cdl6290c06315Child__c kid:kids){kidIds.add(kid.Id);}phase='behavior';List<Cdl6290c06315__c> selected=[SELECT Id,(SELECT Id,Parent__c FROM Children__r) FROM Cdl6290c06315__c WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(Cdl6290c06315Child__c kid:selected[0].Children__r){if(kid.Parent__c!=recId || !kidIds.contains(kid.Id)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('size',selected[0].Children__r.size());payload.put('empty',selected[0].Children__r.isEmpty());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>554){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|LOOKUP_ZERO|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveLOOKUPZEROTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveLOOKUPZEROTest": "65921ce87175e66d6fcf4e345ad6f4e4016aa287e2686359394ea85f1923c8ef"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "empty": true,
+                "size": 0
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveLOOKUPZEROTest": "@IsTest private class CdlObserveLOOKUPZEROTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl67b2270d69__c rec=new Cdl67b2270d69__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}List<Cdl67b2270d69Child__c> kids=new List<Cdl67b2270d69Child__c>();for(Integer j=0;j<0;j++){kids.add(new Cdl67b2270d69Child__c(Name=stamp,Parent__c=recId));}insert kids;Set<Id> kidIds=new Set<Id>();for(Cdl67b2270d69Child__c kid:kids){kidIds.add(kid.Id);}phase='behavior';List<Cdl67b2270d69__c> selected=[SELECT Id,(SELECT Id,Parent__c FROM Children__r) FROM Cdl67b2270d69__c WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(Cdl67b2270d69Child__c kid:selected[0].Children__r){if(kid.Parent__c!=recId || !kidIds.contains(kid.Id)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('size',selected[0].Children__r.size());payload.put('empty',selected[0].Children__r.isEmpty());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>554){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|LOOKUP_ZERO|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveLOOKUPZEROTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveLOOKUPZEROTest": "326427de96f2caf3fe89084f726686a2502474cbeda5c21a5942da71f9001457"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "empty": true,
+                "size": 0
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveLOOKUPZEROTest": "@IsTest private class CdlObserveLOOKUPZEROTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Cdl68e2e44e96__c rec=new Cdl68e2e44e96__c(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}List<Cdl68e2e44e96Child__c> kids=new List<Cdl68e2e44e96Child__c>();for(Integer j=0;j<0;j++){kids.add(new Cdl68e2e44e96Child__c(Name=stamp,Parent__c=recId));}insert kids;Set<Id> kidIds=new Set<Id>();for(Cdl68e2e44e96Child__c kid:kids){kidIds.add(kid.Id);}phase='behavior';List<Cdl68e2e44e96__c> selected=[SELECT Id,(SELECT Id,Parent__c FROM Children__r) FROM Cdl68e2e44e96__c WHERE Id=:recId];if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}Integer outside=0;for(Cdl68e2e44e96Child__c kid:selected[0].Children__r){if(kid.Parent__c!=recId || !kidIds.contains(kid.Id)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope');}payload.put('size',selected[0].Children__r.size());payload.put('empty',selected[0].Children__r.isEmpty());}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>554){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|LOOKUP_ZERO|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveLOOKUPZEROTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveLOOKUPZEROTest": "ad47316aca1ac9d6257f69c7c39fc549cf024d29827fc8d4895c74865cb5e4c1"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "empty": true,
+                "size": 0
+              }
+            },
+            "outcome": "runtime"
+          }
+        }
+      }
+    },
+    {
+      "id": "ACCOUNT_ZERO",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT ContentDocumentId,ContentDocument.Title,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(1!=selected.size()){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}List<ContentDocumentLink> links=selected[0].ContentDocumentLinks;Integer outside=0;for(ContentDocumentLink cdl:links){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope document');}payload.put('size',links.size());payload.put('empty',links.isEmpty());List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){values.add(new List<Object>{docs.contains(cdl.ContentDocumentId),cdl.ContentDocument.Title.startsWith(stamp),cdl.LinkedEntityId==recId,cdl.ShareType,cdl.Visibility});}payload.put('fields',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|ACCOUNT_ZERO|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "f83bde23044c087905b04fecc3e120765d02d4dc3204876930f0584a083a037a"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "fields": [],
+                "empty": true,
+                "size": 0
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT ContentDocumentId,ContentDocument.Title,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(1!=selected.size()){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}List<ContentDocumentLink> links=selected[0].ContentDocumentLinks;Integer outside=0;for(ContentDocumentLink cdl:links){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope document');}payload.put('size',links.size());payload.put('empty',links.isEmpty());List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){values.add(new List<Object>{docs.contains(cdl.ContentDocumentId),cdl.ContentDocument.Title.startsWith(stamp),cdl.LinkedEntityId==recId,cdl.ShareType,cdl.Visibility});}payload.put('fields',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|ACCOUNT_ZERO|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "f83bde23044c087905b04fecc3e120765d02d4dc3204876930f0584a083a037a"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "fields": [],
+                "empty": true,
+                "size": 0
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT ContentDocumentId,ContentDocument.Title,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(1!=selected.size()){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}List<ContentDocumentLink> links=selected[0].ContentDocumentLinks;Integer outside=0;for(ContentDocumentLink cdl:links){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope document');}payload.put('size',links.size());payload.put('empty',links.isEmpty());List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){values.add(new List<Object>{docs.contains(cdl.ContentDocumentId),cdl.ContentDocument.Title.startsWith(stamp),cdl.LinkedEntityId==recId,cdl.ShareType,cdl.Visibility});}payload.put('fields',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|ACCOUNT_ZERO|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "f83bde23044c087905b04fecc3e120765d02d4dc3204876930f0584a083a037a"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "fields": [],
+                "empty": true,
+                "size": 0
+              }
+            },
+            "outcome": "runtime"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveACCOUNTZEROTest": "@IsTest private class CdlObserveACCOUNTZEROTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT ContentDocumentId,ContentDocument.Title,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(1!=selected.size()){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}List<ContentDocumentLink> links=selected[0].ContentDocumentLinks;Integer outside=0;for(ContentDocumentLink cdl:links){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope document');}payload.put('size',links.size());payload.put('empty',links.isEmpty());List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){values.add(new List<Object>{docs.contains(cdl.ContentDocumentId),cdl.ContentDocument.Title.startsWith(stamp),cdl.LinkedEntityId==recId,cdl.ShareType,cdl.Visibility});}payload.put('fields',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>553){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|ACCOUNT_ZERO|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveACCOUNTZEROTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveACCOUNTZEROTest": "7774b5939b0e3761a0eaf41f65fa9dd3d579a1ebe663a7be3db664f73f936b13"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "fields": [],
+                "empty": true,
+                "size": 0
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveACCOUNTZEROTest": "@IsTest private class CdlObserveACCOUNTZEROTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT ContentDocumentId,ContentDocument.Title,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(1!=selected.size()){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}List<ContentDocumentLink> links=selected[0].ContentDocumentLinks;Integer outside=0;for(ContentDocumentLink cdl:links){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope document');}payload.put('size',links.size());payload.put('empty',links.isEmpty());List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){values.add(new List<Object>{docs.contains(cdl.ContentDocumentId),cdl.ContentDocument.Title.startsWith(stamp),cdl.LinkedEntityId==recId,cdl.ShareType,cdl.Visibility});}payload.put('fields',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>553){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|ACCOUNT_ZERO|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveACCOUNTZEROTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveACCOUNTZEROTest": "7774b5939b0e3761a0eaf41f65fa9dd3d579a1ebe663a7be3db664f73f936b13"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "fields": [],
+                "empty": true,
+                "size": 0
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveACCOUNTZEROTest": "@IsTest private class CdlObserveACCOUNTZEROTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(0!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT ContentDocumentId,ContentDocument.Title,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(1!=selected.size()){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}List<ContentDocumentLink> links=selected[0].ContentDocumentLinks;Integer outside=0;for(ContentDocumentLink cdl:links){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope document');}payload.put('size',links.size());payload.put('empty',links.isEmpty());List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){values.add(new List<Object>{docs.contains(cdl.ContentDocumentId),cdl.ContentDocument.Title.startsWith(stamp),cdl.LinkedEntityId==recId,cdl.ShareType,cdl.Visibility});}payload.put('fields',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>553){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|ACCOUNT_ZERO|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveACCOUNTZEROTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveACCOUNTZEROTest": "7774b5939b0e3761a0eaf41f65fa9dd3d579a1ebe663a7be3db664f73f936b13"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "fields": [],
+                "empty": true,
+                "size": 0
+              }
+            },
+            "outcome": "runtime"
+          }
+        }
+      }
+    },
+    {
+      "id": "ACCOUNT_TWO",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<2;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(2!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT ContentDocumentId,ContentDocument.Title,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(1!=selected.size()){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}List<ContentDocumentLink> links=selected[0].ContentDocumentLinks;Integer outside=0;for(ContentDocumentLink cdl:links){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope document');}payload.put('size',links.size());payload.put('empty',links.isEmpty());List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){values.add(new List<Object>{docs.contains(cdl.ContentDocumentId),cdl.ContentDocument.Title.startsWith(stamp),cdl.LinkedEntityId==recId,cdl.ShareType,cdl.Visibility});}payload.put('fields',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|ACCOUNT_TWO|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "8528235b35eb72ed649dd4fb70636324e283ce0805ae7daa7f6f3c5b01b31264"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "fields": [
+                  [
+                    true,
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ],
+                  [
+                    true,
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ]
+                ],
+                "empty": false,
+                "size": 2
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<2;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(2!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT ContentDocumentId,ContentDocument.Title,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(1!=selected.size()){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}List<ContentDocumentLink> links=selected[0].ContentDocumentLinks;Integer outside=0;for(ContentDocumentLink cdl:links){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope document');}payload.put('size',links.size());payload.put('empty',links.isEmpty());List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){values.add(new List<Object>{docs.contains(cdl.ContentDocumentId),cdl.ContentDocument.Title.startsWith(stamp),cdl.LinkedEntityId==recId,cdl.ShareType,cdl.Visibility});}payload.put('fields',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|ACCOUNT_TWO|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "8528235b35eb72ed649dd4fb70636324e283ce0805ae7daa7f6f3c5b01b31264"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "fields": [
+                  [
+                    true,
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ],
+                  [
+                    true,
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ]
+                ],
+                "empty": false,
+                "size": 2
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<2;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(2!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT ContentDocumentId,ContentDocument.Title,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(1!=selected.size()){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}List<ContentDocumentLink> links=selected[0].ContentDocumentLinks;Integer outside=0;for(ContentDocumentLink cdl:links){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope document');}payload.put('size',links.size());payload.put('empty',links.isEmpty());List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){values.add(new List<Object>{docs.contains(cdl.ContentDocumentId),cdl.ContentDocument.Title.startsWith(stamp),cdl.LinkedEntityId==recId,cdl.ShareType,cdl.Visibility});}payload.put('fields',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|ACCOUNT_TWO|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "8528235b35eb72ed649dd4fb70636324e283ce0805ae7daa7f6f3c5b01b31264"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "fields": [
+                  [
+                    true,
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ],
+                  [
+                    true,
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ]
+                ],
+                "empty": false,
+                "size": 2
+              }
+            },
+            "outcome": "runtime"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveACCOUNTTWOTest": "@IsTest private class CdlObserveACCOUNTTWOTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<2;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(2!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT ContentDocumentId,ContentDocument.Title,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(1!=selected.size()){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}List<ContentDocumentLink> links=selected[0].ContentDocumentLinks;Integer outside=0;for(ContentDocumentLink cdl:links){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope document');}payload.put('size',links.size());payload.put('empty',links.isEmpty());List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){values.add(new List<Object>{docs.contains(cdl.ContentDocumentId),cdl.ContentDocument.Title.startsWith(stamp),cdl.LinkedEntityId==recId,cdl.ShareType,cdl.Visibility});}payload.put('fields',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>554){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|ACCOUNT_TWO|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveACCOUNTTWOTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveACCOUNTTWOTest": "d0e0e14e4380d0eacf20e77186dcb5388a20825e0f1c9d8b33cc3253c73972b0"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "fields": [
+                  [
+                    true,
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ],
+                  [
+                    true,
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ]
+                ],
+                "empty": false,
+                "size": 2
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveACCOUNTTWOTest": "@IsTest private class CdlObserveACCOUNTTWOTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<2;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(2!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT ContentDocumentId,ContentDocument.Title,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(1!=selected.size()){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}List<ContentDocumentLink> links=selected[0].ContentDocumentLinks;Integer outside=0;for(ContentDocumentLink cdl:links){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope document');}payload.put('size',links.size());payload.put('empty',links.isEmpty());List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){values.add(new List<Object>{docs.contains(cdl.ContentDocumentId),cdl.ContentDocument.Title.startsWith(stamp),cdl.LinkedEntityId==recId,cdl.ShareType,cdl.Visibility});}payload.put('fields',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>554){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|ACCOUNT_TWO|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveACCOUNTTWOTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveACCOUNTTWOTest": "d0e0e14e4380d0eacf20e77186dcb5388a20825e0f1c9d8b33cc3253c73972b0"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "fields": [
+                  [
+                    true,
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ],
+                  [
+                    true,
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ]
+                ],
+                "empty": false,
+                "size": 2
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveACCOUNTTWOTest": "@IsTest private class CdlObserveACCOUNTTWOTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{String stamp='Cdl'+String.valueOf(Crypto.getRandomLong());Account rec=new Account(Name=stamp);insert rec;Id recId=rec.Id;Set<Id> docs=new Set<Id>();for(Integer j=0;j<2;j++){ContentVersion version=new ContentVersion(Title=stamp+String.valueOf(j),PathOnClient='tiny.txt',VersionData=Blob.valueOf('tiny'));insert version;Id versionId=version.Id;ContentVersion saved=[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id=:versionId];if(!(saved.ContentDocumentId!=null)){throw new IllegalArgumentException('FIXTURE_ERROR: document missing');}Id docId=saved.ContentDocumentId;docs.add(docId);insert new ContentDocumentLink(ContentDocumentId=docId,LinkedEntityId=recId,ShareType='V');}Integer seeded=[SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId=:recId];if(2!=seeded){throw new IllegalArgumentException('FIXTURE_ERROR: link count');}phase='behavior';List<Account> selected=[SELECT Id,(SELECT ContentDocumentId,ContentDocument.Title,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLinks) FROM Account WHERE Id=:recId];if(1!=selected.size()){throw new IllegalArgumentException('FIXTURE_ERROR: parent scope');}List<ContentDocumentLink> links=selected[0].ContentDocumentLinks;Integer outside=0;for(ContentDocumentLink cdl:links){if(!docs.contains(cdl.ContentDocumentId)){outside++;}}if(0!=outside){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope document');}payload.put('size',links.size());payload.put('empty',links.isEmpty());List<Object> values=new List<Object>();for(ContentDocumentLink cdl:links){values.add(new List<Object>{docs.contains(cdl.ContentDocumentId),cdl.ContentDocument.Title.startsWith(stamp),cdl.LinkedEntityId==recId,cdl.ShareType,cdl.Visibility});}payload.put('fields',values);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && true){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>554){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|ACCOUNT_TWO|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveACCOUNTTWOTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveACCOUNTTWOTest": "d0e0e14e4380d0eacf20e77186dcb5388a20825e0f1c9d8b33cc3253c73972b0"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "fields": [
+                  [
+                    true,
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ],
+                  [
+                    true,
+                    true,
+                    true,
+                    "V",
+                    "AllUsers"
+                  ]
+                ],
+                "empty": false,
+                "size": 2
+              }
+            },
+            "outcome": "runtime"
+          }
+        }
+      }
+    }
+  ]
+}

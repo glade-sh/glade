@@ -4,4 +4,4 @@ package storage
 
 const DefaultRESTAPIVersion = "65.0"
 
-var SupportedRESTAPIVersions = []string{"60.0", "65.0", "66.0", "67.0"}
+var SupportedRESTAPIVersions = []string{"60.0", "65.0", "66.0", "67.0", "68.0"}

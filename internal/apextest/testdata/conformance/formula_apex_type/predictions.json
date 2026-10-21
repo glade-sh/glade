@@ -1,0 +1,3421 @@
+{
+  "productBase": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+  "executed": false,
+  "fixPhase": {
+    "implementedRootGroups": [
+      "anonymous-context", "public-context", "standard-context",
+      "member-visibility", "getter-precedence", "contains-null",
+      "String-to-Integer native diagnostic"
+    ],
+    "expectedPassingCells": 596,
+    "expectedPassingCellsByCluster": {
+      "core": 112,
+      "returns": 72,
+      "sobject": 64,
+      "paths": 56,
+      "access": 60,
+      "getters": 40,
+      "rejections": 56,
+      "global": 104,
+      "control": 32
+    },
+    "remainingKnownFailingCapturedCells": 0,
+    "executionVerified": false,
+    "behaviorAndNeighborMapping": "FIXES.md"
+  },
+  "beforeRunReconciliation": {
+    "observedExportHEAD": "capture-revision-063733568680042013009632244249308564915002947830153442150326238318708216315563",
+    "logSHA256": "cca2082c5b2d9a10ff2d3acd4c2c11847f658c4ce4ff212aab6431274e1a49c4",
+    "observedFailingCells": 480,
+    "observedFailingCellsByCluster": {
+      "core": 112,
+      "returns": 72,
+      "sobject": 16,
+      "paths": 56,
+      "access": 60,
+      "getters": 40,
+      "rejections": 56,
+      "global": 56,
+      "control": 12
+    },
+    "predictedNonControlCellsMatchedExactly": 468,
+    "unpredictedNonControlCells": 0,
+    "exceptionTypeQualificationCells": {
+      "id": "C186CONTROL_003",
+      "apis": ["59.0", "62.0", "67.0", "68.0"],
+      "routes": ["anonymous", "isTest"],
+      "cells": 8,
+      "correction": "Qualify only the captured ListException type as System.ListException; keep ExceptionMessage exact.",
+      "rerun": false
+    },
+    "remainingUnpredictedFailures": {
+      "id": "C186CONTROL_004",
+      "apis": ["59.0", "62.0", "67.0", "68.0"],
+      "routes": ["isTest"],
+      "cells": 4,
+      "nativePrimaryDiagnostic": "Illegal assignment from String to Integer",
+      "observedPrimaryDiagnostic": "method \"observe\" initializes Integer local \"incompatible\" with String",
+      "references": ["internal/apextest/formula_apex_type_conformance_test.go:276", "internal/sema/lifecycle_diagnostics.go:114", "internal/sema/value_collection_diagnostics.go:46"],
+      "cause": "Named semantic diagnostics lack native text for String-to-Integer initialization. The anonymous route has native text; the existing lifecycle projection also lacks this assignment pair, so applying that projection alone is insufficient.",
+      "changed": false
+    },
+    "postQualificationPredictedFailingCells": 472,
+    "postQualificationRunVerified": false
+  },
+  "capturedCells": 596,
+  "predictedFailingCells": 468,
+  "predictedPassingCells": 128,
+  "rootCauses": {
+    "anonymous-context": {
+      "cause": "Transient anonymous-local Apex contexts are accepted by the generic builder instead of rejected as unsupported standard-library types.",
+      "references": [
+        "internal/vm/platform_apexpages_formula.go:830",
+        "internal/vm/platform_apexpages_formula.go:836"
+      ],
+      "proposal": "Classify captured anonymous declaration contexts from runtime declaration provenance before formula parsing; return the captured unsupported-type diagnostic. Do not classify from the class name.",
+      "predictedFailingCells": 168,
+      "confidence": "code-reading prediction; no Glade execution"
+    },
+    "public-context": {
+      "cause": "The build-time global check is limited by a name-dependent type rule and runs after formula validation. Ordinary named public contexts must fail first with the captured context type must be global diagnostic.",
+      "references": [
+        "internal/vm/platform_apexpages_formula.go:830",
+        "internal/vm/platform_apexpages_formula.go:836"
+      ],
+      "proposal": "Validate the captured named context access before expression validation, using class access metadata. Retain the captured global and SObject success twins and the separate anonymous-local rejection.",
+      "predictedFailingCells": 252,
+      "confidence": "code-reading prediction; no Glade execution"
+    },
+    "standard-context": {
+      "cause": "String.class gets an empty definition and a field-access diagnostic instead of the captured unsupported standard library type diagnostic.",
+      "references": [
+        "internal/vm/platform_apexpages_formula.go:1172",
+        "internal/dml/formula_builder.go:141"
+      ],
+      "proposal": "Reject the captured String context before field validation. Other standard types need separate native captures.",
+      "predictedFailingCells": 8,
+      "confidence": "code-reading prediction; no Glade execution"
+    },
+    "member-visibility": {
+      "cause": "Formula context definitions include public members of global classes; native exposes only the captured global member twins.",
+      "references": [
+        "internal/vm/platform_apexpages_formula.go:1176",
+        "internal/vm/platform_apexpages_formula.go:1197"
+      ],
+      "proposal": "Build a formula-specific visible-member definition from access metadata; for the captured public record member, return Field record does not exist. Check spelling. Keep global fields and properties accepted.",
+      "predictedFailingCells": 8,
+      "confidence": "code-reading prediction; no Glade execution"
+    },
+    "getter-precedence": {
+      "cause": "Every declared instance field/property is initialized to a stored default. The formula walker reads that slot before checking the getter, so the computed inherited record property stays null even when currentValue holds an Account.",
+      "references": [
+        "internal/vm/construct_runtime.go:1724",
+        "internal/vm/construct_runtime.go:1738",
+        "internal/vm/platform_apexpages_formula.go:1228",
+        "internal/vm/platform_apexpages_formula.go:1232"
+      ],
+      "proposal": "Use declared property getter dispatch before its backing slot for the captured global computed property; preserve direct SObject reads, ordinary fields, automatic properties and null-cast twins. Getter exception propagation, counts and repetition on global contexts need native captures before behavior changes.",
+      "predictedFailingCells": 8,
+      "confidence": "code-reading prediction; no Glade execution"
+    },
+    "contains-null": {
+      "cause": "CONTAINS coerces a null source to empty text and returns false; these FormulaInstance rows return null natively.",
+      "references": [
+        "internal/dml/formula.go:1138",
+        "internal/dml/formula.go:1142",
+        "internal/vm/platform_apexpages_formula.go:1048"
+      ],
+      "proposal": "Preserve null for the captured CONTAINS(null field, A) FormulaInstance expressions. Restrict the change to the captured formula surface; do not extrapolate to DML formulas, other functions or argument shapes.",
+      "predictedFailingCells": 24,
+      "confidence": "code-reading prediction; no Glade execution"
+    }
+  },
+  "predictedFailingCellsByCluster": {
+    "access": 60,
+    "core": 112,
+    "getters": 40,
+    "global": 56,
+    "paths": 56,
+    "rejections": 56,
+    "returns": 72,
+    "sobject": 16
+  },
+  "cells": [
+    {
+      "id": "C186FE_045",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_045",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_045",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_045",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_045",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_045",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_045",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_045",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_046",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_046",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_046",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_046",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_046",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_046",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_046",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_046",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_047",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_047",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_047",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_047",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_047",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_047",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_047",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_047",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_048",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_048",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_048",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_048",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_049",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_049",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_049",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_049",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_050",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_050",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_050",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_050",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_051",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_051",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_051",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_051",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_051",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_051",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_051",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_051",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_052",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_052",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_052",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_052",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "access",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_052",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_052",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_052",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_052",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_053",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_053",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_053",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_053",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_054",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_054",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_054",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_054",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "access",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_001",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_001",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_001",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_001",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_002",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_002",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_002",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_002",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_003",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_003",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_003",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_003",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_004",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_004",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_004",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_004",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_005",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_005",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_005",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_005",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_006",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_006",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_006",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_006",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_007",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_007",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_007",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_007",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_008",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_008",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_008",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_008",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_009",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_009",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_009",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_009",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_010",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_010",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_010",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_010",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_011",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_011",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_011",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_011",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_012",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_012",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_012",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_012",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_013",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_013",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_013",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_013",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_014",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_014",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_014",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_014",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_015",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_015",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_015",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_015",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_015",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_015",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_015",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_015",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_016",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_016",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_016",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_016",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_016",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_016",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_016",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_016",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_017",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_017",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_017",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_017",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_017",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_017",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_017",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_017",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_018",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_018",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_018",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_018",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_018",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_018",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_018",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_018",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_019",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_019",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_019",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_019",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_019",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_019",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_019",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_019",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_020",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_020",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_020",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_020",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_020",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_020",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_020",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_020",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_021",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_021",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_021",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_021",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "core",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_021",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_021",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_021",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_021",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "core",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_055",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_055",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_055",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_055",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_056",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_056",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_056",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_056",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_057",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_057",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_057",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_057",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_057",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_057",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_057",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_057",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_058",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_058",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_058",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_058",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_058",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_058",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_058",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_058",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_059",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_059",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_059",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_059",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_059",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_059",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_059",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_059",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_060",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_060",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_060",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_060",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "getters",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_060",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_060",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_060",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_060",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "getters",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_071",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_071",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_071",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_071",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_075",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "member-visibility"
+    },
+    {
+      "id": "C186FE_075",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "member-visibility"
+    },
+    {
+      "id": "C186FE_075",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "member-visibility"
+    },
+    {
+      "id": "C186FE_075",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "member-visibility"
+    },
+    {
+      "id": "C186FE_077",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "member-visibility"
+    },
+    {
+      "id": "C186FE_077",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "member-visibility"
+    },
+    {
+      "id": "C186FE_077",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "member-visibility"
+    },
+    {
+      "id": "C186FE_077",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "member-visibility"
+    },
+    {
+      "id": "C186FE_080",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "getter-precedence"
+    },
+    {
+      "id": "C186FE_080",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "getter-precedence"
+    },
+    {
+      "id": "C186FE_080",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "getter-precedence"
+    },
+    {
+      "id": "C186FE_080",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "getter-precedence"
+    },
+    {
+      "id": "C186FE_083",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_083",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_083",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_083",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_084",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "getter-precedence"
+    },
+    {
+      "id": "C186FE_084",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "getter-precedence"
+    },
+    {
+      "id": "C186FE_084",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "getter-precedence"
+    },
+    {
+      "id": "C186FE_084",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "getter-precedence"
+    },
+    {
+      "id": "C186FE_086",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_086",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_086",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_086",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_087",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_087",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_087",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_087",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_088",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_088",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_088",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_088",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_089",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_089",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_089",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_089",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_090",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_090",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_090",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_090",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_091",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_091",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_091",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_091",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_092",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_092",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_092",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_092",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_093",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_093",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_093",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_093",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "global",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_038",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_038",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_038",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_038",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_038",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_038",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_038",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_038",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_039",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_039",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_039",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_039",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_039",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_039",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_039",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_039",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_040",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_040",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_040",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_040",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_040",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_040",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_040",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_040",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_041",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_041",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_041",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_041",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_041",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_041",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_041",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_041",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_042",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_042",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_042",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_042",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_042",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_042",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_042",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_042",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_043",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_043",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_043",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_043",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_043",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_043",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_043",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_043",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_044",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_044",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_044",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_044",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "paths",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_044",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_044",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_044",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_044",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "paths",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_061",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_061",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_061",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_061",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_061",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_061",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_061",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_061",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_062",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_062",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_062",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_062",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_062",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_062",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_062",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_062",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_063",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_063",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_063",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_063",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_063",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_063",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_063",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_063",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_064",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_064",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_064",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_064",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_064",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_064",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_064",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_064",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_065",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_065",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_065",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_065",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_065",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_065",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_065",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_065",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_066",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_066",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_066",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_066",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_066",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_066",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_066",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_066",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_067",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "standard-context"
+    },
+    {
+      "id": "C186FE_067",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "standard-context"
+    },
+    {
+      "id": "C186FE_067",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "standard-context"
+    },
+    {
+      "id": "C186FE_067",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "rejections",
+      "rootCause": "standard-context"
+    },
+    {
+      "id": "C186FE_067",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "standard-context"
+    },
+    {
+      "id": "C186FE_067",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "standard-context"
+    },
+    {
+      "id": "C186FE_067",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "standard-context"
+    },
+    {
+      "id": "C186FE_067",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "rejections",
+      "rootCause": "standard-context"
+    },
+    {
+      "id": "C186FE_022",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_022",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_022",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_022",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_023",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_023",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_023",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_023",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_024",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_024",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_024",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_024",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_025",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_025",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_025",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_025",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_026",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_026",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_026",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_026",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_027",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_027",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_027",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_027",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_028",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_028",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_028",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_028",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_028",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_028",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_028",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_028",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_029",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_029",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_029",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_029",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_029",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_029",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_029",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_029",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_030",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_030",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_030",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_030",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_030",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_030",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_030",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_030",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_031",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_031",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_031",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_031",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_031",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_031",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_031",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_031",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_032",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_032",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_032",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_032",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_032",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_032",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_032",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_032",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_033",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_033",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_033",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_033",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "returns",
+      "rootCause": "anonymous-context"
+    },
+    {
+      "id": "C186FE_033",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_033",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_033",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_033",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "returns",
+      "rootCause": "public-context"
+    },
+    {
+      "id": "C186FE_037",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_037",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_037",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_037",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_037",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_037",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_037",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_037",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_097",
+      "api": "59.0",
+      "route": "anonymous",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_097",
+      "api": "62.0",
+      "route": "anonymous",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_097",
+      "api": "67.0",
+      "route": "anonymous",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_097",
+      "api": "68.0",
+      "route": "anonymous",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_097",
+      "api": "59.0",
+      "route": "isTest",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_097",
+      "api": "62.0",
+      "route": "isTest",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_097",
+      "api": "67.0",
+      "route": "isTest",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    },
+    {
+      "id": "C186FE_097",
+      "api": "68.0",
+      "route": "isTest",
+      "cluster": "sobject",
+      "rootCause": "contains-null"
+    }
+  ]
+}

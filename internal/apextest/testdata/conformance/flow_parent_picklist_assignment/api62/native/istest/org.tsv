@@ -1,0 +1,3 @@
+id	group	route	status	value
+K01	FLOW_PARENT_PICKLIST_ASSIGNMENT	istest	runtime	{"description":"Banking","exception":null}
+K02	FLOW_PARENT_PICKLIST_ASSIGNMENT	istest	runtime	{"description":null,"exception":null}

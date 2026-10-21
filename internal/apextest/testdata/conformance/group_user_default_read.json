@@ -1,0 +1,271 @@
+{
+  "rowCount": 12,
+  "scalarCells": 87,
+  "enforcedRows": 9,
+  "enforcedScalarCells": 63,
+  "contextRows": 3,
+  "contextScalarCells": 24,
+  "orgIDSHA256": "f3c5f175f4f1391245e034db15ad1b266456c644b9cd418bc5f53e773c4dd6e9",
+  "orgTSVSHA256": "b2869015f2239214004296f68890c924834bbd936f1e361d5818a5a9b40a60a1",
+  "orgRunSHA256": "9a543cced4df4be2baaa7053f996743f735f4448fda5562b690ac85f682625c9",
+  "testClass": "OwnedGroupLookupProbe",
+  "sources": {
+    "OwnedGroupWithoutReader": "public without sharing class OwnedGroupWithoutReader {\n public static Map<String,Object> read(Set<Id> groupIds,Set<Id> userIds,Set<Id> roleIds) {\n  List<Group> groups=Database.query('SELECT Id,Type,RelatedId,(SELECT UserOrGroupId FROM GroupMembers) FROM Group WHERE Id IN :groupIds',AccessLevel.SYSTEM_MODE);\n  Integer members=0,userMembers=0;\n  for(Group g:groups) for(GroupMember m:g.GroupMembers) { members++; if(m.UserOrGroupId.getSObjectType()==User.SObjectType) userMembers++; }\n  Id selfId=UserInfo.getUserId();\n  return new Map<String,Object>{\n   'groups'=>groups.size(),'members'=>members,'directUserMembers'=>userMembers,\n   'memberRows'=>Database.query('SELECT Id FROM GroupMember WHERE GroupId IN :groupIds',AccessLevel.SYSTEM_MODE).size(),\n   'usersByIds'=>Database.query('SELECT Id FROM User WHERE Id IN :userIds',AccessLevel.SYSTEM_MODE).size(),\n   'usersByRole'=>Database.query('SELECT Id FROM User WHERE UserRoleId IN :roleIds',AccessLevel.SYSTEM_MODE).size(),\n   'self'=>Database.query('SELECT Id FROM User WHERE Id=:selfId',AccessLevel.SYSTEM_MODE).size()\n  };\n }\n}\n",
+    "OwnedGroupWithReader": "public with sharing class OwnedGroupWithReader {\n public static Map<String,Object> read(Set<Id> groupIds,Set<Id> userIds,Set<Id> roleIds) {\n  List<Group> groups=Database.query('SELECT Id,Type,RelatedId,(SELECT UserOrGroupId FROM GroupMembers) FROM Group WHERE Id IN :groupIds',AccessLevel.SYSTEM_MODE);\n  Integer members=0,userMembers=0;\n  for(Group g:groups) for(GroupMember m:g.GroupMembers) { members++; if(m.UserOrGroupId.getSObjectType()==User.SObjectType) userMembers++; }\n  Id selfId=UserInfo.getUserId();\n  return new Map<String,Object>{\n   'groups'=>groups.size(),'members'=>members,'directUserMembers'=>userMembers,\n   'memberRows'=>Database.query('SELECT Id FROM GroupMember WHERE GroupId IN :groupIds',AccessLevel.SYSTEM_MODE).size(),\n   'usersByIds'=>Database.query('SELECT Id FROM User WHERE Id IN :userIds',AccessLevel.SYSTEM_MODE).size(),\n   'usersByRole'=>Database.query('SELECT Id FROM User WHERE UserRoleId IN :roleIds',AccessLevel.SYSTEM_MODE).size(),\n   'self'=>Database.query('SELECT Id FROM User WHERE Id=:selfId',AccessLevel.SYSTEM_MODE).size()\n  };\n }\n}\n",
+    "OwnedGroupInheritedReader": "public inherited sharing class OwnedGroupInheritedReader {\n public static Map<String,Object> read(Set<Id> groupIds,Set<Id> userIds,Set<Id> roleIds) {\n  List<Group> groups=Database.query('SELECT Id,Type,RelatedId,(SELECT UserOrGroupId FROM GroupMembers) FROM Group WHERE Id IN :groupIds',AccessLevel.SYSTEM_MODE);\n  Integer members=0,userMembers=0;\n  for(Group g:groups) for(GroupMember m:g.GroupMembers) { members++; if(m.UserOrGroupId.getSObjectType()==User.SObjectType) userMembers++; }\n  Id selfId=UserInfo.getUserId();\n  return new Map<String,Object>{\n   'groups'=>groups.size(),'members'=>members,'directUserMembers'=>userMembers,\n   'memberRows'=>Database.query('SELECT Id FROM GroupMember WHERE GroupId IN :groupIds',AccessLevel.SYSTEM_MODE).size(),\n   'usersByIds'=>Database.query('SELECT Id FROM User WHERE Id IN :userIds',AccessLevel.SYSTEM_MODE).size(),\n   'usersByRole'=>Database.query('SELECT Id FROM User WHERE UserRoleId IN :roleIds',AccessLevel.SYSTEM_MODE).size(),\n   'self'=>Database.query('SELECT Id FROM User WHERE Id=:selfId',AccessLevel.SYSTEM_MODE).size()\n  };\n }\n}\n",
+    "OwnedGroupLookupProbe": "@IsTest private class OwnedGroupLookupProbe {\n @TestSetup static void seed() {\n  UserRole parent=new UserRole(Name='Owned Group Parent',DeveloperName='OwnedGroupParent');insert parent;\n  UserRole child=new UserRole(Name='Owned Group Child',DeveloperName='OwnedGroupChild',ParentRoleId=parent.Id);insert child;\n  Group roleTree=[SELECT Id FROM Group WHERE RelatedId=:parent.Id AND Type='RoleAndSubordinatesInternal' LIMIT 1];\n  Group roleLeaf=[SELECT Id FROM Group WHERE RelatedId=:child.Id AND Type='Role' LIMIT 1];\n  Group primary=new Group(Name='Owned Primary Group',DeveloperName='OwnedPrimaryGroup');\n  Group nested=new Group(Name='Owned Nested Group',DeveloperName='OwnedNestedGroup');insert new List<Group>{primary,nested};\n  insert new List<GroupMember>{new GroupMember(GroupId=primary.Id,UserOrGroupId=UserInfo.getUserId()),new GroupMember(GroupId=primary.Id,UserOrGroupId=roleTree.Id),new GroupMember(GroupId=primary.Id,UserOrGroupId=nested.Id),new GroupMember(GroupId=nested.Id,UserOrGroupId=roleLeaf.Id)};\n  User target=makeUser('role-target');target.UserRoleId=child.Id;target.LastName='OwnedRoleTarget';insert target;\n }\n private static User makeUser(String key) {\n  Profile profile=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\n  return new User(Username='owned-group-'+key+'-'+UserInfo.getOrganizationId()+'@example.invalid',Alias='ownusr',Email='owned@example.invalid',LastName='OwnedObserver',ProfileId=profile.Id,TimeZoneSidKey='GMT',LocaleSidKey='en_US',LanguageLocaleKey='en_US',EmailEncodingKey='UTF-8');\n }\n @IsTest static void gu01() { observe('GU01'); }\n @IsTest static void gu02() { observe('GU02'); }\n @IsTest static void gu03() { observe('GU03'); }\n @IsTest static void gu04() { observe('GU04'); }\n private static void observe(String row) {\n  Set<Id> groupIds=new Map<Id,Group>([SELECT Id FROM Group WHERE DeveloperName IN ('OwnedPrimaryGroup','OwnedNestedGroup')]).keySet();\n  User target=[SELECT Id,UserRoleId FROM User WHERE LastName='OwnedRoleTarget' LIMIT 1];\n  Set<Id> userIds=new Set<Id>{UserInfo.getUserId(),target.Id};Set<Id> roleIds=new Set<Id>{target.UserRoleId};\n  Map<String,Object> result;\n  System.runAs(makeUser('observer')) {\n   Test.startTest();\n   if(row=='GU01') result=OwnedGroupInheritedReader.read(groupIds,userIds,roleIds);\n   if(row=='GU02') result=OwnedGroupWithReader.read(groupIds,userIds,roleIds);\n   if(row=='GU03') result=OwnedGroupWithoutReader.read(groupIds,userIds,roleIds);\n   if(row=='GU04') {\n    Id profileId=UserInfo.getProfileId();\n    Profile current=[SELECT PermissionsViewAllUsers,PermissionsViewAllData FROM Profile WHERE Id=:profileId];\n    result=new Map<String,Object>{'viewAllUsers'=>current.PermissionsViewAllUsers,'viewAllData'=>current.PermissionsViewAllData,\n     'groupOwnerField'=>Group.SObjectType.getDescribe().fields.getMap().containsKey('OwnerId'),\n     'memberOwnerField'=>GroupMember.SObjectType.getDescribe().fields.getMap().containsKey('OwnerId'),\n     'userOwnerField'=>User.SObjectType.getDescribe().fields.getMap().containsKey('OwnerId')};\n    try { Map<String,Object> models=new Map<String,Object>(); for(SObject item:Database.query('SELECT QualifiedApiName,InternalSharingModel FROM EntityDefinition WHERE QualifiedApiName IN (\\'User\\',\\'Group\\',\\'GroupMember\\')',AccessLevel.SYSTEM_MODE)) models.put((String)item.get('QualifiedApiName'),item.get('InternalSharingModel')); result.put('sharingModels',models); }\n    catch(Exception e) { result.put('sharingModelError',e.getTypeName()+':'+e.getMessage()); }\n   }\n   Test.stopTest();\n  }\n  System.assert(false,'GROUP_LOOKUP|'+row+'|'+JSON.serialize(result));\n }\n}\n"
+  },
+  "sourceSHA256": {
+    "OwnedGroupWithoutReader": "ce28f831425679ac501fa57bed7b2e80b60e56677b0f8220370b8ae32e3312d4",
+    "OwnedGroupWithReader": "a1b7c967fda94ef58f0eb993a357dfb36baffd32552e99e86e6d0b92ee632f94",
+    "OwnedGroupInheritedReader": "6579fe882e418db7cae1e2b094c7fc01227a19d7c60d272530a84efcaf0155d7",
+    "OwnedGroupLookupProbe": "95f770f1bf9fef3070b962bc46a235856d487f322332bf5a821d082abb7c47e6"
+  },
+  "orgContext": {
+    "requestedEdition": "Developer",
+    "featuresRequested": [],
+    "settingsChanged": false,
+    "otherFeatureContext": "UNCAPTURED"
+  },
+  "captures": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "deploymentID": "0AfEm00000aJlOIKA0",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "1fba144260c9caf5d32e7527ca564481382dec18f6361c479f8c7920d4a11bd4"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "deploymentID": "0AfEm00000aK0LiKAK",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "3982769acede535243469658745c6b9685eb8c0ab68c2013cc409bff0c7fc745"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "deploymentID": "0AfEm00000aJo4QKAS",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "e5c55d71f147053d1c1c56fbe974d66f4d0d5241408e4bdaaacbdbfa8cd516d1"
+    }
+  ],
+  "rows": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "GU01",
+      "native": {
+        "self": 1,
+        "usersByRole": 1,
+        "usersByIds": 2,
+        "memberRows": 4,
+        "directUserMembers": 1,
+        "members": 4,
+        "groups": 2
+      },
+      "receiptSHA256": "fa850cb729b519ac89e2c2c875e2f32b1fbe3a2386c2cf811d6fc0f141e0c757"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "GU02",
+      "native": {
+        "self": 1,
+        "usersByRole": 1,
+        "usersByIds": 2,
+        "memberRows": 4,
+        "directUserMembers": 1,
+        "members": 4,
+        "groups": 2
+      },
+      "receiptSHA256": "fa850cb729b519ac89e2c2c875e2f32b1fbe3a2386c2cf811d6fc0f141e0c757"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "GU03",
+      "native": {
+        "self": 1,
+        "usersByRole": 1,
+        "usersByIds": 2,
+        "memberRows": 4,
+        "directUserMembers": 1,
+        "members": 4,
+        "groups": 2
+      },
+      "receiptSHA256": "fa850cb729b519ac89e2c2c875e2f32b1fbe3a2386c2cf811d6fc0f141e0c757"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "GU04",
+      "native": {
+        "sharingModels": {
+          "User": "Read",
+          "GroupMember": "ReadWrite",
+          "Group": "ReadWrite"
+        },
+        "userOwnerField": false,
+        "memberOwnerField": false,
+        "groupOwnerField": true,
+        "viewAllData": false,
+        "viewAllUsers": false
+      },
+      "receiptSHA256": "fa850cb729b519ac89e2c2c875e2f32b1fbe3a2386c2cf811d6fc0f141e0c757"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "GU01",
+      "native": {
+        "self": 1,
+        "usersByRole": 1,
+        "usersByIds": 2,
+        "memberRows": 4,
+        "directUserMembers": 1,
+        "members": 4,
+        "groups": 2
+      },
+      "receiptSHA256": "e2fc702d5ecc414e064e24852e6cf73c0fc44ca6d2d699ce9058e7314f18ca7a"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "GU02",
+      "native": {
+        "self": 1,
+        "usersByRole": 1,
+        "usersByIds": 2,
+        "memberRows": 4,
+        "directUserMembers": 1,
+        "members": 4,
+        "groups": 2
+      },
+      "receiptSHA256": "e2fc702d5ecc414e064e24852e6cf73c0fc44ca6d2d699ce9058e7314f18ca7a"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "GU03",
+      "native": {
+        "self": 1,
+        "usersByRole": 1,
+        "usersByIds": 2,
+        "memberRows": 4,
+        "directUserMembers": 1,
+        "members": 4,
+        "groups": 2
+      },
+      "receiptSHA256": "e2fc702d5ecc414e064e24852e6cf73c0fc44ca6d2d699ce9058e7314f18ca7a"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "GU04",
+      "native": {
+        "sharingModels": {
+          "User": "Read",
+          "GroupMember": "ReadWrite",
+          "Group": "ReadWrite"
+        },
+        "userOwnerField": false,
+        "memberOwnerField": false,
+        "groupOwnerField": true,
+        "viewAllData": false,
+        "viewAllUsers": false
+      },
+      "receiptSHA256": "e2fc702d5ecc414e064e24852e6cf73c0fc44ca6d2d699ce9058e7314f18ca7a"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "GU01",
+      "native": {
+        "self": 1,
+        "usersByRole": 1,
+        "usersByIds": 2,
+        "memberRows": 4,
+        "directUserMembers": 1,
+        "members": 4,
+        "groups": 2
+      },
+      "receiptSHA256": "a70ffb870c6bf17426e52ce9b699528bf67c2d96bbb4f2b03004724866cf4870"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "GU02",
+      "native": {
+        "self": 1,
+        "usersByRole": 1,
+        "usersByIds": 2,
+        "memberRows": 4,
+        "directUserMembers": 1,
+        "members": 4,
+        "groups": 2
+      },
+      "receiptSHA256": "a70ffb870c6bf17426e52ce9b699528bf67c2d96bbb4f2b03004724866cf4870"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "GU03",
+      "native": {
+        "self": 1,
+        "usersByRole": 1,
+        "usersByIds": 2,
+        "memberRows": 4,
+        "directUserMembers": 1,
+        "members": 4,
+        "groups": 2
+      },
+      "receiptSHA256": "a70ffb870c6bf17426e52ce9b699528bf67c2d96bbb4f2b03004724866cf4870"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "GU04",
+      "native": {
+        "sharingModels": {
+          "User": "Read",
+          "Group": "ReadWrite",
+          "GroupMember": "ReadWrite"
+        },
+        "userOwnerField": false,
+        "memberOwnerField": false,
+        "groupOwnerField": true,
+        "viewAllData": false,
+        "viewAllUsers": false
+      },
+      "receiptSHA256": "a70ffb870c6bf17426e52ce9b699528bf67c2d96bbb4f2b03004724866cf4870"
+    }
+  ],
+  "contextReason": "GU04 is native org configuration evidence for omitted sharing-model read defaults. Local EntityDefinition.InternalSharingModel projection is not implemented by this change; preserve the native model values without asserting local DTO parity.",
+  "uncaptured": [
+    "Anonymous entry: runAs is measured only in named tests.",
+    "Other org editions, feature contexts, explicit sharing overrides and write policy: no native behavior inferred beyond the captured Developer read defaults.",
+    "Role-generated names, DeveloperName, membership expansion and sharing recalculation: existing separate evidence and carries stand."
+  ]
+}

@@ -1,0 +1,269 @@
+{
+  "captures": [
+    {
+      "api": "62.0",
+      "files": {
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls": "@IsTest private class LocalZoneNativeProbeTest {\n private static void observe(String id, Datetime stamp, Boolean labels) {\n  Map<String,Object> cell=new Map<String,Object>{'id'=>id,'epoch'=>stamp.getTime(),'date'=>String.valueOf(stamp.date()),'gmt'=>stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'),'local'=>stamp.format('yyyy-MM-dd HH:mm:ss.SSS'),'calendar'=>stamp.format('yyyy-MM-dd')};\n  if(labels) {cell.put('zone',stamp.format('z'));cell.put('longZone',stamp.format('zzzz'));cell.put('offset',stamp.format('Z'));}\n  cells.add(cell);\n }\n private static List<Object> cells=new List<Object>();\n @IsTest static void collect() {\n  User actor=new User(LastName='Owned Format',Alias='fmtprobe',Username='ownedformat'+Datetime.now().getTime()+'@example.invalid',Email='ownedformat@example.invalid',TimeZoneSidKey='Pacific/Kiritimati',LocaleSidKey='en_US',EmailEncodingKey='UTF-8',LanguageLocaleKey='en_US',ProfileId=UserInfo.getProfileId());\n  System.runAs(actor) {\n   observe('F01',Datetime.newInstance(2026,2,1),true);\n   observe('F02',Datetime.newInstance(0),true);\n   observe('F03',(Datetime)JSON.deserialize('\"1994-12-31T09:59:59.999Z\"',Datetime.class),true);\n   observe('F04',(Datetime)JSON.deserialize('\"1994-12-31T10:00:00.000Z\"',Datetime.class),true);\n   observe('F05',Datetime.newInstance(1735689600123L),true);\n   observe('F06',Datetime.newInstance(Date.newInstance(2024,2,29),Time.newInstance(0,0,0,123)),false);\n  }\n  User utcActor=actor.clone(false,false,false,false);utcActor.Username='ownedutc'+Datetime.now().getTime()+'@example.invalid';utcActor.TimeZoneSidKey='GMT';\n  System.runAs(utcActor) {observe('F07',Datetime.newInstance(0),true);observe('F08',Datetime.newInstance(1735689600123L),false);}\n  System.assert(false,'NATIVE_FORMAT|'+JSON.serialize(cells));\n }\n}\n",
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}"
+      },
+      "native": [
+        {
+          "calendar": "2026-02-01",
+          "date": "2026-02-01",
+          "epoch": 1769853600000,
+          "gmt": "2026-01-31 10:00:00.000",
+          "id": "F01",
+          "local": "2026-02-01 00:00:00.000",
+          "longZone": "Line Is. Time",
+          "offset": "+1400",
+          "zone": "LINT"
+        },
+        {
+          "calendar": "1969-12-31",
+          "date": "1969-12-31",
+          "epoch": 0,
+          "gmt": "1970-01-01 00:00:00.000",
+          "id": "F02",
+          "local": "1969-12-31 13:20:00.000",
+          "longZone": "Line Is. Time",
+          "offset": "-1040",
+          "zone": "LINT"
+        },
+        {
+          "calendar": "1994-12-30",
+          "date": "1994-12-30",
+          "epoch": 788867999999,
+          "gmt": "1994-12-31 09:59:59.999",
+          "id": "F03",
+          "local": "1994-12-30 23:59:59.999",
+          "longZone": "Line Is. Time",
+          "offset": "-1000",
+          "zone": "LINT"
+        },
+        {
+          "calendar": "1995-01-01",
+          "date": "1995-01-01",
+          "epoch": 788868000000,
+          "gmt": "1994-12-31 10:00:00.000",
+          "id": "F04",
+          "local": "1995-01-01 00:00:00.000",
+          "longZone": "Line Is. Time",
+          "offset": "+1400",
+          "zone": "LINT"
+        },
+        {
+          "calendar": "2025-01-01",
+          "date": "2025-01-01",
+          "epoch": 1735689600123,
+          "gmt": "2025-01-01 00:00:00.123",
+          "id": "F05",
+          "local": "2025-01-01 14:00:00.123",
+          "longZone": "Line Is. Time",
+          "offset": "+1400",
+          "zone": "LINT"
+        },
+        {
+          "calendar": "2024-02-29",
+          "date": "2024-02-29",
+          "epoch": 1709114400123,
+          "gmt": "2024-02-28 10:00:00.123",
+          "id": "F06",
+          "local": "2024-02-29 00:00:00.123"
+        },
+        {
+          "calendar": "1970-01-01",
+          "date": "1970-01-01",
+          "epoch": 0,
+          "gmt": "1970-01-01 00:00:00.000",
+          "id": "F07",
+          "local": "1970-01-01 00:00:00.000",
+          "longZone": "Greenwich Mean Time",
+          "offset": "+0000",
+          "zone": "GMT"
+        },
+        {
+          "calendar": "2025-01-01",
+          "date": "2025-01-01",
+          "epoch": 1735689600123,
+          "gmt": "2025-01-01 00:00:00.123",
+          "id": "F08",
+          "local": "2025-01-01 00:00:00.123"
+        }
+      ],
+      "receiptSHA256": "009ba62b588b317f1655d01586de8b914da10eb31f8841df970bd0dfae71b7fe",
+      "route": "istest",
+      "sha256": {
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls": "8b80a99131b63e20f1fe26e009196725dc1a7f609a87f0c30215485605d78140",
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "sfdx-project.json": "3f6415903c25e013895eb93fa7fbec23956f74b06460f5266f9d0ac53b80ddbc"
+      }
+    },
+    {
+      "anonymous": "List<Object> cells=new List<Object>();for(Long epoch:new List<Long>{0L,1735689600123L}){Datetime stamp=Datetime.newInstance(epoch);cells.add(new Map<String,Object>{'epoch'=>stamp.getTime(),'gmt'=>stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'),'utc'=>stamp.format('yyyy-MM-dd HH:mm:ss.SSS','UTC')});}System.debug('NATIVE_FORMAT|'+JSON.serialize(cells));\n",
+      "api": "62.0",
+      "files": {
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls": "@IsTest private class LocalZoneNativeProbeTest {\n private static void observe(String id, Datetime stamp, Boolean labels) {\n  Map<String,Object> cell=new Map<String,Object>{'id'=>id,'epoch'=>stamp.getTime(),'date'=>String.valueOf(stamp.date()),'gmt'=>stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'),'local'=>stamp.format('yyyy-MM-dd HH:mm:ss.SSS'),'calendar'=>stamp.format('yyyy-MM-dd')};\n  if(labels) {cell.put('zone',stamp.format('z'));cell.put('longZone',stamp.format('zzzz'));cell.put('offset',stamp.format('Z'));}\n  cells.add(cell);\n }\n private static List<Object> cells=new List<Object>();\n @IsTest static void collect() {\n  User actor=new User(LastName='Owned Format',Alias='fmtprobe',Username='ownedformat'+Datetime.now().getTime()+'@example.invalid',Email='ownedformat@example.invalid',TimeZoneSidKey='Pacific/Kiritimati',LocaleSidKey='en_US',EmailEncodingKey='UTF-8',LanguageLocaleKey='en_US',ProfileId=UserInfo.getProfileId());\n  System.runAs(actor) {\n   observe('F01',Datetime.newInstance(2026,2,1),true);\n   observe('F02',Datetime.newInstance(0),true);\n   observe('F03',(Datetime)JSON.deserialize('\"1994-12-31T09:59:59.999Z\"',Datetime.class),true);\n   observe('F04',(Datetime)JSON.deserialize('\"1994-12-31T10:00:00.000Z\"',Datetime.class),true);\n   observe('F05',Datetime.newInstance(1735689600123L),true);\n   observe('F06',Datetime.newInstance(Date.newInstance(2024,2,29),Time.newInstance(0,0,0,123)),false);\n  }\n  User utcActor=actor.clone(false,false,false,false);utcActor.Username='ownedutc'+Datetime.now().getTime()+'@example.invalid';utcActor.TimeZoneSidKey='GMT';\n  System.runAs(utcActor) {observe('F07',Datetime.newInstance(0),true);observe('F08',Datetime.newInstance(1735689600123L),false);}\n  System.assert(false,'NATIVE_FORMAT|'+JSON.serialize(cells));\n }\n}\n",
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}"
+      },
+      "native": [
+        {
+          "epoch": 0,
+          "gmt": "1970-01-01 00:00:00.000",
+          "utc": "1970-01-01 00:00:00.000"
+        },
+        {
+          "epoch": 1735689600123,
+          "gmt": "2025-01-01 00:00:00.123",
+          "utc": "2025-01-01 00:00:00.123"
+        }
+      ],
+      "receiptSHA256": "d15830b6e7e63fa62ca50b1a97e4365eb00c597719ce2c184f45e445edd3a9a2",
+      "route": "anonymous",
+      "sha256": {
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls": "8b80a99131b63e20f1fe26e009196725dc1a7f609a87f0c30215485605d78140",
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "sfdx-project.json": "3f6415903c25e013895eb93fa7fbec23956f74b06460f5266f9d0ac53b80ddbc"
+      }
+    },
+    {
+      "api": "67.0",
+      "files": {
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls": "@IsTest private class LocalZoneNativeProbeTest {\n private static void observe(String id, Datetime stamp, Boolean labels) {\n  Map<String,Object> cell=new Map<String,Object>{'id'=>id,'epoch'=>stamp.getTime(),'date'=>String.valueOf(stamp.date()),'gmt'=>stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'),'local'=>stamp.format('yyyy-MM-dd HH:mm:ss.SSS'),'calendar'=>stamp.format('yyyy-MM-dd')};\n  if(labels) {cell.put('zone',stamp.format('z'));cell.put('longZone',stamp.format('zzzz'));cell.put('offset',stamp.format('Z'));}\n  cells.add(cell);\n }\n private static List<Object> cells=new List<Object>();\n @IsTest static void collect() {\n  User actor=new User(LastName='Owned Format',Alias='fmtprobe',Username='ownedformat'+Datetime.now().getTime()+'@example.invalid',Email='ownedformat@example.invalid',TimeZoneSidKey='Pacific/Kiritimati',LocaleSidKey='en_US',EmailEncodingKey='UTF-8',LanguageLocaleKey='en_US',ProfileId=UserInfo.getProfileId());\n  System.runAs(actor) {\n   observe('F01',Datetime.newInstance(2026,2,1),true);\n   observe('F02',Datetime.newInstance(0),true);\n   observe('F03',(Datetime)JSON.deserialize('\"1994-12-31T09:59:59.999Z\"',Datetime.class),true);\n   observe('F04',(Datetime)JSON.deserialize('\"1994-12-31T10:00:00.000Z\"',Datetime.class),true);\n   observe('F05',Datetime.newInstance(1735689600123L),true);\n   observe('F06',Datetime.newInstance(Date.newInstance(2024,2,29),Time.newInstance(0,0,0,123)),false);\n  }\n  User utcActor=actor.clone(false,false,false,false);utcActor.Username='ownedutc'+Datetime.now().getTime()+'@example.invalid';utcActor.TimeZoneSidKey='GMT';\n  System.runAs(utcActor) {observe('F07',Datetime.newInstance(0),true);observe('F08',Datetime.newInstance(1735689600123L),false);}\n  System.assert(false,'NATIVE_FORMAT|'+JSON.serialize(cells));\n }\n}\n",
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"67.0\"}"
+      },
+      "native": [
+        {
+          "calendar": "2026-02-01",
+          "date": "2026-02-01",
+          "epoch": 1769853600000,
+          "gmt": "2026-01-31 10:00:00.000",
+          "id": "F01",
+          "local": "2026-02-01 00:00:00.000",
+          "longZone": "Line Is. Time",
+          "offset": "+1400",
+          "zone": "LINT"
+        },
+        {
+          "calendar": "1969-12-31",
+          "date": "1969-12-31",
+          "epoch": 0,
+          "gmt": "1970-01-01 00:00:00.000",
+          "id": "F02",
+          "local": "1969-12-31 13:20:00.000",
+          "longZone": "Line Is. Time",
+          "offset": "-1040",
+          "zone": "LINT"
+        },
+        {
+          "calendar": "1994-12-30",
+          "date": "1994-12-30",
+          "epoch": 788867999999,
+          "gmt": "1994-12-31 09:59:59.999",
+          "id": "F03",
+          "local": "1994-12-30 23:59:59.999",
+          "longZone": "Line Is. Time",
+          "offset": "-1000",
+          "zone": "LINT"
+        },
+        {
+          "calendar": "1995-01-01",
+          "date": "1995-01-01",
+          "epoch": 788868000000,
+          "gmt": "1994-12-31 10:00:00.000",
+          "id": "F04",
+          "local": "1995-01-01 00:00:00.000",
+          "longZone": "Line Is. Time",
+          "offset": "+1400",
+          "zone": "LINT"
+        },
+        {
+          "calendar": "2025-01-01",
+          "date": "2025-01-01",
+          "epoch": 1735689600123,
+          "gmt": "2025-01-01 00:00:00.123",
+          "id": "F05",
+          "local": "2025-01-01 14:00:00.123",
+          "longZone": "Line Is. Time",
+          "offset": "+1400",
+          "zone": "LINT"
+        },
+        {
+          "calendar": "2024-02-29",
+          "date": "2024-02-29",
+          "epoch": 1709114400123,
+          "gmt": "2024-02-28 10:00:00.123",
+          "id": "F06",
+          "local": "2024-02-29 00:00:00.123"
+        },
+        {
+          "calendar": "1970-01-01",
+          "date": "1970-01-01",
+          "epoch": 0,
+          "gmt": "1970-01-01 00:00:00.000",
+          "id": "F07",
+          "local": "1970-01-01 00:00:00.000",
+          "longZone": "Greenwich Mean Time",
+          "offset": "+0000",
+          "zone": "GMT"
+        },
+        {
+          "calendar": "2025-01-01",
+          "date": "2025-01-01",
+          "epoch": 1735689600123,
+          "gmt": "2025-01-01 00:00:00.123",
+          "id": "F08",
+          "local": "2025-01-01 00:00:00.123"
+        }
+      ],
+      "receiptSHA256": "1d9420565c1661ccca4a60d48fbfd1a4a13e710104ca212ed2cc6f638adb4132",
+      "route": "istest",
+      "sha256": {
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls": "8b80a99131b63e20f1fe26e009196725dc1a7f609a87f0c30215485605d78140",
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "sfdx-project.json": "58a7912dda14c3c2fba252a12fd198a98556f0c44971080e7acdfe0d673c847b"
+      }
+    },
+    {
+      "anonymous": "List<Object> cells=new List<Object>();for(Long epoch:new List<Long>{0L,1735689600123L}){Datetime stamp=Datetime.newInstance(epoch);cells.add(new Map<String,Object>{'epoch'=>stamp.getTime(),'gmt'=>stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'),'utc'=>stamp.format('yyyy-MM-dd HH:mm:ss.SSS','UTC')});}System.debug('NATIVE_FORMAT|'+JSON.serialize(cells));\n",
+      "api": "67.0",
+      "files": {
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls": "@IsTest private class LocalZoneNativeProbeTest {\n private static void observe(String id, Datetime stamp, Boolean labels) {\n  Map<String,Object> cell=new Map<String,Object>{'id'=>id,'epoch'=>stamp.getTime(),'date'=>String.valueOf(stamp.date()),'gmt'=>stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'),'local'=>stamp.format('yyyy-MM-dd HH:mm:ss.SSS'),'calendar'=>stamp.format('yyyy-MM-dd')};\n  if(labels) {cell.put('zone',stamp.format('z'));cell.put('longZone',stamp.format('zzzz'));cell.put('offset',stamp.format('Z'));}\n  cells.add(cell);\n }\n private static List<Object> cells=new List<Object>();\n @IsTest static void collect() {\n  User actor=new User(LastName='Owned Format',Alias='fmtprobe',Username='ownedformat'+Datetime.now().getTime()+'@example.invalid',Email='ownedformat@example.invalid',TimeZoneSidKey='Pacific/Kiritimati',LocaleSidKey='en_US',EmailEncodingKey='UTF-8',LanguageLocaleKey='en_US',ProfileId=UserInfo.getProfileId());\n  System.runAs(actor) {\n   observe('F01',Datetime.newInstance(2026,2,1),true);\n   observe('F02',Datetime.newInstance(0),true);\n   observe('F03',(Datetime)JSON.deserialize('\"1994-12-31T09:59:59.999Z\"',Datetime.class),true);\n   observe('F04',(Datetime)JSON.deserialize('\"1994-12-31T10:00:00.000Z\"',Datetime.class),true);\n   observe('F05',Datetime.newInstance(1735689600123L),true);\n   observe('F06',Datetime.newInstance(Date.newInstance(2024,2,29),Time.newInstance(0,0,0,123)),false);\n  }\n  User utcActor=actor.clone(false,false,false,false);utcActor.Username='ownedutc'+Datetime.now().getTime()+'@example.invalid';utcActor.TimeZoneSidKey='GMT';\n  System.runAs(utcActor) {observe('F07',Datetime.newInstance(0),true);observe('F08',Datetime.newInstance(1735689600123L),false);}\n  System.assert(false,'NATIVE_FORMAT|'+JSON.serialize(cells));\n }\n}\n",
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"67.0\"}"
+      },
+      "native": [
+        {
+          "epoch": 0,
+          "gmt": "1970-01-01 00:00:00.000",
+          "utc": "1970-01-01 00:00:00.000"
+        },
+        {
+          "epoch": 1735689600123,
+          "gmt": "2025-01-01 00:00:00.123",
+          "utc": "2025-01-01 00:00:00.123"
+        }
+      ],
+      "receiptSHA256": "69950132d4199e23d3f19256de0c729dd73603a65d8f3107d5f9b7835178c33f",
+      "route": "anonymous",
+      "sha256": {
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls": "8b80a99131b63e20f1fe26e009196725dc1a7f609a87f0c30215485605d78140",
+        "force-app/main/default/classes/LocalZoneNativeProbeTest.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "sfdx-project.json": "58a7912dda14c3c2fba252a12fd198a98556f0c44971080e7acdfe0d673c847b"
+      }
+    }
+  ],
+  "carries": [
+    "Kiritimati zero-argument format, explicit timezone overload, TimeZone factory/display APIs and non-English zone-name localization were not captured; admission remains unchanged.",
+    "API68, namespace variants and skipped/repeated civil constructor choices remain unverified. Anonymous observations cover UTC/GMT controls, not a Kiritimati current-user context."
+  ],
+  "provenance": {
+    "capturedAt": "2026-10-15",
+    "orgIdSHA256": "ed06ea39d5076c7544e24bba99e73a803ef992af837a44d4d91e972ba219f098",
+    "source": "IANA instant offsets plus native API62/67 local formatting",
+    "transport": "owned synthetic named assertion and anonymous debug; named assertion Fail is observation transport"
+  },
+  "schemaVersion": 1
+}

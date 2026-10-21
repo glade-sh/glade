@@ -11,6 +11,20 @@ import (
 
 type ID string
 
+// DefaultOrgID is the local organization Id used when a fixture names none.
+// Salesforce organization Ids are not zero-padded counters, so the default
+// mixes letter case to stay outside counter-style Id generators, including
+// this package's upper-case base-36 sequences. A fake Organization Id built
+// by test code must not equal the running org's Id.
+const DefaultOrgID = "00D000000000mH2"
+
+// DefaultUserID is the seeded running user's Id. Mixed case keeps it outside
+// decimal and upper-case base-36 counter-style Id generators.
+const DefaultUserID = "005000000000aBLAAY"
+
+// DefaultProfileID is the seeded running user's profile Id.
+const DefaultProfileID = "00e000000000e2JAAQ"
+
 func (id ID) String() string {
 	return string(id)
 }
@@ -54,12 +68,18 @@ func NewIDGenerator(prefixes map[string]string) IDGenerator {
 }
 
 func NewStandardIDGenerator() IDGenerator {
-	return NewIDGenerator(standardKeyPrefixes())
+	generator := NewIDGenerator(standardKeyPrefixes())
+	generator.PrefixLookup = StandardKeyPrefix
+	return generator
 }
+
+// Runtime identities start with a nonzero high body digit. Logical sequences
+// remain small counters, while encoded IDs stay distinct from fixture counters.
+const runtimeIDBodyOffset uint64 = 131621703842267136 // 36^11
 
 func NewRuntimeIDGenerator(prefixes map[string]string) IDGenerator {
 	g := NewIDGenerator(prefixes)
-	g.Offset = 1000000
+	g.Offset = runtimeIDBodyOffset
 	return g
 }
 
@@ -69,7 +89,7 @@ func NewRuntimeIDGeneratorWithOwnedPrefixes(prefixes map[string]string) IDGenera
 	return IDGenerator{
 		Prefixes:  prefixes,
 		Sequences: make(map[string]uint64),
-		Offset:    1000000,
+		Offset:    runtimeIDBodyOffset,
 	}
 }
 
@@ -77,7 +97,7 @@ func NewRuntimeIDGeneratorForOrg(org *OrgState) IDGenerator {
 	return IDGenerator{
 		Prefixes:  make(map[string]string),
 		Sequences: make(map[string]uint64),
-		Offset:    1000000,
+		Offset:    runtimeIDBodyOffset,
 		PrefixLookup: func(objectName string) string {
 			if org == nil {
 				return ""
@@ -115,6 +135,13 @@ func (g *IDGenerator) Next(objectName string) (ID, error) {
 
 func AssignDeterministicPrefixes(objectNames []string, explicit map[string]string) map[string]string {
 	out := copyStringMap(StandardKeyPrefixes())
+	// Resolve every requested standard identity before allocating custom ones.
+	// Stub-backed objects can have a captured prefix outside the base catalog.
+	for _, name := range objectNames {
+		if prefix := StandardKeyPrefix(name); prefix != "" {
+			out[name] = prefix
+		}
+	}
 	for object, prefix := range explicit {
 		if prefix != "" {
 			out[object] = prefix
@@ -171,11 +198,19 @@ func EnsureUniqueKeyPrefixes(org *OrgState) {
 	reserved := make(map[string]bool, len(names))
 	for _, name := range names {
 		reserved[strings.TrimSpace(org.Objects[name].Definition.KeyPrefix)] = true
+		// A custom object sorted before a standard one cannot claim its prefix.
+		if prefix := standardKeyPrefixForObject(name); prefix != "" {
+			if owner := standardKeyPrefixOwner(prefix); owner != "" {
+				used[prefix] = owner
+			} else if used[prefix] == "" {
+				used[prefix] = name
+			}
+		}
 	}
 	for _, name := range names {
 		state := org.Objects[name]
 		prefix := strings.TrimSpace(state.Definition.KeyPrefix)
-		if standardPrefix := standardKeyPrefixForObject(name); standardPrefix != "" {
+		if standardPrefix := standardKeyPrefixForObject(name); standardPrefix != "" && keyPrefixAvailableForObject(standardPrefix, name, used) {
 			prefix = standardPrefix
 		}
 		if !keyPrefixAvailableForObject(prefix, name, used) {
@@ -307,7 +342,39 @@ func standardKeyPrefixForObject(objectName string) string {
 	if prefix := standardKeyPrefixBaseData[objectName]; prefix != "" {
 		return prefix
 	}
-	return standardObjectKeyPrefixData[objectName]
+	if prefix := standardObjectKeyPrefixData[objectName]; prefix != "" {
+		return prefix
+	}
+	return capturedStandardKeyPrefix(objectName)
+}
+
+// Bound the cache by captured catalog names. It stores only immutable catalog
+// results, never prefixes allocated or overridden in an org.
+var capturedKeyPrefixCache sync.Map
+
+func capturedStandardKeyPrefix(objectName string) string {
+	if prefix, ok := capturedKeyPrefixCache.Load(objectName); ok {
+		return prefix.(string)
+	}
+	canonical, known := standardDescribeCatalogCanonicalName(objectName)
+	if !known {
+		return ""
+	}
+	if prefix, ok := capturedKeyPrefixCache.Load(canonical); ok {
+		return prefix.(string)
+	}
+	prefix, known := StandardObjectDescribeKeyPrefix(canonical)
+	if !known {
+		return ""
+	}
+	value := ""
+	if prefix != nil {
+		if _, valid := keyPrefixBitsetIndex(*prefix); valid {
+			value = *prefix
+		}
+	}
+	cached, _ := capturedKeyPrefixCache.LoadOrStore(canonical, value)
+	return cached.(string)
 }
 
 func standardKeyPrefixOwner(prefix string) string {
@@ -368,6 +435,7 @@ func buildStandardKeyPrefixOwnerData() map[string]string {
 
 var standardKeyPrefixBaseData = map[string]string{
 	"Account":                 "001",
+	"CaseComment":             "00a", // Named schema_classification_boundaries, API 62/65/67.
 	"Contact":                 "003",
 	"CollaborationGroup":      "0F9",
 	"FeedComment":             "0D7",
@@ -420,7 +488,10 @@ func StandardKeyPrefixes() map[string]string {
 }
 
 func StandardKeyPrefix(objectName string) string {
-	return standardKeyPrefixes()[objectName]
+	if prefix := standardKeyPrefixes()[objectName]; prefix != "" {
+		return prefix
+	}
+	return capturedStandardKeyPrefix(objectName)
 }
 
 func ValidateID(id ID) error {

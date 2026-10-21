@@ -33,6 +33,12 @@ type Query struct {
 	HavingAggregates []Aggregate
 	GroupBy          []string
 	GroupMode        string
+
+	// orderAggregates contains execution-only values for ORDER BY expressions
+	// absent from SELECT. They are removed after sorting and windowing.
+	orderAggregates []Aggregate
+	// LegacyPicklistNullOrder is execution state, separate from cached syntax.
+	LegacyPicklistNullOrder bool `json:"-"`
 }
 type OrderSpec struct {
 	Field string
@@ -82,6 +88,9 @@ type Condition struct {
 type Result struct {
 	Records []storage.Record `json:"records"`
 	Rows    int              `json:"rows"`
+	// AggregateInputRows separates the governor row cost from the number of
+	// result groups. Nil retains result-row accounting for COUNT and records.
+	AggregateInputRows *int `json:"-"`
 }
 type ExecutionCache struct {
 	mu                         sync.Mutex

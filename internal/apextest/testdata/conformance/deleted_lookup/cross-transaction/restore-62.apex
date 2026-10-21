@@ -1,0 +1,11 @@
+String parentName='Owned cross transaction parent API62';
+String childName='Owned cross transaction child API62';
+ParentMemo__c parent=[SELECT Id FROM ParentMemo__c WHERE Name=:parentName ALL ROWS];
+ChildMemo__c child=[SELECT Id FROM ChildMemo__c WHERE Name=:childName];
+Database.SaveResult result=Database.update(new ChildMemo__c(Id=child.Id,Parent__c=parent.Id),false);
+Map<String,Object> observation=new Map<String,Object>{'success'=>result.isSuccess()};
+if(!result.isSuccess())observation.put('status',String.valueOf(result.getErrors()[0].getStatusCode()));
+ChildMemo__c stored=[SELECT Parent__c FROM ChildMemo__c WHERE Id=:child.Id];
+observation.put('lookupCleared',stored.Parent__c==null);
+observation.put('matchesDeletedParent',stored.Parent__c==parent.Id);
+System.debug(LoggingLevel.ERROR,'OBSERVED|crossRestore62|'+JSON.serialize(observation));

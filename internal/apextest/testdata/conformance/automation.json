@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "Declarations": {
     "A43OracleEcho": "public class A43OracleEcho {\n @InvocableMethod(label='A43 Oracle Echo')\n public static List<String> echo(List<String> values) {\n  List<String> out=new List<String>();\n  for(String value:values) out.add(value==null?'nil':'echo:'+value);\n  return out;\n }\n}\n"

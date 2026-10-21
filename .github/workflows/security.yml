@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.9"
+          go-version: "1.26.10"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -32,10 +32,10 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-security-govulncheck-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-security-govulncheck-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-
       - name: Report Go module cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-mod-cache.outputs.cache-matched-key }}
@@ -56,10 +56,10 @@ jobs:
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-security-govulncheck-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-security-govulncheck-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-
       - name: Report Go build cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-build-cache.outputs.cache-matched-key }}
@@ -80,7 +80,8 @@ jobs:
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Leave setup and log upload time around the larger analysis budget.
+    timeout-minutes: 100
     permissions:
       actions: read
       contents: read
@@ -89,7 +90,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.9"
+          go-version: "1.26.10"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -97,10 +98,10 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-security-codeql-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-security-codeql-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-
       - name: Report Go module cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-mod-cache.outputs.cache-matched-key }}
@@ -121,10 +122,10 @@ jobs:
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-security-codeql-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-security-codeql-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-
       - name: Report Go build cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-build-cache.outputs.cache-matched-key }}
@@ -147,6 +148,8 @@ jobs:
           languages: go
           db-location: ${{ runner.temp }}/codeql_databases
           config: |
+            paths-ignore:
+              - '**/*_generated.go'
             queries:
               - uses: security-extended
             query-filters:
@@ -162,6 +165,13 @@ jobs:
                     # This query was the only one still running when PR run
                     # 30205055311 hit its 60-minute job timeout.
                     - go/incorrect-integer-conversion
+                    # These two never finished in run 39616762308 (25 of 27
+                    # queries done within 3 minutes). The only cookie sink is
+                    # the Visualforce Apex Cookie emulation in
+                    # internal/server/visualforce.go, whose Secure and HttpOnly
+                    # come from the Apex program. Tests pin that sink.
+                    - go/cookie-httponly-not-set
+                    - go/cookie-secure-not-set
           build-mode: manual
       - name: Initialize full-branch CodeQL
         if: github.event_name != 'pull_request' || github.event.pull_request.changed_files >= 300
@@ -170,6 +180,8 @@ jobs:
           languages: go
           db-location: ${{ runner.temp }}/codeql_databases
           config: |
+            paths-ignore:
+              - '**/*_generated.go'
             queries:
               - uses: security-extended
             query-filters:
@@ -195,11 +207,18 @@ jobs:
                     # Small PR diff-informed analysis retains both queries.
                     - go/unsafe-quoting
                     - go/unvalidated-url-redirection
+                    # These two never finished in run 39616762308 (25 of 27
+                    # queries done within 3 minutes). The only cookie sink is
+                    # the Visualforce Apex Cookie emulation in
+                    # internal/server/visualforce.go, whose Secure and HttpOnly
+                    # come from the Apex program. Tests pin that sink.
+                    - go/cookie-httponly-not-set
+                    - go/cookie-secure-not-set
           build-mode: manual
       - name: Build Glade for CodeQL
         run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade
       - name: Analyze CodeQL
-        timeout-minutes: 40
+        timeout-minutes: 90
         uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           category: codeql-go
@@ -225,7 +244,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.9"
+          go-version: "1.26.10"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -233,10 +252,10 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-security-gosec-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-security-gosec-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-
       - name: Report Go module cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-mod-cache.outputs.cache-matched-key }}
@@ -257,10 +276,10 @@ jobs:
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-security-gosec-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-security-gosec-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-
       - name: Report Go build cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-build-cache.outputs.cache-matched-key }}

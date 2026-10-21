@@ -22,16 +22,52 @@ func callListStdlibMember(receiver Value, method string, args []Value) (Value, V
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("List.getSObjectType expects 0 arguments")
 		}
+		if allocatedGenericSObjectList(receiver) || mixedGenericSObjectList(receiver) {
+			return Null, receiver, false, true, nil
+		}
 		if objectName := listSObjectTypeName(receiver); objectName != "" {
 			return sObjectTypeToken(objectName), receiver, false, true, nil
 		}
-		if elementType, ok := collectionElementType(receiver.Type); ok && strings.EqualFold(elementType, "sObject") && len(receiver.List) == 0 {
+		if element, ok := collectionElementType(receiver.Type); ok && strings.EqualFold(element, "SObject") && len(receiver.List) == 0 {
 			return Null, receiver, false, true, nil
 		}
 		return Null, receiver, false, true, unsupportedCallError("List.getSObjectType for non-SObject list")
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+// Only the mixed generic-list fallback changes pending MT01-MT09 captures.
+// A concrete runtime list retains its token, including through an upcast.
+func mixedGenericSObjectList(receiver Value) bool {
+	element, ok := collectionElementType(receiver.Type)
+	if !ok || !strings.EqualFold(element, "SObject") {
+		return false
+	}
+	for _, view := range []string{receiver.Runtime, receiver.Static} {
+		if element, ok := collectionElementType(view); ok && listSObjectElementTypeName(element) != "" {
+			return false
+		}
+	}
+	first := ""
+	mixed := false
+	for _, item := range receiver.List {
+		if item.Kind != ValueObject {
+			continue
+		}
+		if item.classInstance || item.projectClass {
+			return false
+		}
+		typeName := listSObjectElementTypeName(runtimeObjectType(item))
+		if typeName == "" {
+			continue
+		}
+		if first != "" && !strings.EqualFold(first, typeName) {
+			mixed = true
+		}
+		first = typeName
+	}
+	return mixed
 }
 func callSetStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	// clear is handled by the VM dispatcher so collection aliases are updated.
@@ -51,6 +87,19 @@ func callSetStdlibMember(receiver Value, method string, args []Value) (Value, Va
 	}
 }
 func callMapStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	// Read-only removals use the VM dispatcher with the other guarded mutations.
+	if method == "remove" {
+		if flag := receiver.Fields["__collection_readonly"]; flag.Kind == ValueBool && flag.Bool {
+			return Null, receiver, false, false, nil
+		}
+	}
+	// authorization and request context headers_null rejects a null header value. Ordinary Apex maps
+	// continue to accept null values through their existing dispatcher.
+	if method == "put" && len(args) == 2 {
+		if err := visualforceHeaderValueError(receiver, args[0], args[1]); err != nil {
+			return Null, receiver, false, true, err
+		}
+	}
 	if isSObjectFieldMapValue(receiver) {
 		switch method {
 		case "clear", "remove", "put", "putAll":

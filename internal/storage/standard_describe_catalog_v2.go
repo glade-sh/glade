@@ -283,7 +283,7 @@ func standardDescribeCatalogV2EntryForResolvedIndexEntry(indexEntry standardDesc
 		APIName:     describe.Name,
 		Label:       firstStorageString(describe.Label, describe.Name),
 		PluralLabel: firstStorageString(describe.LabelPlural, describe.Label+"s", describe.Name+"s"),
-		KeyPrefix:   describe.KeyPrefix,
+		KeyPrefix:   describe.keyPrefixValue(),
 		Fields:      describeFieldMap(describe.Fields),
 		Relations:   describeRelationships(describe.Name, describe.Fields, childRelationships),
 		RecordTypes: describeRecordTypes(describe.RecordTypeInfos),

@@ -43,7 +43,7 @@ func TestCIVisualforceWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 		}
 	}
 	for _, marker := range []string{
-		"needs: [lwc-compile-history-input, visualforce-history-input]",
+		"needs: [lwc-compile-history-input, visualforce-history-input, test-binaries]",
 		"CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json",
 		"name: visualforce-history-input", "path: /tmp/glade-visualforce-duration-history",
 		`scripts/ci-go-test.sh visualforce-shard "${{ matrix.shard }}"`,

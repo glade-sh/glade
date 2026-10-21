@@ -1,0 +1,3225 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 32,
+  "nativeObservationCount": 192,
+  "groups": {
+    "ownership": {
+      "shapes": 16,
+      "cells": 96,
+      "ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R004",
+        "R005",
+        "R006",
+        "R007",
+        "R008",
+        "R009",
+        "R010",
+        "R011",
+        "R012",
+        "R013",
+        "R014",
+        "R015",
+        "R023"
+      ]
+    },
+    "getters": {
+      "shapes": 7,
+      "cells": 42,
+      "ids": [
+        "R016",
+        "R017",
+        "R018",
+        "R019",
+        "R020",
+        "R021",
+        "R022"
+      ]
+    },
+    "describe": {
+      "shapes": 3,
+      "cells": 18,
+      "ids": [
+        "R024",
+        "R025",
+        "R026"
+      ]
+    },
+    "identity_dto": {
+      "shapes": 4,
+      "cells": 24,
+      "ids": [
+        "R027",
+        "C001",
+        "C002",
+        "C003"
+      ]
+    },
+    "deployment": {
+      "shapes": 2,
+      "cells": 12,
+      "ids": [
+        "E001",
+        "E002"
+      ]
+    }
+  },
+  "provenance": {
+    "packetRowsSha256": "eab88e0f01aa9ccc7a6e6177232d0cec1cc28ec609a18eb31e7142a7627de37f",
+    "sourceManifestSha256": "0f82b174e7e53c950fdeb6c0a5817196ce2bd612df70452cd570666f44579083",
+    "completionSha256": "15f756e572bfb26bba2c10a628e01f4f4015bc6ebe7b111e04d7a2edaffe3c74",
+    "captureCompletionSha256": "891da2cee21ef5f598d788ea7f844b8b0a656a5b37645536ede002bea598f7f3",
+    "packagingContext": "Developer Edition; namespace gladens001; managed Beta; metadata API68",
+    "subscriberContext": "fresh nonnamespaced subscriber; Winter 27; deleted and verified",
+    "rowsBeforeApexDeploy": true
+  },
+  "files": [
+    {
+      "path": "native/api62/C001.apex",
+      "sha256": "9b5985dbb89011fd5dd874de1f25a48b45c6c29048dadd9b193a85f9e47b3b4b"
+    },
+    {
+      "path": "native/api62/C001.cls",
+      "sha256": "618a2ad3f7a8394ac714419b69f8eebd530b14abae9e477e138046d8cdfe1023"
+    },
+    {
+      "path": "native/api62/C002.apex",
+      "sha256": "98361b4e98ddfd5fd72f32575d1e465e9af37368e6ed3f7a02c5d491f7b7c793"
+    },
+    {
+      "path": "native/api62/C002.cls",
+      "sha256": "8fbddc4acc6f77b3006a2bbbc0ead4d1d6535ef81efd449d950c276fd6bc1ad3"
+    },
+    {
+      "path": "native/api62/C003.apex",
+      "sha256": "681ee6914e493f848512a43f03784a7571f16ac0416470e49d6740533180806a"
+    },
+    {
+      "path": "native/api62/C003.cls",
+      "sha256": "3f6bb41fc5c0e6dd0b02738e9f829ff8380867d57bf4739c0b703e26eee47e19"
+    },
+    {
+      "path": "native/api62/E001-async.json",
+      "sha256": "90b1dded0ec19622b6473c80b32c7ea26ef9719a99447fef539a229bebc2cf20"
+    },
+    {
+      "path": "native/api62/E001.apex",
+      "sha256": "f8037564ef5b08174c894ad7a04451391bf8e5e0422e3b88bdf5e334e9ef0d02"
+    },
+    {
+      "path": "native/api62/E001.cls",
+      "sha256": "882054d65075b418e5db9d842e8812a8d602b0a01fbfaea941d0afa618d367bd"
+    },
+    {
+      "path": "native/api62/E002-async.json",
+      "sha256": "03397d8d494686f5478ea8c0e201e64731ec1354acfe3db120603dfe98fb0f83"
+    },
+    {
+      "path": "native/api62/E002.apex",
+      "sha256": "619a6a1685bb13e7a5586434b65abea05965fe3f23a734e93d2615b9a79ee6c3"
+    },
+    {
+      "path": "native/api62/E002.cls",
+      "sha256": "f606571029c3801804862f9f90dabbef98be4c3c6dd2d734eb8efe599402fc9a"
+    },
+    {
+      "path": "native/api62/R001.apex",
+      "sha256": "bfd6d192101cc85244dc19006e442374224626313828f03b25460dbd5d7e9b2e"
+    },
+    {
+      "path": "native/api62/R001.cls",
+      "sha256": "efdfa3f3b8a03cc862e68d58999d386a9570945a2cd9c54ce7ff7b5f31dc92e1"
+    },
+    {
+      "path": "native/api62/R002.apex",
+      "sha256": "ef822397f9794510f9a09b804f1cd5707274b7921ea554099f8723525fad095c"
+    },
+    {
+      "path": "native/api62/R002.cls",
+      "sha256": "b10fd847127e970dbe356c7427901a8ceb5f233af22ed725be095fd1531100d9"
+    },
+    {
+      "path": "native/api62/R003.apex",
+      "sha256": "33048ed1a625417ed9beb9ee277fc6506e683a37728d99eab0b3c659c420507a"
+    },
+    {
+      "path": "native/api62/R003.cls",
+      "sha256": "2cedadc61a0f30720702f08d35b7f6cc50f996c231c449dd5cece51f7d2432de"
+    },
+    {
+      "path": "native/api62/R004.apex",
+      "sha256": "1200441fecb57c1aee44fbe8692ec4af2ab498a00f7a13f58ebace4cf9f5048b"
+    },
+    {
+      "path": "native/api62/R004.cls",
+      "sha256": "fcdd05e7f18c779c9cb3ae1f33d910bd82e145e6c4eb3006701ca6da412d15ae"
+    },
+    {
+      "path": "native/api62/R005.apex",
+      "sha256": "1a955254e440695fe4a60cfd2ba0200b2acbf6be7a20181415212e25ae879c0b"
+    },
+    {
+      "path": "native/api62/R005.cls",
+      "sha256": "337769865b8bae91848bf58a7b26c291aea1ba7fd256ec680aab2dc8dc66a69b"
+    },
+    {
+      "path": "native/api62/R006.apex",
+      "sha256": "4dd52759d205e78fa723ef7c8073b15000eb74f47757cdbc9ed4b61518550c77"
+    },
+    {
+      "path": "native/api62/R006.cls",
+      "sha256": "78d3c43430b67d3954babbdd0d0e1564c355920c436a78b925633d4c08b98c18"
+    },
+    {
+      "path": "native/api62/R007.apex",
+      "sha256": "8b9227a606a4f7297b46a1dd8b57812f2f5cb7b2ddc5d144313e2001fa44224f"
+    },
+    {
+      "path": "native/api62/R007.cls",
+      "sha256": "49c0a63bd39d1c25c269ef640c88fced49e6bde90e83faf592b14e8fd6a2898b"
+    },
+    {
+      "path": "native/api62/R008.apex",
+      "sha256": "136648b6b9a16ee3975339a9ae4e1a515813e9dc066fe749b4b6194fc8c29059"
+    },
+    {
+      "path": "native/api62/R008.cls",
+      "sha256": "bd73f6600e3aba90e29545eb8cc3f1174d6067a478da85bc69aba3543d61f80a"
+    },
+    {
+      "path": "native/api62/R009.apex",
+      "sha256": "7f411d30ef876de46e9ef4d5cdd89408537db1bd2baf2bb2e1b71f5e96c01841"
+    },
+    {
+      "path": "native/api62/R009.cls",
+      "sha256": "9251512c0e1858c2dd80940a78221258baee8409882731d1e305f33c14a4bb6a"
+    },
+    {
+      "path": "native/api62/R010.apex",
+      "sha256": "afb910a891dbdd7315faa724af5048ef0b8dcffe35569958af89d9ba9f400d5d"
+    },
+    {
+      "path": "native/api62/R010.cls",
+      "sha256": "03cf9019eeaabd2e6e7c66b0c14334c55b4aee20184dfe964db33e4bcf61a27a"
+    },
+    {
+      "path": "native/api62/R011.apex",
+      "sha256": "ac31bfb845a0b4bea49ac14a67e15da0d22e139f23fca96c11a2f25129baadcc"
+    },
+    {
+      "path": "native/api62/R011.cls",
+      "sha256": "d6d3c73d947a21ed9fd8960fe2bdaccb0a04a93dc2740b022bd0fc34f9807f57"
+    },
+    {
+      "path": "native/api62/R012.apex",
+      "sha256": "d0a0478d83a1c8c8cc02720de33494e1aa555fc9f95f1774f65e2ad873cd40d4"
+    },
+    {
+      "path": "native/api62/R012.cls",
+      "sha256": "81cb9cb6d0f7fa4c37ffc936f4f1d01d15f4e9f02cb236797bbe81633857e9c2"
+    },
+    {
+      "path": "native/api62/R013.apex",
+      "sha256": "41dd06a7e5f058471a088d333bcd02db67de6414a0169ead8dcbc82df297404e"
+    },
+    {
+      "path": "native/api62/R013.cls",
+      "sha256": "813094539608db235f121c498d265f040b1b69c2436f2113a3e9f7686e7c3d3a"
+    },
+    {
+      "path": "native/api62/R014.apex",
+      "sha256": "abb713b26b95205e2eca22ba3c2af0b2af7a2caf3fcd30e03365ba771e39ecd7"
+    },
+    {
+      "path": "native/api62/R014.cls",
+      "sha256": "5b97028aa87d9e2e0825ee6bf01c9b035a9d8ae2d43c8b60ce030a54fcf130aa"
+    },
+    {
+      "path": "native/api62/R015.apex",
+      "sha256": "dd8e17039bdc8695b22f658140e8c90a7e6a92b2b4e704cabd06d97616ddd3c3"
+    },
+    {
+      "path": "native/api62/R015.cls",
+      "sha256": "dad3da55451b543dcda3687a950d77263ef0dd6a8e2ba2e10190ba6bd0bdece1"
+    },
+    {
+      "path": "native/api62/R016.apex",
+      "sha256": "bd90a512afa521116a1ba48a6df8b33f5a122f6edcb1ec625ab2b1a1e569e03a"
+    },
+    {
+      "path": "native/api62/R016.cls",
+      "sha256": "05dd73ed2645ed4e82645e68dc99b66fcb0385d5e8b7e6f1d165b97b61333b0e"
+    },
+    {
+      "path": "native/api62/R017.apex",
+      "sha256": "f14f088ff3c4d2a2ee5a547f51d25ff4deb2891ac003d85c7769e191e685ec00"
+    },
+    {
+      "path": "native/api62/R017.cls",
+      "sha256": "f26209935d6a480c647fc5d7bad6ff87282bfcaaeffe2106c98485d0945e9609"
+    },
+    {
+      "path": "native/api62/R018.apex",
+      "sha256": "f63337710c33695638dd306916218095303985383b0c5d27f0997a613a744f2b"
+    },
+    {
+      "path": "native/api62/R018.cls",
+      "sha256": "a2757f9f878d54750e3bd269a6c469535a89f4d22a25a6d40329e9c13838c8fb"
+    },
+    {
+      "path": "native/api62/R019.apex",
+      "sha256": "fde92b1a5a130cb4c7a533a477af12b7704e24d0f2ffa7ef8d3833a42bca1325"
+    },
+    {
+      "path": "native/api62/R019.cls",
+      "sha256": "f8cce73898599137b653081efd96b2b25971b4ec524add45fa13858e5c19948c"
+    },
+    {
+      "path": "native/api62/R020.apex",
+      "sha256": "36a4ca4eafe84f0d04614ed2a3850cfc82a9974909c6fcb131963607faf9152f"
+    },
+    {
+      "path": "native/api62/R020.cls",
+      "sha256": "3927042b15dd68474f3de4d10acecefcfc8b79a2748be4f6cc1643c29e34e60d"
+    },
+    {
+      "path": "native/api62/R021.apex",
+      "sha256": "dc959fa4cff6642525e67ec5bdd987ec85254b8b88dc47f2c2ba8b5d54ea5bc7"
+    },
+    {
+      "path": "native/api62/R021.cls",
+      "sha256": "16b11bd15dc0dd9624080397230fb450cb5521e34dfd5d73b422e9e741efdc5a"
+    },
+    {
+      "path": "native/api62/R022.apex",
+      "sha256": "136021dc88c05dd72d0433e53a77effa7f646773fb3b117a652067770453b732"
+    },
+    {
+      "path": "native/api62/R022.cls",
+      "sha256": "555d654b4a53787ab529bec575fcc6750efaca9d884408f4964b791c9d60db45"
+    },
+    {
+      "path": "native/api62/R023.apex",
+      "sha256": "15f908aaba96a91fea5e31243ad19861d1dd395fd97a09a73988c2239a285fe0"
+    },
+    {
+      "path": "native/api62/R023.cls",
+      "sha256": "630d47c49f0df97e91d6c733ec120fb4efe4dd65eaa248a0327ceac981971b99"
+    },
+    {
+      "path": "native/api62/R024.apex",
+      "sha256": "1293aca634024288b2f8dc88015170c5e3bc7972ff53ca2508699c9f82565f9e"
+    },
+    {
+      "path": "native/api62/R024.cls",
+      "sha256": "3bc0febab4cf3982ca033bd5efbe8ac321f5e1df604ca36e9066a3acb030965b"
+    },
+    {
+      "path": "native/api62/R025.apex",
+      "sha256": "9cf4d16be076ca70747d598b5e7dc2d46321a90108131a89e94df5c1fa8197c9"
+    },
+    {
+      "path": "native/api62/R025.cls",
+      "sha256": "3d3751848545d1b88cf2c6fbc6a5e55dc2de4f5caf9a56d986c2a33a6c42b091"
+    },
+    {
+      "path": "native/api62/R026.apex",
+      "sha256": "5e1fe99824a4f25adba23bf2bf5a0eacd1477d577a8e7b9b9852e9820300bed6"
+    },
+    {
+      "path": "native/api62/R026.cls",
+      "sha256": "7be85ab7d82254daea44aebad16de9b5e9f1cd8c152bc0248b68d16d20cdaf64"
+    },
+    {
+      "path": "native/api62/R027.apex",
+      "sha256": "a301bc883463fee857e0c601c822c366a31a6bc284451edf42bebf3c04317af1"
+    },
+    {
+      "path": "native/api62/R027.cls",
+      "sha256": "8d80526071ce5fd8cf5dea2e85c9aa177271e393f79fd9a62ea10cef88c22a1a"
+    },
+    {
+      "path": "native/api62/compile.tsv",
+      "sha256": "c2a0b2e21a17c90147858e4f52fb6663746ba8066e6439ca4d3d4d58c94b12d8"
+    },
+    {
+      "path": "native/api62/named-org.tsv",
+      "sha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+    },
+    {
+      "path": "native/api62/org.tsv",
+      "sha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+    },
+    {
+      "path": "native/api67/C001.apex",
+      "sha256": "9b5985dbb89011fd5dd874de1f25a48b45c6c29048dadd9b193a85f9e47b3b4b"
+    },
+    {
+      "path": "native/api67/C001.cls",
+      "sha256": "bb837711f0d99e284a1876225975ae6db151bffa6c4208e18a1116b284d3e93c"
+    },
+    {
+      "path": "native/api67/C002.apex",
+      "sha256": "98361b4e98ddfd5fd72f32575d1e465e9af37368e6ed3f7a02c5d491f7b7c793"
+    },
+    {
+      "path": "native/api67/C002.cls",
+      "sha256": "9321d3842424e655cfb3e01fc56f6c62b68364cf6c7618453a81e86feb1f095c"
+    },
+    {
+      "path": "native/api67/C003.apex",
+      "sha256": "681ee6914e493f848512a43f03784a7571f16ac0416470e49d6740533180806a"
+    },
+    {
+      "path": "native/api67/C003.cls",
+      "sha256": "051bad9a7364559b1e0457352a76ca47bb442cf5e21cca6a701bc0d4f1bf5077"
+    },
+    {
+      "path": "native/api67/E001-async.json",
+      "sha256": "a2f43fd19ebc22ecacd4d6c65ba34061b979e736716ed32a9b15327ad74715d3"
+    },
+    {
+      "path": "native/api67/E001.apex",
+      "sha256": "2fbe3e1c8c824e330521d8d10f3c1d3b3a995975f7fd60202e17b69dc817a2ca"
+    },
+    {
+      "path": "native/api67/E001.cls",
+      "sha256": "fd1dee567a48434ac9014fca03043a7ee8e104329206c931052ba5ae586b9b9a"
+    },
+    {
+      "path": "native/api67/E002-async.json",
+      "sha256": "ff1074bc6213bc3647112abe71d6f3b557f343b6f411fda634600f0e37e0c338"
+    },
+    {
+      "path": "native/api67/E002.apex",
+      "sha256": "e76842a3f83b67baecd656bd046d0d94455326d2da91e94d39b27e9fff13007d"
+    },
+    {
+      "path": "native/api67/E002.cls",
+      "sha256": "08ccd4388820350c67f17a7b141b65a43c5e8d8f8a7dae6ced28e5eb02b77f64"
+    },
+    {
+      "path": "native/api67/R001.apex",
+      "sha256": "bfd6d192101cc85244dc19006e442374224626313828f03b25460dbd5d7e9b2e"
+    },
+    {
+      "path": "native/api67/R001.cls",
+      "sha256": "d748c2de4368d0be72f52bae5a82533375a4733579f4447bbfbc36bff9217cda"
+    },
+    {
+      "path": "native/api67/R002.apex",
+      "sha256": "ef822397f9794510f9a09b804f1cd5707274b7921ea554099f8723525fad095c"
+    },
+    {
+      "path": "native/api67/R002.cls",
+      "sha256": "1bb93b350e1d521ead0cd8f0e0eed48fce73f49dbf16b7cc07adf9b76f6540b3"
+    },
+    {
+      "path": "native/api67/R003.apex",
+      "sha256": "33048ed1a625417ed9beb9ee277fc6506e683a37728d99eab0b3c659c420507a"
+    },
+    {
+      "path": "native/api67/R003.cls",
+      "sha256": "a15ba3f36e315f0c7c753089b777aa6e5e344939795eb7e71634d26f508a8090"
+    },
+    {
+      "path": "native/api67/R004.apex",
+      "sha256": "1200441fecb57c1aee44fbe8692ec4af2ab498a00f7a13f58ebace4cf9f5048b"
+    },
+    {
+      "path": "native/api67/R004.cls",
+      "sha256": "c0e74ba87922f34fbe7ccde324a07ea2c2c90046946ba1c6e99f3dcfd3cc956b"
+    },
+    {
+      "path": "native/api67/R005.apex",
+      "sha256": "1a955254e440695fe4a60cfd2ba0200b2acbf6be7a20181415212e25ae879c0b"
+    },
+    {
+      "path": "native/api67/R005.cls",
+      "sha256": "1ec8bee6e76a446f80914a61b5c62d40f4f8d0cfb054ee6009280fae98642083"
+    },
+    {
+      "path": "native/api67/R006.apex",
+      "sha256": "4dd52759d205e78fa723ef7c8073b15000eb74f47757cdbc9ed4b61518550c77"
+    },
+    {
+      "path": "native/api67/R006.cls",
+      "sha256": "ebd665034c8e979d6223fd9fe35572b4ead5851524adbeab3c91756ccf7a49ee"
+    },
+    {
+      "path": "native/api67/R007.apex",
+      "sha256": "8b9227a606a4f7297b46a1dd8b57812f2f5cb7b2ddc5d144313e2001fa44224f"
+    },
+    {
+      "path": "native/api67/R007.cls",
+      "sha256": "baec9b0509b8d70e3f473933f09f8f3cdc47ea833c3a7ff3379cae9856f33654"
+    },
+    {
+      "path": "native/api67/R008.apex",
+      "sha256": "136648b6b9a16ee3975339a9ae4e1a515813e9dc066fe749b4b6194fc8c29059"
+    },
+    {
+      "path": "native/api67/R008.cls",
+      "sha256": "18b78660d0c5b78c7f2840dfbd9fa1074462144ae2eca11163ec960fae746d24"
+    },
+    {
+      "path": "native/api67/R009.apex",
+      "sha256": "7f411d30ef876de46e9ef4d5cdd89408537db1bd2baf2bb2e1b71f5e96c01841"
+    },
+    {
+      "path": "native/api67/R009.cls",
+      "sha256": "873d8fd6efe65970de83928b4e7ed802a7cddc820e372f0950e9f8f17276da50"
+    },
+    {
+      "path": "native/api67/R010.apex",
+      "sha256": "afb910a891dbdd7315faa724af5048ef0b8dcffe35569958af89d9ba9f400d5d"
+    },
+    {
+      "path": "native/api67/R010.cls",
+      "sha256": "56fb464c9d54b99334045c75c14bd7fff0541983001aa3b4be176ba2dbadc0c9"
+    },
+    {
+      "path": "native/api67/R011.apex",
+      "sha256": "ac31bfb845a0b4bea49ac14a67e15da0d22e139f23fca96c11a2f25129baadcc"
+    },
+    {
+      "path": "native/api67/R011.cls",
+      "sha256": "d82d7023bbc9f1e36f450ad1c37dde408eaa50877f28ada41c65489817c597fe"
+    },
+    {
+      "path": "native/api67/R012.apex",
+      "sha256": "d0a0478d83a1c8c8cc02720de33494e1aa555fc9f95f1774f65e2ad873cd40d4"
+    },
+    {
+      "path": "native/api67/R012.cls",
+      "sha256": "5254a455301fc7e4cabb83a09c1d817993f3908af6c2e01d76021af445435f90"
+    },
+    {
+      "path": "native/api67/R013.apex",
+      "sha256": "41dd06a7e5f058471a088d333bcd02db67de6414a0169ead8dcbc82df297404e"
+    },
+    {
+      "path": "native/api67/R013.cls",
+      "sha256": "629c5c67d89d51db664b0b5a8acc9b1e7dabe3ef9df13badd801366ab5ddff25"
+    },
+    {
+      "path": "native/api67/R014.apex",
+      "sha256": "abb713b26b95205e2eca22ba3c2af0b2af7a2caf3fcd30e03365ba771e39ecd7"
+    },
+    {
+      "path": "native/api67/R014.cls",
+      "sha256": "98ab059002a00322e3a986cf6b3c0fb07cbb18809acd3e7dfe1bc412a9e0ecaf"
+    },
+    {
+      "path": "native/api67/R015.apex",
+      "sha256": "dd8e17039bdc8695b22f658140e8c90a7e6a92b2b4e704cabd06d97616ddd3c3"
+    },
+    {
+      "path": "native/api67/R015.cls",
+      "sha256": "a67418301fd3db3cb03f8cbf590fb27264c58f9ac532f1c0f8f587a462171016"
+    },
+    {
+      "path": "native/api67/R016.apex",
+      "sha256": "bd90a512afa521116a1ba48a6df8b33f5a122f6edcb1ec625ab2b1a1e569e03a"
+    },
+    {
+      "path": "native/api67/R016.cls",
+      "sha256": "55d0a0281c9da5e0c7d349912c823b1d7a119a624133c25e63fa4ec5d9d7f5d3"
+    },
+    {
+      "path": "native/api67/R017.apex",
+      "sha256": "f14f088ff3c4d2a2ee5a547f51d25ff4deb2891ac003d85c7769e191e685ec00"
+    },
+    {
+      "path": "native/api67/R017.cls",
+      "sha256": "d18e7a2fb1a32e881dd6c9573e8fe476e0e0dcc10f24b840016c6bd582b8f39d"
+    },
+    {
+      "path": "native/api67/R018.apex",
+      "sha256": "f63337710c33695638dd306916218095303985383b0c5d27f0997a613a744f2b"
+    },
+    {
+      "path": "native/api67/R018.cls",
+      "sha256": "3218b517437aba280fa02119a573d8062bc8ccb1ca654d307a9f28d13f6af97c"
+    },
+    {
+      "path": "native/api67/R019.apex",
+      "sha256": "fde92b1a5a130cb4c7a533a477af12b7704e24d0f2ffa7ef8d3833a42bca1325"
+    },
+    {
+      "path": "native/api67/R019.cls",
+      "sha256": "3c6f975151c66baafab03484864dfbd854da32f37c383be19aea45d6d99d7fa6"
+    },
+    {
+      "path": "native/api67/R020.apex",
+      "sha256": "36a4ca4eafe84f0d04614ed2a3850cfc82a9974909c6fcb131963607faf9152f"
+    },
+    {
+      "path": "native/api67/R020.cls",
+      "sha256": "1b2180ded0ece27d5f17eef7f6252b8b2b2ce9c4a6611cad310f06834f1c4f08"
+    },
+    {
+      "path": "native/api67/R021.apex",
+      "sha256": "dc959fa4cff6642525e67ec5bdd987ec85254b8b88dc47f2c2ba8b5d54ea5bc7"
+    },
+    {
+      "path": "native/api67/R021.cls",
+      "sha256": "a69597aa4afa6697aae7e0a2ec7d4471bc6315329958219176215fcc50467a7d"
+    },
+    {
+      "path": "native/api67/R022.apex",
+      "sha256": "136021dc88c05dd72d0433e53a77effa7f646773fb3b117a652067770453b732"
+    },
+    {
+      "path": "native/api67/R022.cls",
+      "sha256": "6d0f75c875469af8c670ebca5b4134fa17e2f46c070fbb0079a3e2b0873cbe3f"
+    },
+    {
+      "path": "native/api67/R023.apex",
+      "sha256": "15f908aaba96a91fea5e31243ad19861d1dd395fd97a09a73988c2239a285fe0"
+    },
+    {
+      "path": "native/api67/R023.cls",
+      "sha256": "c0f3195a538e8f80eb907bc60a799adce9a3b50e884b21fc0470dcb786598c51"
+    },
+    {
+      "path": "native/api67/R024.apex",
+      "sha256": "1293aca634024288b2f8dc88015170c5e3bc7972ff53ca2508699c9f82565f9e"
+    },
+    {
+      "path": "native/api67/R024.cls",
+      "sha256": "d4cfcd5f978262852821e3cd692049e15269b02514817dbe0b8fffbb81e984a8"
+    },
+    {
+      "path": "native/api67/R025.apex",
+      "sha256": "9cf4d16be076ca70747d598b5e7dc2d46321a90108131a89e94df5c1fa8197c9"
+    },
+    {
+      "path": "native/api67/R025.cls",
+      "sha256": "a20148df369ebc6da0279a56bfbfea17e5a1335e8451b91910838b0f8e10f846"
+    },
+    {
+      "path": "native/api67/R026.apex",
+      "sha256": "5e1fe99824a4f25adba23bf2bf5a0eacd1477d577a8e7b9b9852e9820300bed6"
+    },
+    {
+      "path": "native/api67/R026.cls",
+      "sha256": "50d31f676b9dfffee99df0c7637130020b97af032faee4356c61c9d20adf9833"
+    },
+    {
+      "path": "native/api67/R027.apex",
+      "sha256": "a301bc883463fee857e0c601c822c366a31a6bc284451edf42bebf3c04317af1"
+    },
+    {
+      "path": "native/api67/R027.cls",
+      "sha256": "d76efb1c1fb235c3d09d38eb9c206058c11c4a6fd284992da1e2a6074d4675d6"
+    },
+    {
+      "path": "native/api67/compile.tsv",
+      "sha256": "ec0927098066228e1c0d0cf0c37fafb8c844de9ba80808c440042d66a22ca06f"
+    },
+    {
+      "path": "native/api67/named-org.tsv",
+      "sha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+    },
+    {
+      "path": "native/api67/org.tsv",
+      "sha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+    },
+    {
+      "path": "native/api68/C001.apex",
+      "sha256": "9b5985dbb89011fd5dd874de1f25a48b45c6c29048dadd9b193a85f9e47b3b4b"
+    },
+    {
+      "path": "native/api68/C001.cls",
+      "sha256": "b882705013cf8b589f3fcc51e0fc9db24d28e262e7178d6b0dadc51f21751b32"
+    },
+    {
+      "path": "native/api68/C002.apex",
+      "sha256": "98361b4e98ddfd5fd72f32575d1e465e9af37368e6ed3f7a02c5d491f7b7c793"
+    },
+    {
+      "path": "native/api68/C002.cls",
+      "sha256": "00076dd55e87de5ee9b1a5cdad1af67517809d14b1764d297c1e77a3016c7982"
+    },
+    {
+      "path": "native/api68/C003.apex",
+      "sha256": "681ee6914e493f848512a43f03784a7571f16ac0416470e49d6740533180806a"
+    },
+    {
+      "path": "native/api68/C003.cls",
+      "sha256": "5031ae7520fb87c1fc93374e91f1ac13d4c129e727fcf81f4059d13a61f44726"
+    },
+    {
+      "path": "native/api68/E001-async.json",
+      "sha256": "5dcc551056c99ead10ca86753cfe17ddccd36e8fd3ca02462e78195ef97d0f30"
+    },
+    {
+      "path": "native/api68/E001.apex",
+      "sha256": "83637673dc7e467c684babfdc09ff7222893c3bc157ca6822710c2263e000c81"
+    },
+    {
+      "path": "native/api68/E001.cls",
+      "sha256": "b52cedc60467d4a745c00a9019d28b87843c0d54e48de0bea1aaed86b3529f7d"
+    },
+    {
+      "path": "native/api68/E002-async.json",
+      "sha256": "f9127ce045b9e4e029fef32ef2acbaa121150bf186c3a7813f2f472d1bd64976"
+    },
+    {
+      "path": "native/api68/E002.apex",
+      "sha256": "5a17f9e64c85a0bebec35c87c9ccb58ad5a7894e7c9e930084790afdc832c0d3"
+    },
+    {
+      "path": "native/api68/E002.cls",
+      "sha256": "e238be0a4195354465df1d74284931b6e9238ba0e6abfb5e5585adcb0e862506"
+    },
+    {
+      "path": "native/api68/R001.apex",
+      "sha256": "bfd6d192101cc85244dc19006e442374224626313828f03b25460dbd5d7e9b2e"
+    },
+    {
+      "path": "native/api68/R001.cls",
+      "sha256": "49d31840dc9878df89f9768160ca84721c4a1c5c5677b990aaec0c46c41600f2"
+    },
+    {
+      "path": "native/api68/R002.apex",
+      "sha256": "ef822397f9794510f9a09b804f1cd5707274b7921ea554099f8723525fad095c"
+    },
+    {
+      "path": "native/api68/R002.cls",
+      "sha256": "e9dd086b76f10b1ecbecb01d8cff8e8b6b38a42f122cb5ec88a8c0da3b9c649e"
+    },
+    {
+      "path": "native/api68/R003.apex",
+      "sha256": "33048ed1a625417ed9beb9ee277fc6506e683a37728d99eab0b3c659c420507a"
+    },
+    {
+      "path": "native/api68/R003.cls",
+      "sha256": "5bd8c5d6ef23b91476e32399a42c1bdad9351c106c0b93e7c4f4f6a33e279c5c"
+    },
+    {
+      "path": "native/api68/R004.apex",
+      "sha256": "1200441fecb57c1aee44fbe8692ec4af2ab498a00f7a13f58ebace4cf9f5048b"
+    },
+    {
+      "path": "native/api68/R004.cls",
+      "sha256": "310421a86ddf81e7a17a95c4fcae5a807e931016470dee93f88de31468544fa8"
+    },
+    {
+      "path": "native/api68/R005.apex",
+      "sha256": "1a955254e440695fe4a60cfd2ba0200b2acbf6be7a20181415212e25ae879c0b"
+    },
+    {
+      "path": "native/api68/R005.cls",
+      "sha256": "c716dec2367a67901e95add6fe396892ba5fb737e9ecb9e66f3804bd0eaf868f"
+    },
+    {
+      "path": "native/api68/R006.apex",
+      "sha256": "4dd52759d205e78fa723ef7c8073b15000eb74f47757cdbc9ed4b61518550c77"
+    },
+    {
+      "path": "native/api68/R006.cls",
+      "sha256": "99f5175213a529479b655b06c94df6ac4d157b05103ac9535bc20f8e9e82794a"
+    },
+    {
+      "path": "native/api68/R007.apex",
+      "sha256": "8b9227a606a4f7297b46a1dd8b57812f2f5cb7b2ddc5d144313e2001fa44224f"
+    },
+    {
+      "path": "native/api68/R007.cls",
+      "sha256": "951a8cdff01762cd845e03952599b5b576fdc980b4e77a8ec3719307da7924a6"
+    },
+    {
+      "path": "native/api68/R008.apex",
+      "sha256": "136648b6b9a16ee3975339a9ae4e1a515813e9dc066fe749b4b6194fc8c29059"
+    },
+    {
+      "path": "native/api68/R008.cls",
+      "sha256": "9829ee1b9ce38e3f725fe7c1c2092babfe59c32f3bf5efcaa2e378f7bf9e5b11"
+    },
+    {
+      "path": "native/api68/R009.apex",
+      "sha256": "7f411d30ef876de46e9ef4d5cdd89408537db1bd2baf2bb2e1b71f5e96c01841"
+    },
+    {
+      "path": "native/api68/R009.cls",
+      "sha256": "b661107bbc1555b14eff95ee0235e691e1b13a052c6ab83ecea5174b74df69b2"
+    },
+    {
+      "path": "native/api68/R010.apex",
+      "sha256": "afb910a891dbdd7315faa724af5048ef0b8dcffe35569958af89d9ba9f400d5d"
+    },
+    {
+      "path": "native/api68/R010.cls",
+      "sha256": "f38169899b83a89917d7c316ed7bb1862cde7909f056aed354e4bc768e4dd9c0"
+    },
+    {
+      "path": "native/api68/R011.apex",
+      "sha256": "ac31bfb845a0b4bea49ac14a67e15da0d22e139f23fca96c11a2f25129baadcc"
+    },
+    {
+      "path": "native/api68/R011.cls",
+      "sha256": "7e38dd1d87136c3866541ae79b86b4b007b702b8c78cc4676bc3ce199e2dbdfc"
+    },
+    {
+      "path": "native/api68/R012.apex",
+      "sha256": "d0a0478d83a1c8c8cc02720de33494e1aa555fc9f95f1774f65e2ad873cd40d4"
+    },
+    {
+      "path": "native/api68/R012.cls",
+      "sha256": "bea2a89d869041661bead86c349c86dc5e6b9b7ee2e9fa593c169a94793ab2ea"
+    },
+    {
+      "path": "native/api68/R013.apex",
+      "sha256": "41dd06a7e5f058471a088d333bcd02db67de6414a0169ead8dcbc82df297404e"
+    },
+    {
+      "path": "native/api68/R013.cls",
+      "sha256": "958e0f1b1e898cf637ccd96dc598e6009ec4dca9f9bdb6c9b95926015f2c222d"
+    },
+    {
+      "path": "native/api68/R014.apex",
+      "sha256": "abb713b26b95205e2eca22ba3c2af0b2af7a2caf3fcd30e03365ba771e39ecd7"
+    },
+    {
+      "path": "native/api68/R014.cls",
+      "sha256": "6d1e31a54f5e2dbd724c9a691a4b43c9902f7ae0c8b166e9c5d55b52de592819"
+    },
+    {
+      "path": "native/api68/R015.apex",
+      "sha256": "dd8e17039bdc8695b22f658140e8c90a7e6a92b2b4e704cabd06d97616ddd3c3"
+    },
+    {
+      "path": "native/api68/R015.cls",
+      "sha256": "cdd0e3a66cad37d3b272bbc44fa7f41624d29a0b215fa9d9c58fcb339e26a0a7"
+    },
+    {
+      "path": "native/api68/R016.apex",
+      "sha256": "bd90a512afa521116a1ba48a6df8b33f5a122f6edcb1ec625ab2b1a1e569e03a"
+    },
+    {
+      "path": "native/api68/R016.cls",
+      "sha256": "17f85053c0db04b92afc5fff484196c4eff1721ab37846e3dc48e0757f46cb5c"
+    },
+    {
+      "path": "native/api68/R017.apex",
+      "sha256": "f14f088ff3c4d2a2ee5a547f51d25ff4deb2891ac003d85c7769e191e685ec00"
+    },
+    {
+      "path": "native/api68/R017.cls",
+      "sha256": "0bb6c9c7c9f0484f6c9506ab162f4a48f650babd621b2620c4a3cf520d95564f"
+    },
+    {
+      "path": "native/api68/R018.apex",
+      "sha256": "f63337710c33695638dd306916218095303985383b0c5d27f0997a613a744f2b"
+    },
+    {
+      "path": "native/api68/R018.cls",
+      "sha256": "17c1661c326f86704a8e2f3fa9573f6147dec251090740c317471154904608f3"
+    },
+    {
+      "path": "native/api68/R019.apex",
+      "sha256": "fde92b1a5a130cb4c7a533a477af12b7704e24d0f2ffa7ef8d3833a42bca1325"
+    },
+    {
+      "path": "native/api68/R019.cls",
+      "sha256": "bd0c70dfb753bf0e636ef9132d7c3c51235353d265ba1fc5a1bc4aa2bd14bd64"
+    },
+    {
+      "path": "native/api68/R020.apex",
+      "sha256": "36a4ca4eafe84f0d04614ed2a3850cfc82a9974909c6fcb131963607faf9152f"
+    },
+    {
+      "path": "native/api68/R020.cls",
+      "sha256": "b00ba3309940452d1e13c8bd1a62c9912f0683ede542d79126364337d1ce6af6"
+    },
+    {
+      "path": "native/api68/R021.apex",
+      "sha256": "dc959fa4cff6642525e67ec5bdd987ec85254b8b88dc47f2c2ba8b5d54ea5bc7"
+    },
+    {
+      "path": "native/api68/R021.cls",
+      "sha256": "3b0cf05afa245a3b71ab9a93e723078e750ebfae92852b764e2f5783b87498d4"
+    },
+    {
+      "path": "native/api68/R022.apex",
+      "sha256": "136021dc88c05dd72d0433e53a77effa7f646773fb3b117a652067770453b732"
+    },
+    {
+      "path": "native/api68/R022.cls",
+      "sha256": "0de3eb6f1fbce9d63fb7abe09750d7b2d9a67b1833f9cb00f3aacdb3976c1366"
+    },
+    {
+      "path": "native/api68/R023.apex",
+      "sha256": "15f908aaba96a91fea5e31243ad19861d1dd395fd97a09a73988c2239a285fe0"
+    },
+    {
+      "path": "native/api68/R023.cls",
+      "sha256": "2cc56a44e2562f2f4585accf8bb6db1c4d0ac9d56c9882349c0e9254b82643ed"
+    },
+    {
+      "path": "native/api68/R024.apex",
+      "sha256": "1293aca634024288b2f8dc88015170c5e3bc7972ff53ca2508699c9f82565f9e"
+    },
+    {
+      "path": "native/api68/R024.cls",
+      "sha256": "0a45a1eb6b5c87650d5ed72d223014de596ad8716467594428aba9575dd560e5"
+    },
+    {
+      "path": "native/api68/R025.apex",
+      "sha256": "9cf4d16be076ca70747d598b5e7dc2d46321a90108131a89e94df5c1fa8197c9"
+    },
+    {
+      "path": "native/api68/R025.cls",
+      "sha256": "f7b998da5b0ffd9d62dc6176b838c925568a5d879df0260a483fb5ba64678c13"
+    },
+    {
+      "path": "native/api68/R026.apex",
+      "sha256": "5e1fe99824a4f25adba23bf2bf5a0eacd1477d577a8e7b9b9852e9820300bed6"
+    },
+    {
+      "path": "native/api68/R026.cls",
+      "sha256": "57e8d648f37d3cf4fae97e22f68c10967b4c41a35669f8b112e0389d3260ca11"
+    },
+    {
+      "path": "native/api68/R027.apex",
+      "sha256": "a301bc883463fee857e0c601c822c366a31a6bc284451edf42bebf3c04317af1"
+    },
+    {
+      "path": "native/api68/R027.cls",
+      "sha256": "27eb9327101a34bf7976ecfa1357a4ad5d10ab25e9d27ec70d8fff65f56f8295"
+    },
+    {
+      "path": "native/api68/compile.tsv",
+      "sha256": "f3af04cec69734357fe3ac926887a0cbe47382436c0c21d7c8588acd98a9d092"
+    },
+    {
+      "path": "native/api68/named-org.tsv",
+      "sha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+    },
+    {
+      "path": "native/api68/org.tsv",
+      "sha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+    },
+    {
+      "path": "fixture/provider/force-app/main/default/customMetadata/Ns113bFlag.ProviderSeed.md",
+      "sha256": "9fb8d6f9e9f40cd5df8e606977b61e9a7b9fd53908743111fce0bfea68f1c536"
+    },
+    {
+      "path": "fixture/provider/force-app/main/default/objects/Ns113bFlag__mdt.object",
+      "sha256": "95651b13dcbb80f4d821d17509d8f24f0c893de0457f4c2aac597844b9d7ef02"
+    },
+    {
+      "path": "fixture/provider/sfdx-project.json",
+      "sha256": "08553b620b32227fb421a59fe9e870685f31a049bb8fa2136bcca712d0e6e824"
+    },
+    {
+      "path": "fixture/subscriber/force-app/main/default/customMetadata/Ns113bLocal.LocalSeed.md",
+      "sha256": "c225d931dee8c142abdf55d99972897899c8da1136b250496994c021db095cc0"
+    },
+    {
+      "path": "fixture/subscriber/force-app/main/default/customMetadata/gladens001__Ns113bFlag.LocalDefault.md",
+      "sha256": "f34406869568dffaca3804a9ebdfedbe653669f7a237ce7a60acf11ddc5431eb"
+    },
+    {
+      "path": "fixture/subscriber/force-app/main/default/customMetadata/gladens001__Ns113bFlag.LocalOff.md",
+      "sha256": "26592be82db49c90cf860337207c3a00f6f30b33d9de36097aedb48c418c2e1e"
+    },
+    {
+      "path": "fixture/subscriber/force-app/main/default/customMetadata/gladens001__Ns113bFlag.LocalSeed.md",
+      "sha256": "ae30052e93ea14d69817f5e78a1db6705a26fbf6070def31782a2ca7b94b24ca"
+    },
+    {
+      "path": "fixture/subscriber/force-app/main/default/objects/Ns113bLocal__mdt.object",
+      "sha256": "0da21a38270319040c1cbf5d8959a4af32d7af4efe9a6bd2db98fc112ee16616"
+    },
+    {
+      "path": "fixture/subscriber/glade.yml",
+      "sha256": "d2c2f992737c77ac7ad0f9b02eb7370e5005e2b3ef5d8b97a20a6a10d055ca68"
+    },
+    {
+      "path": "fixture/subscriber/sfdx-project.json",
+      "sha256": "539230387a78545ecce7adf063f6d76ee309de65eb1d0324baab86a70a13ef6b"
+    }
+  ],
+  "rows": [
+    {
+      "id": "R001",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "subscriber record identity independent of type owner",
+      "twin": "R002",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R001.apex",
+          "sourceSha256": "bfd6d192101cc85244dc19006e442374224626313828f03b25460dbd5d7e9b2e",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|true",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R001.cls",
+          "sourceSha256": "efdfa3f3b8a03cc862e68d58999d386a9570945a2cd9c54ce7ff7b5f31dc92e1",
+          "className": "Ns113910271390462R001",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R001.apex",
+          "sourceSha256": "bfd6d192101cc85244dc19006e442374224626313828f03b25460dbd5d7e9b2e",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|true",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R001.cls",
+          "sourceSha256": "d748c2de4368d0be72f52bae5a82533375a4733579f4447bbfbc36bff9217cda",
+          "className": "Ns113910271390467R001",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R001.apex",
+          "sourceSha256": "bfd6d192101cc85244dc19006e442374224626313828f03b25460dbd5d7e9b2e",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|true",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R001.cls",
+          "sourceSha256": "49d31840dc9878df89f9768160ca84721c4a1c5c5677b990aaec0c46c41600f2",
+          "className": "Ns113910271390468R001",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R002",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "package-shipped identity control",
+      "twin": "R001",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R002.apex",
+          "sourceSha256": "ef822397f9794510f9a09b804f1cd5707274b7921ea554099f8723525fad095c",
+          "outcome": "runtime",
+          "expected": "ProviderSeed|gladens001|gladens001__ProviderSeed|true",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R002.cls",
+          "sourceSha256": "b10fd847127e970dbe356c7427901a8ceb5f233af22ed725be095fd1531100d9",
+          "className": "Ns113910271390462R002",
+          "outcome": "runtime",
+          "expected": "ProviderSeed|gladens001|gladens001__ProviderSeed|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R002.apex",
+          "sourceSha256": "ef822397f9794510f9a09b804f1cd5707274b7921ea554099f8723525fad095c",
+          "outcome": "runtime",
+          "expected": "ProviderSeed|gladens001|gladens001__ProviderSeed|true",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R002.cls",
+          "sourceSha256": "1bb93b350e1d521ead0cd8f0e0eed48fce73f49dbf16b7cc07adf9b76f6540b3",
+          "className": "Ns113910271390467R002",
+          "outcome": "runtime",
+          "expected": "ProviderSeed|gladens001|gladens001__ProviderSeed|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R002.apex",
+          "sourceSha256": "ef822397f9794510f9a09b804f1cd5707274b7921ea554099f8723525fad095c",
+          "outcome": "runtime",
+          "expected": "ProviderSeed|gladens001|gladens001__ProviderSeed|true",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R002.cls",
+          "sourceSha256": "e9dd086b76f10b1ecbecb01d8cff8e8b6b38a42f122cb5ec88a8c0da3b9c649e",
+          "className": "Ns113910271390468R002",
+          "outcome": "runtime",
+          "expected": "ProviderSeed|gladens001|gladens001__ProviderSeed|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R003",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "ownership filter NamespacePrefix=null",
+      "twin": "R004",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R003.apex",
+          "sourceSha256": "33048ed1a625417ed9beb9ee277fc6506e683a37728d99eab0b3c659c420507a",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R003.cls",
+          "sourceSha256": "2cedadc61a0f30720702f08d35b7f6cc50f996c231c449dd5cece51f7d2432de",
+          "className": "Ns113910271390462R003",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R003.apex",
+          "sourceSha256": "33048ed1a625417ed9beb9ee277fc6506e683a37728d99eab0b3c659c420507a",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R003.cls",
+          "sourceSha256": "a15ba3f36e315f0c7c753089b777aa6e5e344939795eb7e71634d26f508a8090",
+          "className": "Ns113910271390467R003",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R003.apex",
+          "sourceSha256": "33048ed1a625417ed9beb9ee277fc6506e683a37728d99eab0b3c659c420507a",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R003.cls",
+          "sourceSha256": "5bd8c5d6ef23b91476e32399a42c1bdad9351c106c0b93e7c4f4f6a33e279c5c",
+          "className": "Ns113910271390468R003",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R004",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "ownership filter NamespacePrefix='gladens001'",
+      "twin": "R003",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R004.apex",
+          "sourceSha256": "1200441fecb57c1aee44fbe8692ec4af2ab498a00f7a13f58ebace4cf9f5048b",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R004.cls",
+          "sourceSha256": "fcdd05e7f18c779c9cb3ae1f33d910bd82e145e6c4eb3006701ca6da412d15ae",
+          "className": "Ns113910271390462R004",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R004.apex",
+          "sourceSha256": "1200441fecb57c1aee44fbe8692ec4af2ab498a00f7a13f58ebace4cf9f5048b",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R004.cls",
+          "sourceSha256": "c0e74ba87922f34fbe7ccde324a07ea2c2c90046946ba1c6e99f3dcfd3cc956b",
+          "className": "Ns113910271390467R004",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R004.apex",
+          "sourceSha256": "1200441fecb57c1aee44fbe8692ec4af2ab498a00f7a13f58ebace4cf9f5048b",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R004.cls",
+          "sourceSha256": "310421a86ddf81e7a17a95c4fcae5a807e931016470dee93f88de31468544fa8",
+          "className": "Ns113910271390468R004",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R005",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "ownership filter NamespacePrefix='gladens001'",
+      "twin": "R006",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R005.apex",
+          "sourceSha256": "1a955254e440695fe4a60cfd2ba0200b2acbf6be7a20181415212e25ae879c0b",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R005.cls",
+          "sourceSha256": "337769865b8bae91848bf58a7b26c291aea1ba7fd256ec680aab2dc8dc66a69b",
+          "className": "Ns113910271390462R005",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R005.apex",
+          "sourceSha256": "1a955254e440695fe4a60cfd2ba0200b2acbf6be7a20181415212e25ae879c0b",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R005.cls",
+          "sourceSha256": "1ec8bee6e76a446f80914a61b5c62d40f4f8d0cfb054ee6009280fae98642083",
+          "className": "Ns113910271390467R005",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R005.apex",
+          "sourceSha256": "1a955254e440695fe4a60cfd2ba0200b2acbf6be7a20181415212e25ae879c0b",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R005.cls",
+          "sourceSha256": "c716dec2367a67901e95add6fe396892ba5fb737e9ecb9e66f3804bd0eaf868f",
+          "className": "Ns113910271390468R005",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R006",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "ownership filter NamespacePrefix=null",
+      "twin": "R005",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R006.apex",
+          "sourceSha256": "4dd52759d205e78fa723ef7c8073b15000eb74f47757cdbc9ed4b61518550c77",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R006.cls",
+          "sourceSha256": "78d3c43430b67d3954babbdd0d0e1564c355920c436a78b925633d4c08b98c18",
+          "className": "Ns113910271390462R006",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R006.apex",
+          "sourceSha256": "4dd52759d205e78fa723ef7c8073b15000eb74f47757cdbc9ed4b61518550c77",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R006.cls",
+          "sourceSha256": "ebd665034c8e979d6223fd9fe35572b4ead5851524adbeab3c91756ccf7a49ee",
+          "className": "Ns113910271390467R006",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R006.apex",
+          "sourceSha256": "4dd52759d205e78fa723ef7c8073b15000eb74f47757cdbc9ed4b61518550c77",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R006.cls",
+          "sourceSha256": "99f5175213a529479b655b06c94df6ac4d157b05103ac9535bc20f8e9e82794a",
+          "className": "Ns113910271390468R006",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R007",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "ownership filter NamespacePrefix='ns113wrong'",
+      "twin": "R003",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R007.apex",
+          "sourceSha256": "8b9227a606a4f7297b46a1dd8b57812f2f5cb7b2ddc5d144313e2001fa44224f",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R007.cls",
+          "sourceSha256": "49c0a63bd39d1c25c269ef640c88fced49e6bde90e83faf592b14e8fd6a2898b",
+          "className": "Ns113910271390462R007",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R007.apex",
+          "sourceSha256": "8b9227a606a4f7297b46a1dd8b57812f2f5cb7b2ddc5d144313e2001fa44224f",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R007.cls",
+          "sourceSha256": "baec9b0509b8d70e3f473933f09f8f3cdc47ea833c3a7ff3379cae9856f33654",
+          "className": "Ns113910271390467R007",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R007.apex",
+          "sourceSha256": "8b9227a606a4f7297b46a1dd8b57812f2f5cb7b2ddc5d144313e2001fa44224f",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R007.cls",
+          "sourceSha256": "951a8cdff01762cd845e03952599b5b576fdc980b4e77a8ec3719307da7924a6",
+          "className": "Ns113910271390468R007",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R008",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "ownership filter QualifiedApiName='LocalSeed'",
+      "twin": "R009",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R008.apex",
+          "sourceSha256": "136648b6b9a16ee3975339a9ae4e1a515813e9dc066fe749b4b6194fc8c29059",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R008.cls",
+          "sourceSha256": "bd73f6600e3aba90e29545eb8cc3f1174d6067a478da85bc69aba3543d61f80a",
+          "className": "Ns113910271390462R008",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R008.apex",
+          "sourceSha256": "136648b6b9a16ee3975339a9ae4e1a515813e9dc066fe749b4b6194fc8c29059",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R008.cls",
+          "sourceSha256": "18b78660d0c5b78c7f2840dfbd9fa1074462144ae2eca11163ec960fae746d24",
+          "className": "Ns113910271390467R008",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R008.apex",
+          "sourceSha256": "136648b6b9a16ee3975339a9ae4e1a515813e9dc066fe749b4b6194fc8c29059",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R008.cls",
+          "sourceSha256": "9829ee1b9ce38e3f725fe7c1c2092babfe59c32f3bf5efcaa2e378f7bf9e5b11",
+          "className": "Ns113910271390468R008",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R009",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "ownership filter QualifiedApiName='gladens001__LocalSeed'",
+      "twin": "R008",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R009.apex",
+          "sourceSha256": "7f411d30ef876de46e9ef4d5cdd89408537db1bd2baf2bb2e1b71f5e96c01841",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R009.cls",
+          "sourceSha256": "9251512c0e1858c2dd80940a78221258baee8409882731d1e305f33c14a4bb6a",
+          "className": "Ns113910271390462R009",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R009.apex",
+          "sourceSha256": "7f411d30ef876de46e9ef4d5cdd89408537db1bd2baf2bb2e1b71f5e96c01841",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R009.cls",
+          "sourceSha256": "873d8fd6efe65970de83928b4e7ed802a7cddc820e372f0950e9f8f17276da50",
+          "className": "Ns113910271390467R009",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R009.apex",
+          "sourceSha256": "7f411d30ef876de46e9ef4d5cdd89408537db1bd2baf2bb2e1b71f5e96c01841",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R009.cls",
+          "sourceSha256": "b661107bbc1555b14eff95ee0235e691e1b13a052c6ab83ecea5174b74df69b2",
+          "className": "Ns113910271390468R009",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R010",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "ownership filter QualifiedApiName='gladens001__ProviderSeed'",
+      "twin": "R011",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R010.apex",
+          "sourceSha256": "afb910a891dbdd7315faa724af5048ef0b8dcffe35569958af89d9ba9f400d5d",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R010.cls",
+          "sourceSha256": "03cf9019eeaabd2e6e7c66b0c14334c55b4aee20184dfe964db33e4bcf61a27a",
+          "className": "Ns113910271390462R010",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R010.apex",
+          "sourceSha256": "afb910a891dbdd7315faa724af5048ef0b8dcffe35569958af89d9ba9f400d5d",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R010.cls",
+          "sourceSha256": "56fb464c9d54b99334045c75c14bd7fff0541983001aa3b4be176ba2dbadc0c9",
+          "className": "Ns113910271390467R010",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R010.apex",
+          "sourceSha256": "afb910a891dbdd7315faa724af5048ef0b8dcffe35569958af89d9ba9f400d5d",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R010.cls",
+          "sourceSha256": "f38169899b83a89917d7c316ed7bb1862cde7909f056aed354e4bc768e4dd9c0",
+          "className": "Ns113910271390468R010",
+          "outcome": "runtime",
+          "expected": "1",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R011",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "ownership filter QualifiedApiName='ProviderSeed'",
+      "twin": "R010",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R011.apex",
+          "sourceSha256": "ac31bfb845a0b4bea49ac14a67e15da0d22e139f23fca96c11a2f25129baadcc",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R011.cls",
+          "sourceSha256": "d6d3c73d947a21ed9fd8960fe2bdaccb0a04a93dc2740b022bd0fc34f9807f57",
+          "className": "Ns113910271390462R011",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R011.apex",
+          "sourceSha256": "ac31bfb845a0b4bea49ac14a67e15da0d22e139f23fca96c11a2f25129baadcc",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R011.cls",
+          "sourceSha256": "d82d7023bbc9f1e36f450ad1c37dde408eaa50877f28ada41c65489817c597fe",
+          "className": "Ns113910271390467R011",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R011.apex",
+          "sourceSha256": "ac31bfb845a0b4bea49ac14a67e15da0d22e139f23fca96c11a2f25129baadcc",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R011.cls",
+          "sourceSha256": "7e38dd1d87136c3866541ae79b86b4b007b702b8c78cc4676bc3ce199e2dbdfc",
+          "className": "Ns113910271390468R011",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R012",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "LocalOff Boolean boundary",
+      "twin": "R001",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R012.apex",
+          "sourceSha256": "d0a0478d83a1c8c8cc02720de33494e1aa555fc9f95f1774f65e2ad873cd40d4",
+          "outcome": "runtime",
+          "expected": "false",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R012.cls",
+          "sourceSha256": "81cb9cb6d0f7fa4c37ffc936f4f1d01d15f4e9f02cb236797bbe81633857e9c2",
+          "className": "Ns113910271390462R012",
+          "outcome": "runtime",
+          "expected": "false",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R012.apex",
+          "sourceSha256": "d0a0478d83a1c8c8cc02720de33494e1aa555fc9f95f1774f65e2ad873cd40d4",
+          "outcome": "runtime",
+          "expected": "false",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R012.cls",
+          "sourceSha256": "5254a455301fc7e4cabb83a09c1d817993f3908af6c2e01d76021af445435f90",
+          "className": "Ns113910271390467R012",
+          "outcome": "runtime",
+          "expected": "false",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R012.apex",
+          "sourceSha256": "d0a0478d83a1c8c8cc02720de33494e1aa555fc9f95f1774f65e2ad873cd40d4",
+          "outcome": "runtime",
+          "expected": "false",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R012.cls",
+          "sourceSha256": "bea2a89d869041661bead86c349c86dc5e6b9b7ee2e9fa593c169a94793ab2ea",
+          "className": "Ns113910271390468R012",
+          "outcome": "runtime",
+          "expected": "false",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R013",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "LocalDefault Boolean boundary",
+      "twin": "R012",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R013.apex",
+          "sourceSha256": "41dd06a7e5f058471a088d333bcd02db67de6414a0169ead8dcbc82df297404e",
+          "outcome": "runtime",
+          "expected": "false",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R013.cls",
+          "sourceSha256": "813094539608db235f121c498d265f040b1b69c2436f2113a3e9f7686e7c3d3a",
+          "className": "Ns113910271390462R013",
+          "outcome": "runtime",
+          "expected": "false",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R013.apex",
+          "sourceSha256": "41dd06a7e5f058471a088d333bcd02db67de6414a0169ead8dcbc82df297404e",
+          "outcome": "runtime",
+          "expected": "false",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R013.cls",
+          "sourceSha256": "629c5c67d89d51db664b0b5a8acc9b1e7dabe3ef9df13badd801366ab5ddff25",
+          "className": "Ns113910271390467R013",
+          "outcome": "runtime",
+          "expected": "false",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R013.apex",
+          "sourceSha256": "41dd06a7e5f058471a088d333bcd02db67de6414a0169ead8dcbc82df297404e",
+          "outcome": "runtime",
+          "expected": "false",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R013.cls",
+          "sourceSha256": "958e0f1b1e898cf637ccd96dc598e6009ec4dca9f9bdb6c9b95926015f2c222d",
+          "className": "Ns113910271390468R013",
+          "outcome": "runtime",
+          "expected": "false",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R014",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "missing record boundary",
+      "twin": "R003",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R014.apex",
+          "sourceSha256": "abb713b26b95205e2eca22ba3c2af0b2af7a2caf3fcd30e03365ba771e39ecd7",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R014.cls",
+          "sourceSha256": "5b97028aa87d9e2e0825ee6bf01c9b035a9d8ae2d43c8b60ce030a54fcf130aa",
+          "className": "Ns113910271390462R014",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R014.apex",
+          "sourceSha256": "abb713b26b95205e2eca22ba3c2af0b2af7a2caf3fcd30e03365ba771e39ecd7",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R014.cls",
+          "sourceSha256": "98ab059002a00322e3a986cf6b3c0fb07cbb18809acd3e7dfe1bc412a9e0ecaf",
+          "className": "Ns113910271390467R014",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R014.apex",
+          "sourceSha256": "abb713b26b95205e2eca22ba3c2af0b2af7a2caf3fcd30e03365ba771e39ecd7",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R014.cls",
+          "sourceSha256": "6d1e31a54f5e2dbd724c9a691a4b43c9902f7ae0c8b166e9c5d55b52de592819",
+          "className": "Ns113910271390468R014",
+          "outcome": "runtime",
+          "expected": "0",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R015",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "unmanaged type and record boundary",
+      "twin": "R001",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R015.apex",
+          "sourceSha256": "dd8e17039bdc8695b22f658140e8c90a7e6a92b2b4e704cabd06d97616ddd3c3",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|false",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R015.cls",
+          "sourceSha256": "dad3da55451b543dcda3687a950d77263ef0dd6a8e2ba2e10190ba6bd0bdece1",
+          "className": "Ns113910271390462R015",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|false",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R015.apex",
+          "sourceSha256": "dd8e17039bdc8695b22f658140e8c90a7e6a92b2b4e704cabd06d97616ddd3c3",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|false",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R015.cls",
+          "sourceSha256": "a67418301fd3db3cb03f8cbf590fb27264c58f9ac532f1c0f8f587a462171016",
+          "className": "Ns113910271390467R015",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|false",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R015.apex",
+          "sourceSha256": "dd8e17039bdc8695b22f658140e8c90a7e6a92b2b4e704cabd06d97616ddd3c3",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|false",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R015.cls",
+          "sourceSha256": "cdd0e3a66cad37d3b272bbc44fa7f41624d29a0b215fa9d9c58fcb339e26a0a7",
+          "className": "Ns113910271390468R015",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|false",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R016",
+      "group": "getters",
+      "kind": "runtime",
+      "claim": "getInstance LocalSeed",
+      "twin": "R017",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R016.apex",
+          "sourceSha256": "bd90a512afa521116a1ba48a6df8b33f5a122f6edcb1ec625ab2b1a1e569e03a",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|true",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R016.cls",
+          "sourceSha256": "05dd73ed2645ed4e82645e68dc99b66fcb0385d5e8b7e6f1d165b97b61333b0e",
+          "className": "Ns113910271390462R016",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R016.apex",
+          "sourceSha256": "bd90a512afa521116a1ba48a6df8b33f5a122f6edcb1ec625ab2b1a1e569e03a",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|true",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R016.cls",
+          "sourceSha256": "55d0a0281c9da5e0c7d349912c823b1d7a119a624133c25e63fa4ec5d9d7f5d3",
+          "className": "Ns113910271390467R016",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R016.apex",
+          "sourceSha256": "bd90a512afa521116a1ba48a6df8b33f5a122f6edcb1ec625ab2b1a1e569e03a",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|true",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R016.cls",
+          "sourceSha256": "17f85053c0db04b92afc5fff484196c4eff1721ab37846e3dc48e0757f46cb5c",
+          "className": "Ns113910271390468R016",
+          "outcome": "runtime",
+          "expected": "LocalSeed|null|LocalSeed|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R017",
+      "group": "getters",
+      "kind": "runtime",
+      "claim": "getInstance gladens001__LocalSeed",
+      "twin": "R016",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R017.apex",
+          "sourceSha256": "f14f088ff3c4d2a2ee5a547f51d25ff4deb2891ac003d85c7769e191e685ec00",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R017.cls",
+          "sourceSha256": "f26209935d6a480c647fc5d7bad6ff87282bfcaaeffe2106c98485d0945e9609",
+          "className": "Ns113910271390462R017",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R017.apex",
+          "sourceSha256": "f14f088ff3c4d2a2ee5a547f51d25ff4deb2891ac003d85c7769e191e685ec00",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R017.cls",
+          "sourceSha256": "d18e7a2fb1a32e881dd6c9573e8fe476e0e0dcc10f24b840016c6bd582b8f39d",
+          "className": "Ns113910271390467R017",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R017.apex",
+          "sourceSha256": "f14f088ff3c4d2a2ee5a547f51d25ff4deb2891ac003d85c7769e191e685ec00",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R017.cls",
+          "sourceSha256": "0bb6c9c7c9f0484f6c9506ab162f4a48f650babd621b2620c4a3cf520d95564f",
+          "className": "Ns113910271390468R017",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R018",
+      "group": "getters",
+      "kind": "runtime",
+      "claim": "getInstance gladens001__ProviderSeed",
+      "twin": "R019",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R018.apex",
+          "sourceSha256": "f63337710c33695638dd306916218095303985383b0c5d27f0997a613a744f2b",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R018.cls",
+          "sourceSha256": "a2757f9f878d54750e3bd269a6c469535a89f4d22a25a6d40329e9c13838c8fb",
+          "className": "Ns113910271390462R018",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R018.apex",
+          "sourceSha256": "f63337710c33695638dd306916218095303985383b0c5d27f0997a613a744f2b",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R018.cls",
+          "sourceSha256": "3218b517437aba280fa02119a573d8062bc8ccb1ca654d307a9f28d13f6af97c",
+          "className": "Ns113910271390467R018",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R018.apex",
+          "sourceSha256": "f63337710c33695638dd306916218095303985383b0c5d27f0997a613a744f2b",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R018.cls",
+          "sourceSha256": "17c1661c326f86704a8e2f3fa9573f6147dec251090740c317471154904608f3",
+          "className": "Ns113910271390468R018",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R019",
+      "group": "getters",
+      "kind": "runtime",
+      "claim": "getInstance ProviderSeed",
+      "twin": "R018",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R019.apex",
+          "sourceSha256": "fde92b1a5a130cb4c7a533a477af12b7704e24d0f2ffa7ef8d3833a42bca1325",
+          "outcome": "runtime",
+          "expected": "ProviderSeed|gladens001|gladens001__ProviderSeed|true",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R019.cls",
+          "sourceSha256": "f8cce73898599137b653081efd96b2b25971b4ec524add45fa13858e5c19948c",
+          "className": "Ns113910271390462R019",
+          "outcome": "runtime",
+          "expected": "ProviderSeed|gladens001|gladens001__ProviderSeed|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R019.apex",
+          "sourceSha256": "fde92b1a5a130cb4c7a533a477af12b7704e24d0f2ffa7ef8d3833a42bca1325",
+          "outcome": "runtime",
+          "expected": "ProviderSeed|gladens001|gladens001__ProviderSeed|true",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R019.cls",
+          "sourceSha256": "3c6f975151c66baafab03484864dfbd854da32f37c383be19aea45d6d99d7fa6",
+          "className": "Ns113910271390467R019",
+          "outcome": "runtime",
+          "expected": "ProviderSeed|gladens001|gladens001__ProviderSeed|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R019.apex",
+          "sourceSha256": "fde92b1a5a130cb4c7a533a477af12b7704e24d0f2ffa7ef8d3833a42bca1325",
+          "outcome": "runtime",
+          "expected": "ProviderSeed|gladens001|gladens001__ProviderSeed|true",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R019.cls",
+          "sourceSha256": "bd0c70dfb753bf0e636ef9132d7c3c51235353d265ba1fc5a1bc4aa2bd14bd64",
+          "className": "Ns113910271390468R019",
+          "outcome": "runtime",
+          "expected": "ProviderSeed|gladens001|gladens001__ProviderSeed|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R020",
+      "group": "getters",
+      "kind": "runtime",
+      "claim": "getInstance ns113wrong__LocalSeed",
+      "twin": "R016",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R020.apex",
+          "sourceSha256": "36a4ca4eafe84f0d04614ed2a3850cfc82a9974909c6fcb131963607faf9152f",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R020.cls",
+          "sourceSha256": "3927042b15dd68474f3de4d10acecefcfc8b79a2748be4f6cc1643c29e34e60d",
+          "className": "Ns113910271390462R020",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R020.apex",
+          "sourceSha256": "36a4ca4eafe84f0d04614ed2a3850cfc82a9974909c6fcb131963607faf9152f",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R020.cls",
+          "sourceSha256": "1b2180ded0ece27d5f17eef7f6252b8b2b2ce9c4a6611cad310f06834f1c4f08",
+          "className": "Ns113910271390467R020",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R020.apex",
+          "sourceSha256": "36a4ca4eafe84f0d04614ed2a3850cfc82a9974909c6fcb131963607faf9152f",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R020.cls",
+          "sourceSha256": "b00ba3309940452d1e13c8bd1a62c9912f0683ede542d79126364337d1ce6af6",
+          "className": "Ns113910271390468R020",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R021",
+      "group": "getters",
+      "kind": "runtime",
+      "claim": "getInstance Missing",
+      "twin": "R016",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R021.apex",
+          "sourceSha256": "dc959fa4cff6642525e67ec5bdd987ec85254b8b88dc47f2c2ba8b5d54ea5bc7",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R021.cls",
+          "sourceSha256": "16b11bd15dc0dd9624080397230fb450cb5521e34dfd5d73b422e9e741efdc5a",
+          "className": "Ns113910271390462R021",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R021.apex",
+          "sourceSha256": "dc959fa4cff6642525e67ec5bdd987ec85254b8b88dc47f2c2ba8b5d54ea5bc7",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R021.cls",
+          "sourceSha256": "a69597aa4afa6697aae7e0a2ec7d4471bc6315329958219176215fcc50467a7d",
+          "className": "Ns113910271390467R021",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R021.apex",
+          "sourceSha256": "dc959fa4cff6642525e67ec5bdd987ec85254b8b88dc47f2c2ba8b5d54ea5bc7",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R021.cls",
+          "sourceSha256": "3b0cf05afa245a3b71ab9a93e723078e750ebfae92852b764e2f5783b87498d4",
+          "className": "Ns113910271390468R021",
+          "outcome": "runtime",
+          "expected": "MISSING",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R022",
+      "group": "getters",
+      "kind": "runtime",
+      "claim": "getAll keys and identities",
+      "twin": "R023",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R022.apex",
+          "sourceSha256": "136021dc88c05dd72d0433e53a77effa7f646773fb3b117a652067770453b732",
+          "outcome": "runtime",
+          "expected": "LocalDefault:LocalDefault|null|LocalDefault;LocalOff:LocalOff|null|LocalOff;LocalSeed:LocalSeed|null|LocalSeed;ProviderSeed:ProviderSeed|gladens001|gladens001__ProviderSeed",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R022.cls",
+          "sourceSha256": "555d654b4a53787ab529bec575fcc6750efaca9d884408f4964b791c9d60db45",
+          "className": "Ns113910271390462R022",
+          "outcome": "runtime",
+          "expected": "LocalDefault:LocalDefault|null|LocalDefault;LocalOff:LocalOff|null|LocalOff;LocalSeed:LocalSeed|null|LocalSeed;ProviderSeed:ProviderSeed|gladens001|gladens001__ProviderSeed",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R022.apex",
+          "sourceSha256": "136021dc88c05dd72d0433e53a77effa7f646773fb3b117a652067770453b732",
+          "outcome": "runtime",
+          "expected": "LocalDefault:LocalDefault|null|LocalDefault;LocalOff:LocalOff|null|LocalOff;LocalSeed:LocalSeed|null|LocalSeed;ProviderSeed:ProviderSeed|gladens001|gladens001__ProviderSeed",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R022.cls",
+          "sourceSha256": "6d0f75c875469af8c670ebca5b4134fa17e2f46c070fbb0079a3e2b0873cbe3f",
+          "className": "Ns113910271390467R022",
+          "outcome": "runtime",
+          "expected": "LocalDefault:LocalDefault|null|LocalDefault;LocalOff:LocalOff|null|LocalOff;LocalSeed:LocalSeed|null|LocalSeed;ProviderSeed:ProviderSeed|gladens001|gladens001__ProviderSeed",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R022.apex",
+          "sourceSha256": "136021dc88c05dd72d0433e53a77effa7f646773fb3b117a652067770453b732",
+          "outcome": "runtime",
+          "expected": "LocalDefault:LocalDefault|null|LocalDefault;LocalOff:LocalOff|null|LocalOff;LocalSeed:LocalSeed|null|LocalSeed;ProviderSeed:ProviderSeed|gladens001|gladens001__ProviderSeed",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R022.cls",
+          "sourceSha256": "0de3eb6f1fbce9d63fb7abe09750d7b2d9a67b1833f9cb00f3aacdb3976c1366",
+          "className": "Ns113910271390468R022",
+          "outcome": "runtime",
+          "expected": "LocalDefault:LocalDefault|null|LocalDefault;LocalOff:LocalOff|null|LocalOff;LocalSeed:LocalSeed|null|LocalSeed;ProviderSeed:ProviderSeed|gladens001|gladens001__ProviderSeed",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R023",
+      "group": "ownership",
+      "kind": "runtime",
+      "claim": "SOQL type selection returns independently owned rows",
+      "twin": "R022",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R023.apex",
+          "sourceSha256": "15f908aaba96a91fea5e31243ad19861d1dd395fd97a09a73988c2239a285fe0",
+          "outcome": "runtime",
+          "expected": "LocalDefault|null|LocalDefault;LocalOff|null|LocalOff;LocalSeed|null|LocalSeed;ProviderSeed|gladens001|gladens001__ProviderSeed",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R023.cls",
+          "sourceSha256": "630d47c49f0df97e91d6c733ec120fb4efe4dd65eaa248a0327ceac981971b99",
+          "className": "Ns113910271390462R023",
+          "outcome": "runtime",
+          "expected": "LocalDefault|null|LocalDefault;LocalOff|null|LocalOff;LocalSeed|null|LocalSeed;ProviderSeed|gladens001|gladens001__ProviderSeed",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R023.apex",
+          "sourceSha256": "15f908aaba96a91fea5e31243ad19861d1dd395fd97a09a73988c2239a285fe0",
+          "outcome": "runtime",
+          "expected": "LocalDefault|null|LocalDefault;LocalOff|null|LocalOff;LocalSeed|null|LocalSeed;ProviderSeed|gladens001|gladens001__ProviderSeed",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R023.cls",
+          "sourceSha256": "c0f3195a538e8f80eb907bc60a799adce9a3b50e884b21fc0470dcb786598c51",
+          "className": "Ns113910271390467R023",
+          "outcome": "runtime",
+          "expected": "LocalDefault|null|LocalDefault;LocalOff|null|LocalOff;LocalSeed|null|LocalSeed;ProviderSeed|gladens001|gladens001__ProviderSeed",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R023.apex",
+          "sourceSha256": "15f908aaba96a91fea5e31243ad19861d1dd395fd97a09a73988c2239a285fe0",
+          "outcome": "runtime",
+          "expected": "LocalDefault|null|LocalDefault;LocalOff|null|LocalOff;LocalSeed|null|LocalSeed;ProviderSeed|gladens001|gladens001__ProviderSeed",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R023.cls",
+          "sourceSha256": "2cc56a44e2562f2f4585accf8bb6db1c4d0ac9d56c9882349c0e9254b82643ed",
+          "className": "Ns113910271390468R023",
+          "outcome": "runtime",
+          "expected": "LocalDefault|null|LocalDefault;LocalOff|null|LocalOff;LocalSeed|null|LocalSeed;ProviderSeed|gladens001|gladens001__ProviderSeed",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R024",
+      "group": "describe",
+      "kind": "runtime",
+      "claim": "Schema type describe namespace boundary",
+      "twin": "R025",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R024.apex",
+          "sourceSha256": "1293aca634024288b2f8dc88015170c5e3bc7972ff53ca2508699c9f82565f9e",
+          "outcome": "runtime",
+          "expected": "gladens001__Ns113bFlag__mdt",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R024.cls",
+          "sourceSha256": "3bc0febab4cf3982ca033bd5efbe8ac321f5e1df604ca36e9066a3acb030965b",
+          "className": "Ns113910271390462R024",
+          "outcome": "runtime",
+          "expected": "gladens001__Ns113bFlag__mdt",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R024.apex",
+          "sourceSha256": "1293aca634024288b2f8dc88015170c5e3bc7972ff53ca2508699c9f82565f9e",
+          "outcome": "runtime",
+          "expected": "gladens001__Ns113bFlag__mdt",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R024.cls",
+          "sourceSha256": "d4cfcd5f978262852821e3cd692049e15269b02514817dbe0b8fffbb81e984a8",
+          "className": "Ns113910271390467R024",
+          "outcome": "runtime",
+          "expected": "gladens001__Ns113bFlag__mdt",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R024.apex",
+          "sourceSha256": "1293aca634024288b2f8dc88015170c5e3bc7972ff53ca2508699c9f82565f9e",
+          "outcome": "runtime",
+          "expected": "gladens001__Ns113bFlag__mdt",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R024.cls",
+          "sourceSha256": "0a45a1eb6b5c87650d5ed72d223014de596ad8716467594428aba9575dd560e5",
+          "className": "Ns113910271390468R024",
+          "outcome": "runtime",
+          "expected": "gladens001__Ns113bFlag__mdt",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R025",
+      "group": "describe",
+      "kind": "runtime",
+      "claim": "Schema field describe namespace boundary",
+      "twin": "R024",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R025.apex",
+          "sourceSha256": "9cf4d16be076ca70747d598b5e7dc2d46321a90108131a89e94df5c1fa8197c9",
+          "outcome": "runtime",
+          "expected": "gladens001__Enabled__c",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R025.cls",
+          "sourceSha256": "3d3751848545d1b88cf2c6fbc6a5e55dc2de4f5caf9a56d986c2a33a6c42b091",
+          "className": "Ns113910271390462R025",
+          "outcome": "runtime",
+          "expected": "gladens001__Enabled__c",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R025.apex",
+          "sourceSha256": "9cf4d16be076ca70747d598b5e7dc2d46321a90108131a89e94df5c1fa8197c9",
+          "outcome": "runtime",
+          "expected": "gladens001__Enabled__c",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R025.cls",
+          "sourceSha256": "a20148df369ebc6da0279a56bfbfea17e5a1335e8451b91910838b0f8e10f846",
+          "className": "Ns113910271390467R025",
+          "outcome": "runtime",
+          "expected": "gladens001__Enabled__c",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R025.apex",
+          "sourceSha256": "9cf4d16be076ca70747d598b5e7dc2d46321a90108131a89e94df5c1fa8197c9",
+          "outcome": "runtime",
+          "expected": "gladens001__Enabled__c",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R025.cls",
+          "sourceSha256": "f7b998da5b0ffd9d62dc6176b838c925568a5d879df0260a483fb5ba64678c13",
+          "className": "Ns113910271390468R025",
+          "outcome": "runtime",
+          "expected": "gladens001__Enabled__c",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R026",
+      "group": "describe",
+      "kind": "runtime",
+      "claim": "global describe qualified and unqualified type keys",
+      "twin": "R024",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R026.apex",
+          "sourceSha256": "5e1fe99824a4f25adba23bf2bf5a0eacd1477d577a8e7b9b9852e9820300bed6",
+          "outcome": "runtime",
+          "expected": "true|false",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R026.cls",
+          "sourceSha256": "7be85ab7d82254daea44aebad16de9b5e9f1cd8c152bc0248b68d16d20cdaf64",
+          "className": "Ns113910271390462R026",
+          "outcome": "runtime",
+          "expected": "true|false",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R026.apex",
+          "sourceSha256": "5e1fe99824a4f25adba23bf2bf5a0eacd1477d577a8e7b9b9852e9820300bed6",
+          "outcome": "runtime",
+          "expected": "true|false",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R026.cls",
+          "sourceSha256": "50d31f676b9dfffee99df0c7637130020b97af032faee4356c61c9d20adf9833",
+          "className": "Ns113910271390467R026",
+          "outcome": "runtime",
+          "expected": "true|false",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R026.apex",
+          "sourceSha256": "5e1fe99824a4f25adba23bf2bf5a0eacd1477d577a8e7b9b9852e9820300bed6",
+          "outcome": "runtime",
+          "expected": "true|false",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R026.cls",
+          "sourceSha256": "57e8d648f37d3cf4fae97e22f68c10967b4c41a35669f8b112e0389d3260ca11",
+          "className": "Ns113910271390468R026",
+          "outcome": "runtime",
+          "expected": "true|false",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "R027",
+      "group": "identity_dto",
+      "kind": "runtime",
+      "claim": "Metadata.CustomMetadata DTO fullName and value",
+      "twin": "C003",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/R027.apex",
+          "sourceSha256": "a301bc883463fee857e0c601c822c366a31a6bc284451edf42bebf3c04317af1",
+          "outcome": "runtime",
+          "expected": "gladens001__Ns113bFlag.DtoOnly|gladens001__Enabled__c|true",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/R027.cls",
+          "sourceSha256": "8d80526071ce5fd8cf5dea2e85c9aa177271e393f79fd9a62ea10cef88c22a1a",
+          "className": "Ns113910271390462R027",
+          "outcome": "runtime",
+          "expected": "gladens001__Ns113bFlag.DtoOnly|gladens001__Enabled__c|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/R027.apex",
+          "sourceSha256": "a301bc883463fee857e0c601c822c366a31a6bc284451edf42bebf3c04317af1",
+          "outcome": "runtime",
+          "expected": "gladens001__Ns113bFlag.DtoOnly|gladens001__Enabled__c|true",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/R027.cls",
+          "sourceSha256": "d76efb1c1fb235c3d09d38eb9c206058c11c4a6fd284992da1e2a6074d4675d6",
+          "className": "Ns113910271390467R027",
+          "outcome": "runtime",
+          "expected": "gladens001__Ns113bFlag.DtoOnly|gladens001__Enabled__c|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/R027.apex",
+          "sourceSha256": "a301bc883463fee857e0c601c822c366a31a6bc284451edf42bebf3c04317af1",
+          "outcome": "runtime",
+          "expected": "gladens001__Ns113bFlag.DtoOnly|gladens001__Enabled__c|true",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/R027.cls",
+          "sourceSha256": "27eb9327101a34bf7976ecfa1357a4ad5d10ab25e9d27ec70d8fff65f56f8295",
+          "className": "Ns113910271390468R027",
+          "outcome": "runtime",
+          "expected": "gladens001__Ns113bFlag.DtoOnly|gladens001__Enabled__c|true",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "C001",
+      "group": "identity_dto",
+      "kind": "compile",
+      "claim": "record NamespacePrefix assignment rejection",
+      "twin": "R001",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/C001.apex",
+          "sourceSha256": "9b5985dbb89011fd5dd874de1f25a48b45c6c29048dadd9b193a85f9e47b3b4b",
+          "outcome": "compiled",
+          "expected": "compiled",
+          "oracleSha256": "c2a0b2e21a17c90147858e4f52fb6663746ba8066e6439ca4d3d4d58c94b12d8"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/C001.cls",
+          "sourceSha256": "618a2ad3f7a8394ac714419b69f8eebd530b14abae9e477e138046d8cdfe1023",
+          "className": "Ns113910271390462C001",
+          "outcome": "compiled",
+          "expected": "compiled",
+          "oracleSha256": "c2a0b2e21a17c90147858e4f52fb6663746ba8066e6439ca4d3d4d58c94b12d8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/C001.apex",
+          "sourceSha256": "9b5985dbb89011fd5dd874de1f25a48b45c6c29048dadd9b193a85f9e47b3b4b",
+          "outcome": "compiled",
+          "expected": "compiled",
+          "oracleSha256": "ec0927098066228e1c0d0cf0c37fafb8c844de9ba80808c440042d66a22ca06f"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/C001.cls",
+          "sourceSha256": "bb837711f0d99e284a1876225975ae6db151bffa6c4208e18a1116b284d3e93c",
+          "className": "Ns113910271390467C001",
+          "outcome": "compiled",
+          "expected": "compiled",
+          "oracleSha256": "ec0927098066228e1c0d0cf0c37fafb8c844de9ba80808c440042d66a22ca06f"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/C001.apex",
+          "sourceSha256": "9b5985dbb89011fd5dd874de1f25a48b45c6c29048dadd9b193a85f9e47b3b4b",
+          "outcome": "compiled",
+          "expected": "compiled",
+          "oracleSha256": "f3af04cec69734357fe3ac926887a0cbe47382436c0c21d7c8588acd98a9d092"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/C001.cls",
+          "sourceSha256": "b882705013cf8b589f3fcc51e0fc9db24d28e262e7178d6b0dadc51f21751b32",
+          "className": "Ns113910271390468C001",
+          "outcome": "compiled",
+          "expected": "compiled",
+          "oracleSha256": "f3af04cec69734357fe3ac926887a0cbe47382436c0c21d7c8588acd98a9d092"
+        }
+      ],
+      "nativeInterpretation": "positive compile-only boundary; no runtime assignment or persistence answer"
+    },
+    {
+      "id": "C002",
+      "group": "identity_dto",
+      "kind": "compile",
+      "claim": "record QualifiedApiName assignment rejection",
+      "twin": "R008",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/C002.apex",
+          "sourceSha256": "98361b4e98ddfd5fd72f32575d1e465e9af37368e6ed3f7a02c5d491f7b7c793",
+          "outcome": "compiled",
+          "expected": "compiled",
+          "oracleSha256": "c2a0b2e21a17c90147858e4f52fb6663746ba8066e6439ca4d3d4d58c94b12d8"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/C002.cls",
+          "sourceSha256": "8fbddc4acc6f77b3006a2bbbc0ead4d1d6535ef81efd449d950c276fd6bc1ad3",
+          "className": "Ns113910271390462C002",
+          "outcome": "compiled",
+          "expected": "compiled",
+          "oracleSha256": "c2a0b2e21a17c90147858e4f52fb6663746ba8066e6439ca4d3d4d58c94b12d8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/C002.apex",
+          "sourceSha256": "98361b4e98ddfd5fd72f32575d1e465e9af37368e6ed3f7a02c5d491f7b7c793",
+          "outcome": "compiled",
+          "expected": "compiled",
+          "oracleSha256": "ec0927098066228e1c0d0cf0c37fafb8c844de9ba80808c440042d66a22ca06f"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/C002.cls",
+          "sourceSha256": "9321d3842424e655cfb3e01fc56f6c62b68364cf6c7618453a81e86feb1f095c",
+          "className": "Ns113910271390467C002",
+          "outcome": "compiled",
+          "expected": "compiled",
+          "oracleSha256": "ec0927098066228e1c0d0cf0c37fafb8c844de9ba80808c440042d66a22ca06f"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/C002.apex",
+          "sourceSha256": "98361b4e98ddfd5fd72f32575d1e465e9af37368e6ed3f7a02c5d491f7b7c793",
+          "outcome": "compiled",
+          "expected": "compiled",
+          "oracleSha256": "f3af04cec69734357fe3ac926887a0cbe47382436c0c21d7c8588acd98a9d092"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/C002.cls",
+          "sourceSha256": "00076dd55e87de5ee9b1a5cdad1af67517809d14b1764d297c1e77a3016c7982",
+          "className": "Ns113910271390468C002",
+          "outcome": "compiled",
+          "expected": "compiled",
+          "oracleSha256": "f3af04cec69734357fe3ac926887a0cbe47382436c0c21d7c8588acd98a9d092"
+        }
+      ],
+      "nativeInterpretation": "positive compile-only boundary; no runtime assignment or persistence answer"
+    },
+    {
+      "id": "C003",
+      "group": "identity_dto",
+      "kind": "compile",
+      "claim": "Does Metadata.CustomMetadata expose namespacePrefix? unknown; capture decides",
+      "twin": "R027",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/C003.apex",
+          "sourceSha256": "681ee6914e493f848512a43f03784a7571f16ac0416470e49d6740533180806a",
+          "outcome": "compile-rejected",
+          "expected": "line 7: Variable does not exist: namespacePrefix",
+          "primaryDiagnostic": "Variable does not exist: namespacePrefix",
+          "oracleSha256": "c2a0b2e21a17c90147858e4f52fb6663746ba8066e6439ca4d3d4d58c94b12d8"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/C003.cls",
+          "sourceSha256": "3f6bb41fc5c0e6dd0b02738e9f829ff8380867d57bf4739c0b703e26eee47e19",
+          "className": "Ns113910271390462C003",
+          "outcome": "compile-rejected",
+          "expected": "[{\"changed\": false, \"columnNumber\": 60, \"componentType\": \"ApexClass\", \"created\": false, \"createdDate\": \"2026-10-12T18:55:28.000Z\", \"deleted\": false, \"fileName\": \"classes/Ns113910271390462C003.cls\", \"fullName\": \"Ns113910271390462C003\", \"lineNumber\": 3, \"problem\": \"Variable does not exist: namespacePrefix\", \"problemType\": \"Error\", \"success\": false}, {\"changed\": false, \"columnNumber\": 94, \"componentType\": \"ApexClass\", \"created\": false, \"createdDate\": \"2026-10-12T18:55:28.000Z\", \"deleted\": false, \"fileName\": \"classes/Ns113910271390462C003.cls\", \"fullName\": \"Ns113910271390462C003\", \"lineNumber\": 3, \"problem\": \"Variable does not exist: namespacePrefix\", \"problemType\": \"Error\", \"success\": false}]",
+          "primaryDiagnostic": "Variable does not exist: namespacePrefix",
+          "oracleSha256": "c2a0b2e21a17c90147858e4f52fb6663746ba8066e6439ca4d3d4d58c94b12d8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/C003.apex",
+          "sourceSha256": "681ee6914e493f848512a43f03784a7571f16ac0416470e49d6740533180806a",
+          "outcome": "compile-rejected",
+          "expected": "line 7: Variable does not exist: namespacePrefix",
+          "primaryDiagnostic": "Variable does not exist: namespacePrefix",
+          "oracleSha256": "ec0927098066228e1c0d0cf0c37fafb8c844de9ba80808c440042d66a22ca06f"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/C003.cls",
+          "sourceSha256": "051bad9a7364559b1e0457352a76ca47bb442cf5e21cca6a701bc0d4f1bf5077",
+          "className": "Ns113910271390467C003",
+          "outcome": "compile-rejected",
+          "expected": "[{\"changed\": false, \"columnNumber\": 60, \"componentType\": \"ApexClass\", \"created\": false, \"createdDate\": \"2026-10-12T18:59:03.000Z\", \"deleted\": false, \"fileName\": \"classes/Ns113910271390467C003.cls\", \"fullName\": \"Ns113910271390467C003\", \"lineNumber\": 3, \"problem\": \"Variable does not exist: namespacePrefix\", \"problemType\": \"Error\", \"success\": false}, {\"changed\": false, \"columnNumber\": 94, \"componentType\": \"ApexClass\", \"created\": false, \"createdDate\": \"2026-10-12T18:59:03.000Z\", \"deleted\": false, \"fileName\": \"classes/Ns113910271390467C003.cls\", \"fullName\": \"Ns113910271390467C003\", \"lineNumber\": 3, \"problem\": \"Variable does not exist: namespacePrefix\", \"problemType\": \"Error\", \"success\": false}]",
+          "primaryDiagnostic": "Variable does not exist: namespacePrefix",
+          "oracleSha256": "ec0927098066228e1c0d0cf0c37fafb8c844de9ba80808c440042d66a22ca06f"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/C003.apex",
+          "sourceSha256": "681ee6914e493f848512a43f03784a7571f16ac0416470e49d6740533180806a",
+          "outcome": "compile-rejected",
+          "expected": "line 7: Variable does not exist: namespacePrefix",
+          "primaryDiagnostic": "Variable does not exist: namespacePrefix",
+          "oracleSha256": "f3af04cec69734357fe3ac926887a0cbe47382436c0c21d7c8588acd98a9d092"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/C003.cls",
+          "sourceSha256": "5031ae7520fb87c1fc93374e91f1ac13d4c129e727fcf81f4059d13a61f44726",
+          "className": "Ns113910271390468C003",
+          "outcome": "compile-rejected",
+          "expected": "[{\"changed\": false, \"columnNumber\": 60, \"componentType\": \"ApexClass\", \"created\": false, \"createdDate\": \"2026-10-12T19:02:27.000Z\", \"deleted\": false, \"fileName\": \"classes/Ns113910271390468C003.cls\", \"fullName\": \"Ns113910271390468C003\", \"lineNumber\": 3, \"problem\": \"Variable does not exist: namespacePrefix\", \"problemType\": \"Error\", \"success\": false}, {\"changed\": false, \"columnNumber\": 94, \"componentType\": \"ApexClass\", \"created\": false, \"createdDate\": \"2026-10-12T19:02:27.000Z\", \"deleted\": false, \"fileName\": \"classes/Ns113910271390468C003.cls\", \"fullName\": \"Ns113910271390468C003\", \"lineNumber\": 3, \"problem\": \"Variable does not exist: namespacePrefix\", \"problemType\": \"Error\", \"success\": false}]",
+          "primaryDiagnostic": "Variable does not exist: namespacePrefix",
+          "oracleSha256": "f3af04cec69734357fe3ac926887a0cbe47382436c0c21d7c8588acd98a9d092"
+        }
+      ]
+    },
+    {
+      "id": "E001",
+      "group": "deployment",
+      "kind": "enqueue",
+      "claim": "What owner does Apex metadata deployment use, and what happens in test context? unknown; capture decides",
+      "twin": "E002",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/E001.apex",
+          "sourceSha256": "f8037564ef5b08174c894ad7a04451391bf8e5e0422e3b88bdf5e334e9ef0d02",
+          "outcome": "deployment",
+          "deployment": {
+            "deployment": {
+              "checkOnly": false,
+              "componentFailures": [],
+              "numberComponentErrors": 0,
+              "status": "Succeeded",
+              "success": true
+            },
+            "records": [
+              {
+                "DeveloperName": "Apex62",
+                "NamespacePrefix": null,
+                "QualifiedApiName": "Apex62",
+                "gladens001__Enabled__c": true
+              }
+            ]
+          },
+          "expected": "ASYNC|{\"deployment\": {\"checkOnly\": false, \"componentFailures\": [], \"numberComponentErrors\": 0, \"status\": \"Succeeded\", \"success\": true}, \"records\": [{\"DeveloperName\": \"Apex62\", \"NamespacePrefix\": null, \"QualifiedApiName\": \"Apex62\", \"gladens001__Enabled__c\": true}]}",
+          "asyncEvidenceSha256": "90b1dded0ec19622b6473c80b32c7ea26ef9719a99447fef539a229bebc2cf20",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/E001.cls",
+          "sourceSha256": "882054d65075b418e5db9d842e8812a8d602b0a01fbfaea941d0afa618d367bd",
+          "className": "Ns113b910271390462E001",
+          "outcome": "runtime",
+          "expected": "EXC|System.AsyncException|Metadata cannot be deployed from within a test",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/E001.apex",
+          "sourceSha256": "2fbe3e1c8c824e330521d8d10f3c1d3b3a995975f7fd60202e17b69dc817a2ca",
+          "outcome": "deployment",
+          "deployment": {
+            "deployment": {
+              "checkOnly": false,
+              "componentFailures": [],
+              "numberComponentErrors": 0,
+              "status": "Succeeded",
+              "success": true
+            },
+            "records": [
+              {
+                "DeveloperName": "Apex67",
+                "NamespacePrefix": null,
+                "QualifiedApiName": "Apex67",
+                "gladens001__Enabled__c": true
+              }
+            ]
+          },
+          "expected": "ASYNC|{\"deployment\": {\"checkOnly\": false, \"componentFailures\": [], \"numberComponentErrors\": 0, \"status\": \"Succeeded\", \"success\": true}, \"records\": [{\"DeveloperName\": \"Apex67\", \"NamespacePrefix\": null, \"QualifiedApiName\": \"Apex67\", \"gladens001__Enabled__c\": true}]}",
+          "asyncEvidenceSha256": "a2f43fd19ebc22ecacd4d6c65ba34061b979e736716ed32a9b15327ad74715d3",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/E001.cls",
+          "sourceSha256": "fd1dee567a48434ac9014fca03043a7ee8e104329206c931052ba5ae586b9b9a",
+          "className": "Ns113b910271390467E001",
+          "outcome": "runtime",
+          "expected": "EXC|System.AsyncException|Metadata cannot be deployed from within a test",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/E001.apex",
+          "sourceSha256": "83637673dc7e467c684babfdc09ff7222893c3bc157ca6822710c2263e000c81",
+          "outcome": "deployment",
+          "deployment": {
+            "deployment": {
+              "checkOnly": false,
+              "componentFailures": [],
+              "numberComponentErrors": 0,
+              "status": "Succeeded",
+              "success": true
+            },
+            "records": [
+              {
+                "DeveloperName": "Apex68",
+                "NamespacePrefix": null,
+                "QualifiedApiName": "Apex68",
+                "gladens001__Enabled__c": true
+              }
+            ]
+          },
+          "expected": "ASYNC|{\"deployment\": {\"checkOnly\": false, \"componentFailures\": [], \"numberComponentErrors\": 0, \"status\": \"Succeeded\", \"success\": true}, \"records\": [{\"DeveloperName\": \"Apex68\", \"NamespacePrefix\": null, \"QualifiedApiName\": \"Apex68\", \"gladens001__Enabled__c\": true}]}",
+          "asyncEvidenceSha256": "5dcc551056c99ead10ca86753cfe17ddccd36e8fd3ca02462e78195ef97d0f30",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/E001.cls",
+          "sourceSha256": "b52cedc60467d4a745c00a9019d28b87843c0d54e48de0bea1aaed86b3529f7d",
+          "className": "Ns113b910271390468E001",
+          "outcome": "runtime",
+          "expected": "EXC|System.AsyncException|Metadata cannot be deployed from within a test",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    },
+    {
+      "id": "E002",
+      "group": "deployment",
+      "kind": "enqueue",
+      "claim": "Apex metadata missing type rejection twin",
+      "twin": "E001",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "source": "native/api62/E002.apex",
+          "sourceSha256": "619a6a1685bb13e7a5586434b65abea05965fe3f23a734e93d2615b9a79ee6c3",
+          "outcome": "deployment",
+          "deployment": {
+            "deployment": {
+              "checkOnly": false,
+              "componentFailures": [
+                {
+                  "changed": false,
+                  "componentType": "CustomMetadata",
+                  "created": false,
+                  "createdDate": "2026-10-12T19:02:43.000Z",
+                  "deleted": false,
+                  "fileName": "customMetadata/ns113wrong__Ns113bAbsent.Apex62.md",
+                  "fullName": "ns113wrong__Ns113bAbsent.Apex62",
+                  "problem": "Custom metadata type ns113wrong__Ns113bAbsent__mdt is not available in this organization.",
+                  "problemType": "Error",
+                  "success": false
+                }
+              ],
+              "numberComponentErrors": 1,
+              "status": "Failed",
+              "success": false
+            },
+            "records": [
+              {
+                "DeveloperName": "Apex62",
+                "NamespacePrefix": null,
+                "QualifiedApiName": "Apex62",
+                "gladens001__Enabled__c": true
+              }
+            ]
+          },
+          "expected": "ASYNC|{\"deployment\": {\"checkOnly\": false, \"componentFailures\": [{\"changed\": false, \"componentType\": \"CustomMetadata\", \"created\": false, \"createdDate\": \"2026-10-12T19:02:43.000Z\", \"deleted\": false, \"fileName\": \"customMetadata/ns113wrong__Ns113bAbsent.Apex62.md\", \"fullName\": \"ns113wrong__Ns113bAbsent.Apex62\", \"problem\": \"Custom metadata type ns113wrong__Ns113bAbsent__mdt is not available in this organization.\", \"problemType\": \"Error\", \"success\": false}], \"numberComponentErrors\": 1, \"status\": \"Failed\", \"success\": false}, \"records\": [{\"DeveloperName\": \"Apex62\", \"NamespacePrefix\": null, \"QualifiedApiName\": \"Apex62\", \"gladens001__Enabled__c\": true}]}",
+          "asyncEvidenceSha256": "03397d8d494686f5478ea8c0e201e64731ec1354acfe3db120603dfe98fb0f83",
+          "oracleSha256": "bab03ccaaf56e5cf6df384a55e17c5bd32f29263f1089235b2880906a6f8fd02"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "source": "native/api62/E002.cls",
+          "sourceSha256": "f606571029c3801804862f9f90dabbef98be4c3c6dd2d734eb8efe599402fc9a",
+          "className": "Ns113b910271390462E002",
+          "outcome": "runtime",
+          "expected": "EXC|System.AsyncException|Metadata cannot be deployed from within a test",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "source": "native/api67/E002.apex",
+          "sourceSha256": "e76842a3f83b67baecd656bd046d0d94455326d2da91e94d39b27e9fff13007d",
+          "outcome": "deployment",
+          "deployment": {
+            "deployment": {
+              "checkOnly": false,
+              "componentFailures": [
+                {
+                  "changed": false,
+                  "componentType": "CustomMetadata",
+                  "created": false,
+                  "createdDate": "2026-10-12T19:03:10.000Z",
+                  "deleted": false,
+                  "fileName": "customMetadata/ns113wrong__Ns113bAbsent.Apex67.md",
+                  "fullName": "ns113wrong__Ns113bAbsent.Apex67",
+                  "problem": "Custom metadata type ns113wrong__Ns113bAbsent__mdt is not available in this organization.",
+                  "problemType": "Error",
+                  "success": false
+                }
+              ],
+              "numberComponentErrors": 1,
+              "status": "Failed",
+              "success": false
+            },
+            "records": [
+              {
+                "DeveloperName": "Apex67",
+                "NamespacePrefix": null,
+                "QualifiedApiName": "Apex67",
+                "gladens001__Enabled__c": true
+              }
+            ]
+          },
+          "expected": "ASYNC|{\"deployment\": {\"checkOnly\": false, \"componentFailures\": [{\"changed\": false, \"componentType\": \"CustomMetadata\", \"created\": false, \"createdDate\": \"2026-10-12T19:03:10.000Z\", \"deleted\": false, \"fileName\": \"customMetadata/ns113wrong__Ns113bAbsent.Apex67.md\", \"fullName\": \"ns113wrong__Ns113bAbsent.Apex67\", \"problem\": \"Custom metadata type ns113wrong__Ns113bAbsent__mdt is not available in this organization.\", \"problemType\": \"Error\", \"success\": false}], \"numberComponentErrors\": 1, \"status\": \"Failed\", \"success\": false}, \"records\": [{\"DeveloperName\": \"Apex67\", \"NamespacePrefix\": null, \"QualifiedApiName\": \"Apex67\", \"gladens001__Enabled__c\": true}]}",
+          "asyncEvidenceSha256": "ff1074bc6213bc3647112abe71d6f3b557f343b6f411fda634600f0e37e0c338",
+          "oracleSha256": "8108376e30918c3d0759e650a7cd9eb1c18da69dc9ec998a5f72be992673b4cd"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "source": "native/api67/E002.cls",
+          "sourceSha256": "08ccd4388820350c67f17a7b141b65a43c5e8d8f8a7dae6ced28e5eb02b77f64",
+          "className": "Ns113b910271390467E002",
+          "outcome": "runtime",
+          "expected": "EXC|System.AsyncException|Metadata cannot be deployed from within a test",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "source": "native/api68/E002.apex",
+          "sourceSha256": "5a17f9e64c85a0bebec35c87c9ccb58ad5a7894e7c9e930084790afdc832c0d3",
+          "outcome": "deployment",
+          "deployment": {
+            "deployment": {
+              "checkOnly": false,
+              "componentFailures": [
+                {
+                  "changed": false,
+                  "componentType": "CustomMetadata",
+                  "created": false,
+                  "createdDate": "2026-10-12T19:03:27.000Z",
+                  "deleted": false,
+                  "fileName": "customMetadata/ns113wrong__Ns113bAbsent.Apex68.md",
+                  "fullName": "ns113wrong__Ns113bAbsent.Apex68",
+                  "problem": "Custom metadata type ns113wrong__Ns113bAbsent__mdt is not available in this organization.",
+                  "problemType": "Error",
+                  "success": false
+                }
+              ],
+              "numberComponentErrors": 1,
+              "status": "Failed",
+              "success": false
+            },
+            "records": [
+              {
+                "DeveloperName": "Apex68",
+                "NamespacePrefix": null,
+                "QualifiedApiName": "Apex68",
+                "gladens001__Enabled__c": true
+              }
+            ]
+          },
+          "expected": "ASYNC|{\"deployment\": {\"checkOnly\": false, \"componentFailures\": [{\"changed\": false, \"componentType\": \"CustomMetadata\", \"created\": false, \"createdDate\": \"2026-10-12T19:03:27.000Z\", \"deleted\": false, \"fileName\": \"customMetadata/ns113wrong__Ns113bAbsent.Apex68.md\", \"fullName\": \"ns113wrong__Ns113bAbsent.Apex68\", \"problem\": \"Custom metadata type ns113wrong__Ns113bAbsent__mdt is not available in this organization.\", \"problemType\": \"Error\", \"success\": false}], \"numberComponentErrors\": 1, \"status\": \"Failed\", \"success\": false}, \"records\": [{\"DeveloperName\": \"Apex68\", \"NamespacePrefix\": null, \"QualifiedApiName\": \"Apex68\", \"gladens001__Enabled__c\": true}]}",
+          "asyncEvidenceSha256": "f9127ce045b9e4e029fef32ef2acbaa121150bf186c3a7813f2f472d1bd64976",
+          "oracleSha256": "f903da54b8f29bc715729dea8d7a93801bf9df3b129b72d5ff394edbee77cc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "source": "native/api68/E002.cls",
+          "sourceSha256": "e238be0a4195354465df1d74284931b6e9238ba0e6abfb5e5585adcb0e862506",
+          "className": "Ns113b910271390468E002",
+          "outcome": "runtime",
+          "expected": "EXC|System.AsyncException|Metadata cannot be deployed from within a test",
+          "oracleSha256": "504478a4ed1b8208bbea0259f966276680a5d165e2bac41afe81be68661d62b8"
+        }
+      ]
+    }
+  ]
+}

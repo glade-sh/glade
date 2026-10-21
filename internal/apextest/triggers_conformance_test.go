@@ -19,11 +19,12 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Trigger observations and owned deployed fixture source captured at API 62 and 67.
+// Trigger observations and owned deployed fixture source captured at API 62, 67, and 68.
 // CI reconstructs the family project and compares every observation as exact text.
 func TestTriggersOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected  string
+		CeilingExpected     *string
 		Owner, Reason       string
 		Compile, NativeNull bool
 		NativeLine          int
@@ -42,13 +43,13 @@ func TestTriggersOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases)+len(data.Remaining) != 297 || len(data.Controls) != 74 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases)+len(data.Remaining) != 297 || len(data.Controls) != 74 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle: %d cases + %d carried, %d controls at %v", len(data.Cases), len(data.Remaining), len(data.Controls), data.APIVersions)
 	}
 	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)
 	seen := map[string]bool{}
 	for _, tc := range rows {
-		if tc.ID == "" || seen[tc.ID] || tc.Expected == "?" || strings.HasPrefix(tc.Expected, "COMPILE_ERROR") && tc.NativeLine == 0 ||
+		if tc.ID == "" || seen[tc.ID] || tc.Expected == "?" || tc.CeilingExpected == nil || strings.HasPrefix(tc.Expected, "COMPILE_ERROR") && tc.NativeLine == 0 ||
 			(tc.Owner == "") != (tc.Reason == "") || tc.Owner == "A37" {
 			t.Fatalf("invalid row: %#v", tc)
 		}
@@ -78,8 +79,8 @@ func TestTriggersOrgConformance(t *testing.T) {
   System.assert(expectedText.equals(observedText),id+' expected <'+expectedText+'> actual <'+observedText+'>');
  }
 }`
-	body := func(tc familyCase) string {
-		prefix := "P pq=new P(); pq.expectedText=" + conformanceApexString(tc.Expected) + ";\n"
+	body := func(tc familyCase, expected string) string {
+		prefix := "P pq=new P(); pq.expectedText=" + conformanceApexString(expected) + ";\n"
 		if tc.NativeNull {
 			prefix += "pq.expectedNull=true;\n"
 		}
@@ -123,6 +124,12 @@ func TestTriggersOrgConformance(t *testing.T) {
 	}
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
+			expected := func(tc familyCase) string {
+				if api == "68.0" {
+					return *tc.CeilingExpected
+				}
+				return tc.Expected
+			}
 			counts := newConformanceCountLog(t, "triggers", api)
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
@@ -181,7 +188,7 @@ func TestTriggersOrgConformance(t *testing.T) {
 					continue
 				}
 				executable++
-				fmt.Fprintf(&namedSource, "@IsTest static void observed%s(){\n%s\n}\n", tc.ID, body(tc))
+				fmt.Fprintf(&namedSource, "@IsTest static void observed%s(){\n%s\n}\n", tc.ID, body(tc, expected(tc)))
 			}
 			namedSource.WriteString("}\n")
 			namedPath := filepath.Join(root, "TriggersProbe.cls")
@@ -222,14 +229,14 @@ func TestTriggersOrgConformance(t *testing.T) {
 						return
 					}
 					counts.run(t, "anonymous", "anonymous", "exact", func(t *testing.T) {
-						source := body(tc)
+						source := body(tc, expected(tc))
 						if tc.NativeLine > 0 {
 							source = rejectedSource(tc, false)
 						}
 						analysis := sema.AnalyzeAnonymous(index, source, api)
 						if tc.NativeLine > 0 {
-							if observed := compileText(analysis); observed != tc.Expected {
-								t.Fatalf("expected <%s> actual <%s>", tc.Expected, observed)
+							if observed := compileText(analysis); observed != expected(tc) {
+								t.Fatalf("expected <%s> actual <%s>", expected(tc), observed)
 							}
 							return
 						}
@@ -246,13 +253,17 @@ func TestTriggersOrgConformance(t *testing.T) {
 							t.Fatal(err)
 						}
 					})
-					counts.run(t, "isTest", "@IsTest", "exact", func(t *testing.T) {
+					namedKind := "exact"
+					if api == "68.0" {
+						namedKind = "legacy" // No native @IsTest execution was captured at API 68.
+					}
+					counts.run(t, "isTest", "@IsTest", namedKind, func(t *testing.T) {
 						if tc.NativeLine > 0 {
 							path := filepath.Join(root, "TriggersCompile"+tc.ID+".cls")
 							writeFile(t, path, rejectedSource(tc, true))
 							writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
-							if observed := compileText(sema.Analyze(buildIndex(path))); observed != tc.Expected {
-								t.Fatalf("expected <%s> actual <%s>", tc.Expected, observed)
+							if observed := compileText(sema.Analyze(buildIndex(path))); observed != expected(tc) {
+								t.Fatalf("expected <%s> actual <%s>", expected(tc), observed)
 							}
 							return
 						}

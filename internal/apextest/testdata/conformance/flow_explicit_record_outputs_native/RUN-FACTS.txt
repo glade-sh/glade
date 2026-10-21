@@ -1,0 +1,14 @@
+context=istest
+transport=intentional result-bearing assertion; not native test-pass credit
+api=62.0
+source_sha256:62.0:force-app/main/default/classes/SpruceRecordObservationTest.cls=daee5ded3ba14cba0daa5708dd6caab51fae42f2e7a91cc7558344db3960740e
+source_sha256:62.0:force-app/main/default/classes/SpruceRecordObservationTest.cls-meta.xml=51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d
+source_sha256:62.0:force-app/main/default/flows/Spruce_Explicit_Records.flow-meta.xml=d214eaefb248290bdcd96b8c1bc5ef761944a55aeeb79b08eb24962bd1c23777
+source_sha256:62.0:sfdx-project.json=c498cd6a2814b21c447d6e99066bf8646aed3c79a83a9dbe16360d4739126c1e
+api=67.0
+source_sha256:67.0:force-app/main/default/classes/SpruceRecordObservationTest.cls=daee5ded3ba14cba0daa5708dd6caab51fae42f2e7a91cc7558344db3960740e
+source_sha256:67.0:force-app/main/default/classes/SpruceRecordObservationTest.cls-meta.xml=17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b
+source_sha256:67.0:force-app/main/default/flows/Spruce_Explicit_Records.flow-meta.xml=32a67a658633ef42cd8abb0e25c745e9087692cf2c6404c107ef674c512fca58
+source_sha256:67.0:sfdx-project.json=5c31de0d65dec71e8b7364858ad7bef1c867d544c47b6b504c85a8757b1b8ed2
+native_complete=true
+observations=2

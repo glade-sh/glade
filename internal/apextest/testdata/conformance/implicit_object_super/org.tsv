@@ -1,0 +1,7 @@
+source_api	route	observation
+62.0	anonymous	{"distinct":false,"explicitSuper":10,"null":false,"overrideHash":true,"self":true,"stable":true,"systemHash":true}
+62.0	isTest	{"distinct":false,"explicitSuper":10,"null":false,"overrideHash":true,"self":true,"stable":true,"systemHash":true}
+67.0	anonymous	{"distinct":false,"explicitSuper":10,"null":false,"overrideHash":true,"self":true,"stable":true,"systemHash":true}
+67.0	isTest	{"distinct":false,"explicitSuper":10,"null":false,"overrideHash":true,"self":true,"stable":true,"systemHash":true}
+68.0	anonymous	{"distinct":false,"explicitSuper":10,"null":false,"overrideHash":true,"self":true,"stable":true,"systemHash":true}
+68.0	isTest	{"distinct":false,"explicitSuper":10,"null":false,"overrideHash":true,"self":true,"stable":true,"systemHash":true}

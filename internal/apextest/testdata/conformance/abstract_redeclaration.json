@@ -1,0 +1,834 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "packetRowsSha256": "bdb07c4592ca774891f1569ddbb47b04d8979873883901e5e60ab5a6c6092167",
+  "nativeJsonSha256": "4ea174bf42c7fcf1cdd34a6b45f2232d1313484f90b0d79926ea759ee2e914e3",
+  "sourceManifestSha256": "af4d7c498b85003536813731611d0195b34454cd55719dd98b0ecdfe18f88b32",
+  "rows": [
+    {
+      "id": "C126ABSTRACT_001",
+      "question": "Reabstract inherited abstract method",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126ABSTRACT_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "857466f84b64daa28e2e4b1634e18f7d0427986a3b239310707beed81323f7a7"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "b2859be8de27762552cc016a208504cd6f7ebcfd089bbef8b3875d2a6e69e02d",
+            "67.0": "4199bc419580611abf964d654a62431f831123c0fb85eb2dd5bc89b43ef188a6",
+            "68.0": "b09f3dc48b6dfbc4405507e805da9c1da5ce738307f108b3656652386a26a0b3"
+          },
+          "anonymous": "abstract class C126Base {public abstract String value();}\nabstract class C126Derived extends C126Base {public abstract override String value();}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('compiled',true);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126ABSTRACT_001|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126ABSTRACT_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Base": "ef0e1b7e92564c62357b9b3b129fbfff83ab054586711790c92d9b425af80f9b",
+            "class:C126Derived": "e921d992c749bb60cbc0926c5d3968acfb21ddfe4d94b357bbe395aba3003134",
+            "class:C126Test": "f2bcd553208ee74b2fc4d0f3a207edfed71ddca5a34b3eb90381aa0b6907a736"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "348fbdd21cf3cba78fd9eecad7a6c3289074dd69400389499e48eea8fe05c144",
+            "67.0": "f84419d11e7a7ebd45b41b2d3a0d427733bb0a09003d81f307f9f45155a267be",
+            "68.0": "03fb4d82d9704c95893c47ca0aa4d66b4c45ea30a140c1edc3031b41b138f857"
+          },
+          "classes": {
+            "C126Base": "public abstract class C126Base {public abstract String value();}",
+            "C126Derived": "public abstract class C126Derived extends C126Base {public abstract override String value();}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('compiled',true);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126ABSTRACT_001|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126ABSTRACT_002",
+      "question": "Reabstract inherited concrete method",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126ABSTRACT_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "841919d1b7ff16c6f54d6bc50e55e8c6905c492838fdced417bdbafcda331618"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "f8baac46d240c1717891b92e05c6cdc8beb41a826d50e0c54a104c9caa6536e0",
+            "67.0": "458b66149ac4b2c9930f03c6f810b131f305aeece402a7fdf3f7fe97ca9f6316",
+            "68.0": "ae5c309363a1d3aba8453ffba0e21d689214a5a1e20f94ee43a8b285bc10c875"
+          },
+          "anonymous": "abstract class C126Base {public virtual String value(){return 'base';}}\nabstract class C126Derived extends C126Base {public abstract override String value();}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('compiled',true);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126ABSTRACT_002|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126ABSTRACT_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Base": "6c6182ff00e2424e9ce5acc8699732be8befdffcec274b25727b409a3da6c87e",
+            "class:C126Derived": "e921d992c749bb60cbc0926c5d3968acfb21ddfe4d94b357bbe395aba3003134",
+            "class:C126Test": "902c7eed920ae337aacec31a11587463bdaecb2adbef28fe69c169bf227522bf"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "032444aa55a8305016b9edc8a08ba885122542760cad29f7d728eace2e5edc42",
+            "67.0": "c7a62892c02544b4072c502b4105543deebcccc87e073430aace47334af020b5",
+            "68.0": "5d54b00182e42adff49ea70d51ac7219d7dcb809e1925188a2f49bd622d1e11a"
+          },
+          "classes": {
+            "C126Base": "public abstract class C126Base {public virtual String value(){return 'base';}}",
+            "C126Derived": "public abstract class C126Derived extends C126Base {public abstract override String value();}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('compiled',true);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126ABSTRACT_002|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126ABSTRACT_003",
+      "question": "Abstract redeclaration without override",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126ABSTRACT_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "c193f6dda4b91cd14c28b6b46ec82f1aeb82f27b059e8f525dcd4a5829d493d7"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method must use the override keyword: String C126Derived.value()",
+                "line": 2,
+                "column": 69,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method must use the override keyword: String C126Derived.value()",
+                "line": 2,
+                "column": 69,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method must use the override keyword: String C126Derived.value()",
+                "line": 2,
+                "column": 69,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Method must use the override keyword: String C126Derived.value()",
+                "line": 2,
+                "column": 69
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Method must use the override keyword: String C126Derived.value()",
+                "line": 2,
+                "column": 69
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Method must use the override keyword: String C126Derived.value()",
+                "line": 2,
+                "column": 69
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "e486f26bc2ba909e92bab09ebd5fcd2acd1c754f31c4b23b35c85f7662fd4826",
+            "67.0": "d74e5042cca35fa8f2649ccc99a05759774425a21e5567a0046a300e884247a8",
+            "68.0": "e25b74ae00965a6d9df6dcbd4cc25809c2c1c1efeffbc768de2243e56239bae7"
+          },
+          "anonymous": "abstract class C126Base {public abstract String value();}\nabstract class C126Derived extends C126Base {public abstract String value();}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('compiled',true);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126ABSTRACT_003|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126ABSTRACT_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Base": "ef0e1b7e92564c62357b9b3b129fbfff83ab054586711790c92d9b425af80f9b",
+            "class:C126Derived": "5bdf6e4c87a9463629b8afaccfb3314c3a215a3826d54c29f1cc304233e03652",
+            "class:C126Test": "167d2932d8253f8f5615bede19dd4727eae4b236bba5396fe46a41986ef75219"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Derived",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method must use the override keyword: String C126Derived.value()"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Derived",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method must use the override keyword: String C126Derived.value()"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Derived",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method must use the override keyword: String C126Derived.value()"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Derived",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method must use the override keyword: String C126Derived.value()"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Derived",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method must use the override keyword: String C126Derived.value()"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Derived",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method must use the override keyword: String C126Derived.value()"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "4ab11dee75aea0253cdf3a54477ba161437e367f73c73fbee62982108206eb0c",
+            "67.0": "2d757941bacc92e976212f8d550f13e112cc0708d6f2fa98ef4db938d49fc625",
+            "68.0": "940db0a9e1cf0c2ec0886ad6a0af3f1018085452811873d46d1883778e4e9594"
+          },
+          "classes": {
+            "C126Base": "public abstract class C126Base {public abstract String value();}",
+            "C126Derived": "public abstract class C126Derived extends C126Base {public abstract String value();}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('compiled',true);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126ABSTRACT_003|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126ABSTRACT_004",
+      "question": "Concrete implementation",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126ABSTRACT_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "6361d74583e34865ce1e06ff1350dcc0ccba561ae74e61c9b8d5d699857b2bd6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "fc6f610e58c92e9a2bbb67afae4b28e3400e3e7c430ad21cf4f33b27b7f42cad",
+            "67.0": "056139911305f80aa06fe3a1e7227a7353d4922c8635cb151cf32ab950b76087",
+            "68.0": "dce79af0ef80c395d17a65611f230930b5bc7955f5260e770726d3952a85fb24"
+          },
+          "anonymous": "abstract class C126Base {public abstract String value();}\nabstract class C126Derived extends C126Base {public override String value(){return 'child';}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('compiled',true);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126ABSTRACT_004|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126ABSTRACT_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Base": "ef0e1b7e92564c62357b9b3b129fbfff83ab054586711790c92d9b425af80f9b",
+            "class:C126Derived": "c153c6e215c4db66a714b6c673616ca2c9576d0834b62caf661f02f56120e59c",
+            "class:C126Test": "123587eb8e300b6177af2684b99c3385eea3c5b68c879ed54e72f43c9bcb59a9"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "compiled": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "0d2ba035904beba96daa277d0e53d8e73316c3de37b2650efce3f313b9087559",
+            "67.0": "cc8700ff3272c996dab51d425600cff7e959b6d670693beece5208d9c062fc60",
+            "68.0": "55ea948e1058f060684293a03d6aa794152d02ee9e58efe29d1952bdbd587c7d"
+          },
+          "classes": {
+            "C126Base": "public abstract class C126Base {public abstract String value();}",
+            "C126Derived": "public abstract class C126Derived extends C126Base {public override String value(){return 'child';}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('compiled',true);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126ABSTRACT_004|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126ABSTRACT_005",
+      "question": "Mismatched return type",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126ABSTRACT_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "373e5ee83e1c1fb679ef4f4b9b37025ccc43237569013934e4d58310a5eaa94f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method return types clash: Integer vs String from the type C126Derived",
+                "line": 2,
+                "column": 79,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method return types clash: Integer vs String from the type C126Derived",
+                "line": 2,
+                "column": 79,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method return types clash: Integer vs String from the type C126Derived",
+                "line": 2,
+                "column": 79,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Method return types clash: Integer vs String from the type C126Derived",
+                "line": 2,
+                "column": 79
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Method return types clash: Integer vs String from the type C126Derived",
+                "line": 2,
+                "column": 79
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Method return types clash: Integer vs String from the type C126Derived",
+                "line": 2,
+                "column": 79
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "5133ec1568202175f662ae0ffaddeecc1905b968faafd54aecde561ea3c16b20",
+            "67.0": "c6d657bd5d52a4c16c5890b64749ff715643f910f16d7d1fde7b8682436f58f9",
+            "68.0": "a8d19068dd24532b368db7f16fa1dd07662c53da30fdf2dc19de0e783ca322c0"
+          },
+          "anonymous": "abstract class C126Base {public abstract String value();}\nabstract class C126Derived extends C126Base {public abstract override Integer value();}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('compiled',true);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126ABSTRACT_005|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126ABSTRACT_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Base": "ef0e1b7e92564c62357b9b3b129fbfff83ab054586711790c92d9b425af80f9b",
+            "class:C126Derived": "9d7a66132045b6497899e1ec76ff2bac1fc05bfeaa8aaaf8b6d6dd20091365ed",
+            "class:C126Test": "31d6ef5d9343a1e677925ebbcf957f8cbbe130551e54ff90e6b37ebd6d55678a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Derived",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method return types clash: Integer vs String from the type C126Derived"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Derived",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method return types clash: Integer vs String from the type C126Derived"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Derived",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method return types clash: Integer vs String from the type C126Derived"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Derived",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method return types clash: Integer vs String from the type C126Derived"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Derived",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method return types clash: Integer vs String from the type C126Derived"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Derived",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method return types clash: Integer vs String from the type C126Derived"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "e7f07a24c8bb727cd4060e18e013952ebc333de8d4f34eac33d060186606d490",
+            "67.0": "4e71d35ee365f26096fa0ff513fde62e7ff7231aa95a3d1407fe62f40688e0dd",
+            "68.0": "89a430c48ca9eaba1bf93fc1a14bc5c963b14125dcd7093e9a882587a51b8e3d"
+          },
+          "classes": {
+            "C126Base": "public abstract class C126Base {public abstract String value();}",
+            "C126Derived": "public abstract class C126Derived extends C126Base {public abstract override Integer value();}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('compiled',true);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126ABSTRACT_005|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126ABSTRACT_006",
+      "question": "No inherited matching method",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126ABSTRACT_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "ed1bc48f09a60f001a4c4bab506eb853c88ccc992ec43ef598744d616b5674f2"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "@Override specified for non-overriding method: String C126Derived.missing()",
+                "line": 2,
+                "column": 78,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "@Override specified for non-overriding method: String C126Derived.missing()",
+                "line": 2,
+                "column": 78,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "@Override specified for non-overriding method: String C126Derived.missing()",
+                "line": 2,
+                "column": 78,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "@Override specified for non-overriding method: String C126Derived.missing()",
+                "line": 2,
+                "column": 78
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "@Override specified for non-overriding method: String C126Derived.missing()",
+                "line": 2,
+                "column": 78
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "@Override specified for non-overriding method: String C126Derived.missing()",
+                "line": 2,
+                "column": 78
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "5621ccb6e5def5a8fd3119b9aae44672de3c5f003b6d664b5dfa4aa7d73f955e",
+            "67.0": "b22f65237c28194c528eea41dc0728f0eb3d14557981d995f444671188bfadce",
+            "68.0": "9aa299858069e6c3e1c2aea6ecd5f4b6c77aadab8df1340f4d5131cd97bada4d"
+          },
+          "anonymous": "abstract class C126Base {public abstract String value();}\nabstract class C126Derived extends C126Base {public abstract override String missing();}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('compiled',true);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126ABSTRACT_006|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126ABSTRACT_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Base": "ef0e1b7e92564c62357b9b3b129fbfff83ab054586711790c92d9b425af80f9b",
+            "class:C126Derived": "f9a0c52445c094a4351b1135bf16c9371c727f79a9541acd9ba6a0d2753ee05e",
+            "class:C126Test": "95271035ac067761c8e89807ce9d1bc35f4c0869ea28c8275bc3c1f8bd2f7b1b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Derived",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "@Override specified for non-overriding method: String C126Derived.missing()"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Derived",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "@Override specified for non-overriding method: String C126Derived.missing()"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Derived",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "@Override specified for non-overriding method: String C126Derived.missing()"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Derived",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "@Override specified for non-overriding method: String C126Derived.missing()"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Derived",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "@Override specified for non-overriding method: String C126Derived.missing()"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Derived",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "@Override specified for non-overriding method: String C126Derived.missing()"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "bb089d64fee2dad5b1401b1816d19b74304e20694e0a2398c67abab869486d94",
+            "67.0": "51676a8ba6221e399fa6893033d17948417d87f0bbea6e6ffc767b78478bb66c",
+            "68.0": "e67cf464f43ec5f5c06fa74d109bac69feb430572d02d5c6848f1a9167a59bb6"
+          },
+          "classes": {
+            "C126Base": "public abstract class C126Base {public abstract String value();}",
+            "C126Derived": "public abstract class C126Derived extends C126Base {public abstract override String missing();}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('compiled',true);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126ABSTRACT_006|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    }
+  ]
+}

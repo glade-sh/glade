@@ -42,9 +42,11 @@ type l15RuntimeProject struct {
 	Files map[string]string `json:"files"`
 }
 
-// TestL15SalesforceConformance replays all 200 native rows at source API 59/67.
+// TestL15SalesforceConformance replays all 200 native rows at source API 59/67/68.
 // Sources and exact org.tsv answers were exported from the owned message
-// service captures; CI neither imports the capture tools nor calls Salesforce.
+// service captures; API 68 uses the retained recovery capture
+// capture-job, including its actual twelve runtime source files.
+// CI neither imports the capture tools nor calls Salesforce.
 // GLADE_L15_CAPTURE=1 reports mismatches without failing for before/after counts.
 // Normal mode asserts matching rows and logs declared external-owner carries.
 // Infrastructure and incomplete fixtures fail in either mode.
@@ -54,7 +56,7 @@ func TestL15SalesforceConformance(t *testing.T) {
 	var runtimeProjects map[string]l15RuntimeProject
 	l15ReadJSON(t, "testdata/l15_salesforce.json", &cases)
 	l15ReadJSON(t, "testdata/l15_runtime.json", &runtimeProjects)
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var compilerCases, runtimeCases []l15Case
 	metadataRows := 0
@@ -227,9 +229,11 @@ func TestL15SalesforceConformance(t *testing.T) {
 		}
 		fmt.Fprintf(&report, "API_TOTAL\t%s\t%d/%d\n", api, apiMatches, len(cases))
 	}
-	fmt.Fprintf(&report, "TOTAL\t%d/%d\nCOMPILE_METADATA_TOTAL\t%d/112\nBROWSER_TOTAL\t%d/288\nLOCAL_BROWSER_ROWS\t%d/288\n", matches, total, compilerMatches, browserMatches, localBrowserRows)
+	compilerTotal := (len(compilerCases) + metadataRows) * len(versions)
+	browserTotal := len(runtimeCases) * len(versions)
+	fmt.Fprintf(&report, "TOTAL\t%d/%d\nCOMPILE_METADATA_TOTAL\t%d/%d\nBROWSER_TOTAL\t%d/%d\nLOCAL_BROWSER_ROWS\t%d/%d\n", matches, total, compilerMatches, compilerTotal, browserMatches, browserTotal, localBrowserRows, browserTotal)
 	fmt.Fprintf(&report, "DIAGNOSTIC_TOTAL\t%d/%d\nDIAGNOSTIC_CARRIED_TOTAL\t%d/%d\nCARRIED_TOTAL\t%d/%d\n", diagnosticMatches, diagnosticTotal, diagnosticCarried, diagnosticTotal, carried, total)
-	t.Logf("L15 matches %d/%d; compile/metadata %d/112; browser %d/288; local DOM rows %d/288", matches, total, compilerMatches, browserMatches, localBrowserRows)
+	t.Logf("L15 matches %d/%d; compile/metadata %d/%d; browser %d/%d; local DOM rows %d/%d", matches, total, compilerMatches, compilerTotal, browserMatches, browserTotal, localBrowserRows, browserTotal)
 	t.Logf("L15 rejection diagnostics %d/%d, carried %d/%d; carried rows %d/%d", diagnosticMatches, diagnosticTotal, diagnosticCarried, diagnosticTotal, carried, total)
 	if path := os.Getenv("GLADE_L15_REPORT"); path != "" {
 		if err := os.WriteFile(path, []byte(report.String()), 0600); err != nil {

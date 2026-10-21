@@ -374,7 +374,7 @@ func TestCIRaceWorkflowSchedulesBrowserPackagesSeparately(t *testing.T) {
 		t.Fatal("browser race packages must use a dedicated early matrix")
 	}
 	job := workflow[start:end]
-	for _, marker := range []string{"needs: plan", "max-parallel: 8", "CI_RACE_SHARD_INDEX: ${{ matrix.shard }}", "CI_RACE_HEAD_SHA: ${{ github.sha }}", `scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright", `GLADE_LWC_COMPILE: "1"`, `NO_COLOR: "1"`} {
+	for _, marker := range []string{"needs: [plan, test-binaries]", "max-parallel: 8", "CI_RACE_SHARD_INDEX: ${{ matrix.shard }}", "CI_RACE_HEAD_SHA: ${{ github.sha }}", `scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright", `GLADE_LWC_COMPILE: "1"`, `NO_COLOR: "1"`} {
 		if !strings.Contains(job, marker) {
 			t.Errorf("browser matrix missing %q", marker)
 		}
@@ -396,7 +396,9 @@ func TestCIRaceWorkflowSchedulesBrowserPackagesSeparately(t *testing.T) {
 	if !strings.Contains(workflow, "scripts/ci-race-shard-aggregate.sh") || !strings.Contains(workflow, "needs: [plan, race-browser]") {
 		t.Fatal("browser shards must require an exact union aggregate")
 	}
-	if strings.Count(workflow, "GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright") != 2 {
-		t.Fatal("both browser matrix and generic browser consumers must resolve the installed Playwright module")
+	for _, name := range []string{"race-browser", "race", "race-push"} {
+		if !strings.Contains(workflowJobBlocksText(workflow)[name], "GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright") {
+			t.Errorf("%s must resolve the installed Playwright module", name)
+		}
 	}
 }

@@ -34,6 +34,7 @@ func AnalyzeAnonymousDeclarations(index typesys.Index) Result {
 func AnalyzeAnonymousDeclarationsInContext(index, transient typesys.Index) Result {
 	if index.HasErrors() {
 		diagnostics := NativeLifecycleDiagnostics(index, index.Diagnostics)
+		diagnostics = anonymousReservedStaticPriority(index, diagnostics)
 		return Result{Project: index.Project, Summary: Summary{Diagnostics: len(diagnostics)}, Diagnostics: diagnostics}
 	}
 	context := index

@@ -38,6 +38,8 @@ type translatedLabelXML struct {
 
 type tabXML struct {
 	CustomObject bool   `xml:"customObject"`
+	Page         string `xml:"page"`
+	URL          string `xml:"url"`
 	Description  string `xml:"description"`
 	Label        string `xml:"label"`
 	Motif        string `xml:"motif"`
@@ -263,13 +265,13 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 	return registry, nil
 }
 
-func ApplyProject(org *storage.OrgState, p project.Project) error {
+func ApplyProject(org *storage.OrgState, p project.Project, metadataReaders ...func(string) ([]byte, error)) error {
 	registry, err := LoadProjectWithDependencies(p)
 	if err != nil {
 		return err
 	}
 	org.Metadata = registry
-	ensureMetadataObjects(org)
+	ensureMetadataObjects(org, p)
 	if err := applyPlatformCachePartitions(org, p); err != nil {
 		return err
 	}
@@ -287,7 +289,26 @@ func ApplyProject(org *storage.OrgState, p project.Project) error {
 	if err := ensureApexPageObject(org, p.VisualforcePageFiles, p.Namespace, p.SourceAPIVersion); err != nil {
 		return err
 	}
-	return nil
+	readMetadata := os.ReadFile
+	if len(metadataReaders) > 0 && metadataReaders[0] != nil {
+		readMetadata = metadataReaders[0]
+	}
+	if err := LoadLayoutMetadata(org, LayoutMetadataFiles(p), readMetadata); err != nil {
+		return err
+	}
+	return applySetupRecordMetadata(org, p, readMetadata)
+}
+
+// LayoutMetadataFiles includes declarations from loaded project dependencies.
+func LayoutMetadataFiles(p project.Project) []string {
+	files := append([]string(nil), p.LayoutFiles...)
+	for _, dep := range p.ManagedPackageDependencies {
+		if dep.Status != "loaded" || dep.Project == nil {
+			continue
+		}
+		files = append(files, LayoutMetadataFiles(*dep.Project)...)
+	}
+	return files
 }
 
 func projectFolderFilesWithDependencies(p project.Project) []string {
@@ -473,9 +494,12 @@ func loadTab(path string) (storage.TabMetadata, error) {
 		label = name
 	}
 	tab := storage.TabMetadata{
-		Name:        name,
-		Label:       label,
-		Custom:      raw.CustomObject,
+		Name:  name,
+		Label: label,
+		Page:  strings.TrimSpace(raw.Page),
+		URL:   strings.TrimSpace(raw.URL),
+		// Every CustomTab component is custom; customObject identifies its backing object.
+		Custom:      true,
 		Motif:       strings.TrimSpace(raw.Motif),
 		Description: strings.TrimSpace(raw.Description),
 		File:        path,
@@ -1175,7 +1199,7 @@ func loadRemoteSite(path string) (storage.EndpointMetadata, error) {
 	return storage.EndpointMetadata{Kind: "RemoteSiteSetting", Name: name, URL: strings.TrimSpace(raw.URL), Active: active, File: path}, nil
 }
 
-func ensureMetadataObjects(org *storage.OrgState) {
+func ensureMetadataObjects(org *storage.OrgState, p project.Project) {
 	if org == nil {
 		return
 	}
@@ -1183,6 +1207,7 @@ func ensureMetadataObjects(org *storage.OrgState) {
 		org.Objects = make(map[string]storage.ObjectState)
 	}
 	ensureStaticResourceObject(org)
+	ensureNamedCredentialObject(org, p)
 	if len(org.Metadata.EmailTemplates) > 0 {
 		ensureEmailTemplateObject(org)
 	}
@@ -1368,6 +1393,7 @@ func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace s
 		org.Objects = make(map[string]storage.ObjectState)
 	}
 	object := org.Objects["Folder"]
+	object.Definition = object.Definition.Clone()
 	if object.Definition.APIName == "" {
 		object.Definition.APIName = "Folder"
 	}

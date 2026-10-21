@@ -1,0 +1,16 @@
+api=62.0
+transport=intentional result-bearing assertion; not native test-pass credit
+deployment_success=true
+captured_utc=2026-10-19T15:38:53.287547+00:00
+source_sha256:62.0:force-app/main/default/classes/OrchardFormulaTest.cls=3556af5d02d1f022ac32413ccf3ea3fdad6f7cefa1e663848062204f7ae9ee0f
+source_sha256:62.0:force-app/main/default/classes/OrchardFormulaTest.cls-meta.xml=5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86
+source_sha256:62.0:force-app/main/default/flows/OrchardFormulaResources.flow-meta.xml=f886fed32856fd722641047cfeedc5445a664b0a6be616be0e06db930094f5b4
+source_sha256:62.0:sfdx-project.json=f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9
+rows=1
+native_complete=true
+api=67.0
+captured_utc=2026-10-19T15:39:29.252045+00:00
+source_sha256:67.0:force-app/main/default/classes/OrchardFormulaTest.cls=3556af5d02d1f022ac32413ccf3ea3fdad6f7cefa1e663848062204f7ae9ee0f
+source_sha256:67.0:force-app/main/default/classes/OrchardFormulaTest.cls-meta.xml=eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7
+source_sha256:67.0:force-app/main/default/flows/OrchardFormulaResources.flow-meta.xml=94343f08c4952ccd1098b54976e013d8e58edc42c77ca8cd8827af6ff1aacbed
+source_sha256:67.0:sfdx-project.json=2bc58206d0b9c401181c61264ca1a7084dff5c8afdec3c0d7edeea86a65d9484

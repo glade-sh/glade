@@ -1,0 +1,59 @@
+Started UTC 2026-10-16T00:37:50.220764+00:00
+Owner k3; own scratch alias scratch-org; target Dev Hub scratch-org; edition developer; duration1day.
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf org create scratch --target-dev-hub scratch-org --alias scratch-org --duration-days 1 --edition developer --wait 15 --json
+Org ID SHA256: ed2a63259685b54221751f21c017c9d87a7d77be13fdfe9ab1fa12344f1b6be0
+No credentials exported. Native synthetic-only capture.
+
+UTC 2026-10-16T00:38:00.488669+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf project deploy start --target-org scratch-org --source-dir native-capture --api-version 62.0 --wait 10 --json
+
+UTC 2026-10-16T00:38:03.795688+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org scratch-org --file native-capture --api-version 62.0 --json
+
+UTC 2026-10-16T00:38:05.036371+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org scratch-org --file native-capture --api-version 62.0 --json
+
+UTC 2026-10-16T00:38:06.273703+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org scratch-org --file native-capture --api-version 62.0 --json
+
+UTC 2026-10-16T00:38:07.571820+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org scratch-org --tests PcConstructorCountsA62Test --synchronous --result-format json --api-version 62.0 --json
+
+UTC 2026-10-16T00:38:08.896423+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf project deploy start --target-org scratch-org --source-dir native-capture --api-version 62.0 --wait 10 --json
+
+UTC 2026-10-16T00:38:12.185569+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf project deploy start --target-org scratch-org --source-dir native-capture --api-version 67.0 --wait 10 --json
+
+UTC 2026-10-16T00:38:15.476141+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org scratch-org --file native-capture --api-version 67.0 --json
+
+UTC 2026-10-16T00:38:16.725184+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org scratch-org --file native-capture --api-version 67.0 --json
+
+UTC 2026-10-16T00:38:17.985970+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org scratch-org --file native-capture --api-version 67.0 --json
+
+UTC 2026-10-16T00:38:19.229976+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org scratch-org --tests PcConstructorCountsA67Test --synchronous --result-format json --api-version 67.0 --json
+
+UTC 2026-10-16T00:38:20.467571+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf project deploy start --target-org scratch-org --source-dir native-capture --api-version 67.0 --wait 10 --json
+
+UTC 2026-10-16T00:38:27.796464+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf project deploy start --target-org scratch-org --source-dir native-capture --api-version 68.0 --wait 10 --json
+
+UTC 2026-10-16T00:38:31.133890+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org scratch-org --file native-capture --api-version 68.0 --json
+
+UTC 2026-10-16T00:38:32.412364+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org scratch-org --file native-capture --api-version 68.0 --json
+
+UTC 2026-10-16T00:38:33.292055+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org scratch-org --file native-capture --api-version 68.0 --json
+
+UTC 2026-10-16T00:38:34.308409+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org scratch-org --tests PcConstructorCountsA68Test --synchronous --result-format json --api-version 68.0 --json
+
+UTC 2026-10-16T00:38:35.579575+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf project deploy start --target-org scratch-org --source-dir native-capture --api-version 68.0 --wait 10 --json

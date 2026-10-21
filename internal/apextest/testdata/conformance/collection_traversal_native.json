@@ -1,0 +1,4448 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "shapeCount": 32,
+  "nativeCellCount": 192,
+  "caseTableSHA256": "825fd33edb9cf7b1cf8dcd57c95b252e6e10d48ce5fc627c948704ffa6fa0a86",
+  "helpers": {
+    "ProbeTraversal": "public class ProbeTraversal{public static List<String> items;public static void drop(Integer n){items.remove(n);}}"
+  },
+  "helperSHA256": {
+    "ProbeTraversal": "dd43ebef7c0984005de794ecd527789cbf9b842cbc01fff1eeefa0bbf81c2242"
+  },
+  "rows": [
+    {
+      "id": "A01_RAW",
+      "source": "A.1 list-remove-break",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(1);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(1);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "b862417c4dca86d97355a9251e08bc6f2f1d529b9fd1dead0c5c16b0127de283",
+        "istest": "b862417c4dca86d97355a9251e08bc6f2f1d529b9fd1dead0c5c16b0127de283"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A01_RAW",
+            "source": "A.1 list-remove-break",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "3b37e37b564cc139f8c900067c9543b3d740c98d2df8b349a2acd9f61fa7e9c2"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A01_RAW",
+            "source": "A.1 list-remove-break",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "cf1b0ff22b77196d5bff7b1c5c066f8f0bffb2397a44396e8a72be445e7de8d2"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A01_RAW",
+            "source": "A.1 list-remove-break",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "f487ce6a55b651ecaa662407b1d73bc50857e57f62ec67fb8be8067ebd68a026"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A01_RAW",
+            "source": "A.1 list-remove-break",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "209cf7ed07a551923ce35372bb09598427cbc2daf7b0fafcd7e6d70f3301ffc1"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A01_RAW",
+            "source": "A.1 list-remove-break",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "349aaf1f4b58bc0d99fe7ed478372a40a7fe8230f57dd9d9635f35f19c34a9c5"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A01_RAW",
+            "source": "A.1 list-remove-break",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "78db3c8fffd6b16a8ac9a6715c6689034126b7e7b4f87df0bc0ddc98eafb3f44"
+        }
+      ]
+    },
+    {
+      "id": "A01_CATCH",
+      "source": "A.1 + A.7 list-remove-break",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(1);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(1);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "3f4b582b382f24c013b135f64a3f2019f82fae6f1280c3b4a0911aa21b803bf2",
+        "istest": "3f4b582b382f24c013b135f64a3f2019f82fae6f1280c3b4a0911aa21b803bf2"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A01_CATCH",
+            "source": "A.1 + A.7 list-remove-break",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "b86bc1da6a0f8b45830831cc6f6734016a581e120595b21cde53badb7f3847e6"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A01_CATCH",
+            "source": "A.1 + A.7 list-remove-break",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "a6e98f01a45952749ba38e753433938c7e845ea8f509315474d7181d97d0a692"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A01_CATCH",
+            "source": "A.1 + A.7 list-remove-break",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "0a734e1070d1379a9ba8737485f6bed6d81785f5c1732f1f4d68f13c592c0abb"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A01_CATCH",
+            "source": "A.1 + A.7 list-remove-break",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "fd2803d58c54abfcaeccffc1ed6beca827c64a3c58c941a20f45d8545affcdd1"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A01_CATCH",
+            "source": "A.1 + A.7 list-remove-break",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "812edcdfabe3b458f0fd783642898555eff9bfd95826cdabb7690741f7711369"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A01_CATCH",
+            "source": "A.1 + A.7 list-remove-break",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "e81b657341c839d736580ad41905ec37d3ccd251bbc927e48e9a5efa192b60cd"
+        }
+      ]
+    },
+    {
+      "id": "A02_RAW",
+      "source": "A.2 list-remove-continue",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(1);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(1);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "39578a4c9f5d85cfa2db3ef73833e5c816fcd3e43eda0ed5e5115db6d1c58528",
+        "istest": "39578a4c9f5d85cfa2db3ef73833e5c816fcd3e43eda0ed5e5115db6d1c58528"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A02_RAW",
+            "source": "A.2 list-remove-continue",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "d8446f0c1c08e8182c83099c7238791a62823c7c5720ca45cf7dfe78abc67189"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A02_RAW",
+            "source": "A.2 list-remove-continue",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "2e733d84e778e1c5d377e09dbf2cd85e0b190fdb4edc8be05bc573d4e4c743f4"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A02_RAW",
+            "source": "A.2 list-remove-continue",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "bb5533e8267972120023b1921e2183e9d16f9d6779506caadca42dfa89e5413b"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A02_RAW",
+            "source": "A.2 list-remove-continue",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "e2c5f3ebf2e87b9ec32ce0d6caa4b959a92346c1667b5bac9d953a79c314d708"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A02_RAW",
+            "source": "A.2 list-remove-continue",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "a3b8adbdba5b34d98f43974844b3bdc45de5da072dbc17f84c5f573ce6942438"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A02_RAW",
+            "source": "A.2 list-remove-continue",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "0034a2c7a2f4ad49d2712e99b1b58bff0e3c10a2879eea3fd6e6ff21e7a48c7a"
+        }
+      ]
+    },
+    {
+      "id": "A02_CATCH",
+      "source": "A.2 + A.7 list-remove-continue",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(1);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(1);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "d50dc8f822caffbac1ae864fd2c1967b21f475f629a255e11aeacc87852d186a",
+        "istest": "d50dc8f822caffbac1ae864fd2c1967b21f475f629a255e11aeacc87852d186a"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A02_CATCH",
+            "source": "A.2 + A.7 list-remove-continue",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "40d560617b4523d2369812b63e50a229625ddf6758c8d76c369f538ee3395a4f"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A02_CATCH",
+            "source": "A.2 + A.7 list-remove-continue",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "8c5b263d148e49e4a02e836a66ec615d782e628aba4e2f817a476864564a012c"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A02_CATCH",
+            "source": "A.2 + A.7 list-remove-continue",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "1829985b48b162658b4f72ac40af4dcf344aca0ba0f7d4b162bcd056565939f6"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A02_CATCH",
+            "source": "A.2 + A.7 list-remove-continue",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "acecaa2d7d72744eee07443b6b514c167b0963a640d22e2cede54d41c1565886"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A02_CATCH",
+            "source": "A.2 + A.7 list-remove-continue",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "84e252a5545125c8012c87a3d696c21cab4a122f8a9b59e5a9147c85a6f47bf8"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A02_CATCH",
+            "source": "A.2 + A.7 list-remove-continue",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "0dd1eebca780de0e2ae7e37ab356832ffb839ac98346c66aa3a2818ac1014379"
+        }
+      ]
+    },
+    {
+      "id": "A03_RAW",
+      "source": "A.3 list-remove-last",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='c'){p.put('stage','mutating');l.remove(2);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='c'){p.put('stage','mutating');l.remove(2);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "f6a2c7e9046ebdd3f6ed422a5f0fd7cbb02d7dc2a966b905c1d73a8bf4dc87f8",
+        "istest": "f6a2c7e9046ebdd3f6ed422a5f0fd7cbb02d7dc2a966b905c1d73a8bf4dc87f8"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A03_RAW",
+            "source": "A.3 list-remove-last",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "673bb59217dc4bf16e99b3dfe887c61c4119845379a3d47699c8314614545031"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A03_RAW",
+            "source": "A.3 list-remove-last",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "71ff5cf10ca027d43804a4cd0094e278e9b8ea622babfc3828f9ed2b8422ae75"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A03_RAW",
+            "source": "A.3 list-remove-last",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "01d5fcaa47d08c2b265fe75a6a6f05c92edf1f97d160c3cb8fe26e6308a75519"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A03_RAW",
+            "source": "A.3 list-remove-last",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "2e0bad95b291bb2e0d0e6b108c43dc5998a74cbdf1c31fef0ceaee77914a28a4"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A03_RAW",
+            "source": "A.3 list-remove-last",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "315d6a846a4ca70ae8c4352e8cad31a5217b4ab54558655f3570851ee428804b"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A03_RAW",
+            "source": "A.3 list-remove-last",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "dc711c3d479cd674ce748cd4bc45670ee04545bcfde0d404cfc72ee6bfdfe987"
+        }
+      ]
+    },
+    {
+      "id": "A03_CATCH",
+      "source": "A.3 + A.7 list-remove-last",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='c'){p.put('stage','mutating');l.remove(2);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='c'){p.put('stage','mutating');l.remove(2);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "7e3d35c1ee40c2779a4976cc0485dad50d5058c819728117c6d8b02303dc3214",
+        "istest": "7e3d35c1ee40c2779a4976cc0485dad50d5058c819728117c6d8b02303dc3214"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A03_CATCH",
+            "source": "A.3 + A.7 list-remove-last",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "2844a6ecca091c5605d6486860e65b88edb523b27c3c6c51b7b982dea3c1cf64"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A03_CATCH",
+            "source": "A.3 + A.7 list-remove-last",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "cd1637ac64acc81929a739182e12a11547eff32e291e0d4560cb25f0521f37af"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A03_CATCH",
+            "source": "A.3 + A.7 list-remove-last",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "07d9ae594770b70a4765517d7d24a5c025f467a2db329798619ccb13ef661550"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A03_CATCH",
+            "source": "A.3 + A.7 list-remove-last",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "a559b806f93bbf0bbf879fb9193805678ae4fa2ac3ad256006216acddea35ddd"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A03_CATCH",
+            "source": "A.3 + A.7 list-remove-last",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "665f093bf1ce58fc64e3c18691fc1930498aaa190e463fc3e8e7f105ce99dc71"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A03_CATCH",
+            "source": "A.3 + A.7 list-remove-last",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "bd0adf9330815cbdab3ae74f19f8167a790b9502ded95a85c74db9f5d982e6fb"
+        }
+      ]
+    },
+    {
+      "id": "A04_RAW",
+      "source": "A.4 helper-remove-continue",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};ProbeTraversal.items=l;p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');ProbeTraversal.drop(1);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};ProbeTraversal.items=l;p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');ProbeTraversal.drop(1);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "25dcf61346e97525e0767795f43e02cbdca551fc1a1e18c82cfbceb3d0edc335",
+        "istest": "25dcf61346e97525e0767795f43e02cbdca551fc1a1e18c82cfbceb3d0edc335"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A04_RAW",
+            "source": "A.4 helper-remove-continue",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "c9d5afde6c7b9527933db7b92d4adba996b3961ce9d1494d20480f920e19036d"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A04_RAW",
+            "source": "A.4 helper-remove-continue",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "9581507c7edccaf07851c6426dfaed1bf1d4f8eb60057a726c4a40a885f00f02"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A04_RAW",
+            "source": "A.4 helper-remove-continue",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "e8b542bc6788455f10c3b4028770ff4679152d0a026be3c82609ebb81957c95a"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A04_RAW",
+            "source": "A.4 helper-remove-continue",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "b7f2ca57a8a7b189dff77260b29503dde34c1590b26b3546cb0735d26e2e6209"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A04_RAW",
+            "source": "A.4 helper-remove-continue",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "3da19fd3c2e0c5be0593435514d0838e266d3eedbbac99ff80390f57f7344bac"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A04_RAW",
+            "source": "A.4 helper-remove-continue",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "53186364eb4b3fcdc60e818eb877066149f76d0d3b62264cd315c79873878ac6"
+        }
+      ]
+    },
+    {
+      "id": "A04_CATCH",
+      "source": "A.4 + A.7 helper-remove-continue",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};ProbeTraversal.items=l;p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');ProbeTraversal.drop(1);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};ProbeTraversal.items=l;p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');ProbeTraversal.drop(1);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "a1f59e88af77163ce0f4c191bd40aabbae4db196cf5d2d6d9d9f7ffd04e15c41",
+        "istest": "a1f59e88af77163ce0f4c191bd40aabbae4db196cf5d2d6d9d9f7ffd04e15c41"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A04_CATCH",
+            "source": "A.4 + A.7 helper-remove-continue",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "3214b5e3e5c0e49dd0e43b4b35c779e89de0a6f4a502b48edf30adbcca4e90b1"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A04_CATCH",
+            "source": "A.4 + A.7 helper-remove-continue",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "2a04e632e116d2f315436c70d905fa32cd37339a1d09a1f184ef05a9ea9b47b3"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A04_CATCH",
+            "source": "A.4 + A.7 helper-remove-continue",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "e3242beec744ecf5c61503486421af0405c23ef5355fe4265cce62e553e75a01"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A04_CATCH",
+            "source": "A.4 + A.7 helper-remove-continue",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "6eac4cebb0401e0eca0fadd8dc2bb4f8d674e4bf809b48575ab054a6c23c900f"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A04_CATCH",
+            "source": "A.4 + A.7 helper-remove-continue",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "ca55827090af48b2bc1888aab8341c588eded8769cd67ac21499b6ce8aa3686f"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A04_CATCH",
+            "source": "A.4 + A.7 helper-remove-continue",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "a1f87560670cac22b9cb369babc1346e83cb700a142dac2d7ce254d599bf4e84"
+        }
+      ]
+    },
+    {
+      "id": "A05_RAW",
+      "source": "A.4 helper-remove-break",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};ProbeTraversal.items=l;p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');ProbeTraversal.drop(1);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};ProbeTraversal.items=l;p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');ProbeTraversal.drop(1);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "18db94cf294e09281461c176d6ac8e454402267c283435dc3754f8846ba4a40b",
+        "istest": "18db94cf294e09281461c176d6ac8e454402267c283435dc3754f8846ba4a40b"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A05_RAW",
+            "source": "A.4 helper-remove-break",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "ca6acf3b280fa7815a10d5b1a26c4cc192f97f3fae66524cb69cc2fc8858eb7b"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A05_RAW",
+            "source": "A.4 helper-remove-break",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "32edb93628af9e2e19dec910c10dfd5e05a81784d033f5d6f3c5792b1591a656"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A05_RAW",
+            "source": "A.4 helper-remove-break",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "0bcd8247988126816eff5ad30dc22ce56a5978839f19052a78c3c8410e807b59"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A05_RAW",
+            "source": "A.4 helper-remove-break",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "8ccc3ff3a07e02373ad5c07b297f37949317ff0913b2a7936965022f552708cf"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A05_RAW",
+            "source": "A.4 helper-remove-break",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "66b8c7fd35b51a0d6304b4d7837ecc650b762e8ae3beb9a1596f6d7a70993b76"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A05_RAW",
+            "source": "A.4 helper-remove-break",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "e74fe313abc762baf378184c64758e38637cf3c5820f2239f18e8ef08c40f9c9"
+        }
+      ]
+    },
+    {
+      "id": "A05_CATCH",
+      "source": "A.4 + A.7 helper-remove-break",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};ProbeTraversal.items=l;p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');ProbeTraversal.drop(1);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};ProbeTraversal.items=l;p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');ProbeTraversal.drop(1);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "d36c71083782e4dd3bc74305ebf429b52180d8ed7f51116e006c05d100187cc3",
+        "istest": "d36c71083782e4dd3bc74305ebf429b52180d8ed7f51116e006c05d100187cc3"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A05_CATCH",
+            "source": "A.4 + A.7 helper-remove-break",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "10e049e1469557c3e9ac17fc57774d13ae92c6a37ee493e716d78b65551d6505"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A05_CATCH",
+            "source": "A.4 + A.7 helper-remove-break",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "b422a44bcbe101052e16516da15cc4e291beca3aeabd84024c5c5f8ca9fd0bcc"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A05_CATCH",
+            "source": "A.4 + A.7 helper-remove-break",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "04f3e517d2c6258a7b67c1a1c5f38f9491dd533eec77b5cf73a234fb2262b80e"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A05_CATCH",
+            "source": "A.4 + A.7 helper-remove-break",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "d152f20d6dde225c1711a8b9092f5b2dd015a73c92afa3d8b9c1d01d2f36f8c6"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A05_CATCH",
+            "source": "A.4 + A.7 helper-remove-break",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "4dee11726b2e57c4383c1d8bff2a430c010994922058008e05852fa8210a8e6e"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A05_CATCH",
+            "source": "A.4 + A.7 helper-remove-break",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "c48e43a37ce822a082405c5e09882fc8e4bfcb14f7017e13315f081ad62179ff"
+        }
+      ]
+    },
+    {
+      "id": "A06_RAW",
+      "source": "A.5 list-add-break",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "0098fbe0620b1917ee657eae86258938d0cee49325fb03455b9b75e7c938e6b0",
+        "istest": "0098fbe0620b1917ee657eae86258938d0cee49325fb03455b9b75e7c938e6b0"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A06_RAW",
+            "source": "A.5 list-add-break",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "b0e09075aa52c8c20b0a79f9f05ae5b9ca70cb305cbc6551f2ef6e34547ae0f5"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A06_RAW",
+            "source": "A.5 list-add-break",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "776552bb388ed6538aaa0d1d201a85581631ea614c90c5c9a6fb88859bf08416"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A06_RAW",
+            "source": "A.5 list-add-break",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "beda4564e17b793b2c22f6fd5172f7967cb9d81c110e3468dac1d4c7d8259263"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A06_RAW",
+            "source": "A.5 list-add-break",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "4e162b1fd257421607e193fa0bc42abab19e929ea3a9c7f0c716203762106a8c"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A06_RAW",
+            "source": "A.5 list-add-break",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "e63e764a5fc94be3991e456965074c0e7bff3ca697a4138bbcedea44549e27a0"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A06_RAW",
+            "source": "A.5 list-add-break",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "07385ea98316e4d3d3aa065b9a69929338e9d574bcbf5370f055b65360c39a4b"
+        }
+      ]
+    },
+    {
+      "id": "A06_CATCH",
+      "source": "A.5 + A.7 list-add-break",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "1cd9e9c4ec2f7ed1373ec502547cc95b937e6a9469735735d2b0d3e2b1537866",
+        "istest": "1cd9e9c4ec2f7ed1373ec502547cc95b937e6a9469735735d2b0d3e2b1537866"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A06_CATCH",
+            "source": "A.5 + A.7 list-add-break",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "46f0ccb751266a41533daae5b784348609c31e911bf4b0320ec3dc349f36c421"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A06_CATCH",
+            "source": "A.5 + A.7 list-add-break",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "95f23778625886312819d46c04c741c1c6d725cdb1732df405d8aae90aae067f"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A06_CATCH",
+            "source": "A.5 + A.7 list-add-break",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "261f4cfbd18c21d3ad85cdd57c79a2a4d54412b96c9e01ac35367f3f09e12a97"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A06_CATCH",
+            "source": "A.5 + A.7 list-add-break",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "2582a1c7ecf17664241bd9405f70e5ab9a4730247edd1e3274ddb1bcfe578411"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A06_CATCH",
+            "source": "A.5 + A.7 list-add-break",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "163044fb2272bd389f0e338b9da50e940d62facb4f61e944782f0c44ab7e1e47"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A06_CATCH",
+            "source": "A.5 + A.7 list-add-break",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "8da3b734556ffe65e6ea42fdc9e771de2ec2c1f91d5cb69c06ec9ce4616039cd"
+        }
+      ]
+    },
+    {
+      "id": "A07_RAW",
+      "source": "A.5 list-add-continue",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "3a6cb9be399d47e4f057be119fba8e66dfaafad9f88f24c819297b156a7a19f8",
+        "istest": "3a6cb9be399d47e4f057be119fba8e66dfaafad9f88f24c819297b156a7a19f8"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A07_RAW",
+            "source": "A.5 list-add-continue",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "00aac4485713e057912cd53c7e2fbccbe61939abb4a1182c99dba3059bb2df79"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A07_RAW",
+            "source": "A.5 list-add-continue",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "cfabceae4ccd1d52b0225edafd7efa66016d57856a59d30ba1b365c074091f5f"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A07_RAW",
+            "source": "A.5 list-add-continue",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "7fff889ef66adefad7872214730c52f26f09e6bf983445ffeed3dc7ff6d91845"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A07_RAW",
+            "source": "A.5 list-add-continue",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "7dce5b0d4b45fe04bf48867b4f228b41c82773b8d00a6e4e1765181cd9f7b106"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A07_RAW",
+            "source": "A.5 list-add-continue",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "87963a8706e62cebc41b406c0174e2156530b119859287f0b9b873cb2222fccb"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A07_RAW",
+            "source": "A.5 list-add-continue",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "bf0b48b9e8d6b0e023b085396b406969c1195a5274b00022265eab930f9a1c5b"
+        }
+      ]
+    },
+    {
+      "id": "A07_CATCH",
+      "source": "A.5 + A.7 list-add-continue",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "0d63f88efcba8be16776fa88a6c1dbd6334ec8cec42a6cb33983a654c433fade",
+        "istest": "0d63f88efcba8be16776fa88a6c1dbd6334ec8cec42a6cb33983a654c433fade"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A07_CATCH",
+            "source": "A.5 + A.7 list-add-continue",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "cf103c499fea5380bea572ad119d47073d811180f68a7203fffc81adc5d1d960"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A07_CATCH",
+            "source": "A.5 + A.7 list-add-continue",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "97b6c37f5efa0fb8166c34868848e5420458e2779c893d063ef44fc47b04b3b3"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A07_CATCH",
+            "source": "A.5 + A.7 list-add-continue",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "579bfe27f82b182087fdd87ae5cc6bef5497f5d87213724e30ebd5ffc1fc9237"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A07_CATCH",
+            "source": "A.5 + A.7 list-add-continue",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "2bed9d09370b2b44568a0119fb187556c0bde0daa13f10d247deb21fe8e7d8f1"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A07_CATCH",
+            "source": "A.5 + A.7 list-add-continue",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "050986202e5ce52ea1f9727ae792c16b41f55e95a885d23d1a316286a0c98a70"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A07_CATCH",
+            "source": "A.5 + A.7 list-add-continue",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "73a4f2ca4edbafb5d8084051bf3dbc36576299ebcd04a5301f664ced55d23ae6"
+        }
+      ]
+    },
+    {
+      "id": "A08_RAW",
+      "source": "A.5 list-clear",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.clear();p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.clear();p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "1a752490cab9777f82779ae9620652979a2ed540368da3e0f6cc7a4e8d90a0bb",
+        "istest": "1a752490cab9777f82779ae9620652979a2ed540368da3e0f6cc7a4e8d90a0bb"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A08_RAW",
+            "source": "A.5 list-clear",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "f693605b726f3bc53b57b2941d478767f1c29a7b89b08fb6b593f58d68b289a9"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A08_RAW",
+            "source": "A.5 list-clear",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "4d8c499d72ab790dadf217d10233813ca1659b5211c78dbe1b8a84d8b805bd3c"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A08_RAW",
+            "source": "A.5 list-clear",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "2501a89754bc617a4b67e924a0bb788b4627daface84f0e1df6a9a3dda2fb9a0"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A08_RAW",
+            "source": "A.5 list-clear",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "7cae762b5a3744161511d135aedd202604c68cf5182f9717c092f58fa20005e4"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A08_RAW",
+            "source": "A.5 list-clear",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "fef63b38f249bdd6cd073f8d1f57d614608294f008dd3a682dad8770d447d9c8"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A08_RAW",
+            "source": "A.5 list-clear",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "7d224873fb7bd75ff6a8da0d5230a7b591869e18f9045b9d8bf19f20aa9f57a5"
+        }
+      ]
+    },
+    {
+      "id": "A08_CATCH",
+      "source": "A.5 + A.7 list-clear",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.clear();p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.clear();p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "9ea7f8756cd1ef6a71f117c8309a444d5e8eb2334865e67ea6cfe01948ed4068",
+        "istest": "9ea7f8756cd1ef6a71f117c8309a444d5e8eb2334865e67ea6cfe01948ed4068"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A08_CATCH",
+            "source": "A.5 + A.7 list-clear",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "5cc62a3f3fc627c724493a71b9a70bb0a5714a26041fd4a3ad6bb0a922a1cf6e"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A08_CATCH",
+            "source": "A.5 + A.7 list-clear",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "e4677c6794d60069156582852e2cce25c939c2797032c0910d52e003979df587"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A08_CATCH",
+            "source": "A.5 + A.7 list-clear",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "9f497a0bd4ca01b66352680dd189216d60b897ffb178d4abc7137a726257c776"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A08_CATCH",
+            "source": "A.5 + A.7 list-clear",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "688a73fc67030cab9feb73e952e40f3b01a640eebcd93eb51701303a53641aab"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A08_CATCH",
+            "source": "A.5 + A.7 list-clear",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "89a67b53c92da46dce97852d77b5af2bbf2146567e9a170adf6a0125a408bdcc"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A08_CATCH",
+            "source": "A.5 + A.7 list-clear",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "e7a14128a19cb10334162a54032b38bc58d2840e268d0ee77ce62e2b0089b725"
+        }
+      ]
+    },
+    {
+      "id": "A09_RAW",
+      "source": "A.5 list-set",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.set(0,'z');p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.set(0,'z');p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "35d0405d73c7a25cd0ff34408e9c366f423ab2b98124e5ab222ee256d80ec95f",
+        "istest": "35d0405d73c7a25cd0ff34408e9c366f423ab2b98124e5ab222ee256d80ec95f"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "z",
+                "b",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A09_RAW",
+            "source": "A.5 list-set",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "0db765e72e45787587662909abd16aad86aafcdccd725a388e0f990deca86bbe"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "z",
+                "b",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A09_RAW",
+            "source": "A.5 list-set",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "17833d57a7b15e304a9baff9f147288f33c79eab093b56baf235c3711762aa1b"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "z",
+                "b",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A09_RAW",
+            "source": "A.5 list-set",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "e5d9e44b931f67d445dc1c79a7664172b649ffb7f6474360dc13b55d94ac685f"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "z",
+                "b",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A09_RAW",
+            "source": "A.5 list-set",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "186e3de8d7b069c7b482185c0397d074677839b8b981bab08f496e156ecf9a31"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "z",
+                "b",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A09_RAW",
+            "source": "A.5 list-set",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "21306ef3b0529a7512154f0d8fe53595fef627758c18bad6e4d75b7d3dde390e"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "z",
+                "b",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A09_RAW",
+            "source": "A.5 list-set",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "358731770f7b3697c4ac3fc40247d0beb674fb3206ee4dce38d4e868761300a7"
+        }
+      ]
+    },
+    {
+      "id": "A09_CATCH",
+      "source": "A.5 + A.7 list-set",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.set(0,'z');p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');List<String> l=new List<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.set(0,'z');p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "32108ddcd21ced260c87f5a6f1e2e9b06a7c2c8811341eb656df190f7c2d01be",
+        "istest": "32108ddcd21ced260c87f5a6f1e2e9b06a7c2c8811341eb656df190f7c2d01be"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "z",
+                "b",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A09_CATCH",
+            "source": "A.5 + A.7 list-set",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "54fa6d297c23e197126ded3ccc814593ce62b60048fd901e83501d7e671f638f"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "z",
+                "b",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A09_CATCH",
+            "source": "A.5 + A.7 list-set",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "5aeb315708f01ef0151e6d70ae5ee4741b9d1f2baaf3427657d1c6a5e546aad4"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "z",
+                "b",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A09_CATCH",
+            "source": "A.5 + A.7 list-set",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "949e5565a49e37b8a2ebd0514ab55509e3e2d4b92d895f8bccad0b0ccfa80b9d"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "z",
+                "b",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A09_CATCH",
+            "source": "A.5 + A.7 list-set",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "afde8336fab6b42e86ef0b2c65d6c160fa244555a2b0f50f8093b4659dbd4eeb"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "z",
+                "b",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A09_CATCH",
+            "source": "A.5 + A.7 list-set",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "405515a7ef74da3241617002c0b583d1ef98d1918f75270a30213ac58d8460e4"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "z",
+                "b",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A09_CATCH",
+            "source": "A.5 + A.7 list-set",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "54d1972ae211eaa118654afdf662cac10706488ee7e554d409acdf9cd1701943"
+        }
+      ]
+    },
+    {
+      "id": "A10_RAW",
+      "source": "A.6 set-remove",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "100845811ec3b1c3b60d4cbc647a7cff9bec8d5818356ba5b89d49df845d2fa9",
+        "istest": "100845811ec3b1c3b60d4cbc647a7cff9bec8d5818356ba5b89d49df845d2fa9"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A10_RAW",
+            "source": "A.6 set-remove",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "b1fdb79efa387d34fa81748e1137db9366c5bf2685e8d1252dc4b949b9dc5a4d"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A10_RAW",
+            "source": "A.6 set-remove",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "56c80c9b6114cadcd0004619e7f2212ef3a0bf985139ff3aa8c47bf35b28ef14"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A10_RAW",
+            "source": "A.6 set-remove",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "f7e59c2d9f5e8c82773a4a95ed828ed1355cb7a8b998e8d413ca646b0b1beff5"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A10_RAW",
+            "source": "A.6 set-remove",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "26d1675d7e49421a74aae4f090b927a92d4ba26d395c85ce10886296b4ed8b77"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A10_RAW",
+            "source": "A.6 set-remove",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "c01a290e77665728175327f42be6e8122d9faeee50dcda30eb92a5d1cd262e4d"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A10_RAW",
+            "source": "A.6 set-remove",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "763c59265ac77f0d895377fb2827f8b170aa2fa1633275abc797a2195ebd06f3"
+        }
+      ]
+    },
+    {
+      "id": "A10_CATCH",
+      "source": "A.6 + A.7 set-remove",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "2c2a1d28f09f09690814d5966d39afbecf572c8d27607ad5f6d4167a0ebf688e",
+        "istest": "2c2a1d28f09f09690814d5966d39afbecf572c8d27607ad5f6d4167a0ebf688e"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A10_CATCH",
+            "source": "A.6 + A.7 set-remove",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "01466a2c1f6539f78713c1085489613f862c44a2d7b793d40cede09b0059e263"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A10_CATCH",
+            "source": "A.6 + A.7 set-remove",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "4480c5c218241e1b0cd5bcfbaa6518c695b7d7af81f76e39ae8c3493a616239f"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A10_CATCH",
+            "source": "A.6 + A.7 set-remove",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "fb989006ad1a3a09643d135802b4b2991ee16a1130c361e92ec7afa82cbea97a"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A10_CATCH",
+            "source": "A.6 + A.7 set-remove",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "9dfeb453e281b74c7991266a5fd494b6811a0fe4c14fa61a7b4a8396e305294d"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A10_CATCH",
+            "source": "A.6 + A.7 set-remove",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "9e869b797c789fba92d04a031e814b88460a8c064d90c4101fc2b05de19f5e09"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A10_CATCH",
+            "source": "A.6 + A.7 set-remove",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "ccfc34c68200293cd539071873aa5d4d97325ab5fa1e1cf86d6fece4312d3568"
+        }
+      ]
+    },
+    {
+      "id": "A11_RAW",
+      "source": "A.6 set-add",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "1f72f1eecb8c4109a0315e173c28f01a2553d147ef8bce5c0507b3d10d83f93b",
+        "istest": "1f72f1eecb8c4109a0315e173c28f01a2553d147ef8bce5c0507b3d10d83f93b"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A11_RAW",
+            "source": "A.6 set-add",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "e7ffef749bd453994da2019ea83cd5b544248d4928b93f47697d4c8eaa148d1e"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A11_RAW",
+            "source": "A.6 set-add",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "8afe953e23f86e5833936cbebb78acf9149d75396fe734b3e62027e97084a563"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A11_RAW",
+            "source": "A.6 set-add",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "6a5f631a7e093af8a550c399af54c8ba9c2f1659d3c931ae3fc1283d153a6979"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A11_RAW",
+            "source": "A.6 set-add",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "7c7acd031ae3b6d18418bfc5ffa69588dbdcca0fb5bd079544cd7f12601a57ab"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A11_RAW",
+            "source": "A.6 set-add",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "fe06fb6c7d875bc52e983fc105f71e0485c4e9f0e3b6a6086c47d86f6bbbfc4f"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A11_RAW",
+            "source": "A.6 set-add",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "638a0f0ed1a7fb2345bc80c49f23ac40453700fbf8abbff5d8e6aec129b233b0"
+        }
+      ]
+    },
+    {
+      "id": "A11_CATCH",
+      "source": "A.6 + A.7 set-add",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "5865fecb5c926fa1714c80bc755ebe3ff507489b3b53daa78718faa70f7780ca",
+        "istest": "5865fecb5c926fa1714c80bc755ebe3ff507489b3b53daa78718faa70f7780ca"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A11_CATCH",
+            "source": "A.6 + A.7 set-add",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "5c5c227c37c3a9b42cd67a5414eac27edd004d9cab6476863ab0644bcb61526f"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A11_CATCH",
+            "source": "A.6 + A.7 set-add",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "9f048c1441792f148da0a6310c49885c6f557465944293af94eabeb12129075b"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A11_CATCH",
+            "source": "A.6 + A.7 set-add",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "0d7f35e7c21cd68105bc677a961b994c48025df0eb74cc81f4e6ea1a3a758025"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A11_CATCH",
+            "source": "A.6 + A.7 set-add",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "624590c9f968753600a0ce2193ceb35cafd39ac6031478e3dcb504295809d426"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A11_CATCH",
+            "source": "A.6 + A.7 set-add",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "b5d0bf8c9f004f6d7647ee6e9e58e7dfdda67503d41849ac7cc8b4197ba11e6f"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A11_CATCH",
+            "source": "A.6 + A.7 set-add",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "e0374f595c147856912ab0c8ea3382bf8102eafd6be1e321b05bd21888d62873"
+        }
+      ]
+    },
+    {
+      "id": "A12_RAW",
+      "source": "A.6 map-remove",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Map<String,Integer> l=new Map<String,Integer>{'a'=>1,'b'=>2,'c'=>3};p.put('final',l);for(String s:l.keySet()){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Map<String,Integer> l=new Map<String,Integer>{'a'=>1,'b'=>2,'c'=>3};p.put('final',l);for(String s:l.keySet()){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "b1ee603d85912a3e9665069dd976fe0859eeed2950d801e21c534370dad6646b",
+        "istest": "b1ee603d85912a3e9665069dd976fe0859eeed2950d801e21c534370dad6646b"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A12_RAW",
+            "source": "A.6 map-remove",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "07188564aa53776c0e62aef555af4d37eaa4f7179e3dc62f3b481479f3b98745"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A12_RAW",
+            "source": "A.6 map-remove",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "db3b49dc6ddf6591b6e2efc6dd43bfbd0e5dea1f82a7082ffb808f57609b9593"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A12_RAW",
+            "source": "A.6 map-remove",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "f23ccf50eb137c08db1081756affdecbb61d9f2e1aacb838f8f8c9aeff11c7c6"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A12_RAW",
+            "source": "A.6 map-remove",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "91ce135c36e54c75ce11f923dd822f594c39489d02aece53217c753babe55d9f"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A12_RAW",
+            "source": "A.6 map-remove",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "c249c0c7354e2dfe90498760bb99f774ae248e4ef3103cddac17b368a05099af"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A12_RAW",
+            "source": "A.6 map-remove",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "5e137774bc7e01e338ef0f1f888a7dd2a59666a10f9cad4de4adec580fa1ee8b"
+        }
+      ]
+    },
+    {
+      "id": "A12_CATCH",
+      "source": "A.6 + A.7 map-remove",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Map<String,Integer> l=new Map<String,Integer>{'a'=>1,'b'=>2,'c'=>3};p.put('final',l);try{for(String s:l.keySet()){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Map<String,Integer> l=new Map<String,Integer>{'a'=>1,'b'=>2,'c'=>3};p.put('final',l);try{for(String s:l.keySet()){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "9ddeff05c8755dc4ff83dca1643af2e45d31618fdfdb9ca36c081ada83ebcfa9",
+        "istest": "9ddeff05c8755dc4ff83dca1643af2e45d31618fdfdb9ca36c081ada83ebcfa9"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A12_CATCH",
+            "source": "A.6 + A.7 map-remove",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "2bb67a16847a0466a4b748f504138f9e5a5cf455b488844ab2b0630e55bd9d30"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A12_CATCH",
+            "source": "A.6 + A.7 map-remove",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "ee7358cd947556797b64f951e9ad0e9b228cf05c864779f4b24f23247e8b84b0"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A12_CATCH",
+            "source": "A.6 + A.7 map-remove",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "89bd90c4de423b6757d596aea6447151ff2e606b49850c3c1758d988b6d7a45d"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A12_CATCH",
+            "source": "A.6 + A.7 map-remove",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "74d867416236c9e11497fa26b43b1a49615a78df3a108b44af42a74fe5cb1ea3"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A12_CATCH",
+            "source": "A.6 + A.7 map-remove",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "a09d56a559a8963922e7fcc64f1702534e492e94e324fd3d576b19477281d092"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "case_table_row": "A12_CATCH",
+            "source": "A.6 + A.7 map-remove",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "f9d9e95c2b31d424edf145573cb4bcefdeeab52b9646a017e8a3a93be838e7c5"
+        }
+      ]
+    },
+    {
+      "id": "A13_RAW",
+      "source": "A.6 set-remove-break",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "1294a4d455831c74d81e1b2bab7440ddae1d14f4980eb4d54781e7e0ed9188b6",
+        "istest": "1294a4d455831c74d81e1b2bab7440ddae1d14f4980eb4d54781e7e0ed9188b6"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A13_RAW",
+            "source": "A.6 set-remove-break",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "0e37ef3ea9dad812185cb01f473ed5d578870358bdedde0a22448a149b1a75b8"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A13_RAW",
+            "source": "A.6 set-remove-break",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "0515016114da795b5e7fc0848d36f9ce4640de1a485156fecc77e6967814e9a9"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A13_RAW",
+            "source": "A.6 set-remove-break",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "c9c5b02cc716ab551932be5bace5c6081548d1ab727a934c5ec6dc7ec257daf0"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A13_RAW",
+            "source": "A.6 set-remove-break",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "f64a55e7c0adb50d79d2e2dbaaed7b946b537c8af88a28e60253f43592bf5cfd"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A13_RAW",
+            "source": "A.6 set-remove-break",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "9e1f8b1e2ef43f9f1f8a1f3c2be2f885a1ecb76d0503b4884ba66355345d00cc"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A13_RAW",
+            "source": "A.6 set-remove-break",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "c2c181e983d4c9600a2cc1abc4c14513baba6c0945dc490703cdb80aa3020ff6"
+        }
+      ]
+    },
+    {
+      "id": "A13_CATCH",
+      "source": "A.6 + A.7 set-remove-break",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "ab5ed08321c67e74386e85e20674f380cc383a5cafc90164874aeee5b23d9709",
+        "istest": "ab5ed08321c67e74386e85e20674f380cc383a5cafc90164874aeee5b23d9709"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A13_CATCH",
+            "source": "A.6 + A.7 set-remove-break",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "b18da9883956c57a8cd501e7a7df644bf3465d9aa804fd377ea393a7df0fbc68"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A13_CATCH",
+            "source": "A.6 + A.7 set-remove-break",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "5941094e0c3ae8e92264a3ee2405ecbd5a2b960617148cd752eac1dc0795cf11"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A13_CATCH",
+            "source": "A.6 + A.7 set-remove-break",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "d86a43ce2a3df64dc47667fefd024ef7493f735263bb461f454e01564f7d17bb"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A13_CATCH",
+            "source": "A.6 + A.7 set-remove-break",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "62a09a33a0ee2b75eaff1ef2acd58f824316382b03faee35f557e7f0cbb89289"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A13_CATCH",
+            "source": "A.6 + A.7 set-remove-break",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "f561788e7574b145abdd25e7dae3519bfd3cf425716afa1d36c492d803540cee"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "c"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A13_CATCH",
+            "source": "A.6 + A.7 set-remove-break",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "9a34b1e16efbded11c6f43b1022d11dd0f6a95dbf24d7ae9b72dfa7341305233"
+        }
+      ]
+    },
+    {
+      "id": "A14_RAW",
+      "source": "A.6 set-add-break",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "edc3e5e2be35b7c2c14730247e8ad1e1846267e1036df47f36cbf7fadde3779d",
+        "istest": "edc3e5e2be35b7c2c14730247e8ad1e1846267e1036df47f36cbf7fadde3779d"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A14_RAW",
+            "source": "A.6 set-add-break",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "2a63532b2da6d2e7fc3b6c65d815fbc93f243a49fff8482a6d8ed5bd752400cc"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A14_RAW",
+            "source": "A.6 set-add-break",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "174e3590a0a6fe4712b38eef1bda3403464bd6720ad8a579829e7835b30b716c"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A14_RAW",
+            "source": "A.6 set-add-break",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "75a85fbf49d0e2bb2e96ec26878fe2e9e910cec07886e4ce3314ee5e45b4861f"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A14_RAW",
+            "source": "A.6 set-add-break",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "853107c416ec41c844fa6c6f35aa6b2f5fbfe6c4a2f149a44b99d4a42945b1c9"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A14_RAW",
+            "source": "A.6 set-add-break",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "ce24a2c1d065f153b67f72cc6748f1b8d1f2123e8c0011a4139b1ca48dd32f03"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A14_RAW",
+            "source": "A.6 set-add-break",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "45a590c922ac0251837698430aae6ea5a3df16874e5527b90eb351b82461bd6b"
+        }
+      ]
+    },
+    {
+      "id": "A14_CATCH",
+      "source": "A.6 + A.7 set-add-break",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Set<String> l=new Set<String>{'a','b','c'};p.put('final',l);try{for(String s:l){visited.add(s);if(s=='b'){p.put('stage','mutating');l.add('d');p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "1ae57e01384fff224b862a082fe2f76e057e07e083972095852ede22f1f8f59a",
+        "istest": "1ae57e01384fff224b862a082fe2f76e057e07e083972095852ede22f1f8f59a"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A14_CATCH",
+            "source": "A.6 + A.7 set-add-break",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "3085ccfaf8d1f6cfd98da5768351295211267e4732cb188092f5fc4e9def281f"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A14_CATCH",
+            "source": "A.6 + A.7 set-add-break",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "3db5b91572aa57a4fcadc41eb66ba73c0ba7dc7f7d17745c8106a0e40ec843fb"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A14_CATCH",
+            "source": "A.6 + A.7 set-add-break",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "68031b3d43544bf180fbf2dcde483d5aa03f91f177782d2df70aba8975747475"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A14_CATCH",
+            "source": "A.6 + A.7 set-add-break",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "cc6e5d4cc07346a4cfe9cde92d9f51aa386481a0fd1b7000821184752d38eb59"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A14_CATCH",
+            "source": "A.6 + A.7 set-add-break",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "c6a54337b30c7806f9a8babae684841a4ba0f7367acd4f921dcebaa3f3c10f4d"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A14_CATCH",
+            "source": "A.6 + A.7 set-add-break",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "dc772a69985c0c0d20a3adb037cdbcbf2699f3acdd38aeeec792abf19a7880b9"
+        }
+      ]
+    },
+    {
+      "id": "A15_RAW",
+      "source": "A.6 map-remove-break",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Map<String,Integer> l=new Map<String,Integer>{'a'=>1,'b'=>2,'c'=>3};p.put('final',l);for(String s:l.keySet()){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Map<String,Integer> l=new Map<String,Integer>{'a'=>1,'b'=>2,'c'=>3};p.put('final',l);for(String s:l.keySet()){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "fe023c216ef6aa7ffb1c82047c118a5cd435569786a6cf296718067d0b5f2114",
+        "istest": "fe023c216ef6aa7ffb1c82047c118a5cd435569786a6cf296718067d0b5f2114"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A15_RAW",
+            "source": "A.6 map-remove-break",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "0b97b98e159aee9218cd1126ffb8e35ea1d40bc08731741fb73b835dd67b40d7"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A15_RAW",
+            "source": "A.6 map-remove-break",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "661e6b385d005733d3863fe9293bbbbd65e9624b4b3e5a7927ea20c5bce6d2aa"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A15_RAW",
+            "source": "A.6 map-remove-break",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "cc313ca48d7ddcebd9777bbb317f7fa3fc8662e7bc447209fb685a2bdc622b07"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A15_RAW",
+            "source": "A.6 map-remove-break",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "6f1f518fad74a5c8792606c90274d79b811583d3d9883367191052d49a95f9ac"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A15_RAW",
+            "source": "A.6 map-remove-break",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "b7d2becbd0681622fc35599cd67810cfc4b7e284e3193423258b46ada5a69198"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A15_RAW",
+            "source": "A.6 map-remove-break",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "d181b7e1a2d0e1683caf7906821b671ec8cf6ad89069663e418921bd5f94a7d0"
+        }
+      ]
+    },
+    {
+      "id": "A15_CATCH",
+      "source": "A.6 + A.7 map-remove-break",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Map<String,Integer> l=new Map<String,Integer>{'a'=>1,'b'=>2,'c'=>3};p.put('final',l);try{for(String s:l.keySet()){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> visited=new List<String>();p.put('visited',visited);p.put('stage','loop');Map<String,Integer> l=new Map<String,Integer>{'a'=>1,'b'=>2,'c'=>3};p.put('final',l);try{for(String s:l.keySet()){visited.add(s);if(s=='b'){p.put('stage','mutating');l.remove(s);p.put('stage','mutated');break;}}p.put('stage','done');p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "ff915b59867ac0328edbec5149f91a682a56f4a6f5fbfb2155aff47009bdee89",
+        "istest": "ff915b59867ac0328edbec5149f91a682a56f4a6f5fbfb2155aff47009bdee89"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A15_CATCH",
+            "source": "A.6 + A.7 map-remove-break",
+            "api": "62.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "2c26015616a41ecc1ff8186e7bbded9a9124acf0db256f7d506ac951c88cf7aa"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A15_CATCH",
+            "source": "A.6 + A.7 map-remove-break",
+            "api": "62.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "a7d2952e02383c5fe854e4280437d58bb6a00a49d11d7f41e1802e62d76fb670"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A15_CATCH",
+            "source": "A.6 + A.7 map-remove-break",
+            "api": "67.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "4c8cb5015e893bb5ca6897ccd800b8c83b24f6d72e54251dd58bf53bd607bbef"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A15_CATCH",
+            "source": "A.6 + A.7 map-remove-break",
+            "api": "67.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "81e86d9401cafeca06c38b11ad1a45c91f84286d9b430d554aadac52b4c4babe"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A15_CATCH",
+            "source": "A.6 + A.7 map-remove-break",
+            "api": "68.0",
+            "invocation_route": "anonymous"
+          },
+          "nativeSHA256": "dc789985f6bde7301942f964fdc69a9ec6470ecd05575d6bbf83fc19fe5f4571"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "outcome": "runtime",
+            "value": {
+              "complete": true,
+              "final": {
+                "c": 3,
+                "a": 1
+              },
+              "stage": "done",
+              "visited": [
+                "a",
+                "b"
+              ]
+            },
+            "case_table_row": "A15_CATCH",
+            "source": "A.6 + A.7 map-remove-break",
+            "api": "68.0",
+            "invocation_route": "istest"
+          },
+          "nativeSHA256": "2446ccf65a062de845b881ffaac37730cf7b04b9677ecb8889f0bcbb975a410b"
+        }
+      ]
+    },
+    {
+      "id": "A16_RAW",
+      "source": "A.8 explicit-iterator-remove",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> l=new List<String>{'a','b','c'};p.put('final',l);Iterator<String> it=l.iterator();p.put('first',it.next());p.put('stage','mutating');l.remove(0);p.put('stage','mutated');p.put('hasNext',it.hasNext());p.put('stage','next');p.put('next',it.next());p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> l=new List<String>{'a','b','c'};p.put('final',l);Iterator<String> it=l.iterator();p.put('first',it.next());p.put('stage','mutating');l.remove(0);p.put('stage','mutated');p.put('hasNext',it.hasNext());p.put('stage','next');p.put('next',it.next());p.put('complete',true);System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "348bb3b2d6f5a1368186555a1a8bb85de80edbe1d071c4aab4ebc623211858ae",
+        "istest": "348bb3b2d6f5a1368186555a1a8bb85de80edbe1d071c4aab4ebc623211858ae"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A16_RAW",
+            "source": "A.8 explicit-iterator-remove",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "b53a0cf4cdb40830e37b2f5c89e86dff028895895f34e27f41add523aa107e9b"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A16_RAW",
+            "source": "A.8 explicit-iterator-remove",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "894f71f5d8f52850e4af65ae7826194f53a85fe8164ab95216ada4706b6d1529"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A16_RAW",
+            "source": "A.8 explicit-iterator-remove",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "d6e1674f50cfb3c1afd108dcfe4b6c4d8b975e09c7bfb843b13e964b922d3d38"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A16_RAW",
+            "source": "A.8 explicit-iterator-remove",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "e514b21aa15b21a0df9bdf6c17cc656cd88ab0582e8c77e9548a9f494aa40307"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A16_RAW",
+            "source": "A.8 explicit-iterator-remove",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "8843c20050cc10155dafcbc07ad1df7ce997c1bbef2b4b6e00bff416a3a31b12"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A16_RAW",
+            "source": "A.8 explicit-iterator-remove",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "7844d781a0c0a72b36591156c76334f90afed8cd2b22c1eb6b668dee8ae45d3c"
+        }
+      ]
+    },
+    {
+      "id": "A16_CATCH",
+      "source": "A.8 + A.7 explicit-iterator-remove",
+      "anonymous": "Map<String,Object> p=new Map<String,Object>();List<String> l=new List<String>{'a','b','c'};p.put('final',l);Iterator<String> it=l.iterator();try{p.put('first',it.next());p.put('stage','mutating');l.remove(0);p.put('stage','mutated');p.put('hasNext',it.hasNext());p.put('stage','next');p.put('next',it.next());p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "named": "Map<String,Object> p=new Map<String,Object>();List<String> l=new List<String>{'a','b','c'};p.put('final',l);Iterator<String> it=l.iterator();try{p.put('first',it.next());p.put('stage','mutating');l.remove(0);p.put('stage','mutated');p.put('hasNext',it.hasNext());p.put('stage','next');p.put('next',it.next());p.put('complete',true);}catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}System.debug('SCOPED_NATIVE|'+JSON.serialize(p));",
+      "sourceSHA256": {
+        "anonymous": "d2ed398b542277cb57e6a50780953b51992035436fbc1519d9b0ca302111edb9",
+        "istest": "d2ed398b542277cb57e6a50780953b51992035436fbc1519d9b0ca302111edb9"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A16_CATCH",
+            "source": "A.8 + A.7 explicit-iterator-remove",
+            "api": "62.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "81e0ec596a52ceb98937f769b78c223a4e9952137d6352ba1be7f6a02ba4f478"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A16_CATCH",
+            "source": "A.8 + A.7 explicit-iterator-remove",
+            "api": "62.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "10f4788d7c4acef05387c1b8b6de4916c86bdec563ebff40855a3b146285dc34"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A16_CATCH",
+            "source": "A.8 + A.7 explicit-iterator-remove",
+            "api": "67.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "95af7e13819d97556ba5bdf82001f3ed557be1a44e1ca94bb7cf0438dd7b790b"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A16_CATCH",
+            "source": "A.8 + A.7 explicit-iterator-remove",
+            "api": "67.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "1c9108408875bae54359390aead7ee30fe02d14ef6b201e21e49cac588c3a32c"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "native": {
+            "outcome": "uncaught_anonymous",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A16_CATCH",
+            "source": "A.8 + A.7 explicit-iterator-remove",
+            "api": "68.0",
+            "invocation_route": "anonymous",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "5519cc69207a767a3295476fe779b12b1d15c86a8c32215b38760791d700efb3"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_istest",
+          "native": {
+            "outcome": "uncaught_istest",
+            "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+            "exceptionType": "System.FinalException",
+            "case_table_row": "A16_CATCH",
+            "source": "A.8 + A.7 explicit-iterator-remove",
+            "api": "68.0",
+            "invocation_route": "istest",
+            "exceptionTypeSource": "exact exceptionMessage prefix"
+          },
+          "nativeSHA256": "92b911df2d996c08b34fa37805594d9e3cdc0e3ae8bce4c1fe989bc4a35f541b"
+        }
+      ]
+    }
+  ],
+  "evidenceLimits": "Uncaught traversal cells record only terminal exception type/message and catchability, not stage or final collection readbacks. Terminal assertion transport is replaced by a tagged debug line. Helper exports retain only declarations used by this group.",
+  "unobservedShapes": [
+    {
+      "id": "RETURN_DIRECT",
+      "apex": "List<String> l=new List<String>{'a','b','c'};for(String s:l){if(s=='b'){l.remove(1);return;}}",
+      "nativeControl": "A01_RAW",
+      "reason": "Only break was captured. Direct return remains unobserved."
+    },
+    {
+      "id": "RETURN_HELPER",
+      "apex": "List<String> l=new List<String>{'a','b','c'};ProbeTraversal.items=l;for(String s:l){if(s=='b'){ProbeTraversal.drop(1);return;}}",
+      "nativeControl": "A05_RAW",
+      "reason": "Only helper remove then break was captured. Helper remove then return remains unobserved."
+    },
+    {
+      "id": "ITERATOR_REMOVE_PHASE",
+      "apex": "List<String> l=new List<String>{'a','b','c'};Iterator<String> it=l.iterator();it.next();l.remove(0);Boolean hasNext=it.hasNext();String next=it.next();",
+      "nativeControl": "A16_RAW",
+      "reason": "Native terminates with uncaught FinalException, but has no hasNext/stage readback. Exact removal-specific iterator phase remains unobserved."
+    }
+  ],
+  "stillPendingCellCount": 18
+}

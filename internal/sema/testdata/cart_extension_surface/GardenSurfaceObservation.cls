@@ -1,0 +1,1 @@
+public class GardenSurfaceObservation { public static String observe() { return JSON.serialize(new List<Boolean>{GardenOrchestratorOverride.observe(),GardenPricingOverride.observe(),GardenPromotionsOverride.observe(),GardenShippingOverride.observe(),GardenTaxOverride.observe(),GardenOrderOverride.observe(),GardenSplitOverride.observe(),GardenSplitMockOverride.observe()}); } }

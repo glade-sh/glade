@@ -1,0 +1,67 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "rows": [
+    {
+      "id": "MT01",
+      "source": "List<SObject> rows=new List<SObject>{new Account(),new Contact(),new Opportunity(),new Account()}; Object token=rows.getSObjectType();",
+      "observe": "token null predicate and String.valueOf(token), compilation and exception message if any",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "MT02",
+      "source": "List<SObject> rows=new List<SObject>(); Object token=rows.getSObjectType();",
+      "observe": "token null predicate and String.valueOf(token), compilation and exception message if any",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "MT03",
+      "source": "List<SObject> rows=new List<SObject>{new Account()}; Object token=rows.getSObjectType();",
+      "observe": "token null predicate and String.valueOf(token), compilation and exception message if any",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "MT04",
+      "source": "List<SObject> rows=new List<SObject>{new Account(),new Account()}; Object token=rows.getSObjectType();",
+      "observe": "token null predicate and String.valueOf(token), compilation and exception message if any",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "MT05",
+      "source": "List<SObject> rows=new List<SObject>{null,null}; Object token=rows.getSObjectType();",
+      "observe": "token null predicate and String.valueOf(token), compilation and exception message if any",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "MT06",
+      "source": "List<Account> concrete=new List<Account>(); List<SObject> rows=concrete; Object token=rows.getSObjectType();",
+      "observe": "token null predicate and String.valueOf(token), compilation and exception message if any",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "MT07",
+      "source": "List<Account> concrete=new List<Account>{new Account()}; Object saved=concrete; List<SObject> rows=(List<SObject>)saved; Object token=rows.getSObjectType();",
+      "observe": "token null predicate and String.valueOf(token), compilation and exception message if any",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "MT08",
+      "source": "List<SObject> rows=new List<SObject>{null,new Account(),new Contact()}; Object token=rows.getSObjectType();",
+      "observe": "token null predicate and String.valueOf(token), compilation and exception message if any",
+      "captureStatus": "PENDING-ROWS"
+    },
+    {
+      "id": "MT09",
+      "source": "List<SObject> rows=new List<SObject>{new Contact(),new Account()}; Object token=rows.getSObjectType();",
+      "observe": "reverse mixed order token null predicate and String.valueOf(token)",
+      "captureStatus": "PENDING-ROWS"
+    }
+  ]
+}

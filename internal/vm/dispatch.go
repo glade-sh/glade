@@ -3,6 +3,7 @@ package vm
 import (
 	"crypto/aes"
 	"crypto/hmac"
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -30,6 +31,13 @@ func validateAuthTokenID(value Value) error {
 }
 
 func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, result *Result) (Value, error) {
+	// A declaration is not a statement. Keep unmodeled trigger-local calls
+	// explicit rather than falling through to a builtin or another class.
+	for _, name := range vm.currentMethod.triggerLocalMethods {
+		if strings.EqualFold(callee, name) {
+			return Null, unsupportedCallError("trigger-local method " + callee)
+		}
+	}
 	vm.markRootCollectionRefsEscaped(args...)
 	for _, value := range namedArgs {
 		vm.markCollectionRefsEscaped(value)
@@ -74,6 +82,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return value, err
 	}
 	if !strings.Contains(callee, ".") {
+		if value, handled, err := vm.callLexicalMember(callContextClass, callee, args, result); handled || err != nil {
+			return value, err
+		}
 		for _, contextClass := range vm.lookupContextClasses() {
 			if method, ok, ambiguous := vm.matchRegisteredStaticMethod(contextClass+"."+callee, args); ok {
 				if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
@@ -102,9 +113,6 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		if dataWeaveStaticScriptReceiver(className) && strings.EqualFold(methodName, "createScript") {
 			return vm.dataWeaveCreateScript(args)
-		}
-		if value, handled, err := vm.callFrameworkStaticMember(className, methodName, args); handled || err != nil {
-			return value, err
 		}
 		if packagedControllerDefaultMethod(className, methodName) || packagedControllerUnsupportedMethod(className, methodName) {
 			if value, handled, err := vm.callPackagedControllerStatic(callee, args); handled || err != nil {
@@ -278,9 +286,6 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 	if dot := strings.LastIndex(callee, "."); dot > 0 && dot < len(callee)-1 {
 		typeName, methodName := callee[:dot], callee[dot+1:]
-		if value, handled, err := vm.callFrameworkStaticMember(typeName, methodName, args); handled || err != nil {
-			return value, err
-		}
 		if value, handled, err := vm.callManagedAPIChain(callee, args); handled || err != nil {
 			return value, err
 		}
@@ -307,9 +312,6 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return value, err
 		}
 		if value, handled, err := vm.callEnumStaticMember(className, methodName, args); handled || err != nil {
-			return value, err
-		}
-		if value, handled, err := vm.callFrameworkStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
 		}
 		if method, ok, ambiguous := vm.resolveStaticMethodForArgs(className, methodName, args); ok {
@@ -443,6 +445,11 @@ platformStaticCall:
 		return context, nil
 	}
 
+	if callee == "Database.query" || callee == "Database.getQueryLocator" || callee == "Database.countQuery" {
+		previousBindRoute := vm.dynamicSOQLBindRoute
+		vm.dynamicSOQLBindRoute = callee
+		defer func() { vm.dynamicSOQLBindRoute = previousBindRoute }()
+	}
 	switch callee {
 	case "Datacloud.FindDuplicates.findDuplicates":
 		// An empty/null request is a hosted boundary error.
@@ -495,7 +502,7 @@ platformStaticCall:
 		if args[0].Kind == ValueNull {
 			return Null, newExceptionError("NullPointerException", "Argument 1 cannot be null")
 		}
-		return Int(int64(valueHashCode(args[0]))), nil
+		return vm.systemCustomHashCode(args[0], result)
 	case "System.debug":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("System.debug expects message or logging level and message")
@@ -549,6 +556,9 @@ platformStaticCall:
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
 			return Null, fmt.Errorf("Database.query expects AccessLevel")
 		}
+		if err := vm.validateDynamicSOQLBindSyntax(args[0].Text, false); err != nil {
+			return Null, err
+		}
 		if err := vm.validateDynamicSOQLBinds(args[0].Text, Null); err != nil {
 			return Null, err
 		}
@@ -559,7 +569,10 @@ platformStaticCall:
 		if len(args) == 2 {
 			return vm.executeSOQLWithAccessLevel(args[0].Text, args[1], result)
 		}
-		return vm.executeSOQL(args[0].Text, result)
+		if err := vm.userModeInaccessibleAnonymousSystemQuery(args[0].Text); err != nil {
+			return Null, err
+		}
+		return vm.executeSOQLQuery(args[0].Text, result)
 	case "Database.queryWithBinds":
 		if len(args) != 3 {
 			return Null, fmt.Errorf("Database.queryWithBinds expects query String, bind Map, and AccessLevel")
@@ -582,6 +595,9 @@ platformStaticCall:
 		if err := vm.validateDynamicQueryAccessLevel(args[0].Text, args[2]); err != nil {
 			return Null, err
 		}
+		if err := vm.validateDynamicSOQLBindSyntax(args[0].Text, false); err != nil {
+			return Null, err
+		}
 		if err := vm.validateDynamicSOQLBinds(args[0].Text, args[1]); err != nil {
 			return Null, err
 		}
@@ -598,6 +614,12 @@ platformStaticCall:
 		}
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
 			return Null, fmt.Errorf("Database.countQuery expects AccessLevel")
+		}
+		if err := vm.validateDynamicSOQLBindSyntax(args[0].Text, true); err != nil {
+			return Null, err
+		}
+		if err := vm.validateDynamicSOQLCountHavingNames(args[0].Text); err != nil {
+			return Null, err
 		}
 		// COUNT(field) and ordinary selections use query().
 		if query, err := vm.parseSOQLAt(args[0].Text); err != nil {
@@ -701,6 +723,9 @@ platformStaticCall:
 		if callee == "Database.getCursor" {
 			value, err = vm.executeCursorSOQL(args[0].Text, Null, result)
 		} else {
+			if err := vm.scopeMinePaginationBoundary(args[0].Text, false); err != nil {
+				return Null, err
+			}
 			value, err = vm.executeSOQL(args[0].Text, result)
 		}
 		if err != nil {
@@ -739,7 +764,21 @@ platformStaticCall:
 		if callee == "Database.getCursorWithBinds" {
 			value, err = vm.executeCursorSOQL(args[0].Text, args[1], result)
 		} else {
-			value, err = vm.executeSOQLWithBindMap(args[0].Text, args[1], result)
+			mode := databaseAccessLevelSecurityMode(args[2])
+			capturedMode := mode == "SYSTEM_MODE" || mode == "USER_MODE"
+			if capturedMode {
+				if query, parseErr := vm.parseSOQLAt(args[0].Text); parseErr == nil && (query.SecurityMode == "SYSTEM_MODE" || query.SecurityMode == "USER_MODE") {
+					return Null, newExceptionError("QueryException", "Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.")
+				}
+			}
+			if err := vm.scopeMinePaginationBoundary(args[0].Text, capturedMode); err != nil {
+				return Null, err
+			}
+			if capturedMode {
+				value, err = vm.executeSOQLWithBindMapAccessLevel(args[0].Text, args[1], args[2], result)
+			} else {
+				value, err = vm.executeSOQLWithBindMap(args[0].Text, args[1], result)
+			}
 		}
 		if err != nil {
 			return Null, err
@@ -821,6 +860,10 @@ platformStaticCall:
 			vm.savepoints[id] = snapshotRuntimeOrgState(vm.Org)
 		}
 		vm.emailSavepoints[id] = append([]CapturedEmail(nil), vm.capturedEmails...)
+		if vm.creationSavepoints == nil {
+			vm.creationSavepoints = make(map[string]recordCreationCheckpoint)
+		}
+		vm.creationSavepoints[id] = vm.creationCheckpoint()
 		vm.savepointOrder[id] = vm.nextSavepoint
 		savepoint := Object("System.Savepoint")
 		savepoint.Fields["Id"] = String(id)
@@ -865,6 +908,7 @@ platformStaticCall:
 			*vm.Org = restored
 		}
 		vm.capturedEmails = append([]CapturedEmail(nil), vm.emailSavepoints[idValue.Text]...)
+		vm.creationSavepoints[idValue.Text].restore()
 		if err := vm.incrementLimit("savepointRollbacks", 1); err != nil {
 			return Null, err
 		}
@@ -874,6 +918,7 @@ platformStaticCall:
 				delete(vm.savepoints, id)
 				delete(vm.savepointMarks, id)
 				delete(vm.emailSavepoints, id)
+				delete(vm.creationSavepoints, id)
 				delete(vm.savepointOrder, id)
 			}
 		}
@@ -903,6 +948,7 @@ platformStaticCall:
 				delete(vm.savepoints, id)
 				delete(vm.savepointMarks, id)
 				delete(vm.emailSavepoints, id)
+				delete(vm.creationSavepoints, id)
 				delete(vm.savepointOrder, id)
 			}
 		}
@@ -918,7 +964,7 @@ platformStaticCall:
 	case "Database.insertImmediate", "Database.updateImmediate", "Database.deleteImmediate":
 		op := strings.TrimPrefix(callee, "Database.")
 		op = strings.TrimSuffix(op, "Immediate")
-		return vm.executeDatabaseDML(op, args, result)
+		return vm.executeDatabaseDMLWithHistoryTestSeed(op, args, result, false)
 	case "Database.getAsyncSaveResult", "Database.getAsyncDeleteResult":
 		if len(args) != 1 {
 			return Null, fmt.Errorf("%s expects async operation id or local result", callee)
@@ -1015,6 +1061,9 @@ platformStaticCall:
 			return Value{Kind: ValueNull, Type: "String"}, nil
 		}
 		if args[0].Kind == ValueMap {
+			if text, captured := vm.stubNamespaceValueOfText(args[0]); captured {
+				return String(text), nil
+			}
 			// Use the same direct source-class map display
 			// as assertions, retaining the map return before label processing.
 			text, err := vm.displayString(args[0], result)
@@ -1057,23 +1106,36 @@ platformStaticCall:
 				return Null, err
 			}
 			if strings.EqualFold(canonicalRuntimePlatformType(args[0].Static), "Object") {
-				return String(datetimeValue.UTC().Format("2006-01-02 15:04:05")), nil
+				return String(apexDatetimeDisplayText(datetimeValue)), nil
 			}
+			// Owned user_timezone the captured row observes the typed Datetime
+			// overload in the running user's zone; Object display stays GMT.
 			_, _, local, _, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), datetimeValue)
 			if !ok {
 				return Null, unsupportedCallError("String.valueOf timezone " + vm.currentUserTimeZoneID())
 			}
 			return String(local.Format("2006-01-02 15:04:05")), nil
 		}
-		text, err := vm.displayString(args[0], result)
+		if value, handled, err := vm.stringValueOfOverride(args[0], result); handled {
+			return value, err
+		}
+		if text, captured := vm.stubNamespaceValueOfText(args[0]); captured {
+			return String(vm.resolveLabelMergeExpressions(text)), nil
+		}
+		converted, err := vm.displayStringValue(args[0], result)
 		if err != nil {
 			return Null, err
 		}
-		text = vm.resolveLabelMergeExpressions(text)
-		return String(text), nil
+		if converted.Kind == ValueNull {
+			return typedNull("String"), nil
+		}
+		return String(vm.resolveLabelMergeExpressions(converted.Text)), nil
 	case "String.format":
 		if len(args) != 2 {
 			return Null, fmt.Errorf("String.format expects format String and List arguments")
+		}
+		if value, handled, err := stringFormatNullList(args[0], args[1]); handled {
+			return value, err
 		}
 		if args[0].Kind == ValueNull || args[1].Kind == ValueNull {
 			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
@@ -1083,7 +1145,7 @@ platformStaticCall:
 		}
 		pattern := vm.resolveLabelMergeExpressions(args[0].Text)
 		formatted, err := formatString(pattern, args[1].List, func(value Value) (string, error) {
-			return vm.displayString(value, result)
+			return vm.stubNamespaceExpressionText(value, result)
 		})
 		if err != nil {
 			return Null, err
@@ -1112,6 +1174,11 @@ platformStaticCall:
 	case "AccessLevel.withPermissionSetId":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("AccessLevel.withPermissionSetId expects String")
+		}
+		if strings.TrimSpace(args[0].Text) != "" {
+			if err := vm.validateUserModePermissionSetFeature(); err != nil {
+				return Null, err
+			}
 		}
 		value := accessLevelValue("USER_MODE")
 		value.Fields["permissionSetId"] = args[0]
@@ -1219,7 +1286,7 @@ platformStaticCall:
 		} else {
 			return Null, newExceptionError("System.TypeException", "Date.valueOf expects String")
 		}
-		parse := parseDateText
+		parse := parseDateValueOfText
 		if args[0].Kind == ValueString && strings.EqualFold(args[0].Static, "Object") {
 			parse = parseDateObjectText
 		}
@@ -1247,26 +1314,29 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
-		if originalType, originalMember, ok := splitDottedTypeMember(originalCallee); ok &&
-			originalType == "DateTime" && originalMember == "Now" && vm.hasLastNow {
-			return platformScalar("Datetime", formatPlatformDatetime(vm.lastNow)), nil
-		}
+
 		now := vm.fakeNow
 		vm.lastNow = now
 		vm.hasLastNow = true
-		// Salesforce exposes millisecond-precision Datetime values. Advance the
-		// deterministic clock by the smallest observable unit so elapsed-time
-		// contracts do not depend on interpreter execution latency.
+		vm.hasPendingNowMillis = true
+		// Captured native now values retain milliseconds. Advance the
+		// deterministic clock one millisecond per fresh read.
 		vm.fakeNow = vm.fakeNow.Add(time.Millisecond)
 		return platformScalar("Datetime", formatPlatformDatetime(now)), nil
 	case "System.currentTimeMillis":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("System.currentTimeMillis expects 0 arguments")
 		}
-		if vm.hasLastNow {
-			return longIntValue(vm.lastNow.UnixMilli()), nil
+		now := vm.fakeNow
+		if vm.hasPendingNowMillis && vm.fakeNow.Equal(vm.lastNow.Add(time.Millisecond)) {
+			now = vm.lastNow
+		} else {
+			// Follow the deterministic progression used by Datetime.now; a
+			// bounded elapsed-time loop must be able to observe time passing.
+			vm.fakeNow = vm.fakeNow.Add(time.Millisecond)
 		}
-		return longIntValue(vm.fakeNow.UnixMilli()), nil
+		vm.hasPendingNowMillis = false
+		return longIntValue(now.UnixMilli()), nil
 	case "System.isBatch", "System.isFuture", "System.isQueueable", "System.isScheduled":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -1283,6 +1353,12 @@ platformStaticCall:
 		}
 		mode := Object("ApplicationReadWriteMode")
 		mode.Fields["value"] = String("READ_WRITE")
+		if vm.testContext != nil {
+			mode.Fields["value"] = String("DEFAULT")
+			if vm.testContext.ReadOnlyApplication {
+				mode.Fields["value"] = String("READ_ONLY")
+			}
+		}
 		return mode, nil
 	case "System.getQuiddityShortCode":
 		if len(args) != 1 {
@@ -1362,6 +1438,9 @@ platformStaticCall:
 		}
 		if vm.currentAsyncKind != "Queueable" {
 			return Null, newExceptionError("System.AsyncException", "getMinimumQueueableDelayInMinutes is not allowed outside a Queueable of Finalizer execution")
+		}
+		if !vm.currentQueueableDelaySet {
+			return Null, nil
 		}
 		return Int(int64(vm.currentQueueableDelay)), nil
 	case "Datetime.newInstance", "Datetime.newInstanceGmt":
@@ -1468,7 +1547,7 @@ platformStaticCall:
 		// Every admitted String form is a wall clock in the selected zone,
 		// including strings with Z, fractions or offset-looking suffixes (O001/O003).
 		if callee == "Datetime.valueOf" {
-			value, err = datetimeFromLocalParts(value.Year(), int(value.Month()), value.Day(), value.Hour(), value.Minute(), value.Second(), 0, vm.currentUserTimeZoneID())
+			value, err = datetimeValueOfLocalClock(value, vm.currentUserTimeZoneID())
 			if err != nil {
 				return Null, err
 			}
@@ -1558,7 +1637,7 @@ platformStaticCall:
 		if vm.testContext == nil {
 			return Null, fmt.Errorf("Test.getStandardPricebookId is only available in test context")
 		}
-		return String("01s000000000001"), nil
+		return platformScalar("Id", "01s000000000001"), nil
 	case "Time.newInstance":
 		if len(args) < 3 || len(args) > 4 {
 			return Null, fmt.Errorf("Time.newInstance expects hour, minute, second[, millisecond]")
@@ -1968,6 +2047,9 @@ platformStaticCall:
 			}
 			return Null, newExceptionError("System.SecurityException", "Unrecognized algorithm: "+args[0].Text)
 		}
+		if callee == "Crypto.signWithCertificate" && args[2].Kind == ValueString && args[2].Text != "" {
+			return Null, newExceptionError("System.NoDataFoundException", "Data Not Available: The data you were trying to access could not be found.")
+		}
 		return platformScalar("Blob", string(signature)), nil
 	case "Crypto.verify", "Crypto.verifyWithCertificate":
 		if len(args) != 4 {
@@ -2021,8 +2103,8 @@ platformStaticCall:
 		switch args[0].Int {
 		case 128, 192, 256:
 			key := make([]byte, int(args[0].Int/8))
-			for i := range key {
-				key[i] = byte(i + 1)
+			if _, err := rand.Read(key); err != nil {
+				return Null, fmt.Errorf("Crypto.generateAESKey secure random read: %w", err)
 			}
 			return platformScalar("Blob", string(key)), nil
 		default:
@@ -2065,7 +2147,7 @@ platformStaticCall:
 		if isIteratorValue(args[0]) {
 			return Null, jsonDeserializeException("Apex Type unsupported in JSON: system.ListIterator")
 		}
-		data, err := jsonMarshalNoEscape(vm.jsonFromValueForSerialize(args[0], suppressNulls))
+		data, err := jsonMarshalNoEscape(vm.jsonFromValueForJSONSerialize(args[0], suppressNulls))
 		if err != nil {
 			return Null, apexPagesSerializationError(err)
 		}
@@ -2084,7 +2166,7 @@ platformStaticCall:
 		if isIteratorValue(args[0]) {
 			return Null, jsonDeserializeException("Apex Type unsupported in JSON: system.ListIterator")
 		}
-		data, err := jsonMarshalNoEscapeIndent(vm.jsonFromValueForSerialize(args[0], suppressNulls), "", "  ")
+		data, err := jsonMarshalNoEscapeIndent(vm.jsonFromValueForJSONSerialize(args[0], suppressNulls), "", "  ")
 		if err != nil {
 			return Null, apexPagesSerializationError(err)
 		}
@@ -2114,7 +2196,7 @@ platformStaticCall:
 			return Null, jsonDeserializeException("%s", err.Error())
 		}
 		if args[1].Kind == ValueObject && args[1].Type == "Type" {
-			typeName := typeValueName(args[1])
+			typeName := jsonDeserializeTypeName(args[1])
 			_, recordType := vm.explicitSchemaRecordType(typeValueIdentityName(args[1]))
 			if !strict {
 				decoded = vm.jsonRootSObjectPayload(typeValueIdentityName(args[1]), decoded)
@@ -2130,7 +2212,7 @@ platformStaticCall:
 		appendTraceLazy(result, "apex.describe.global", "apex.describe", func() map[string]any {
 			return vm.traceDescribeArgs("getGlobalDescribe", nil)
 		})
-		return vm.schemaGlobalDescribe(), nil
+		return vm.globalDescribeMapValue(), nil
 	case "Schema.describeSObjects":
 		if len(args) >= 1 && args[0].Kind == ValueNull {
 			return Null, newExceptionError("System.NullPointerException", "Argument 1 cannot be null")
@@ -2411,14 +2493,7 @@ platformStaticCall:
 	case "reports.ReportManager.runReport":
 		return vm.reportsRunReport(args)
 	case "IsvPartners.AppAnalytics.logCustomInteraction":
-		if len(args) < 1 || len(args) > 2 {
-			return Null, fmt.Errorf("IsvPartners.AppAnalytics.logCustomInteraction expects interaction label[, id]")
-		}
-		if args[0].Kind == ValueNull || args[0].Kind == ValueString {
-			// Invalid labels fail before hosted telemetry is reached.
-			return Null, newExceptionError("System.InvalidParameterValueException", "We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum.")
-		}
-		return Null, unsupportedCallError("IsvPartners.AppAnalytics.logCustomInteraction hosted telemetry")
+		return vm.appAnalyticsLogCustomInteraction(args)
 	case "UserProvisioning.UserProvisioningLog.log":
 		if len(args) != 2 && len(args) != 3 && len(args) != 5 {
 			return Null, fmt.Errorf("UserProvisioning.UserProvisioningLog.log expects 2, 3, or 5 arguments")
@@ -2605,11 +2680,8 @@ platformStaticCall:
 			communityURL = vm.salesforceBaseURL()
 		}
 		return String(strings.TrimRight(communityURL, "/") + "/services/auth/sso/" + providerName + "?startURL=" + startURL), nil
-	case "Cache.Org.getPartition", "Cache.Session.getPartition":
-		if len(args) != 1 {
-			return Null, fmt.Errorf("%s expects String partition name", callee)
-		}
-		return vm.cachePartition(callee, args[0])
+	case "Cache.Org.getPartition", "Cache.Session.getPartition", "Cache.Session.isAvailable":
+		return vm.callCacheScopeStaticDefault(callee, args)
 	case "Cache.Org.get", "Cache.Session.get":
 		return vm.cacheStaticDefaultGet(callee, args)
 	case "Cache.Org.put", "Cache.Session.put":
@@ -2626,15 +2698,20 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
-		return Decimal(100), nil
-	case "Cache.Session.isAvailable":
-		if len(args) != 0 {
-			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		if callee == "Cache.Org.getCapacity" {
+			if err := vm.cacheRequireCapturedDefault(callee); err != nil {
+				return Null, err
+			}
 		}
-		return Bool(true), nil
+		return Decimal(100), nil
 	case "Cache.Org.getName", "Cache.Session.getName":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		if callee == "Cache.Org.getName" {
+			if err := vm.cacheRequireCapturedDefault(callee); err != nil {
+				return Null, err
+			}
 		}
 		return String(vm.cacheDefaultName()), nil
 	case "Cache.Org.getAvgGetSize", "Cache.Session.getAvgGetSize",
@@ -3039,7 +3116,7 @@ platformStaticCall:
 		if err := vm.requireTestContext(callee); err != nil {
 			return Null, err
 		}
-		return Null, nil
+		return vm.calculatePermissionSetGroup(args[0])
 	case "Test.enableChangeDataCapture":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Test.enableChangeDataCapture expects 0 arguments")
@@ -3054,8 +3131,9 @@ platformStaticCall:
 			return Null, fmt.Errorf("Test.setReadOnlyApplicationMode expects Boolean")
 		}
 		if err := vm.requireTestContext(callee); err != nil {
-			return Null, err
+			return Null, newExceptionError("System.StringException", "Test.setReadOnlyApplicationMode() can only be called from testMethods")
 		}
+		vm.testContext.ReadOnlyApplication = args[0].Bool
 		return Null, nil
 	case "Test.isSoqlStubDefined":
 		if len(args) != 1 || !isSObjectTypeToken(args[0]) {
@@ -3275,7 +3353,7 @@ platformStaticCall:
 		}
 		fallbackID := "system"
 		if vm.Org != nil {
-			fallbackID = "005000000000001"
+			fallbackID = storage.DefaultUserID
 		}
 		return String(displayIDText(vm.currentUserInfoField("Id", fallbackID))), nil
 	case "UserInfo.getCurrentUvid":
@@ -3403,7 +3481,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.isMultiCurrencyOrganization expects 0 arguments")
 		}
-		return Bool(vm.orgBool("Organization", "IsMultiCurrencyEnabled", false)), nil
+		return Bool(vm.Org.HasFeature("MultiCurrency")), nil
 	case "Site.getSiteId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getSiteId expects 0 arguments")
@@ -3539,6 +3617,12 @@ platformStaticCall:
 		if len(args) != 3 {
 			return Null, fmt.Errorf("Site.login expects 3 arguments")
 		}
+		if args[0].Kind == ValueString && args[0].Text != "" &&
+			args[1].Kind == ValueString && args[1].Text != "" &&
+			(args[2].Kind == ValueNull || args[2].Kind == ValueString) &&
+			!vm.hasOrgRecords("Site") {
+			return Null, nil
+		}
 		startURL := "/"
 		if args[2].Kind == ValueString && strings.TrimSpace(args[2].Text) != "" {
 			startURL = args[2].Text
@@ -3638,6 +3722,11 @@ platformStaticCall:
 	case "Network.forwardToAuthPage":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("Network.forwardToAuthPage expects 1 or 2 arguments")
+		}
+		if len(args) == 2 && args[1].Kind == ValueNull &&
+			(args[0].Kind == ValueNull || args[0].Kind == ValueString && args[0].Text != "") &&
+			!vm.hasOrgRecords("Site") {
+			return Null, nil
 		}
 		startURL := "/"
 		if args[0].Kind == ValueString && strings.TrimSpace(args[0].Text) != "" {

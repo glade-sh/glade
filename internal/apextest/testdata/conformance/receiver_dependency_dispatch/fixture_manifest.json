@@ -1,0 +1,86 @@
+[
+  {
+    "path": "fixture/provider/force-app/main/default/classes/Builder.cls",
+    "sha256": "1c0465e4a17d2ef6f098cdc38c99155af086fa5b2846be18c74eb9f8674375f0"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/Builder.cls-meta.xml",
+    "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/BuilderBase.cls",
+    "sha256": "edde9d148dd215565384d6c514e96d679d779636eea77968dd1eedd40916b0e0"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/BuilderBase.cls-meta.xml",
+    "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/Caller.cls",
+    "sha256": "182bc817db1b8d93e13420333b0a7f092a819d00757de599f8a7f1dbde6adef8"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/Caller.cls-meta.xml",
+    "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/Data.cls",
+    "sha256": "177a673048bb5c259560c4dbf40a44b93f7d8e04331dd4b91ccb585662d61410"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/Data.cls-meta.xml",
+    "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/Item.cls",
+    "sha256": "f2f6b84a68d4c3f872ec756ad28ee0d7b12bd07b86493f77b3ffaff53c68823f"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/Item.cls-meta.xml",
+    "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/N1Api67.cls",
+    "sha256": "e965132b5fb77cf312a7829507c43b83203a1d5a0e5c825aef71885e3249736e"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/N1Api67.cls-meta.xml",
+    "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/N1Api68.cls",
+    "sha256": "590caf79c7cdd69500102f11c84644ac4c8654d6b8f1c3fe4af05a6682c18f9f"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/N1Api68.cls-meta.xml",
+    "sha256": "d61a5e940622b0ba248df9de701b26c9b9bb440ffaf0d2325ae8e446eb7bf728"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/N1PackageCoverage.cls",
+    "sha256": "38227a876a5de9f058ac727c77752c69f37860b8a0e56de62f1c69e959f83074"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/N1PackageCoverage.cls-meta.xml",
+    "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/Util.cls",
+    "sha256": "ceb41408a489ae28da71311589543056e34b9c05a8f54beb976120ca545274a9"
+  },
+  {
+    "path": "fixture/provider/force-app/main/default/classes/Util.cls-meta.xml",
+    "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+  },
+  {
+    "path": "fixture/provider/sfdx-project.json",
+    "sha256": "b2b2db275c1693ca42957eb839352c2ffd5b2975944f5d40b51bf7c2073e0f1d"
+  },
+  {
+    "path": "fixture/subscriber/glade.yml",
+    "sha256": "d2c2f992737c77ac7ad0f9b02eb7370e5005e2b3ef5d8b97a20a6a10d055ca68"
+  },
+  {
+    "path": "fixture/subscriber/sfdx-project.json",
+    "sha256": "d6c3e215a2ce18d8edcfb05ad90b349954a0dc1e1307b01ee7d261750861b2c5"
+  }
+]

@@ -268,7 +268,7 @@ func (vm *VM) approvalSubmitActor(request Value, definition storage.Record) (sto
 	if current := vm.currentUserID(); current != "" {
 		return storage.ID(current), nil
 	}
-	return "005000000000001", nil
+	return storage.DefaultUserID, nil
 }
 
 func approvalRequestIDList(request Value, field string) []storage.ID {
@@ -306,7 +306,7 @@ func (vm *VM) approvalFirstProcessNode(definitionID storage.ID) (storage.Record,
 func (vm *VM) approvalCreateProcessInstance(objectID storage.ID, definition storage.Record) (storage.ID, error) {
 	submitterID := storage.ID(vm.currentUserID())
 	if submitterID == "" {
-		submitterID = "005000000000001"
+		submitterID = storage.DefaultUserID
 	}
 	id, err := vm.approvalNextID("ProcessInstance", "04g")
 	if err != nil {

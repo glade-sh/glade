@@ -1,0 +1,67 @@
+{
+  "carries": [
+    "Concrete record Object-view API62/67/68 source versions and anonymous observations remain unobserved; no rule is inferred for them."
+  ],
+  "checkOnly": true,
+  "classAPIs": {
+    "RecordOrderingCandidate": "61.0",
+    "RecordOrderingFixture": "61.0"
+  },
+  "classes": {
+    "RecordOrderingCandidate": "@IsTest private class RecordOrderingCandidate {\n@IsTest static void concreteObjectViewSort() {\n Map<String,Object> payload=new Map<String,Object>{'row'=>'RECORD_OBJECT_VIEW','stage'=>'construct','castNonNull'=>null,'identity'=>null,'comparison'=>null,'sortedAmounts'=>null,'exceptionType'=>null,'exceptionMessage'=>null};\n try {\n  List<Opportunity> values=new List<Opportunity>{new Opportunity(Amount=2),new Opportunity(Amount=9)};\n  Object held=new RecordOrderingFixture.AmountDescending();\n  payload.put('stage','cast');\n  System.Comparator<Object> order=(System.Comparator<Object>)held;\n  payload.put('castNonNull',order!=null);\n  payload.put('identity',order instanceof RecordOrderingFixture.AmountDescending);\n  payload.put('stage','compare');\n  payload.put('comparison',order.compare(values[0],values[1]));\n  payload.put('stage','sort');\n  RecordOrderingFixture.sortRecords(values,order);\n  payload.put('sortedAmounts',new List<Decimal>{values[0].Amount,values[1].Amount});\n  payload.put('stage','complete');\n } catch(Exception error) {\n  payload.put('exceptionType',error.getTypeName());\n  payload.put('exceptionMessage',error.getMessage());\n }\n System.assertEquals('NATIVE_OBSERVATION',JSON.serialize(payload));\n}\n@IsTest static void sObjectObjectViewSort() {\n Map<String,Object> payload=new Map<String,Object>{'row'=>'SOBJECT_OBJECT_VIEW','stage'=>'construct','castNonNull'=>null,'identity'=>null,'comparison'=>null,'sortedAmounts'=>null,'exceptionType'=>null,'exceptionMessage'=>null};\n try {\n  List<Opportunity> values=new List<Opportunity>{new Opportunity(Amount=9),new Opportunity(Amount=2)};\n  Object held=new RecordOrderingFixture.FieldAscending();\n  payload.put('stage','cast');\n  System.Comparator<Object> order=(System.Comparator<Object>)held;\n  payload.put('castNonNull',order!=null);\n  payload.put('identity',order instanceof RecordOrderingFixture.FieldAscending);\n  payload.put('stage','compare');\n  payload.put('comparison',order.compare(values[0],values[1]));\n  payload.put('stage','sort');\n  RecordOrderingFixture.sortRecords(values,order);\n  payload.put('sortedAmounts',new List<Decimal>{values[0].Amount,values[1].Amount});\n  payload.put('stage','complete');\n } catch(Exception error) {\n  payload.put('exceptionType',error.getTypeName());\n  payload.put('exceptionMessage',error.getMessage());\n }\n System.assertEquals('NATIVE_OBSERVATION',JSON.serialize(payload));\n}\n}\n",
+    "RecordOrderingFixture": "public class RecordOrderingFixture {\n public class AmountDescending implements System.Comparator<Opportunity> {\n  public Integer compare(Opportunity left, Opportunity right) {\n   return left.Amount==right.Amount ? 0 : (left.Amount>right.Amount ? -1 : 1);\n  }\n }\n public class DecimalAscending implements System.Comparator<Decimal> {\n  public Integer compare(Decimal left, Decimal right) {\n   return left==right ? 0 : (left<right ? -1 : 1);\n  }\n }\n public class FieldAscending implements System.Comparator<SObject> {\n  private System.Comparator<Object> scalarOrder=(System.Comparator<Object>)new DecimalAscending();\n  public Integer compare(SObject left, SObject right) {\n   return scalarOrder.compare(left.get(Opportunity.Amount),right.get(Opportunity.Amount));\n  }\n }\n public class PlainOrder {}\n public static void sortRecords(List<Opportunity> values,System.Comparator<Object> order) {\n  values.sort(order);\n }\n}\n"
+  },
+  "deploymentId": "0AfEc00000p1YyMKAU",
+  "deploymentStatus": "Failed",
+  "orgRunSHA256": "817e300216b76312f0e6ed04a06c671f078fec5038acdb179e4cf187113db45b",
+  "orgTSVSHA256": "c5d9a7247df005c4a789b6c9dc03399a5fe42531613bd85fef9b53d40b945a1a",
+  "rawAnswerSHA256": "d57cf8a4bda647b88465f03df980d7ae4224c6ab436ed217b78fa73d5e4b1731",
+  "route": "istest",
+  "rows": [
+    {
+      "id": "RECORD_OBJECT_VIEW",
+      "method": "concreteObjectViewSort",
+      "native": {
+        "castNonNull": true,
+        "comparison": 1,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "identity": true,
+        "row": "RECORD_OBJECT_VIEW",
+        "sortedAmounts": [
+          9,
+          2
+        ],
+        "stage": "complete"
+      },
+      "rawPayload": "{\"exceptionMessage\":null,\"exceptionType\":null,\"sortedAmounts\":[9,2],\"comparison\":1,\"identity\":true,\"castNonNull\":true,\"stage\":\"complete\",\"row\":\"RECORD_OBJECT_VIEW\"}",
+      "rawPayloadSHA256": "f55795619bc6cbf3e51a9717a0e87d828ee7b81c82428282c9a921b9d288ab4d"
+    },
+    {
+      "id": "SOBJECT_OBJECT_VIEW",
+      "method": "sObjectObjectViewSort",
+      "native": {
+        "castNonNull": true,
+        "comparison": 1,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "identity": true,
+        "row": "SOBJECT_OBJECT_VIEW",
+        "sortedAmounts": [
+          2,
+          9
+        ],
+        "stage": "complete"
+      },
+      "rawPayload": "{\"exceptionMessage\":null,\"exceptionType\":null,\"sortedAmounts\":[2,9],\"comparison\":1,\"identity\":true,\"castNonNull\":true,\"stage\":\"complete\",\"row\":\"SOBJECT_OBJECT_VIEW\"}",
+      "rawPayloadSHA256": "af23f181f083d4c6fd351641791bff4f2fa4d7a14106146e900cf9512be7b557"
+    }
+  ],
+  "sourceAPI": "61.0",
+  "sourceSHA256": {
+    "RecordOrderingCandidate": "97262c6c35b6d0c33761059c738cd47fcd9f6572ca9c960ff480719d325cd6d2",
+    "RecordOrderingFixture": "657553417ec8a3596e01a203c1573bd39e4cc7e63232c5322fd3fdbf234984af"
+  },
+  "transport": "Two named methods intentionally assert the observed JSON; no unknown behavioral assertion. No persistent metadata.",
+  "transportAPI": "61.0"
+}

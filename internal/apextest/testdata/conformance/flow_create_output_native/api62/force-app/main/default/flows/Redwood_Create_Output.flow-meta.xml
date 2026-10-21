@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <interviewLabel>Redwood Create Output</interviewLabel><label>Redwood Create Output</label><processType>AutoLaunchedFlow</processType>
+    <recordCreates><name>Create_Row</name><label>Create Row</label><locationX>0</locationX><locationY>0</locationY><assignRecordIdToReference>createdId</assignRecordIdToReference><connector><targetReference>Create_Control</targetReference></connector><inputAssignments><field>Name</field><value><stringValue>Redwood inserted row</stringValue></value></inputAssignments><inputAssignments><field>AnnualRevenue</field><value><elementReference>revenue</elementReference></value></inputAssignments><object>Account</object></recordCreates>
+    <recordCreates><name>Create_Control</name><label>Create Control</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Name</field><value><stringValue>Redwood literal control</stringValue></value></inputAssignments><inputAssignments><field>AnnualRevenue</field><value><numberValue>7.5</numberValue></value></inputAssignments><object>Account</object></recordCreates>
+    <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Create_Row</targetReference></connector></start><status>Active</status>
+    <variables><name>createdId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>
+    <variables><name>revenue</name><dataType>Number</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput><scale>2</scale></variables>
+</Flow>

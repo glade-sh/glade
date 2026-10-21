@@ -1,0 +1,5 @@
+case	purpose
+forward	Mixed-case parameter keys inserted in declared order
+reverse	Same keys and values inserted in reverse order
+encoded	Space slash and asterisk value encoding control
+rawConstructor	Explicit mixed-case path and existing query order without map mutation

@@ -48,10 +48,10 @@ func TestDateTimeOrgConformance(t *testing.T) {
 	if err = json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Versions) != 2 {
-		t.Fatalf("API versions=%d, want floor and ceiling", len(data.Versions))
+	if len(data.Versions) != 3 {
+		t.Fatalf("API versions=%d, want floor, prior ceiling, and API 68", len(data.Versions))
 	}
-	versions := map[string]bool{"62.0": false, "67.0": false}
+	versions := map[string]bool{"62.0": false, "67.0": false, "68.0": false}
 	for _, version := range data.Versions {
 		if seen, expected := versions[version.APIVersion]; !expected || seen {
 			t.Fatalf("unexpected or duplicate API version %q", version.APIVersion)
@@ -61,6 +61,9 @@ func TestDateTimeOrgConformance(t *testing.T) {
 	captureDir := os.Getenv("GLADE_DATE_TIME_CAPTURE_DIR")
 	for _, v := range data.Versions {
 		t.Run(v.APIVersion, func(t *testing.T) {
+			if v.APIVersion == "68.0" {
+				t.Log("API 68 @IsTest checks are local named-route checks against native anonymous answers; no Salesforce named-route capture")
+			}
 			if len(v.Cases) != 450 {
 				t.Fatalf("rows=%d, want450", len(v.Cases))
 			}

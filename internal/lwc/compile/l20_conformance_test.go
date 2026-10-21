@@ -39,9 +39,10 @@ type l20Case struct {
 }
 
 // TestL20SalesforceConformance replays the owned inputs and exact org.tsv text
-// exported from the API 59/67 data presentation capture.
+// exported from the API 59/67/68 data presentation capture.
 // An individual native control supersedes meta_bad_target with identical
 // inputs and captured rejection text.
+// API 68 uses the same-source full capture's rejection and diagnostic.
 // The capture records 41 compiler/metadata and 161 browser observations at each
 // API. The null-location mount error is retained and counted separately from
 // the 201 ordinary rows. No observed fields, including raw null, are removed.
@@ -66,7 +67,7 @@ func l20SalesforceConformance(t *testing.T) {
 	if err := json.Unmarshal(data, &cases); err != nil {
 		t.Fatal(err)
 	}
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var compilerCases, runtimeCases []l20Case
 	nativeErrors := 0

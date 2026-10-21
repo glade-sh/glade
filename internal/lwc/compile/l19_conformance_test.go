@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -321,12 +322,57 @@ func l19SalesforceConformance(t *testing.T) {
 			l07Write(t, path, []byte(report.String()))
 		}
 	}
-	for _, api := range versions {
-		compiled := l19CompileCases(t, api, compileCases)
-		dom, domErrors, runtimeCompileErr, browserErr := l19ObserveDOM(t, api, runtimeCases[api], dependencyRoot, fixture.FixturePicklists)
-		if browserErr != nil {
+	type browserPass struct {
+		compiled          map[string]compile.BundleResult
+		dom               map[string]json.RawMessage
+		domErrors         map[string]string
+		compileErr        error
+		runtimeCompileErr error
+		browserErr        error
+	}
+	observe := func(api string, result browserPass) browserPass {
+		result.dom, result.domErrors, result.runtimeCompileErr, result.browserErr = l19ObserveDOM(t, api, runtimeCases[api], dependencyRoot, fixture.FixturePicklists)
+		return result
+	}
+	parallel := browserAPIParallelism(len(versions))
+	var passes []browserPass
+	if parallel > 1 {
+		// Compile-only passes stay serial, including any shared toolchain install.
+		// Fail in API order before starting any browsers if compilation fails.
+		prepared := make([]browserPass, len(versions))
+		for pass, api := range versions {
+			prepared[pass].compiled, prepared[pass].compileErr = l19CompileCases(t, api, compileCases)
+			if prepared[pass].compileErr != nil {
+				t.Fatal(prepared[pass].compileErr)
+			}
+		}
+		// Each API owns its temporary projects, output files, org/server and Node
+		// process. Shared toolchains are now initialized; inputs are read-only.
+		// Keep failures, comparisons, logging and report writes on this goroutine.
+		passes = runBrowserPasses(len(versions), parallel, func(pass int) browserPass {
+			return observe(versions[pass], prepared[pass])
+		})
+	}
+	for pass, api := range versions {
+		var result browserPass
+		if parallel == 1 {
+			// Keep compile/observe/report interleaved on the test goroutine.
+			result.compiled, result.compileErr = l19CompileCases(t, api, compileCases)
+			if result.compileErr != nil {
+				t.Fatal(result.compileErr)
+			}
+			result = observe(api, result)
+		} else {
+			result = passes[pass]
+		}
+		compiled, dom, domErrors, runtimeCompileErr := result.compiled, result.dom, result.domErrors, result.runtimeCompileErr
+		if result.browserErr != nil {
+			var fatalErr *l19ObservationFatalError
+			if errors.As(result.browserErr, &fatalErr) {
+				t.Fatal(fatalErr)
+			}
 			writeReport()
-			t.Fatalf("record forms browser environment: %v", browserErr)
+			t.Fatalf("record forms browser environment: %v", result.browserErr)
 		}
 		apiMatches, apiDOMRows, apiControlMatches, apiControlRows := 0, 0, 0, 0
 		for _, c := range allCases {
@@ -449,7 +495,53 @@ func l19SalesforceConformance(t *testing.T) {
 	writeReport()
 }
 
-func l19CompileCases(t *testing.T, api string, cases []l19Case) map[string]compile.BundleResult {
+// l19ObservationFatalError preserves observation failures that historically
+// aborted without writing a report or adding the browser-environment prefix.
+type l19ObservationFatalError struct {
+	error
+}
+
+// These helpers return errors because API passes may execute off the test goroutine.
+func l19Write(path string, data []byte) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0600)
+}
+
+func l19Copy(source, target string) error {
+	return filepath.WalkDir(source, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		rel, err := filepath.Rel(source, path)
+		if err != nil {
+			return err
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return l19Write(filepath.Join(target, rel), data)
+	})
+}
+
+func l19CompilerEnvironmentError(err error) error {
+	if err != nil {
+		// Keep the same infrastructure classification as l07CheckCompilerEnvironment.
+		for _, marker := range []string{"Cannot find module", "ERR_MODULE_NOT_FOUND", "decode compile result:", "could not find glade", "signal: killed"} {
+			if strings.Contains(err.Error(), marker) {
+				return fmt.Errorf("L07 compiler environment: %v", err)
+			}
+		}
+	}
+	return nil
+}
+
+func l19CompileCases(t *testing.T, api string, cases []l19Case) (map[string]compile.BundleResult, error) {
 	t.Helper()
 	root := t.TempDir()
 	keys := map[string]string{}
@@ -458,33 +550,43 @@ func l19CompileCases(t *testing.T, api string, cases []l19Case) map[string]compi
 		rel := filepath.Join("cases", fmt.Sprintf("%04d", index), "force-app", "main", "default", "lwc", name)
 		keys[c.ID] = filepath.ToSlash(rel)
 		bundle := filepath.Join(root, rel)
-		l07Write(t, filepath.Join(bundle, name+".js"), []byte(c.JS))
-		l07Write(t, filepath.Join(bundle, name+".html"), []byte(c.Template))
+		if err := l19Write(filepath.Join(bundle, name+".js"), []byte(c.JS)); err != nil {
+			return nil, err
+		}
+		if err := l19Write(filepath.Join(bundle, name+".html"), []byte(c.Template)); err != nil {
+			return nil, err
+		}
 		fragment := c.MetaFragment
 		if fragment == "" {
 			fragment = "<isExposed>false</isExposed>"
 		}
-		l07Write(t, filepath.Join(bundle, name+".js-meta.xml"), []byte(`<?xml version="1.0" encoding="UTF-8"?><LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion>`+fragment+`</LightningComponentBundle>`))
+		if err := l19Write(filepath.Join(bundle, name+".js-meta.xml"), []byte(`<?xml version="1.0" encoding="UTF-8"?><LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion>`+fragment+`</LightningComponentBundle>`)); err != nil {
+			return nil, err
+		}
 	}
-	l07Write(t, filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"cases","default":true}],"namespace":"","sourceApiVersion":"`+api+`"}`))
+	if err := l19Write(filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"cases","default":true}],"namespace":"","sourceApiVersion":"`+api+`"}`)); err != nil {
+		return nil, err
+	}
 	p, err := project.Load(root)
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
 	batch, err := compile.CompileBatch(p, compile.Options{OutDir: filepath.Join(root, "dist")})
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
 	results := map[string]compile.BundleResult{}
 	for _, c := range cases {
 		result, ok := batch[keys[c.ID]]
 		if !ok {
-			t.Fatalf("missing record forms compile row %s", c.ID)
+			return nil, fmt.Errorf("missing record forms compile row %s", c.ID)
 		}
-		l07CheckCompilerEnvironment(t, result.Err)
+		if err := l19CompilerEnvironmentError(result.Err); err != nil {
+			return nil, err
+		}
 		results[c.ID] = result
 	}
-	return results
+	return results, nil
 }
 
 func l19ObserveDOM(t *testing.T, api string, cases []l19Case, dependencyRoot string, picklists []l19FixturePicklist) (map[string]json.RawMessage, map[string]string, error, error) {
@@ -526,13 +628,17 @@ func l19ObserveProjectDOM(t *testing.T, api string, cases []l19Case, dependencyR
 	if runtimeProject == "interactions" {
 		fixture, page = "l19_interaction_runtime", "familyL19Controlf9db75e5"
 	}
-	l07Copy(t, filepath.Join("testdata", fixture, "api"+api[:2]), root)
+	if err := l19Copy(filepath.Join("testdata", fixture, "api"+api[:2]), root); err != nil {
+		return nil, nil, nil, &l19ObservationFatalError{err}
+	}
 	p, err := project.Load(root)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	manifest, err := compile.Compile(p, compile.Options{OutDir: filepath.Join(root, "dist")})
-	l07CheckCompilerEnvironment(t, err)
+	if environmentErr := l19CompilerEnvironmentError(err); environmentErr != nil {
+		return nil, nil, nil, &l19ObservationFatalError{environmentErr}
+	}
 	if err != nil {
 		return nil, nil, err, nil
 	}
@@ -565,11 +671,11 @@ func l19ObserveProjectDOM(t *testing.T, api string, cases []l19Case, dependencyR
 	for _, input := range picklists {
 		object, ok := org.Objects[input.Object]
 		if !ok {
-			t.Fatalf("record forms fixture object not found: %s", input.Object)
+			return nil, nil, nil, &l19ObservationFatalError{fmt.Errorf("record forms fixture object not found: %s", input.Object)}
 		}
 		field, ok := object.Definition.Fields[input.Field]
 		if !ok {
-			t.Fatalf("record forms fixture field not found: %s.%s", input.Object, input.Field)
+			return nil, nil, nil, &l19ObservationFatalError{fmt.Errorf("record forms fixture field not found: %s.%s", input.Object, input.Field)}
 		}
 		field.PicklistValues = append([]storage.PicklistValue(nil), input.Values...)
 		for index := range field.PicklistValues {

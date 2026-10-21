@@ -49,9 +49,13 @@ type v01DOM struct {
 	Text     string   `json:"text"`
 }
 
-// TestV01SalesforceConformance uses all 305 owned rows at API 59/67, exported
+// TestV01SalesforceConformance uses all 305 owned rows at API 59/67/68, exported
 // from the native structure capture: compile inputs and DOM observations,
 // plus the repeat and raw-text controls at both APIs.
+// API 68 inputs and observations come from vf_structure/api68 and
+// its repeat-controls-api68/raw-text-controls-api68 in the retained
+// browser-recovery capture. The unknown metadata-field diagnostic
+// was recaptured in api68-qname to preserve its public XML namespace.
 // Compile rows compare acceptance and exact diagnostic type/text from the native
 // diagnostics.json files. Every Component structure-owned diagnostic is enforced; the three Expression evaluation
 // expression rows carry their acceptance and diagnostic differences separately.
@@ -63,7 +67,7 @@ type v01DOM struct {
 // GLADE_V01_REPORT selects the optional TSV output path.
 func TestV01SalesforceConformance(t *testing.T) {
 	capture := os.Getenv("GLADE_V01_CAPTURE") != ""
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
 	data, err := os.ReadFile("testdata/v01_salesforce.json")
 	if err != nil {
 		t.Fatal(err)
@@ -145,6 +149,22 @@ func TestV01SalesforceConformance(t *testing.T) {
 			markup := c.Markup
 			if c.Kind == "runtime" {
 				markup = `<apex:page controller="` + controller.Name + `" showHeader="false" sidebar="false" standardStylesheets="false" docType="html-5.0"><div data-v01-case="` + c.ID + `">` + markup + `</div></apex:page>`
+				// The page compiler needs the same captured getters that the VM
+				// executes below; runtime registration alone cannot declare them.
+				var source strings.Builder
+				source.WriteString("public class " + controller.Name + " {")
+				for _, getter := range table.Getters {
+					source.WriteString("public " + getter.ReturnType + " " + getter.Name + "() {" + getter.Body + "}")
+				}
+				source.WriteString("}")
+				classPath := filepath.Join(root, "force-app", "main", "default", "classes", controller.Name+".cls")
+				writeFile(t, classPath, source.String())
+				controllerAPI := api
+				if api == "68.0" {
+					// The native API 68 page retained deterministic Apex 67 getters.
+					controllerAPI = controller.APIVersion
+				}
+				writeFile(t, classPath+"-meta.xml", `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+controllerAPI+`</apiVersion><status>Active</status></ApexClass>`)
 			}
 			writeFile(t, path, markup)
 			writeFile(t, path+"-meta.xml", c.Metadata[api])
@@ -152,7 +172,12 @@ func TestV01SalesforceConformance(t *testing.T) {
 			p, compileErr := project.Load(root)
 			var index Index
 			if compileErr == nil {
-				index, compileErr = LoadProject(p)
+				loader := LoadProject
+				if c.Kind == "runtime" {
+					// These fragments use the controller registered on the VM below.
+					loader = LoadProjectForRender
+				}
+				index, compileErr = loader(p)
 			}
 			got := "COMPILE_OK"
 			diagnostic := v01Diagnostic{}

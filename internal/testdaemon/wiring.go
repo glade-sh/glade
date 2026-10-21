@@ -46,6 +46,7 @@ func runRequestV1FromOptions(
 		TraceAll:              options.TraceAll,
 		SlowTestThresholdMS:   options.SlowTestThresholdMS,
 		TimeoutMS:             options.TimeoutMS,
+		TimeoutSource:         options.TimeoutSource,
 		Parallelism:           options.Parallelism,
 		ParallelMethods:       options.ParallelMethods,
 		NoDiskCache:           options.NoDiskCache,
@@ -71,6 +72,7 @@ func apexOptionsFromRunRequestV1(request RunRequestV1) apextest.Options {
 		TraceAll:              request.TraceAll,
 		SlowTestThresholdMS:   request.SlowTestThresholdMS,
 		TimeoutMS:             request.TimeoutMS,
+		TimeoutSource:         request.TimeoutSource,
 		Parallelism:           request.Parallelism,
 		ParallelMethods:       request.ParallelMethods,
 		NoDiskCache:           request.NoDiskCache,
@@ -88,6 +90,11 @@ func validateRunRequestV1(request RunRequestV1) error {
 	case "", string(vm.LimitModePermissive), string(vm.LimitModeStrict):
 	default:
 		return fmt.Errorf("unsupported test limit mode %q", request.LimitMode)
+	}
+	switch request.TimeoutSource {
+	case "", "flag", "environment", "default":
+	default:
+		return fmt.Errorf("unsupported test timeout source %q", request.TimeoutSource)
 	}
 	if request.TimeoutMS < 0 || request.SlowTestThresholdMS < 0 {
 		return fmt.Errorf("test timing values cannot be negative")

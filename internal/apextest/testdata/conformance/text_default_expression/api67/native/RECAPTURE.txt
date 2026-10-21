@@ -1,0 +1,8 @@
+metadata_api=67.0
+deployment_success=true
+field_metadata_changed=false
+all_four_fields_created=true
+before_field_access=anonymous describe omitted custom fields; default and explicit SYSTEM_MODE queries reported missing column
+resolution=deploy and assign TextDefaultAccess; unchanged probe succeeds on both routes
+rows=16
+native_complete=true

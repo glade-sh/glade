@@ -1,0 +1,66 @@
+{
+  "api": "68.0",
+  "deployment": {
+    "id": "0AfQL00000szyPx0AI",
+    "status": "Succeeded",
+    "success": true,
+    "numberComponentErrors": 0,
+    "numberComponentsDeployed": 4
+  },
+  "captured_at": "2026-10-19T05:06:49.579714+00:00",
+  "anonymous": {
+    "success": true,
+    "compiled": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": {
+      "language": {
+        "value": "en_US:Alpha"
+      },
+      "populated": {
+        "value": "true:true:true:true:true:true:true"
+      },
+      "queryFields": {
+        "value": "1:en_US"
+      },
+      "allPopulated": {
+        "value": "true:true:true:true:true:true:true"
+      },
+      "constructed": {
+        "value": "false:false:true:true:true"
+      }
+    }
+  },
+  "tests": [
+    {
+      "MethodName": "allPopulated",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|allPopulated|{\"value\":\"true:true:true:true:true:true:true\"}",
+      "StackTrace": "Class.MetadataFieldProbeTest.allPopulated: line 5, column 1"
+    },
+    {
+      "MethodName": "constructed",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|constructed|{\"value\":\"false:false:true:true:true\"}",
+      "StackTrace": "Class.MetadataFieldProbeTest.constructed: line 6, column 1"
+    },
+    {
+      "MethodName": "language",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|language|{\"value\":\"en_US:Alpha\"}",
+      "StackTrace": "Class.MetadataFieldProbeTest.language: line 2, column 1"
+    },
+    {
+      "MethodName": "populated",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|populated|{\"value\":\"true:true:true:true:true:true:true\"}",
+      "StackTrace": "Class.MetadataFieldProbeTest.populated: line 3, column 1"
+    },
+    {
+      "MethodName": "queryFields",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|queryFields|{\"value\":\"1:en_US\"}",
+      "StackTrace": "Class.MetadataFieldProbeTest.queryFields: line 4, column 1"
+    }
+  ]
+}

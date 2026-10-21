@@ -1577,11 +1577,41 @@
   ],
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "floorOracle": {
     "apiVersion": "62.0",
     "route": "anonymous",
     "rows": 262
+  },
+  "ceilingOracle": {
+    "apiVersion": "68.0",
+    "route": "anonymous",
+    "toolsCommit": "capture-revision-038922242939171818483227610950169864242628534922311775415491496155028953450663",
+    "rows": 262,
+    "observed": 262,
+    "nativeUnobserved": [],
+    "orgTSV": "native-capture",
+    "orgRowsSHA256": "5efa034fdf79b6051cdd8a3434ad6413d5abd43ad9a300ef963d8c1c8049be1c",
+    "initialObserved": 261,
+    "supersededUnobserved": [
+      "R231"
+    ],
+    "directNativeObservations": [
+      {
+        "id": "R231",
+        "route": "anonymous",
+        "compiled": true,
+        "success": false,
+        "exceptionMessage": "System.FinalException: Cannot modify a collection while it is being iterated.",
+        "source": "native-capture",
+        "resultKey": "A11-R231@68.0",
+        "nativeSHA256": "1bc8b8f835729d211a6bd0e94062fa6be2508466e59437f8025e8bbbe1deb599",
+        "rowsSHA256": "4b271fce42a3d3eff35b5c50ec602959138195c53375c75a1f28e613060eb74f",
+        "anonymousSHA256": "128fa8309d2b871b447b7733f5d8dd79087c181bfdc7e19889698aae27d7231a",
+        "codeSHA256": "1ef944cb20396bd44fda7a415deae4e1243432d45cdc39961646d6c568f0a0c2"
+      }
+    ]
   }
 }

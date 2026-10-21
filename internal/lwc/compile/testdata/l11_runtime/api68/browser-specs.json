@@ -1,0 +1,5265 @@
+[
+  {
+    "id": "r_relatedRecords_normal",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_null",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": null,
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_empty",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_number",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": 42,
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_array",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": [],
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_invalid",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "L11_INVALID",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_undefined",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [
+      "parentRecordId"
+    ],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_omitted",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v1",
+    "wireKeys": [
+      "fields",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedCount_normal",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v2",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedCount_null",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "parentRecordId": null,
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v2",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedCount_empty",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "parentRecordId": "",
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v2",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedCount_number",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "parentRecordId": 42,
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v2",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedCount_array",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "parentRecordId": [],
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v2",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedCount_invalid",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "parentRecordId": "L11_INVALID",
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v2",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedCount_undefined",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [
+      "parentRecordId"
+    ],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v2",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedCount_omitted",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v3",
+    "wireKeys": [
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_normal",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v4",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_null",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "parentObjectApiName": null,
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v4",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_empty",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "parentObjectApiName": "",
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v4",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_number",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "parentObjectApiName": 42,
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v4",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_array",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "parentObjectApiName": [],
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v4",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_invalid",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "parentObjectApiName": "L11_INVALID",
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v4",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_undefined",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [
+      "parentObjectApiName"
+    ],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v4",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_omitted",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v5",
+    "wireKeys": [
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedInfos_normal",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfos",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v6",
+    "wireKeys": [
+      "parentObjectApiName"
+    ]
+  },
+  {
+    "id": "r_relatedInfos_null",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfos",
+    "config": {
+      "parentObjectApiName": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v6",
+    "wireKeys": [
+      "parentObjectApiName"
+    ]
+  },
+  {
+    "id": "r_relatedInfos_empty",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfos",
+    "config": {
+      "parentObjectApiName": ""
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v6",
+    "wireKeys": [
+      "parentObjectApiName"
+    ]
+  },
+  {
+    "id": "r_relatedInfos_number",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfos",
+    "config": {
+      "parentObjectApiName": 42
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v6",
+    "wireKeys": [
+      "parentObjectApiName"
+    ]
+  },
+  {
+    "id": "r_relatedInfos_array",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfos",
+    "config": {
+      "parentObjectApiName": []
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v6",
+    "wireKeys": [
+      "parentObjectApiName"
+    ]
+  },
+  {
+    "id": "r_relatedInfos_invalid",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfos",
+    "config": {
+      "parentObjectApiName": "L11_INVALID"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v6",
+    "wireKeys": [
+      "parentObjectApiName"
+    ]
+  },
+  {
+    "id": "r_relatedInfos_undefined",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfos",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c"
+    },
+    "projection": "full",
+    "omit": [
+      "parentObjectApiName"
+    ],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v6",
+    "wireKeys": [
+      "parentObjectApiName"
+    ]
+  },
+  {
+    "id": "r_relatedInfos_omitted",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfos",
+    "config": {},
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v7",
+    "wireKeys": []
+  },
+  {
+    "id": "r_relatedBatch_normal",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedBatch",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListParameters": [
+        {
+          "relatedListId": "Children__r",
+          "fields": [
+            "FamilyL11Child__c.Name"
+          ]
+        }
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v8",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListParameters"
+    ]
+  },
+  {
+    "id": "r_relatedBatch_null",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedBatch",
+    "config": {
+      "parentRecordId": null,
+      "relatedListParameters": [
+        {
+          "relatedListId": "Children__r",
+          "fields": [
+            "FamilyL11Child__c.Name"
+          ]
+        }
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v8",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListParameters"
+    ]
+  },
+  {
+    "id": "r_relatedBatch_empty",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedBatch",
+    "config": {
+      "parentRecordId": "",
+      "relatedListParameters": [
+        {
+          "relatedListId": "Children__r",
+          "fields": [
+            "FamilyL11Child__c.Name"
+          ]
+        }
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v8",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListParameters"
+    ]
+  },
+  {
+    "id": "r_relatedBatch_number",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedBatch",
+    "config": {
+      "parentRecordId": 42,
+      "relatedListParameters": [
+        {
+          "relatedListId": "Children__r",
+          "fields": [
+            "FamilyL11Child__c.Name"
+          ]
+        }
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v8",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListParameters"
+    ]
+  },
+  {
+    "id": "r_relatedBatch_array",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedBatch",
+    "config": {
+      "parentRecordId": [],
+      "relatedListParameters": [
+        {
+          "relatedListId": "Children__r",
+          "fields": [
+            "FamilyL11Child__c.Name"
+          ]
+        }
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v8",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListParameters"
+    ]
+  },
+  {
+    "id": "r_relatedBatch_invalid",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedBatch",
+    "config": {
+      "parentRecordId": "L11_INVALID",
+      "relatedListParameters": [
+        {
+          "relatedListId": "Children__r",
+          "fields": [
+            "FamilyL11Child__c.Name"
+          ]
+        }
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v8",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListParameters"
+    ]
+  },
+  {
+    "id": "r_relatedBatch_undefined",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedBatch",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListParameters": [
+        {
+          "relatedListId": "Children__r",
+          "fields": [
+            "FamilyL11Child__c.Name"
+          ]
+        }
+      ]
+    },
+    "projection": "full",
+    "omit": [
+      "parentRecordId"
+    ],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v8",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListParameters"
+    ]
+  },
+  {
+    "id": "r_relatedBatch_omitted",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedBatch",
+    "config": {
+      "relatedListParameters": [
+        {
+          "relatedListId": "Children__r",
+          "fields": [
+            "FamilyL11Child__c.Name"
+          ]
+        }
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v9",
+    "wireKeys": [
+      "relatedListParameters"
+    ]
+  },
+  {
+    "id": "r_relatedInfoBatch_normal",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfoBatch",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "relatedListNames": [
+        "Children__r"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v10",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListNames"
+    ]
+  },
+  {
+    "id": "r_relatedInfoBatch_null",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfoBatch",
+    "config": {
+      "parentObjectApiName": null,
+      "relatedListNames": [
+        "Children__r"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v10",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListNames"
+    ]
+  },
+  {
+    "id": "r_relatedInfoBatch_empty",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfoBatch",
+    "config": {
+      "parentObjectApiName": "",
+      "relatedListNames": [
+        "Children__r"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v10",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListNames"
+    ]
+  },
+  {
+    "id": "r_relatedInfoBatch_number",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfoBatch",
+    "config": {
+      "parentObjectApiName": 42,
+      "relatedListNames": [
+        "Children__r"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v10",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListNames"
+    ]
+  },
+  {
+    "id": "r_relatedInfoBatch_array",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfoBatch",
+    "config": {
+      "parentObjectApiName": [],
+      "relatedListNames": [
+        "Children__r"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v10",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListNames"
+    ]
+  },
+  {
+    "id": "r_relatedInfoBatch_invalid",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfoBatch",
+    "config": {
+      "parentObjectApiName": "L11_INVALID",
+      "relatedListNames": [
+        "Children__r"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v10",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListNames"
+    ]
+  },
+  {
+    "id": "r_relatedInfoBatch_undefined",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfoBatch",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "relatedListNames": [
+        "Children__r"
+      ]
+    },
+    "projection": "full",
+    "omit": [
+      "parentObjectApiName"
+    ],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v10",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListNames"
+    ]
+  },
+  {
+    "id": "r_relatedInfoBatch_omitted",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfoBatch",
+    "config": {
+      "relatedListNames": [
+        "Children__r"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v11",
+    "wireKeys": [
+      "relatedListNames"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_empty_parent",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$empty",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_parent15",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent15",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_page_one",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "pageSize": 1
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v12",
+    "wireKeys": [
+      "fields",
+      "pageSize",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_page_zero",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "pageSize": 0
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v12",
+    "wireKeys": [
+      "fields",
+      "pageSize",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_page_large",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "pageSize": 2000
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v12",
+    "wireKeys": [
+      "fields",
+      "pageSize",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_page_over",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "pageSize": 2001
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v12",
+    "wireKeys": [
+      "fields",
+      "pageSize",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_page_string",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "pageSize": "2"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v12",
+    "wireKeys": [
+      "fields",
+      "pageSize",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_page_null",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "pageSize": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v12",
+    "wireKeys": [
+      "fields",
+      "pageSize",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_fields_empty",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_fields_null",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": null,
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_fields_optional",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "optionalFields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v13",
+    "wireKeys": [
+      "fields",
+      "optionalFields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_fields_missing",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_field_unqualified",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "Name"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_fields_duplicate",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Name"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_sort_desc",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "-FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_sort_multiple",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_filter",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "where": "{ Sort__c: { gt: 1 } }"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v14",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy",
+      "where"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_filter_invalid",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "where": "{ invalid"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v14",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy",
+      "where"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_relation_bad",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "OwnedMissing__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedRecords_relation_null",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": null,
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v0",
+    "wireKeys": [
+      "fields",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_relatedCount_empty_parent",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "parentRecordId": "$empty",
+      "relatedListId": "Children__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v2",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedCount_maximum_one",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "maxCount": 1
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v15",
+    "wireKeys": [
+      "maxCount",
+      "parentRecordId",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedCount_maximum_zero",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "maxCount": 0
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v15",
+    "wireKeys": [
+      "maxCount",
+      "parentRecordId",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedCount_maximum_string",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "maxCount": "2"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v15",
+    "wireKeys": [
+      "maxCount",
+      "parentRecordId",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedCount_maximum_null",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedCount",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "maxCount": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v15",
+    "wireKeys": [
+      "maxCount",
+      "parentRecordId",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_restrict_false",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "relatedListId": "Children__r",
+      "restrictColumnsToLayout": false
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v16",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListId",
+      "restrictColumnsToLayout"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_restrict_true",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "relatedListId": "Children__r",
+      "restrictColumnsToLayout": true
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v16",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListId",
+      "restrictColumnsToLayout"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_restrict_string",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "relatedListId": "Children__r",
+      "restrictColumnsToLayout": "false"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v16",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListId",
+      "restrictColumnsToLayout"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_fields",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v17",
+    "wireKeys": [
+      "fields",
+      "parentObjectApiName",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedInfo_bad_relation",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfo",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "relatedListId": "OwnedMissing__r"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v4",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListId"
+    ]
+  },
+  {
+    "id": "r_relatedInfos_record_type_null",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfos",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "recordTypeId": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v18",
+    "wireKeys": [
+      "parentObjectApiName",
+      "recordTypeId"
+    ]
+  },
+  {
+    "id": "r_relatedInfos_record_type_invalid",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfos",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "recordTypeId": "L11_INVALID"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v18",
+    "wireKeys": [
+      "parentObjectApiName",
+      "recordTypeId"
+    ]
+  },
+  {
+    "id": "r_relatedBatch_empty_batch",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedBatch",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListParameters": []
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v8",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListParameters"
+    ]
+  },
+  {
+    "id": "r_relatedBatch_mixed_batch",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedBatch",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListParameters": [
+        {
+          "relatedListId": "Children__r",
+          "fields": [
+            "FamilyL11Child__c.Name"
+          ]
+        },
+        {
+          "relatedListId": "OwnedMissing__r"
+        }
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v8",
+    "wireKeys": [
+      "parentRecordId",
+      "relatedListParameters"
+    ]
+  },
+  {
+    "id": "r_relatedInfoBatch_empty_batch",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfoBatch",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "relatedListNames": []
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v10",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListNames"
+    ]
+  },
+  {
+    "id": "r_relatedInfoBatch_mixed_batch",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedInfoBatch",
+    "config": {
+      "parentObjectApiName": "FamilyL11Parent__c",
+      "relatedListNames": [
+        "Children__r",
+        "OwnedMissing__r"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v10",
+    "wireKeys": [
+      "parentObjectApiName",
+      "relatedListNames"
+    ]
+  },
+  {
+    "id": "r_listInfo_object_null",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "objectApiName": null,
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v19",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_listInfo_object_empty",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "objectApiName": "",
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v19",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_listInfo_object_lowercase",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "objectApiName": "familyl11child__c",
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v19",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_listInfo_object_number",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "objectApiName": 42,
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v19",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_listInfo_object_array",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "objectApiName": [
+        "FamilyL11Child__c"
+      ],
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v19",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_listInfo_object_unknown",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "objectApiName": "FamilyL11Missing__c",
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v19",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_listInfo_object_undefined",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [
+      "objectApiName"
+    ],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v19",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_listInfo_object_omitted",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v20",
+    "wireKeys": [
+      "listViewApiName"
+    ]
+  },
+  {
+    "id": "r_listInfo_normal",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v19",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_objectLists_object_null",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v21",
+    "wireKeys": [
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_objectLists_object_empty",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": ""
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v21",
+    "wireKeys": [
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_objectLists_object_lowercase",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": "familyl11child__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v21",
+    "wireKeys": [
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_objectLists_object_number",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": 42
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v21",
+    "wireKeys": [
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_objectLists_object_array",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": [
+        "FamilyL11Child__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v21",
+    "wireKeys": [
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_objectLists_object_unknown",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": "FamilyL11Missing__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v21",
+    "wireKeys": [
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_objectLists_object_undefined",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": "FamilyL11Child__c"
+    },
+    "projection": "full",
+    "omit": [
+      "objectApiName"
+    ],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v21",
+    "wireKeys": [
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_objectLists_object_omitted",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {},
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v22",
+    "wireKeys": []
+  },
+  {
+    "id": "r_objectLists_normal",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": "FamilyL11Child__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v21",
+    "wireKeys": [
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_listRecords_object_null",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": null,
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_object_empty",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_object_lowercase",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "familyl11child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_object_number",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": 42,
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_object_array",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": [
+        "FamilyL11Child__c"
+      ],
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_object_unknown",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Missing__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_object_undefined",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [
+      "objectApiName"
+    ],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_object_omitted",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v24",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_normal",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listInfos_names_null",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_listInfos_names_empty",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": []
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_listInfos_names_lowercase",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": [
+        "familyl11child__c.FamilyL11Owned"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_listInfos_names_number",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": 42
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_listInfos_names_array",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": [
+        "FamilyL11Child__c.FamilyL11Owned"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_listInfos_names_unknown",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": [
+        "FamilyL11Missing__c.FamilyL11Owned"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_listInfos_names_undefined",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": [
+        "FamilyL11Child__c.FamilyL11Owned"
+      ]
+    },
+    "projection": "full",
+    "omit": [
+      "names"
+    ],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_listInfos_names_omitted",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {},
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v26",
+    "wireKeys": []
+  },
+  {
+    "id": "r_listInfos_normal",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": [
+        "FamilyL11Child__c.FamilyL11Owned"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_listInfo_view_null",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v19",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_listInfo_view_empty",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": ""
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v19",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_listInfo_view_unknown",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Missing"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v19",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_listInfo_view_qualified",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfo",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Child__c.FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v19",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_listRecords_view_null",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": null,
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_view_empty",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_view_unknown",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Missing",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_view_qualified",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Child__c.FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listInfos_empty",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": []
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_listInfos_null",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_listInfos_duplicate",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": [
+        "FamilyL11Child__c.FamilyL11Owned",
+        "FamilyL11Child__c.FamilyL11Owned"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_listInfos_mixed",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": [
+        "FamilyL11Child__c.FamilyL11Owned",
+        "FamilyL11Child__c.FamilyL11Missing"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_listInfos_string",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listInfos",
+    "config": {
+      "names": "FamilyL11Child__c.FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v25",
+    "wireKeys": [
+      "names"
+    ]
+  },
+  {
+    "id": "r_objectLists_one",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "pageSize": 1
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v27",
+    "wireKeys": [
+      "objectApiName",
+      "pageSize"
+    ]
+  },
+  {
+    "id": "r_objectLists_zero",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "pageSize": 0
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v27",
+    "wireKeys": [
+      "objectApiName",
+      "pageSize"
+    ]
+  },
+  {
+    "id": "r_objectLists_null",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "pageSize": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v27",
+    "wireKeys": [
+      "objectApiName",
+      "pageSize"
+    ]
+  },
+  {
+    "id": "r_objectLists_query",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "q": "FamilyL11"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v28",
+    "wireKeys": [
+      "objectApiName",
+      "q"
+    ]
+  },
+  {
+    "id": "r_objectLists_query_empty",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "q": ""
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v28",
+    "wireKeys": [
+      "objectApiName",
+      "q"
+    ]
+  },
+  {
+    "id": "r_objectLists_recent",
+    "group": "list-info",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "objectLists",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "recentListsOnly": true
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v29",
+    "wireKeys": [
+      "objectApiName",
+      "recentListsOnly"
+    ]
+  },
+  {
+    "id": "r_listRecords_page_one",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c",
+      "pageSize": 1
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v30",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "pageSize",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_page_string",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c",
+      "pageSize": "2"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v30",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "pageSize",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_page_token_bad",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c",
+      "pageToken": "L11_BAD_TOKEN"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v31",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "pageToken",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_fields_empty",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [],
+      "sortBy": "Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_optional_bad",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c",
+      "optionalFields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v32",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "optionalFields",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_sort_desc",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "-Sort__c"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v23",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_search",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c",
+      "searchTerm": "L11 B"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v33",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "searchTerm",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_where",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c",
+      "where": "{ Sort__c: { gte: 2 } }"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v34",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "sortBy",
+      "where"
+    ]
+  },
+  {
+    "id": "r_legacy_normal",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v35",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_legacy_view_null",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v35",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_legacy_view_empty",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": ""
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v35",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_legacy_view_missing",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Missing"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v35",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_legacy_view_number",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": 42
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v35",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_legacy_object_null",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": null,
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v35",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_legacy_page_one",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "pageSize": 1
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v36",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName",
+      "pageSize"
+    ]
+  },
+  {
+    "id": "r_legacy_page_zero",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "pageSize": 0
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v36",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName",
+      "pageSize"
+    ]
+  },
+  {
+    "id": "r_legacy_sort_name",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "sortBy": "FamilyL11Child__c.Name"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v37",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_legacy_sort_array",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "sortBy": [
+        "FamilyL11Child__c.Name"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v37",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_legacy_direction_desc",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "sortDirection": "DESC"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v38",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName",
+      "sortDirection"
+    ]
+  },
+  {
+    "id": "r_legacy_direction_invalid",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "sortDirection": "L11_INVALID"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v38",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName",
+      "sortDirection"
+    ]
+  },
+  {
+    "id": "r_legacy_display_list",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "displayType": "List"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v39",
+    "wireKeys": [
+      "displayType",
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_legacy_display_invalid",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "displayType": "L11_INVALID"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v39",
+    "wireKeys": [
+      "displayType",
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_legacy_token_bad",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "pageToken": "L11_BAD_TOKEN"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v40",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName",
+      "pageToken"
+    ]
+  },
+  {
+    "id": "r_legacy_view_undefined",
+    "group": "legacy-getListUi",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "legacy",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [
+      "listViewApiName"
+    ],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v35",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_nav_normal",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": [
+        "$tab"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v41",
+    "wireKeys": [
+      "navItemNames"
+    ]
+  },
+  {
+    "id": "r_nav_large",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": [
+        "$tab"
+      ],
+      "formFactor": "Large"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v42",
+    "wireKeys": [
+      "formFactor",
+      "navItemNames"
+    ]
+  },
+  {
+    "id": "r_nav_small",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": [
+        "$tab"
+      ],
+      "formFactor": "Small"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v42",
+    "wireKeys": [
+      "formFactor",
+      "navItemNames"
+    ]
+  },
+  {
+    "id": "r_nav_null",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": [
+        "$tab"
+      ],
+      "formFactor": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v42",
+    "wireKeys": [
+      "formFactor",
+      "navItemNames"
+    ]
+  },
+  {
+    "id": "r_nav_invalid",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": [
+        "$tab"
+      ],
+      "formFactor": "L11_INVALID"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v42",
+    "wireKeys": [
+      "formFactor",
+      "navItemNames"
+    ]
+  },
+  {
+    "id": "r_nav_array",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": [
+        "$tab"
+      ],
+      "formFactor": [
+        "Large"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v42",
+    "wireKeys": [
+      "formFactor",
+      "navItemNames"
+    ]
+  },
+  {
+    "id": "r_nav_one",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": [
+        "$tab"
+      ],
+      "pageSize": 1
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v43",
+    "wireKeys": [
+      "navItemNames",
+      "pageSize"
+    ]
+  },
+  {
+    "id": "r_nav_zero",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": [
+        "$tab"
+      ],
+      "pageSize": 0
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v43",
+    "wireKeys": [
+      "navItemNames",
+      "pageSize"
+    ]
+  },
+  {
+    "id": "r_nav_offset_zero",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": [
+        "$tab"
+      ],
+      "page": 0
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v44",
+    "wireKeys": [
+      "navItemNames",
+      "page"
+    ]
+  },
+  {
+    "id": "r_nav_offset_negative",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": [
+        "$tab"
+      ],
+      "page": -1
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v44",
+    "wireKeys": [
+      "navItemNames",
+      "page"
+    ]
+  },
+  {
+    "id": "r_nav_names",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": [
+        "$tab"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v41",
+    "wireKeys": [
+      "navItemNames"
+    ]
+  },
+  {
+    "id": "r_nav_names_empty",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": []
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v41",
+    "wireKeys": [
+      "navItemNames"
+    ]
+  },
+  {
+    "id": "r_nav_names_null",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v41",
+    "wireKeys": [
+      "navItemNames"
+    ]
+  },
+  {
+    "id": "r_nav_names_string",
+    "group": "nav-items",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "nav",
+    "config": {
+      "navItemNames": "$tab"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v41",
+    "wireKeys": [
+      "navItemNames"
+    ]
+  },
+  {
+    "id": "r_preferences_normal",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "preferences",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v45",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_preferences_second",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "preferences",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Missing"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v45",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_preferences_empty",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "preferences",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": ""
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v45",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_preferences_null",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "preferences",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": null
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v45",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_preferences_number",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "preferences",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": 42
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v45",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_preferences_unknown",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "preferences",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11MissingPreference"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v45",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_preferences_qualified",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "preferences",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Child__c.FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v45",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_preferences_array",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "preferences",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": [
+        "FamilyL11Owned"
+      ]
+    },
+    "projection": "full",
+    "omit": [],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v45",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_preferences_undefined",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "preferences",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned"
+    },
+    "projection": "full",
+    "omit": [
+      "listViewApiName"
+    ],
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v45",
+    "wireKeys": [
+      "listViewApiName",
+      "objectApiName"
+    ]
+  },
+  {
+    "id": "r_updateListPreferences_snapshot",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "updateListPreferences",
+    "config": {},
+    "argument": "snapshot",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_updateListPreferences_null",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "updateListPreferences",
+    "config": {},
+    "argument": null,
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_updateListPreferences_empty",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "updateListPreferences",
+    "config": {},
+    "argument": {},
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_updateListPreferences_unknown",
+    "group": "preferences",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "updateListPreferences",
+    "config": {},
+    "argument": {
+      "columnWrap": {
+        "OwnedMissing__c": true
+      }
+    },
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_createList_normal",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "createList",
+    "config": {},
+    "variant": "normal",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_createList_null",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "createList",
+    "config": {},
+    "variant": "null",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_createList_empty",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "createList",
+    "config": {},
+    "variant": "empty",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_createList_bad_object",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "createList",
+    "config": {},
+    "variant": "bad_object",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_createList_converted",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "createList",
+    "config": {},
+    "variant": "converted",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_createList_missing_view",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "createList",
+    "config": {},
+    "variant": "missing_view",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_updateList_normal",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "updateList",
+    "config": {},
+    "variant": "normal",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_updateList_null",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "updateList",
+    "config": {},
+    "variant": "null",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_updateList_empty",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "updateList",
+    "config": {},
+    "variant": "empty",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_updateList_bad_object",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "updateList",
+    "config": {},
+    "variant": "bad_object",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_updateList_converted",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "updateList",
+    "config": {},
+    "variant": "converted",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_updateList_missing_view",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "updateList",
+    "config": {},
+    "variant": "missing_view",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_deleteList_normal",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "deleteList",
+    "config": {},
+    "variant": "normal",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_deleteList_null",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "null",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "deleteList",
+    "config": {},
+    "variant": "null",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_deleteList_empty",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "deleteList",
+    "config": {},
+    "variant": "empty",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_deleteList_bad_object",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "deleteList",
+    "config": {},
+    "variant": "bad_object",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_deleteList_converted",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "conversion",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "deleteList",
+    "config": {},
+    "variant": "converted",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_deleteList_missing_view",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "deleteList",
+    "config": {},
+    "variant": "missing_view",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_mutation_hosted_boundary",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "exception",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "hosted-boundary",
+    "adapter": "createList",
+    "config": {},
+    "variant": "boundary",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_relatedRecords_native_next_page",
+    "group": "related-list-reads",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "relatedRecords",
+    "config": {
+      "parentRecordId": "$parent",
+      "relatedListId": "Children__r",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "pageSize": 1
+    },
+    "projection": "full",
+    "omit": [],
+    "sequence": "next-page",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v12",
+    "wireKeys": [
+      "fields",
+      "pageSize",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ],
+    "nextPageVariant": "v46",
+    "nextPageKeys": [
+      "fields",
+      "pageSize",
+      "pageToken",
+      "parentRecordId",
+      "relatedListId",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_listRecords_native_next_page",
+    "group": "list-records",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "owned-read",
+    "adapter": "listRecords",
+    "config": {
+      "objectApiName": "FamilyL11Child__c",
+      "listViewApiName": "FamilyL11Owned",
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "sortBy": "Sort__c",
+      "pageSize": 1
+    },
+    "projection": "full",
+    "omit": [],
+    "sequence": "next-page",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireVariant": "v30",
+    "wireKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "pageSize",
+      "sortBy"
+    ],
+    "nextPageVariant": "v47",
+    "nextPageKeys": [
+      "fields",
+      "listViewApiName",
+      "objectApiName",
+      "pageSize",
+      "pageToken",
+      "sortBy"
+    ]
+  },
+  {
+    "id": "r_createList_nested_dto",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "createList",
+    "config": {},
+    "variant": "nested_dto",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  },
+  {
+    "id": "r_updateList_nested_dto",
+    "group": "list-view-mutations",
+    "kind": "runtime",
+    "scenario": "normal",
+    "expectation": "?",
+    "basis": "org",
+    "classification": "required-gap",
+    "adapter": "updateList",
+    "config": {},
+    "variant": "nested_dto",
+    "route": "browser",
+    "observation": "Native return/error/throw or bounded absence, rendered JSON; no inferred answer",
+    "wireKeys": []
+  }
+]

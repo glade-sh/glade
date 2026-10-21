@@ -178,7 +178,7 @@ func TestDaemonEquivalenceMatrix(t *testing.T) {
 			wantTotal:          1,
 			wantCaseStatus:     testreport.StatusUnsupported,
 			wantProblemType:    "Canceled",
-			wantProblemMessage: context.DeadlineExceeded.Error(),
+			wantProblemMessage: "context deadline exceeded: per-test wall-clock cap 20ms (--test-timeout flag) exceeded; raise --test-timeout above 20ms, or disable it with --test-timeout 0",
 			wantEnvelopeStatus: "failed",
 		},
 		{
@@ -377,6 +377,32 @@ func TestNoCacheRoutingContract(t *testing.T) {
 	})
 }
 
+// A connected invocation selects the published index; loading the local project
+// would also discover the additional failing test written after server startup.
+func TestConnectedRunUsesPublishedTestSelection(t *testing.T) {
+	fixture := newDaemonEquivalenceFixture(t, daemonEquivalenceScenario{
+		classes: map[string]string{
+			"PublishedTest": `@IsTest private class PublishedTest { @IsTest static void passes() { System.assert(true); } }`,
+		},
+	})
+	stopServer := startDaemonEquivalenceServer(t, fixture.projectRoot)
+	defer stopServer()
+	addDaemonEquivalenceLocalTest(t, fixture.projectRoot)
+	connected := runNoCacheRoutingInvocation(t, fixture.projectRoot, "--connect", "--no-cache")
+	assertNoCacheRoutingResult(t, connected, 1, "PublishedTest.passes")
+	var stdout, stderr bytes.Buffer
+	exit := Run(context.Background(), []string{"test", "--project", fixture.projectRoot, "--json", "--no-progress", "--no-serve", "--no-cache"}, &stdout, &stderr)
+	var envelope struct {
+		Summary testreport.Summary `json:"summary"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+		t.Fatalf("decode local control: %v; stdout=%s stderr=%s", err, stdout.String(), stderr.String())
+	}
+	if exit != 1 || envelope.Summary.Total != 2 || envelope.Summary.Passed != 1 || envelope.Summary.Failed != 1 {
+		t.Fatalf("local control exit=%d summary=%+v; stdout=%s stderr=%s", exit, envelope.Summary, stdout.String(), stderr.String())
+	}
+}
+
 func runNoCacheRoutingInvocation(t *testing.T, root string, extraArgs ...string) testreport.Run {
 	t.Helper()
 	args := []string{"test", "--project", root, "--json", "--no-progress"}
@@ -468,7 +494,7 @@ func runDaemonEquivalenceInvocation(t *testing.T, scenario daemonEquivalenceScen
 	if mode.realServer {
 		stopServer = startDaemonEquivalenceServer(t, fixture.projectRoot)
 		defer stopServer()
-		poisonDaemonEquivalenceLocalLoad(t, fixture.projectRoot)
+		addDaemonEquivalenceLocalTest(t, fixture.projectRoot)
 	}
 	args := []string{"test", "--project", fixture.projectRoot, "--json", "--no-progress"}
 	args = append(args, scenario.args...)
@@ -619,9 +645,12 @@ func startDaemonEquivalenceServer(t *testing.T, root string) func() {
 	}
 }
 
-func poisonDaemonEquivalenceLocalLoad(t *testing.T, root string) {
+func addDaemonEquivalenceLocalTest(t *testing.T, root string) {
 	t.Helper()
-	writeDaemonEquivalenceFile(t, filepath.Join(root, "sfdx-project.json"), "{\n")
+	// Runtime metadata still needs a readable project. An additional test
+	// changes local discovery without corrupting metadata or indexed sources.
+	writeDaemonEquivalenceFile(t, filepath.Join(root, "force-app/main/default/classes/UnpublishedTest.cls"),
+		`@IsTest private class UnpublishedTest { @IsTest static void fails() { System.assert(false); } }`)
 }
 
 func normalizeDaemonEquivalenceRun(t *testing.T, run testreport.Run, baseRoot string) testreport.Run {
@@ -733,7 +762,7 @@ func runDaemonEquivalenceShardPlan(t *testing.T, mode daemonEquivalenceMode) []d
 	if mode.realServer {
 		stopServer = startDaemonEquivalenceServer(t, fixture.projectRoot)
 		defer stopServer()
-		poisonDaemonEquivalenceLocalLoad(t, fixture.projectRoot)
+		addDaemonEquivalenceLocalTest(t, fixture.projectRoot)
 	}
 	args = append(args, mode.args...)
 	var stdout, stderr bytes.Buffer

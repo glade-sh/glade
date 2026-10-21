@@ -1,0 +1,4 @@
+id	outcome	value
+history	compile-rejected	Field is not writeable: AccountHistory.Field
+logdate	compile-rejected	Field is not writeable: EventLogFile.LogDate
+control	compile-rejected	Field is not writeable: Account.CreatedDate

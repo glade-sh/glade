@@ -204,7 +204,7 @@ func (vm *VM) callDatabaseUnitOfWorkMember(receiver Value, method string, args [
 			if !ok {
 				continue
 			}
-			applied, err := vm.executeDatabaseDML(opValue.Text, []Value{records, Bool(false)}, result)
+			applied, err := vm.executeDatabaseDMLWithHistoryTestSeed(opValue.Text, []Value{records, Bool(false)}, result, false)
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
@@ -244,6 +244,9 @@ func databaseResultIDValue(id storage.ID) Value {
 }
 
 func databaseDMLResultIDValue(op string, result dml.Result) Value {
+	if result.StatusCode == readOnlyApplicationDMLStatus {
+		return databaseResultIDValue(result.ID)
+	}
 	if !result.Success && !strings.EqualFold(op, "delete") {
 		// A rejected undelete of an active record still identifies the record.
 		if strings.EqualFold(op, "update") || (strings.EqualFold(op, "undelete") && result.StatusCode == "UNDELETE_FAILED") {

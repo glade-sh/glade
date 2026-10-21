@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "oracle": "Owned platform event observations and controls at API 62.0 and 67.0, including server-publish control S001.",
   "files": {
@@ -2146,70 +2147,70 @@
       "code": "r=A39Oracle.publishOne('A39Immediate__e','A39','summary');",
       "expected": "true|1|OPERATION_ENQUEUED:22f0a322-1f0f-46c0-bc4e-0d31df72f330:",
       "owner": "nonrepeatable native UUID cell",
-      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format. The first and repeat API 68 captures also return different UUIDs."
     },
     {
       "id": "R014",
       "code": "r=A39Oracle.publishOne('A39Immediate__e','a\\'b','summary');",
       "expected": "true|1|OPERATION_ENQUEUED:f601c388-c3bb-4b6c-b096-8022211f2a63:",
       "owner": "nonrepeatable native UUID cell",
-      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format. The first and repeat API 68 captures also return different UUIDs."
     },
     {
       "id": "R015",
       "code": "r=A39Oracle.publishOne('A39Immediate__e','a\\\\b','summary');",
       "expected": "true|1|OPERATION_ENQUEUED:55e948e5-a421-4a67-b8df-5dafb2b4ed89:",
       "owner": "nonrepeatable native UUID cell",
-      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format. The first and repeat API 68 captures also return different UUIDs."
     },
     {
       "id": "R018",
       "code": "r=A39Oracle.publishOne('A39Immediate__e','é','summary');",
       "expected": "true|1|OPERATION_ENQUEUED:7526a14c-824b-4ac6-b6ce-8ee57ce1aac2:",
       "owner": "nonrepeatable native UUID cell",
-      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format. The first and repeat API 68 captures also return different UUIDs."
     },
     {
       "id": "R019",
       "code": "r=A39Oracle.publishOne('A39Immediate__e','xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx','summary');",
       "expected": "true|1|OPERATION_ENQUEUED:01fc2780-36d0-4cad-a4ba-a43eb4b435e1:",
       "owner": "nonrepeatable native UUID cell",
-      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format. The first and repeat API 68 captures also return different UUIDs."
     },
     {
       "id": "R096",
       "code": "r=A39Oracle.publishOne('A39AfterCommit__e','A39','summary');",
       "expected": "true|1|OPERATION_ENQUEUED:b4cf41ec-2919-4556-a404-af9f42c1869f:",
       "owner": "nonrepeatable native UUID cell",
-      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format. The first and repeat API 68 captures also return different UUIDs."
     },
     {
       "id": "R097",
       "code": "r=A39Oracle.publishOne('A39AfterCommit__e','a\\'b','summary');",
       "expected": "true|1|OPERATION_ENQUEUED:3f8b11d1-1cf9-497c-a1bb-8e943c826d04:",
       "owner": "nonrepeatable native UUID cell",
-      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format. The first and repeat API 68 captures also return different UUIDs."
     },
     {
       "id": "R098",
       "code": "r=A39Oracle.publishOne('A39AfterCommit__e','a\\\\b','summary');",
       "expected": "true|1|OPERATION_ENQUEUED:82fdba59-e043-444e-b2e4-3212828e21b3:",
       "owner": "nonrepeatable native UUID cell",
-      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format. The first and repeat API 68 captures also return different UUIDs."
     },
     {
       "id": "R101",
       "code": "r=A39Oracle.publishOne('A39AfterCommit__e','é','summary');",
       "expected": "true|1|OPERATION_ENQUEUED:b5af63ed-61db-4cdc-8593-17011c451949:",
       "owner": "nonrepeatable native UUID cell",
-      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format. The first and repeat API 68 captures also return different UUIDs."
     },
     {
       "id": "R102",
       "code": "r=A39Oracle.publishOne('A39AfterCommit__e','xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx','summary');",
       "expected": "true|1|OPERATION_ENQUEUED:83880b5e-b128-47dc-b0d9-0d8231206e07:",
       "owner": "nonrepeatable native UUID cell",
-      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format. The first and repeat API 68 captures also return different UUIDs."
     },
     {
       "id": "P011",
@@ -2240,5 +2241,20 @@
       "reason": "Native Salesforce Internal Error includes an unstable server error ID; no local hosted outcome is fabricated."
     }
   ],
-  "absorbedTicketRows": {}
+  "absorbedTicketRows": {},
+  "namedByApi": {
+    "62.0": {
+      "P001": "ACCEPTED",
+      "P002": "ACCEPTED",
+      "P004": "true",
+      "P009": "true",
+      "P006": "true|false|1"
+    },
+    "67.0": {
+      "P001": "ACCEPTED",
+      "P002": "ACCEPTED",
+      "P004": "true",
+      "P009": "true"
+    }
+  }
 }

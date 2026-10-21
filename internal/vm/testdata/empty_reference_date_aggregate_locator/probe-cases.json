@@ -1,0 +1,113 @@
+{
+  "nativeStatus": "observed-construction-and-empty-iteration",
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "contexts": [
+    "anonymous",
+    "istest"
+  ],
+  "shapeCount": 3,
+  "pendingExecutionCells": 0,
+  "rows": [
+    {
+      "id": "maximum-date",
+      "anonymous": "anonymous-observation.apex",
+      "istestClass": "DateAggregateLocator1Probe",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY) GROUP BY AccountId",
+      "nativeExpected": {
+        "emptyConstruction": {
+          "created": true,
+          "queryPreserved": true
+        },
+        "matchingConstruction": {
+          "type": "System.QueryException",
+          "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch"
+        },
+        "emptyIterator": {
+          "created": true,
+          "hasNext": false
+        }
+      },
+      "nativeStatus": "observed-construction-and-empty-iteration",
+      "stages": [
+        "construction",
+        "iterator",
+        "iteration"
+      ],
+      "inputs": [
+        "empty",
+        "matchingControl"
+      ],
+      "anonymousRow": "D001"
+    },
+    {
+      "id": "maximum-date-or-decimal",
+      "anonymous": "anonymous-observation.apex",
+      "istestClass": "DateAggregateLocator2Probe",
+      "query": "SELECT AccountId,MAX(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (CloseDate < TODAY OR Amount > 100) GROUP BY AccountId",
+      "nativeExpected": {
+        "emptyConstruction": {
+          "created": true,
+          "queryPreserved": true
+        },
+        "matchingConstruction": {
+          "type": "System.QueryException",
+          "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch"
+        },
+        "emptyIterator": {
+          "created": true,
+          "hasNext": false
+        }
+      },
+      "nativeStatus": "observed-construction-and-empty-iteration",
+      "stages": [
+        "construction",
+        "iterator",
+        "iteration"
+      ],
+      "inputs": [
+        "empty",
+        "matchingControl"
+      ],
+      "anonymousRow": "D002"
+    },
+    {
+      "id": "count-date",
+      "anonymous": "anonymous-observation.apex",
+      "istestClass": "DateAggregateLocator3Probe",
+      "query": "SELECT AccountId,COUNT(CloseDate) resultValue FROM Opportunity WHERE AccountId IN :parents AND (Amount < 200) GROUP BY AccountId",
+      "nativeExpected": {
+        "emptyConstruction": {
+          "created": true,
+          "queryPreserved": true
+        },
+        "matchingConstruction": {
+          "type": "System.QueryException",
+          "message": "Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch"
+        },
+        "emptyIterator": {
+          "created": true,
+          "hasNext": false
+        }
+      },
+      "nativeStatus": "observed-construction-and-empty-iteration",
+      "stages": [
+        "construction",
+        "iterator",
+        "iteration"
+      ],
+      "inputs": [
+        "empty",
+        "matchingControl"
+      ],
+      "anonymousRow": "D003"
+    }
+  ],
+  "observedExecutionCells": 18,
+  "negativeControlExecutionCells": 6,
+  "iteratorCarryCells": 0,
+  "matchedIteratorCells": 18
+}

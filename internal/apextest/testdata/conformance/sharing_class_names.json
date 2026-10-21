@@ -1,0 +1,407 @@
+{
+  "apiVersions": [
+    "62.0",
+    "65.0",
+    "66.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "isTest"
+  ],
+  "absentRoutes": [
+    {
+      "route": "anonymous",
+      "reason": "anonymous Apex cannot use System.runAs; compile-only captures at 62.0/67.0/68.0 accept C001-C004 and reject C005: Inner types are not allowed to have inner types; no restricted-principal sharing/FLS runtime route"
+    }
+  ],
+  "object": "ShareCase__c",
+  "metadata": {
+    "objects/ShareCase__c.object": "<?xml version='1.0' encoding='utf-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><enableActivities>false</enableActivities><enableReports>false</enableReports><fields><fullName>Payload__c</fullName><label>Payload</label><length>80</length><type>Text</type></fields><fields><fullName>Result__c</fullName><label>Observation</label><length>255</length><type>Text</type></fields><label>ShareCase</label><nameField><label>Oracle Name</label><type>Text</type></nameField><pluralLabel>ShareCases</pluralLabel><sharingModel>Private</sharingModel><sharingReasons><fullName>Oracle__c</fullName><label>Oracle</label></sharingReasons></CustomObject>",
+    "profiles/Standard User.profile": "<?xml version='1.0' encoding='utf-8'?>\n<Profile xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>false</editable><field>ShareCase__c.Payload__c</field><readable>false</readable></fieldPermissions></Profile>\n"
+  },
+  "permissionSets": {
+    "denied": "<?xml version='1.0' encoding='utf-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>true</editable><field>ShareCase__c.Result__c</field><readable>true</readable></fieldPermissions><label>ShareCaseAccess</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>ShareCase__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+    "granted": "<?xml version='1.0' encoding='utf-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>true</editable><field>ShareCase__c.Payload__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>ShareCase__c.Result__c</field><readable>true</readable></fieldPermissions><label>ShareCaseAccess</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>ShareCase__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+  },
+  "rows": [
+    {
+      "id": "F001",
+      "twins": [
+        "R018",
+        "R019",
+        "R020"
+      ],
+      "deniedPayload": false,
+      "classes": {
+        "ShareCaseWith": "public with sharing class ShareCaseWith {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseWithout": "public without sharing class ShareCaseWithout {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseSink": "public without sharing class ShareCaseSink {public static void store(Id target,String value){update as system new ShareCase__c(Id=target,Result__c=value);} public static String read(Id target){return [SELECT Result__c FROM ShareCase__c WHERE Id=:target WITH SYSTEM_MODE].Result__c;}}\n",
+        "ShareCaseProbe": "public class ShareCaseProbe {public static String observe(){String defaultResult; try {defaultResult=String.valueOf(Database.query('SELECT Payload__c FROM ShareCase__c WHERE Name = \\'result\\'').size());}catch(Exception e){defaultResult='EXC|'+e.getTypeName()+'|'+e.getMessage();} String userMode; try {userMode=String.valueOf(Database.query('SELECT Payload__c FROM ShareCase__c WHERE Name = \\'result\\'', AccessLevel.USER_MODE).size());}catch(Exception e){userMode='EXC|'+e.getTypeName()+'|'+e.getMessage();} String systemMode; try {systemMode=String.valueOf(Database.query('SELECT Payload__c FROM ShareCase__c WHERE Name = \\'result\\'', AccessLevel.SYSTEM_MODE).size());}catch(Exception e){systemMode='EXC|'+e.getTypeName()+'|'+e.getMessage();} return 'default='+defaultResult+';userMode='+userMode+';systemMode='+systemMode;}}\n",
+        "ShareCaseTest": "@IsTest  private class ShareCaseTest {\n@IsTest static void F001(){\nId adminId=UserInfo.getUserId(); User admin=[SELECT Id FROM User WHERE Id=:adminId];\nProfile standard=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\nPermissionSet profileAccess=[SELECT PermissionsViewAllData,PermissionsModifyAllData FROM PermissionSet WHERE IsOwnedByProfile=true AND ProfileId=:standard.Id LIMIT 1];\nSystem.assertEquals(false,profileAccess.PermissionsViewAllData,'PROFILE_VIEW_ALL');\nSystem.assertEquals(false,profileAccess.PermissionsModifyAllData,'PROFILE_MODIFY_ALL');\nUser restricted=new User(Alias='shcase',Email='sharecase@example.invalid',\n    EmailEncodingKey='UTF-8',LastName='ShareCase',LanguageLocaleKey='en_US',\n    LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=standard.Id,\n    Username='ShareCase.'+String.valueOf(DateTime.now().getTime())+'@example.invalid');\nSystem.runAs(admin){\n    insert restricted;\n}\nSystem.runAs(restricted){\nSystem.assertEquals(restricted.Id,UserInfo.getUserId(),'BASELINE_PRINCIPAL');\nSystem.assertEquals(false,ShareCase__c.Payload__c.getDescribe().isAccessible(),'PROFILE_FLS_BEFORE_GRANT');\n}\nSystem.runAs(admin){\n    PermissionSet access=[SELECT Id FROM PermissionSet WHERE Name='ShareCaseAccess'];\n    insert new PermissionSetAssignment(AssigneeId=restricted.Id,PermissionSetId=access.Id);\n}\nSystem.runAs(admin){\n    insert as system new List<ShareCase__c>{new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='one'),\n        new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='two')};\n}\nShareCase__c target=new ShareCase__c(Name='result',OwnerId=restricted.Id,Payload__c='visible-secret',Result__c='pending');\nSystem.runAs(admin){insert as system target;}\nString value; Integer visibleWith; Integer visibleWithout; Integer visibleUser;\nSystem.runAs(restricted){\n    System.assertEquals(restricted.Id,UserInfo.getUserId(),'RUNAS_NOT_APPLIED');\n    System.assertEquals(true,ShareCase__c.SObjectType.getDescribe().isAccessible(),'FIXTURE_CRUD');\n    System.assertEquals(true,ShareCase__c.Payload__c.getDescribe().isAccessible(),'FIXTURE_FLS');\n    visibleWith=ShareCaseWith.countRows(); visibleWithout=ShareCaseWithout.countRows();\n    visibleUser=[SELECT Id FROM ShareCase__c WHERE Name='hidden' WITH USER_MODE].size();\n    System.assertEquals(0,visibleWith,'PRIVATE_WITH_CONTROL');\n    System.assertEquals(2,visibleWithout,'PRIVATE_WITHOUT_CONTROL');\n    System.assertEquals(0,visibleUser,'PRIVATE_USER_CONTROL');\n    try {value=String.valueOf(ShareCaseProbe.observe());}catch(Exception e){value='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n}\nSystem.assert(false,'P|F001|observed='+value+';with='+visibleWith+';without='+visibleWithout+';user='+visibleUser);\n}\n}\n\n"
+      },
+      "classApiVersions": {
+        "ShareCaseSink": "62.0"
+      },
+      "expected": {
+        "62.0": "observed=default=1;userMode=1;systemMode=1;with=0;without=2;user=0",
+        "67.0": "observed=default=1;userMode=1;systemMode=1;with=0;without=2;user=0",
+        "68.0": "observed=default=1;userMode=1;systemMode=1;with=0;without=2;user=0"
+      },
+      "apiVersions": [
+        "62.0",
+        "67.0",
+        "68.0"
+      ]
+    },
+    {
+      "id": "R006",
+      "twins": [
+        "R005"
+      ],
+      "deniedPayload": false,
+      "classes": {
+        "ShareCaseWith": "public with sharing class ShareCaseWith {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseWithout": "public without sharing class ShareCaseWithout {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseSink": "public without sharing class ShareCaseSink {public static void store(Id target,String value){update as system new ShareCase__c(Id=target,Result__c=value);} public static String read(Id target){return [SELECT Result__c FROM ShareCase__c WHERE Id=:target WITH SYSTEM_MODE].Result__c;}}\n",
+        "ShareCaseProbe": "public  class ShareCaseProbe {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseCaller": "public without sharing class ShareCaseCaller {public static Integer countRows(){return ShareCaseProbe.countRows();}}\n",
+        "ShareCaseTest": "@IsTest  private class ShareCaseTest {\n@IsTest static void R006(){\nId adminId=UserInfo.getUserId(); User admin=[SELECT Id FROM User WHERE Id=:adminId];\nProfile standard=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\nPermissionSet profileAccess=[SELECT PermissionsViewAllData,PermissionsModifyAllData FROM PermissionSet WHERE IsOwnedByProfile=true AND ProfileId=:standard.Id LIMIT 1];\nSystem.assertEquals(false,profileAccess.PermissionsViewAllData,'PROFILE_VIEW_ALL');\nSystem.assertEquals(false,profileAccess.PermissionsModifyAllData,'PROFILE_MODIFY_ALL');\nUser restricted=new User(Alias='shcase',Email='sharecase@example.invalid',\n    EmailEncodingKey='UTF-8',LastName='ShareCase',LanguageLocaleKey='en_US',\n    LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=standard.Id,\n    Username='ShareCase.'+String.valueOf(DateTime.now().getTime())+'@example.invalid');\nSystem.runAs(admin){\n    insert restricted;\n    PermissionSet access=[SELECT Id FROM PermissionSet WHERE Name='ShareCaseAccess'];\n    insert new PermissionSetAssignment(AssigneeId=restricted.Id,PermissionSetId=access.Id);\n}\nSystem.runAs(admin){\n    insert as system new List<ShareCase__c>{new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='one'),\n        new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='two')};\n}\nShareCase__c target=new ShareCase__c(Name='result',OwnerId=restricted.Id,Payload__c='visible-secret',Result__c='pending');\nSystem.runAs(admin){insert as system target;}\nString value; Integer visibleWith; Integer visibleWithout; Integer visibleUser;\nSystem.runAs(restricted){\n    System.assertEquals(restricted.Id,UserInfo.getUserId(),'RUNAS_NOT_APPLIED');\n    System.assertEquals(true,ShareCase__c.SObjectType.getDescribe().isAccessible(),'FIXTURE_CRUD');\n    System.assertEquals(true,ShareCase__c.Payload__c.getDescribe().isAccessible(),'FIXTURE_FLS');\n    visibleWith=ShareCaseWith.countRows(); visibleWithout=ShareCaseWithout.countRows();\n    visibleUser=[SELECT Id FROM ShareCase__c WHERE Name='hidden' WITH USER_MODE].size();\n    System.assertEquals(0,visibleWith,'PRIVATE_WITH_CONTROL');\n    System.assertEquals(2,visibleWithout,'PRIVATE_WITHOUT_CONTROL');\n    System.assertEquals(0,visibleUser,'PRIVATE_USER_CONTROL');\n    try {value=String.valueOf(ShareCaseCaller.countRows());}catch(Exception e){value='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n}\nSystem.assert(false,'P|R006|observed='+value+';with='+visibleWith+';without='+visibleWithout+';user='+visibleUser);\n}\n}\n\n"
+      },
+      "classApiVersions": {
+        "ShareCaseSink": "62.0",
+        "ShareCaseCaller": "62.0"
+      },
+      "expected": {
+        "62.0": "observed=2;with=0;without=2;user=0",
+        "65.0": "observed=2;with=0;without=2;user=0",
+        "66.0": "observed=2;with=0;without=2;user=0",
+        "67.0": "observed=0;with=0;without=2;user=0"
+      },
+      "apiVersions": [
+        "62.0",
+        "65.0",
+        "66.0",
+        "67.0"
+      ]
+    },
+    {
+      "id": "R011",
+      "twins": [
+        "R012"
+      ],
+      "deniedPayload": false,
+      "classes": {
+        "ShareCaseWith": "public with sharing class ShareCaseWith {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseWithout": "public without sharing class ShareCaseWithout {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseSink": "public without sharing class ShareCaseSink {public static void store(Id target,String value){update as system new ShareCase__c(Id=target,Result__c=value);} public static String read(Id target){return [SELECT Result__c FROM ShareCase__c WHERE Id=:target WITH SYSTEM_MODE].Result__c;}}\n",
+        "ShareCaseProbe": "public without sharing class ShareCaseProbe {public class WithSharing {public Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}}\n",
+        "ShareCaseTest": "@IsTest  private class ShareCaseTest {\n@IsTest static void R011(){\nId adminId=UserInfo.getUserId(); User admin=[SELECT Id FROM User WHERE Id=:adminId];\nProfile standard=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\nPermissionSet profileAccess=[SELECT PermissionsViewAllData,PermissionsModifyAllData FROM PermissionSet WHERE IsOwnedByProfile=true AND ProfileId=:standard.Id LIMIT 1];\nSystem.assertEquals(false,profileAccess.PermissionsViewAllData,'PROFILE_VIEW_ALL');\nSystem.assertEquals(false,profileAccess.PermissionsModifyAllData,'PROFILE_MODIFY_ALL');\nUser restricted=new User(Alias='shcase',Email='sharecase@example.invalid',\n    EmailEncodingKey='UTF-8',LastName='ShareCase',LanguageLocaleKey='en_US',\n    LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=standard.Id,\n    Username='ShareCase.'+String.valueOf(DateTime.now().getTime())+'@example.invalid');\nSystem.runAs(admin){\n    insert restricted;\n    PermissionSet access=[SELECT Id FROM PermissionSet WHERE Name='ShareCaseAccess'];\n    insert new PermissionSetAssignment(AssigneeId=restricted.Id,PermissionSetId=access.Id);\n}\nSystem.runAs(admin){\n    insert as system new List<ShareCase__c>{new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='one'),\n        new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='two')};\n}\nShareCase__c target=new ShareCase__c(Name='result',OwnerId=restricted.Id,Payload__c='visible-secret',Result__c='pending');\nSystem.runAs(admin){insert as system target;}\nString value; Integer visibleWith; Integer visibleWithout; Integer visibleUser;\nSystem.runAs(restricted){\n    System.assertEquals(restricted.Id,UserInfo.getUserId(),'RUNAS_NOT_APPLIED');\n    System.assertEquals(true,ShareCase__c.SObjectType.getDescribe().isAccessible(),'FIXTURE_CRUD');\n    System.assertEquals(true,ShareCase__c.Payload__c.getDescribe().isAccessible(),'FIXTURE_FLS');\n    visibleWith=ShareCaseWith.countRows(); visibleWithout=ShareCaseWithout.countRows();\n    visibleUser=[SELECT Id FROM ShareCase__c WHERE Name='hidden' WITH USER_MODE].size();\n    System.assertEquals(0,visibleWith,'PRIVATE_WITH_CONTROL');\n    System.assertEquals(2,visibleWithout,'PRIVATE_WITHOUT_CONTROL');\n    System.assertEquals(0,visibleUser,'PRIVATE_USER_CONTROL');\n    try {value=String.valueOf(new ShareCaseProbe.WithSharing().countRows());}catch(Exception e){value='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n}\nSystem.assert(false,'P|R011|observed='+value+';with='+visibleWith+';without='+visibleWithout+';user='+visibleUser);\n}\n}\n\n"
+      },
+      "classApiVersions": {
+        "ShareCaseSink": "62.0"
+      },
+      "expected": {
+        "62.0": "observed=0;with=0;without=2;user=0",
+        "65.0": "observed=0;with=0;without=2;user=0",
+        "66.0": "observed=0;with=0;without=2;user=0",
+        "67.0": "observed=0;with=0;without=2;user=0",
+        "68.0": "observed=0;with=0;without=2;user=0"
+      },
+      "apiVersions": [
+        "62.0",
+        "65.0",
+        "66.0",
+        "67.0",
+        "68.0"
+      ]
+    },
+    {
+      "id": "R012",
+      "twins": [
+        "R011"
+      ],
+      "deniedPayload": false,
+      "classes": {
+        "ShareCaseWith": "public with sharing class ShareCaseWith {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseWithout": "public without sharing class ShareCaseWithout {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseSink": "public without sharing class ShareCaseSink {public static void store(Id target,String value){update as system new ShareCase__c(Id=target,Result__c=value);} public static String read(Id target){return [SELECT Result__c FROM ShareCase__c WHERE Id=:target WITH SYSTEM_MODE].Result__c;}}\n",
+        "ShareCaseProbe": "public without sharing class ShareCaseProbe {public class Neutral {public Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}}\n",
+        "ShareCaseTest": "@IsTest  private class ShareCaseTest {\n@IsTest static void R012(){\nId adminId=UserInfo.getUserId(); User admin=[SELECT Id FROM User WHERE Id=:adminId];\nProfile standard=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\nPermissionSet profileAccess=[SELECT PermissionsViewAllData,PermissionsModifyAllData FROM PermissionSet WHERE IsOwnedByProfile=true AND ProfileId=:standard.Id LIMIT 1];\nSystem.assertEquals(false,profileAccess.PermissionsViewAllData,'PROFILE_VIEW_ALL');\nSystem.assertEquals(false,profileAccess.PermissionsModifyAllData,'PROFILE_MODIFY_ALL');\nUser restricted=new User(Alias='shcase',Email='sharecase@example.invalid',\n    EmailEncodingKey='UTF-8',LastName='ShareCase',LanguageLocaleKey='en_US',\n    LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=standard.Id,\n    Username='ShareCase.'+String.valueOf(DateTime.now().getTime())+'@example.invalid');\nSystem.runAs(admin){\n    insert restricted;\n    PermissionSet access=[SELECT Id FROM PermissionSet WHERE Name='ShareCaseAccess'];\n    insert new PermissionSetAssignment(AssigneeId=restricted.Id,PermissionSetId=access.Id);\n}\nSystem.runAs(admin){\n    insert as system new List<ShareCase__c>{new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='one'),\n        new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='two')};\n}\nShareCase__c target=new ShareCase__c(Name='result',OwnerId=restricted.Id,Payload__c='visible-secret',Result__c='pending');\nSystem.runAs(admin){insert as system target;}\nString value; Integer visibleWith; Integer visibleWithout; Integer visibleUser;\nSystem.runAs(restricted){\n    System.assertEquals(restricted.Id,UserInfo.getUserId(),'RUNAS_NOT_APPLIED');\n    System.assertEquals(true,ShareCase__c.SObjectType.getDescribe().isAccessible(),'FIXTURE_CRUD');\n    System.assertEquals(true,ShareCase__c.Payload__c.getDescribe().isAccessible(),'FIXTURE_FLS');\n    visibleWith=ShareCaseWith.countRows(); visibleWithout=ShareCaseWithout.countRows();\n    visibleUser=[SELECT Id FROM ShareCase__c WHERE Name='hidden' WITH USER_MODE].size();\n    System.assertEquals(0,visibleWith,'PRIVATE_WITH_CONTROL');\n    System.assertEquals(2,visibleWithout,'PRIVATE_WITHOUT_CONTROL');\n    System.assertEquals(0,visibleUser,'PRIVATE_USER_CONTROL');\n    try {value=String.valueOf(new ShareCaseProbe.Neutral().countRows());}catch(Exception e){value='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n}\nSystem.assert(false,'P|R012|observed='+value+';with='+visibleWith+';without='+visibleWithout+';user='+visibleUser);\n}\n}\n\n"
+      },
+      "classApiVersions": {
+        "ShareCaseSink": "62.0"
+      },
+      "expected": {
+        "62.0": "observed=0;with=0;without=2;user=0",
+        "65.0": "observed=0;with=0;without=2;user=0",
+        "66.0": "observed=0;with=0;without=2;user=0",
+        "67.0": "observed=0;with=0;without=2;user=0",
+        "68.0": "observed=0;with=0;without=2;user=0"
+      },
+      "apiVersions": [
+        "62.0",
+        "65.0",
+        "66.0",
+        "67.0",
+        "68.0"
+      ]
+    },
+    {
+      "id": "R015",
+      "twins": [
+        "R016",
+        "R017"
+      ],
+      "deniedPayload": false,
+      "classes": {
+        "ShareCaseWith": "public with sharing class ShareCaseWith {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseWithout": "public without sharing class ShareCaseWithout {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseSink": "public without sharing class ShareCaseSink {public static void store(Id target,String value){update as system new ShareCase__c(Id=target,Result__c=value);} public static String read(Id target){return [SELECT Result__c FROM ShareCase__c WHERE Id=:target WITH SYSTEM_MODE].Result__c;}}\n",
+        "ShareCaseProbe": "public  class ShareCaseProbe {public static Integer countRows(){return Database.query('SELECT Id FROM ShareCase__c WHERE Name = \\'hidden\\'').size();}}\n",
+        "ShareCaseTest": "@IsTest  private class ShareCaseTest {\n@IsTest static void R015(){\nId adminId=UserInfo.getUserId(); User admin=[SELECT Id FROM User WHERE Id=:adminId];\nProfile standard=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\nPermissionSet profileAccess=[SELECT PermissionsViewAllData,PermissionsModifyAllData FROM PermissionSet WHERE IsOwnedByProfile=true AND ProfileId=:standard.Id LIMIT 1];\nSystem.assertEquals(false,profileAccess.PermissionsViewAllData,'PROFILE_VIEW_ALL');\nSystem.assertEquals(false,profileAccess.PermissionsModifyAllData,'PROFILE_MODIFY_ALL');\nUser restricted=new User(Alias='shcase',Email='sharecase@example.invalid',\n    EmailEncodingKey='UTF-8',LastName='ShareCase',LanguageLocaleKey='en_US',\n    LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=standard.Id,\n    Username='ShareCase.'+String.valueOf(DateTime.now().getTime())+'@example.invalid');\nSystem.runAs(admin){\n    insert restricted;\n    PermissionSet access=[SELECT Id FROM PermissionSet WHERE Name='ShareCaseAccess'];\n    insert new PermissionSetAssignment(AssigneeId=restricted.Id,PermissionSetId=access.Id);\n}\nSystem.runAs(admin){\n    insert as system new List<ShareCase__c>{new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='one'),\n        new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='two')};\n}\nShareCase__c target=new ShareCase__c(Name='result',OwnerId=restricted.Id,Payload__c='visible-secret',Result__c='pending');\nSystem.runAs(admin){insert as system target;}\nString value; Integer visibleWith; Integer visibleWithout; Integer visibleUser;\nSystem.runAs(restricted){\n    System.assertEquals(restricted.Id,UserInfo.getUserId(),'RUNAS_NOT_APPLIED');\n    System.assertEquals(true,ShareCase__c.SObjectType.getDescribe().isAccessible(),'FIXTURE_CRUD');\n    System.assertEquals(true,ShareCase__c.Payload__c.getDescribe().isAccessible(),'FIXTURE_FLS');\n    visibleWith=ShareCaseWith.countRows(); visibleWithout=ShareCaseWithout.countRows();\n    visibleUser=[SELECT Id FROM ShareCase__c WHERE Name='hidden' WITH USER_MODE].size();\n    System.assertEquals(0,visibleWith,'PRIVATE_WITH_CONTROL');\n    System.assertEquals(2,visibleWithout,'PRIVATE_WITHOUT_CONTROL');\n    System.assertEquals(0,visibleUser,'PRIVATE_USER_CONTROL');\n    try {value=String.valueOf(ShareCaseProbe.countRows());}catch(Exception e){value='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n}\nSystem.assert(false,'P|R015|observed='+value+';with='+visibleWith+';without='+visibleWithout+';user='+visibleUser);\n}\n}\n\n"
+      },
+      "classApiVersions": {
+        "ShareCaseSink": "62.0"
+      },
+      "expected": {
+        "62.0": "observed=0;with=0;without=2;user=0",
+        "67.0": "observed=0;with=0;without=2;user=0",
+        "68.0": "observed=0;with=0;without=2;user=0"
+      },
+      "apiVersions": [
+        "62.0",
+        "67.0",
+        "68.0"
+      ]
+    },
+    {
+      "id": "R018",
+      "twins": [
+        "R019",
+        "R020"
+      ],
+      "deniedPayload": true,
+      "classes": {
+        "ShareCaseWith": "public with sharing class ShareCaseWith {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseWithout": "public without sharing class ShareCaseWithout {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseSink": "public without sharing class ShareCaseSink {public static void store(Id target,String value){update as system new ShareCase__c(Id=target,Result__c=value);} public static String read(Id target){return [SELECT Result__c FROM ShareCase__c WHERE Id=:target WITH SYSTEM_MODE].Result__c;}}\n",
+        "ShareCaseProbe": "public  class ShareCaseProbe {public static Integer countRows(){return Database.query('SELECT Payload__c FROM ShareCase__c WHERE Name = \\'result\\'').size();}}\n",
+        "ShareCaseTest": "@IsTest  private class ShareCaseTest {\n@IsTest static void R018(){\nId adminId=UserInfo.getUserId(); User admin=[SELECT Id FROM User WHERE Id=:adminId];\nProfile standard=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\nPermissionSet profileAccess=[SELECT PermissionsViewAllData,PermissionsModifyAllData FROM PermissionSet WHERE IsOwnedByProfile=true AND ProfileId=:standard.Id LIMIT 1];\nSystem.assertEquals(false,profileAccess.PermissionsViewAllData,'PROFILE_VIEW_ALL');\nSystem.assertEquals(false,profileAccess.PermissionsModifyAllData,'PROFILE_MODIFY_ALL');\nUser restricted=new User(Alias='shcase',Email='sharecase@example.invalid',\n    EmailEncodingKey='UTF-8',LastName='ShareCase',LanguageLocaleKey='en_US',\n    LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=standard.Id,\n    Username='ShareCase.'+String.valueOf(DateTime.now().getTime())+'@example.invalid');\nSystem.runAs(admin){\n    insert restricted;\n    PermissionSet access=[SELECT Id FROM PermissionSet WHERE Name='ShareCaseAccess'];\n    insert new PermissionSetAssignment(AssigneeId=restricted.Id,PermissionSetId=access.Id);\n}\nSystem.runAs(admin){\n    insert as system new List<ShareCase__c>{new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='one'),\n        new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='two')};\n}\nShareCase__c target=new ShareCase__c(Name='result',OwnerId=restricted.Id,Payload__c='visible-secret',Result__c='pending');\nSystem.runAs(admin){insert as system target;}\nString value; Integer visibleWith; Integer visibleWithout; Integer visibleUser;\nSystem.runAs(restricted){\n    System.assertEquals(restricted.Id,UserInfo.getUserId(),'RUNAS_NOT_APPLIED');\n    System.assertEquals(true,ShareCase__c.SObjectType.getDescribe().isAccessible(),'FIXTURE_CRUD');\n    System.assertEquals(false,ShareCase__c.Payload__c.getDescribe().isAccessible(),'FIXTURE_FLS');\n    visibleWith=ShareCaseWith.countRows(); visibleWithout=ShareCaseWithout.countRows();\n    visibleUser=[SELECT Id FROM ShareCase__c WHERE Name='hidden' WITH USER_MODE].size();\n    System.assertEquals(0,visibleWith,'PRIVATE_WITH_CONTROL');\n    System.assertEquals(2,visibleWithout,'PRIVATE_WITHOUT_CONTROL');\n    System.assertEquals(0,visibleUser,'PRIVATE_USER_CONTROL');\n    try {value=String.valueOf(ShareCaseProbe.countRows());}catch(Exception e){value='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n}\nSystem.assert(false,'P|R018|observed='+value+';with='+visibleWith+';without='+visibleWithout+';user='+visibleUser);\n}\n}\n\n"
+      },
+      "classApiVersions": {
+        "ShareCaseSink": "62.0"
+      },
+      "expected": {
+        "62.0": "observed=1;with=0;without=2;user=0",
+        "65.0": "observed=1;with=0;without=2;user=0",
+        "66.0": "observed=1;with=0;without=2;user=0",
+        "67.0": "observed=EXC|System.QueryException|No such column 'Payload__c' on entity 'ShareCase__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.;with=0;without=2;user=0",
+        "68.0": "observed=EXC|System.QueryException|No such column 'Payload__c' on entity 'ShareCase__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.;with=0;without=2;user=0"
+      },
+      "apiVersions": [
+        "62.0",
+        "65.0",
+        "66.0",
+        "67.0",
+        "68.0"
+      ]
+    },
+    {
+      "id": "R019",
+      "twins": [
+        "R018",
+        "R020"
+      ],
+      "deniedPayload": true,
+      "classes": {
+        "ShareCaseWith": "public with sharing class ShareCaseWith {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseWithout": "public without sharing class ShareCaseWithout {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseSink": "public without sharing class ShareCaseSink {public static void store(Id target,String value){update as system new ShareCase__c(Id=target,Result__c=value);} public static String read(Id target){return [SELECT Result__c FROM ShareCase__c WHERE Id=:target WITH SYSTEM_MODE].Result__c;}}\n",
+        "ShareCaseProbe": "public  class ShareCaseProbe {public static Integer countRows(){return Database.query('SELECT Payload__c FROM ShareCase__c WHERE Name = \\'result\\'', AccessLevel.USER_MODE).size();}}\n",
+        "ShareCaseTest": "@IsTest  private class ShareCaseTest {\n@IsTest static void R019(){\nId adminId=UserInfo.getUserId(); User admin=[SELECT Id FROM User WHERE Id=:adminId];\nProfile standard=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\nPermissionSet profileAccess=[SELECT PermissionsViewAllData,PermissionsModifyAllData FROM PermissionSet WHERE IsOwnedByProfile=true AND ProfileId=:standard.Id LIMIT 1];\nSystem.assertEquals(false,profileAccess.PermissionsViewAllData,'PROFILE_VIEW_ALL');\nSystem.assertEquals(false,profileAccess.PermissionsModifyAllData,'PROFILE_MODIFY_ALL');\nUser restricted=new User(Alias='shcase',Email='sharecase@example.invalid',\n    EmailEncodingKey='UTF-8',LastName='ShareCase',LanguageLocaleKey='en_US',\n    LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=standard.Id,\n    Username='ShareCase.'+String.valueOf(DateTime.now().getTime())+'@example.invalid');\nSystem.runAs(admin){\n    insert restricted;\n    PermissionSet access=[SELECT Id FROM PermissionSet WHERE Name='ShareCaseAccess'];\n    insert new PermissionSetAssignment(AssigneeId=restricted.Id,PermissionSetId=access.Id);\n}\nSystem.runAs(admin){\n    insert as system new List<ShareCase__c>{new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='one'),\n        new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='two')};\n}\nShareCase__c target=new ShareCase__c(Name='result',OwnerId=restricted.Id,Payload__c='visible-secret',Result__c='pending');\nSystem.runAs(admin){insert as system target;}\nString value; Integer visibleWith; Integer visibleWithout; Integer visibleUser;\nSystem.runAs(restricted){\n    System.assertEquals(restricted.Id,UserInfo.getUserId(),'RUNAS_NOT_APPLIED');\n    System.assertEquals(true,ShareCase__c.SObjectType.getDescribe().isAccessible(),'FIXTURE_CRUD');\n    System.assertEquals(false,ShareCase__c.Payload__c.getDescribe().isAccessible(),'FIXTURE_FLS');\n    visibleWith=ShareCaseWith.countRows(); visibleWithout=ShareCaseWithout.countRows();\n    visibleUser=[SELECT Id FROM ShareCase__c WHERE Name='hidden' WITH USER_MODE].size();\n    System.assertEquals(0,visibleWith,'PRIVATE_WITH_CONTROL');\n    System.assertEquals(2,visibleWithout,'PRIVATE_WITHOUT_CONTROL');\n    System.assertEquals(0,visibleUser,'PRIVATE_USER_CONTROL');\n    try {value=String.valueOf(ShareCaseProbe.countRows());}catch(Exception e){value='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n}\nSystem.assert(false,'P|R019|observed='+value+';with='+visibleWith+';without='+visibleWithout+';user='+visibleUser);\n}\n}\n\n"
+      },
+      "classApiVersions": {
+        "ShareCaseSink": "62.0"
+      },
+      "expected": {
+        "62.0": "observed=EXC|System.QueryException|No such column 'Payload__c' on entity 'ShareCase__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.;with=0;without=2;user=0",
+        "67.0": "observed=EXC|System.QueryException|No such column 'Payload__c' on entity 'ShareCase__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.;with=0;without=2;user=0",
+        "68.0": "observed=EXC|System.QueryException|No such column 'Payload__c' on entity 'ShareCase__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.;with=0;without=2;user=0"
+      },
+      "apiVersions": [
+        "62.0",
+        "67.0",
+        "68.0"
+      ]
+    },
+    {
+      "id": "R020",
+      "twins": [
+        "R018",
+        "R019"
+      ],
+      "deniedPayload": true,
+      "classes": {
+        "ShareCaseWith": "public with sharing class ShareCaseWith {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseWithout": "public without sharing class ShareCaseWithout {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseSink": "public without sharing class ShareCaseSink {public static void store(Id target,String value){update as system new ShareCase__c(Id=target,Result__c=value);} public static String read(Id target){return [SELECT Result__c FROM ShareCase__c WHERE Id=:target WITH SYSTEM_MODE].Result__c;}}\n",
+        "ShareCaseProbe": "public  class ShareCaseProbe {public static Integer countRows(){return Database.query('SELECT Payload__c FROM ShareCase__c WHERE Name = \\'result\\'', AccessLevel.SYSTEM_MODE).size();}}\n",
+        "ShareCaseTest": "@IsTest  private class ShareCaseTest {\n@IsTest static void R020(){\nId adminId=UserInfo.getUserId(); User admin=[SELECT Id FROM User WHERE Id=:adminId];\nProfile standard=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\nPermissionSet profileAccess=[SELECT PermissionsViewAllData,PermissionsModifyAllData FROM PermissionSet WHERE IsOwnedByProfile=true AND ProfileId=:standard.Id LIMIT 1];\nSystem.assertEquals(false,profileAccess.PermissionsViewAllData,'PROFILE_VIEW_ALL');\nSystem.assertEquals(false,profileAccess.PermissionsModifyAllData,'PROFILE_MODIFY_ALL');\nUser restricted=new User(Alias='shcase',Email='sharecase@example.invalid',\n    EmailEncodingKey='UTF-8',LastName='ShareCase',LanguageLocaleKey='en_US',\n    LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=standard.Id,\n    Username='ShareCase.'+String.valueOf(DateTime.now().getTime())+'@example.invalid');\nSystem.runAs(admin){\n    insert restricted;\n    PermissionSet access=[SELECT Id FROM PermissionSet WHERE Name='ShareCaseAccess'];\n    insert new PermissionSetAssignment(AssigneeId=restricted.Id,PermissionSetId=access.Id);\n}\nSystem.runAs(admin){\n    insert as system new List<ShareCase__c>{new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='one'),\n        new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='two')};\n}\nShareCase__c target=new ShareCase__c(Name='result',OwnerId=restricted.Id,Payload__c='visible-secret',Result__c='pending');\nSystem.runAs(admin){insert as system target;}\nString value; Integer visibleWith; Integer visibleWithout; Integer visibleUser;\nSystem.runAs(restricted){\n    System.assertEquals(restricted.Id,UserInfo.getUserId(),'RUNAS_NOT_APPLIED');\n    System.assertEquals(true,ShareCase__c.SObjectType.getDescribe().isAccessible(),'FIXTURE_CRUD');\n    System.assertEquals(false,ShareCase__c.Payload__c.getDescribe().isAccessible(),'FIXTURE_FLS');\n    visibleWith=ShareCaseWith.countRows(); visibleWithout=ShareCaseWithout.countRows();\n    visibleUser=[SELECT Id FROM ShareCase__c WHERE Name='hidden' WITH USER_MODE].size();\n    System.assertEquals(0,visibleWith,'PRIVATE_WITH_CONTROL');\n    System.assertEquals(2,visibleWithout,'PRIVATE_WITHOUT_CONTROL');\n    System.assertEquals(0,visibleUser,'PRIVATE_USER_CONTROL');\n    try {value=String.valueOf(ShareCaseProbe.countRows());}catch(Exception e){value='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n}\nSystem.assert(false,'P|R020|observed='+value+';with='+visibleWith+';without='+visibleWithout+';user='+visibleUser);\n}\n}\n\n"
+      },
+      "classApiVersions": {
+        "ShareCaseSink": "62.0"
+      },
+      "expected": {
+        "62.0": "observed=1;with=0;without=2;user=0",
+        "67.0": "observed=1;with=0;without=2;user=0",
+        "68.0": "observed=1;with=0;without=2;user=0"
+      },
+      "apiVersions": [
+        "62.0",
+        "67.0",
+        "68.0"
+      ]
+    },
+    {
+      "id": "R034",
+      "twins": [
+        "R035",
+        "R006"
+      ],
+      "deniedPayload": false,
+      "classes": {
+        "ShareCaseWith": "public with sharing class ShareCaseWith {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseWithout": "public without sharing class ShareCaseWithout {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseSink": "public without sharing class ShareCaseSink {public static void store(Id target,String value){update as system new ShareCase__c(Id=target,Result__c=value);} public static String read(Id target){return [SELECT Result__c FROM ShareCase__c WHERE Id=:target WITH SYSTEM_MODE].Result__c;}}\n",
+        "ShareCaseProbe": "public without sharing class ShareCaseProbe {public class WithSharing {public Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}}\n",
+        "ShareCaseCaller": "public without sharing class ShareCaseCaller {public static Integer countRows(){return new ShareCaseProbe.WithSharing().countRows();}}\n",
+        "ShareCaseTest": "@IsTest  private class ShareCaseTest {\n@IsTest static void R034(){\nId adminId=UserInfo.getUserId(); User admin=[SELECT Id FROM User WHERE Id=:adminId];\nProfile standard=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\nPermissionSet profileAccess=[SELECT PermissionsViewAllData,PermissionsModifyAllData FROM PermissionSet WHERE IsOwnedByProfile=true AND ProfileId=:standard.Id LIMIT 1];\nSystem.assertEquals(false,profileAccess.PermissionsViewAllData,'PROFILE_VIEW_ALL');\nSystem.assertEquals(false,profileAccess.PermissionsModifyAllData,'PROFILE_MODIFY_ALL');\nUser restricted=new User(Alias='shcase',Email='sharecase@example.invalid',\n    EmailEncodingKey='UTF-8',LastName='ShareCase',LanguageLocaleKey='en_US',\n    LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=standard.Id,\n    Username='ShareCase.'+String.valueOf(DateTime.now().getTime())+'@example.invalid');\nSystem.runAs(admin){\n    insert restricted;\n    PermissionSet access=[SELECT Id FROM PermissionSet WHERE Name='ShareCaseAccess'];\n    insert new PermissionSetAssignment(AssigneeId=restricted.Id,PermissionSetId=access.Id);\n}\nSystem.runAs(admin){\n    insert as system new List<ShareCase__c>{new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='one'),\n        new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='two')};\n}\nShareCase__c target=new ShareCase__c(Name='result',OwnerId=restricted.Id,Payload__c='visible-secret',Result__c='pending');\nSystem.runAs(admin){insert as system target;}\nString value; Integer visibleWith; Integer visibleWithout; Integer visibleUser;\nSystem.runAs(restricted){\n    System.assertEquals(restricted.Id,UserInfo.getUserId(),'RUNAS_NOT_APPLIED');\n    System.assertEquals(true,ShareCase__c.SObjectType.getDescribe().isAccessible(),'FIXTURE_CRUD');\n    System.assertEquals(true,ShareCase__c.Payload__c.getDescribe().isAccessible(),'FIXTURE_FLS');\n    visibleWith=ShareCaseWith.countRows(); visibleWithout=ShareCaseWithout.countRows();\n    visibleUser=[SELECT Id FROM ShareCase__c WHERE Name='hidden' WITH USER_MODE].size();\n    System.assertEquals(0,visibleWith,'PRIVATE_WITH_CONTROL');\n    System.assertEquals(2,visibleWithout,'PRIVATE_WITHOUT_CONTROL');\n    System.assertEquals(0,visibleUser,'PRIVATE_USER_CONTROL');\n    try {value=String.valueOf(ShareCaseCaller.countRows());}catch(Exception e){value='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n}\nSystem.assert(false,'P|R034|observed='+value+';with='+visibleWith+';without='+visibleWithout+';user='+visibleUser);\n}\n}\n\n"
+      },
+      "classApiVersions": {
+        "ShareCaseSink": "62.0",
+        "ShareCaseCaller": "62.0"
+      },
+      "expected": {
+        "62.0": "observed=2;with=0;without=2;user=0",
+        "65.0": "observed=2;with=0;without=2;user=0",
+        "66.0": "observed=2;with=0;without=2;user=0",
+        "67.0": "observed=0;with=0;without=2;user=0"
+      },
+      "apiVersions": [
+        "62.0",
+        "65.0",
+        "66.0",
+        "67.0"
+      ]
+    },
+    {
+      "id": "R035",
+      "twins": [
+        "R034",
+        "R006"
+      ],
+      "deniedPayload": false,
+      "classes": {
+        "ShareCaseWith": "public with sharing class ShareCaseWith {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseWithout": "public without sharing class ShareCaseWithout {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseSink": "public without sharing class ShareCaseSink {public static void store(Id target,String value){update as system new ShareCase__c(Id=target,Result__c=value);} public static String read(Id target){return [SELECT Result__c FROM ShareCase__c WHERE Id=:target WITH SYSTEM_MODE].Result__c;}}\n",
+        "ShareCaseProbe": "public without sharing class ShareCaseProbe {public class Neutral {public Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}}\n",
+        "ShareCaseCaller": "public without sharing class ShareCaseCaller {public static Integer countRows(){return new ShareCaseProbe.Neutral().countRows();}}\n",
+        "ShareCaseTest": "@IsTest  private class ShareCaseTest {\n@IsTest static void R035(){\nId adminId=UserInfo.getUserId(); User admin=[SELECT Id FROM User WHERE Id=:adminId];\nProfile standard=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\nPermissionSet profileAccess=[SELECT PermissionsViewAllData,PermissionsModifyAllData FROM PermissionSet WHERE IsOwnedByProfile=true AND ProfileId=:standard.Id LIMIT 1];\nSystem.assertEquals(false,profileAccess.PermissionsViewAllData,'PROFILE_VIEW_ALL');\nSystem.assertEquals(false,profileAccess.PermissionsModifyAllData,'PROFILE_MODIFY_ALL');\nUser restricted=new User(Alias='shcase',Email='sharecase@example.invalid',\n    EmailEncodingKey='UTF-8',LastName='ShareCase',LanguageLocaleKey='en_US',\n    LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=standard.Id,\n    Username='ShareCase.'+String.valueOf(DateTime.now().getTime())+'@example.invalid');\nSystem.runAs(admin){\n    insert restricted;\n    PermissionSet access=[SELECT Id FROM PermissionSet WHERE Name='ShareCaseAccess'];\n    insert new PermissionSetAssignment(AssigneeId=restricted.Id,PermissionSetId=access.Id);\n}\nSystem.runAs(admin){\n    insert as system new List<ShareCase__c>{new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='one'),\n        new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='two')};\n}\nShareCase__c target=new ShareCase__c(Name='result',OwnerId=restricted.Id,Payload__c='visible-secret',Result__c='pending');\nSystem.runAs(admin){insert as system target;}\nString value; Integer visibleWith; Integer visibleWithout; Integer visibleUser;\nSystem.runAs(restricted){\n    System.assertEquals(restricted.Id,UserInfo.getUserId(),'RUNAS_NOT_APPLIED');\n    System.assertEquals(true,ShareCase__c.SObjectType.getDescribe().isAccessible(),'FIXTURE_CRUD');\n    System.assertEquals(true,ShareCase__c.Payload__c.getDescribe().isAccessible(),'FIXTURE_FLS');\n    visibleWith=ShareCaseWith.countRows(); visibleWithout=ShareCaseWithout.countRows();\n    visibleUser=[SELECT Id FROM ShareCase__c WHERE Name='hidden' WITH USER_MODE].size();\n    System.assertEquals(0,visibleWith,'PRIVATE_WITH_CONTROL');\n    System.assertEquals(2,visibleWithout,'PRIVATE_WITHOUT_CONTROL');\n    System.assertEquals(0,visibleUser,'PRIVATE_USER_CONTROL');\n    try {value=String.valueOf(ShareCaseCaller.countRows());}catch(Exception e){value='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n}\nSystem.assert(false,'P|R035|observed='+value+';with='+visibleWith+';without='+visibleWithout+';user='+visibleUser);\n}\n}\n\n"
+      },
+      "classApiVersions": {
+        "ShareCaseSink": "62.0",
+        "ShareCaseCaller": "62.0"
+      },
+      "expected": {
+        "62.0": "observed=2;with=0;without=2;user=0",
+        "65.0": "observed=2;with=0;without=2;user=0",
+        "66.0": "observed=2;with=0;without=2;user=0",
+        "67.0": "observed=0;with=0;without=2;user=0"
+      },
+      "apiVersions": [
+        "62.0",
+        "65.0",
+        "66.0",
+        "67.0"
+      ]
+    },
+    {
+      "id": "R036",
+      "twins": [
+        "R011"
+      ],
+      "deniedPayload": false,
+      "classes": {
+        "ShareCaseWith": "public with sharing class ShareCaseWith {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseWithout": "public without sharing class ShareCaseWithout {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseSink": "public without sharing class ShareCaseSink {public static void store(Id target,String value){update as system new ShareCase__c(Id=target,Result__c=value);} public static String read(Id target){return [SELECT Result__c FROM ShareCase__c WHERE Id=:target WITH SYSTEM_MODE].Result__c;}}\n",
+        "ShareCaseProbe": "public without sharing class ShareCaseProbe {public without sharing class WithSharing {public Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}}\n",
+        "ShareCaseTest": "@IsTest  private class ShareCaseTest {\n@IsTest static void R036(){\nId adminId=UserInfo.getUserId(); User admin=[SELECT Id FROM User WHERE Id=:adminId];\nProfile standard=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\nPermissionSet profileAccess=[SELECT PermissionsViewAllData,PermissionsModifyAllData FROM PermissionSet WHERE IsOwnedByProfile=true AND ProfileId=:standard.Id LIMIT 1];\nSystem.assertEquals(false,profileAccess.PermissionsViewAllData,'PROFILE_VIEW_ALL');\nSystem.assertEquals(false,profileAccess.PermissionsModifyAllData,'PROFILE_MODIFY_ALL');\nUser restricted=new User(Alias='shcase',Email='sharecase@example.invalid',\n    EmailEncodingKey='UTF-8',LastName='ShareCase',LanguageLocaleKey='en_US',\n    LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=standard.Id,\n    Username='ShareCase.'+String.valueOf(DateTime.now().getTime())+'@example.invalid');\nSystem.runAs(admin){\n    insert restricted;\n    PermissionSet access=[SELECT Id FROM PermissionSet WHERE Name='ShareCaseAccess'];\n    insert new PermissionSetAssignment(AssigneeId=restricted.Id,PermissionSetId=access.Id);\n}\nSystem.runAs(admin){\n    insert as system new List<ShareCase__c>{new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='one'),\n        new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='two')};\n}\nShareCase__c target=new ShareCase__c(Name='result',OwnerId=restricted.Id,Payload__c='visible-secret',Result__c='pending');\nSystem.runAs(admin){insert as system target;}\nString value; Integer visibleWith; Integer visibleWithout; Integer visibleUser;\nSystem.runAs(restricted){\n    System.assertEquals(restricted.Id,UserInfo.getUserId(),'RUNAS_NOT_APPLIED');\n    System.assertEquals(true,ShareCase__c.SObjectType.getDescribe().isAccessible(),'FIXTURE_CRUD');\n    System.assertEquals(true,ShareCase__c.Payload__c.getDescribe().isAccessible(),'FIXTURE_FLS');\n    visibleWith=ShareCaseWith.countRows(); visibleWithout=ShareCaseWithout.countRows();\n    visibleUser=[SELECT Id FROM ShareCase__c WHERE Name='hidden' WITH USER_MODE].size();\n    System.assertEquals(0,visibleWith,'PRIVATE_WITH_CONTROL');\n    System.assertEquals(2,visibleWithout,'PRIVATE_WITHOUT_CONTROL');\n    System.assertEquals(0,visibleUser,'PRIVATE_USER_CONTROL');\n    try {value=String.valueOf(new ShareCaseProbe.WithSharing().countRows());}catch(Exception e){value='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n}\nSystem.assert(false,'P|R036|observed='+value+';with='+visibleWith+';without='+visibleWithout+';user='+visibleUser);\n}\n}\n\n"
+      },
+      "classApiVersions": {
+        "ShareCaseSink": "62.0"
+      },
+      "expected": {
+        "62.0": "observed=2;with=0;without=2;user=0",
+        "65.0": "observed=2;with=0;without=2;user=0",
+        "66.0": "observed=2;with=0;without=2;user=0",
+        "67.0": "observed=2;with=0;without=2;user=0",
+        "68.0": "observed=2;with=0;without=2;user=0"
+      },
+      "apiVersions": [
+        "62.0",
+        "65.0",
+        "66.0",
+        "67.0",
+        "68.0"
+      ]
+    },
+    {
+      "id": "R037",
+      "twins": [
+        "R006",
+        "R034"
+      ],
+      "deniedPayload": false,
+      "classes": {
+        "ShareCaseWith": "public with sharing class ShareCaseWith {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseWithout": "public without sharing class ShareCaseWithout {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseSink": "public without sharing class ShareCaseSink {public static void store(Id target,String value){update as system new ShareCase__c(Id=target,Result__c=value);} public static String read(Id target){return [SELECT Result__c FROM ShareCase__c WHERE Id=:target WITH SYSTEM_MODE].Result__c;}}\n",
+        "WithSharing": "public  class WithSharing {public static Integer countRows(){return [SELECT Id FROM ShareCase__c WHERE Name = 'hidden' WITH SYSTEM_MODE].size();}}\n",
+        "ShareCaseCaller": "public without sharing class ShareCaseCaller {public static Integer countRows(){return WithSharing.countRows();}}\n",
+        "ShareCaseTest": "@IsTest  private class ShareCaseTest {\n@IsTest static void R037(){\nId adminId=UserInfo.getUserId(); User admin=[SELECT Id FROM User WHERE Id=:adminId];\nProfile standard=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];\nPermissionSet profileAccess=[SELECT PermissionsViewAllData,PermissionsModifyAllData FROM PermissionSet WHERE IsOwnedByProfile=true AND ProfileId=:standard.Id LIMIT 1];\nSystem.assertEquals(false,profileAccess.PermissionsViewAllData,'PROFILE_VIEW_ALL');\nSystem.assertEquals(false,profileAccess.PermissionsModifyAllData,'PROFILE_MODIFY_ALL');\nUser restricted=new User(Alias='shcase',Email='sharecase@example.invalid',\n    EmailEncodingKey='UTF-8',LastName='ShareCase',LanguageLocaleKey='en_US',\n    LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=standard.Id,\n    Username='ShareCase.'+String.valueOf(DateTime.now().getTime())+'@example.invalid');\nSystem.runAs(admin){\n    insert restricted;\n    PermissionSet access=[SELECT Id FROM PermissionSet WHERE Name='ShareCaseAccess'];\n    insert new PermissionSetAssignment(AssigneeId=restricted.Id,PermissionSetId=access.Id);\n}\nSystem.runAs(admin){\n    insert as system new List<ShareCase__c>{new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='one'),\n        new ShareCase__c(Name='hidden',OwnerId=adminId,Payload__c='two')};\n}\nShareCase__c target=new ShareCase__c(Name='result',OwnerId=restricted.Id,Payload__c='visible-secret',Result__c='pending');\nSystem.runAs(admin){insert as system target;}\nString value; Integer visibleWith; Integer visibleWithout; Integer visibleUser;\nSystem.runAs(restricted){\n    System.assertEquals(restricted.Id,UserInfo.getUserId(),'RUNAS_NOT_APPLIED');\n    System.assertEquals(true,ShareCase__c.SObjectType.getDescribe().isAccessible(),'FIXTURE_CRUD');\n    System.assertEquals(true,ShareCase__c.Payload__c.getDescribe().isAccessible(),'FIXTURE_FLS');\n    visibleWith=ShareCaseWith.countRows(); visibleWithout=ShareCaseWithout.countRows();\n    visibleUser=[SELECT Id FROM ShareCase__c WHERE Name='hidden' WITH USER_MODE].size();\n    System.assertEquals(0,visibleWith,'PRIVATE_WITH_CONTROL');\n    System.assertEquals(2,visibleWithout,'PRIVATE_WITHOUT_CONTROL');\n    System.assertEquals(0,visibleUser,'PRIVATE_USER_CONTROL');\n    try {value=String.valueOf(ShareCaseCaller.countRows());}catch(Exception e){value='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n}\nSystem.assert(false,'P|R037|observed='+value+';with='+visibleWith+';without='+visibleWithout+';user='+visibleUser);\n}\n}\n\n"
+      },
+      "classApiVersions": {
+        "ShareCaseSink": "62.0",
+        "ShareCaseCaller": "62.0"
+      },
+      "expected": {
+        "62.0": "observed=2;with=0;without=2;user=0",
+        "65.0": "observed=2;with=0;without=2;user=0",
+        "66.0": "observed=2;with=0;without=2;user=0",
+        "67.0": "observed=0;with=0;without=2;user=0"
+      },
+      "apiVersions": [
+        "62.0",
+        "65.0",
+        "66.0",
+        "67.0"
+      ]
+    }
+  ],
+  "carried": [],
+  "excludedCaptures": [],
+  "profileProjection": {
+    "nativeFullName": "Standard",
+    "profileName": "Standard User",
+    "path": "profiles/Standard User.profile",
+    "apiVersions": [
+      "62.0",
+      "67.0",
+      "68.0"
+    ],
+    "scope": "Only the explicitly retrieved Payload fieldPermissions entry; no Name, Result or profile completeness claim."
+  }
+}

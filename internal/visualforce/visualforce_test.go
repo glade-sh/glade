@@ -134,7 +134,7 @@ func TestLoadProjectUsesVisualforceSidecarVersionAndProjectFallback(t *testing.T
 }
 
 func TestLoadProjectRejectsInvalidVisualforceSidecarVersion(t *testing.T) {
-	for _, raw := range []string{"67.1", "68.0", "not-a-version"} {
+	for _, raw := range []string{"67.1", "69.0", "not-a-version"} {
 		t.Run(raw, func(t *testing.T) {
 			root := t.TempDir()
 			path := filepath.Join(root, "force-app/main/default/pages/Probe.page")

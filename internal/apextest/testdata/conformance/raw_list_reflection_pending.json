@@ -1,0 +1,52 @@
+{
+  "disposition": "PENDING-ROWS",
+  "scope": "Reflection-only raw List target for List<Object> and List<Date>. Assignment/instanceof retain existing rules.",
+  "apis": [
+    "61.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "contexts": [
+    "anonymous",
+    "@IsTest(SeeAllData=false)"
+  ],
+  "metadata": "Record helper and caller versions separately. Use matched versions plus helper 61/callers 61/62/67/68 unless rows specify another actual helper. Each row runs separately.",
+  "record": [
+    "compile outcome",
+    "stage",
+    "returned payload",
+    "caught exception type and exact message",
+    "uncaught result",
+    "source metadata",
+    "native release and timezone"
+  ],
+  "controls": [
+    "Integer value=17;",
+    "caught and uncaught empty List<Integer> indexed at0"
+  ],
+  "envelope": "Map<String,Object> payload=new Map<String,Object>();try{BODY}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'PROBE|ID|'+JSON.serialize(payload));",
+  "rows": [
+    {
+      "id": "RAW_LIST_OBJECT",
+      "body": "Type raw=Type.forName('List');Type concrete=Type.forName('List<Object>');payload.put('rawNotNull',raw!=null);payload.put('concreteNotNull',concrete!=null);payload.put('assignable',raw.isAssignableFrom(concrete));"
+    },
+    {
+      "id": "RAW_LIST_DATE",
+      "body": "Type raw=Type.forName('List');Type concrete=Type.forName('List<Date>');payload.put('rawNotNull',raw!=null);payload.put('concreteNotNull',concrete!=null);payload.put('assignable',raw.isAssignableFrom(concrete));"
+    },
+    {
+      "id": "PARSED_LIST_OBJECT",
+      "body": "Object source=new List<Object>{'word'};try{Date value=(Date)source;}catch(TypeException error){String from=error.getMessage().substringAfter('Invalid conversion from runtime type ').substringBefore(' to Date');payload.put('sourceLabel',from);Type parsed=Type.forName(from);payload.put('parsedNotNull',parsed!=null);if(parsed!=null)payload.put('assignable',Type.forName('List').isAssignableFrom(parsed));}"
+    },
+    {
+      "id": "OTHER_TARGETS",
+      "body": "payload.put('typedSelf',Type.forName('List<String>').isAssignableFrom(Type.forName('List<String>')));payload.put('setToRaw',Type.forName('List').isAssignableFrom(Type.forName('Set<Date>')));payload.put('otherElement',Type.forName('List').isAssignableFrom(Type.forName('List<String>')));"
+    },
+    {
+      "id": "PARSED_LIST_DATE",
+      "body": "Object source=new List<Date>{Date.newInstance(2040,1,2)};try{Date value=(Date)source;}catch(TypeException error){String from=error.getMessage().substringAfter('Invalid conversion from runtime type ').substringBefore(' to Date');payload.put('sourceLabel',from);Type parsed=Type.forName(from);payload.put('parsedNotNull',parsed!=null);if(parsed!=null)payload.put('assignable',Type.forName('List').isAssignableFrom(parsed));}"
+    }
+  ],
+  "expectedNative": "UNKNOWN; do not infer native answers from local candidates."
+}

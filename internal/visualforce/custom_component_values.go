@@ -76,6 +76,11 @@ func componentBindingTypesEqual(left, right string) bool {
 	return normalize(left) == normalize(right)
 }
 
+func componentBindingTypesAssignable(attributeType, propertyType string) bool {
+	return componentBindingTypesEqual(attributeType, propertyType) ||
+		componentBindingTypesEqual(attributeType, "Id") && componentBindingTypesEqual(propertyType, "String")
+}
+
 func componentBindingValue(value vm.Value, typeName, attribute string) (vm.Value, error) {
 	if value.Kind == vm.ValueNull {
 		return value, nil

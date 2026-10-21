@@ -1,0 +1,2835 @@
+{
+  "family": "compile_gate",
+  "decision": "roadmap doc-7 D40: glade test gates compile errors by dependency. Invalid classes and their transitive dependents are compile errors; every other selected test runs; the run fails when any class is excluded.",
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "routeApplicability": {
+    "deploy": "Every row is a check-only metadata deploy: the gate decides which saved project classes compile, and Salesforce reports an invalid class and its dependents as component failures of a deploy.",
+    "anonymous": "Does not apply. Anonymous Apex cannot declare top-level classes and cannot leave a class invalid while others compile: a block compiles as one unit against classes already saved, and a saved class is never invalid. Dependency invalidation exists only for deployed classes, and glade runs the gate only in glade test over project classes."
+  },
+  "provenance": {
+    "transport": "check-only metadata deploy at the row's API version: sourceApiVersion and every class -meta.xml apiVersion are the row API unless classApis sets a class's version; rows with tests run RunSpecifiedTests",
+    "normalization": "none: componentFailures fullName, lineNumber and problem, and runTestResult failures and successes, are copied verbatim and in deploy order",
+    "nativeRuns": "A check-only deploy with a compile error runs no tests, even requested ones: GATE2-07T requests BRGIndepTest beside the invalid BRGBad and gets no test result. Glade models an org where the invalid class was never saved, so G07 and GATE2-07T take their runtime values from runtimeTwin G11: identical BRGIndep and BRGIndepTest sources apart from the row tag (runtimeTag), captured without the invalid class."
+  },
+  "carried": [],
+  "rows": [
+    {
+      "id": "G01",
+      "note": "baseline: the invalid class alone",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRGBad": "public class BRGBad { public static Integer one() { Integer x = 'not a number'; return 1; } }"
+      },
+      "native": {
+        "62.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "G02",
+      "note": "direct dependent via a static call",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRGBad": "public class BRGBad { public static Integer one() { Integer x = 'not a number'; return 1; } }",
+        "BRGDepCall": "public class BRGDepCall { public static Integer two() { return BRGBad.one() + 1; } }"
+      },
+      "native": {
+        "62.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRGDepCall",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRGBad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRGDepCall",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRGBad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "G03",
+      "note": "direct dependent via a local declaration only",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRGBad": "public class BRGBad { public static Integer one() { Integer x = 'not a number'; return 1; } }",
+        "BRGDepDecl": "public class BRGDepDecl { public static Integer three() { BRGBad b = null; return b == null ? 3 : 0; } }"
+      },
+      "native": {
+        "62.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRGDepDecl",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRGBad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRGDepDecl",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRGBad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "G04",
+      "note": "direct dependent via extends",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRGBadVirtual": "public virtual class BRGBadVirtual { public Integer v() { Integer x = 'nope'; return 1; } }",
+        "BRGDepExt": "public class BRGDepExt extends BRGBadVirtual { }"
+      },
+      "native": {
+        "62.0": {
+          "compile": [
+            {
+              "name": "BRGBadVirtual",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRGDepExt",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRGBadVirtual : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "compile": [
+            {
+              "name": "BRGBadVirtual",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRGDepExt",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRGBadVirtual : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "G05",
+      "note": "transitive dependent (Dep2 -> DepCall -> Bad)",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRGBad": "public class BRGBad { public static Integer one() { Integer x = 'not a number'; return 1; } }",
+        "BRGDepCall": "public class BRGDepCall { public static Integer two() { return BRGBad.one() + 1; } }",
+        "BRGDep2": "public class BRGDep2 { public static Integer four() { return BRGDepCall.two() + 2; } }"
+      },
+      "native": {
+        "62.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRGDep2",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRGDepCall : Dependent class is invalid and needs recompilation:\n Class BRGBad : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRGDepCall",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRGBad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRGDep2",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRGDepCall : Dependent class is invalid and needs recompilation:\n Class BRGBad : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRGDepCall",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRGBad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "G06",
+      "note": "test class that depends on the invalid class",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRGBad": "public class BRGBad { public static Integer one() { Integer x = 'not a number'; return 1; } }",
+        "BRGTestDep": "@IsTest private class BRGTestDep { @IsTest static void observe() { System.assertEquals(1, BRGBad.one()); } }"
+      },
+      "native": {
+        "62.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRGTestDep",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRGBad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRGTestDep",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRGBad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "G07",
+      "note": "independent classes beside an invalid one in the same deploy",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRGBad": "public class BRGBad { public static Integer one() { Integer x = 'not a number'; return 1; } }",
+        "BRGIndep": "public class BRGIndep { public static Integer five() { return 5; } }",
+        "BRGIndepTest": "@IsTest private class BRGIndepTest { @IsTest static void observe() { String v; try { v = String.valueOf(BRGIndep.five()); } catch (Exception e) { v = 'EXC|' + e.getTypeName() + '|' + e.getMessage(); } System.assert(false, 'P|G07|' + v); } }"
+      },
+      "native": {
+        "62.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      },
+      "runtimeTwin": "G11"
+    },
+    {
+      "id": "G08",
+      "note": "boundary twin: Type.forName and a string literal only",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRGBad": "public class BRGBad { public static Integer one() { Integer x = 'not a number'; return 1; } }",
+        "BRGByName": "public class BRGByName { public static String probe() { Type t = Type.forName('BRGBad'); String label = 'BRGBad'; return String.valueOf(t) + '|' + label; } }"
+      },
+      "native": {
+        "62.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "G09",
+      "note": "invalid implementer vs a class using only the (valid) interface",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRGBadI": "public interface BRGBadI { Integer one(); } ",
+        "BRGImplBad": "public class BRGImplBad implements BRGBadI { public Integer one() { Integer x = 'nope'; return 1; } }",
+        "BRGUseIface": "public class BRGUseIface { public static Integer six(BRGBadI i) { return i == null ? 6 : i.one(); } }"
+      },
+      "native": {
+        "62.0": {
+          "compile": [
+            {
+              "name": "BRGImplBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "compile": [
+            {
+              "name": "BRGImplBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "G10",
+      "note": "invalid class never saved: dependent alone",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRGDepCall": "public class BRGDepCall { public static Integer two() { return BRGBad.one() + 1; } }"
+      },
+      "native": {
+        "62.0": {
+          "compile": [
+            {
+              "name": "BRGDepCall",
+              "line": 1,
+              "problem": "Variable does not exist: BRGBad"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "compile": [
+            {
+              "name": "BRGDepCall",
+              "line": 1,
+              "problem": "Variable does not exist: BRGBad"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "G11",
+      "note": "independent class alone: tests run",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRGIndep": "public class BRGIndep { public static Integer five() { return 5; } }",
+        "BRGIndepTest": "@IsTest private class BRGIndepTest { @IsTest static void observe() { String v; try { v = String.valueOf(BRGIndep.five()); } catch (Exception e) { v = 'EXC|' + e.getTypeName() + '|' + e.getMessage(); } System.assert(false, 'P|G11|' + v); } }"
+      },
+      "tests": [
+        "BRGIndepTest"
+      ],
+      "native": {
+        "62.0": {
+          "compile": [],
+          "testFailures": [
+            {
+              "cls": "BRGIndepTest",
+              "method": "observe",
+              "message": "System.AssertException: Assertion Failed: P|G11|5"
+            }
+          ],
+          "testPasses": []
+        },
+        "67.0": {
+          "compile": [],
+          "testFailures": [
+            {
+              "cls": "BRGIndepTest",
+              "method": "observe",
+              "message": "System.AssertException: Assertion Failed: P|G11|5"
+            }
+          ],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "G12",
+      "note": "by-name-only class without the invalid class: compiles and runs",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRGByName": "public class BRGByName { public static String probe() { Type t = Type.forName('BRGBad'); String label = 'BRGBad'; return String.valueOf(t) + '|' + label; } }",
+        "BRGByNameTest": "@IsTest private class BRGByNameTest { @IsTest static void observe() { String v; try { v = BRGByName.probe(); } catch (Exception e) { v = 'EXC|' + e.getTypeName() + '|' + e.getMessage(); } System.assert(false, 'P|G12|' + v); } }"
+      },
+      "tests": [
+        "BRGByNameTest"
+      ],
+      "native": {
+        "62.0": {
+          "compile": [],
+          "testFailures": [
+            {
+              "cls": "BRGByNameTest",
+              "method": "observe",
+              "message": "System.AssertException: Assertion Failed: P|G12|null|BRGBad"
+            }
+          ],
+          "testPasses": []
+        },
+        "67.0": {
+          "compile": [],
+          "testFailures": [
+            {
+              "cls": "BRGByNameTest",
+              "method": "observe",
+              "message": "System.AssertException: Assertion Failed: P|G12|null|BRGBad"
+            }
+          ],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-01",
+      "note": "A reference that differs from the declared name only in case is a dependency; which casing the dependent message names.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2DepCase": "public class BRG2DepCase {\n    public static Integer two() {\n        return brg2bad.ONE() + 1;\n    }\n}\n",
+        "BRG2DepCaseType": "public class BRG2DepCaseType {\n    public static Integer three() {\n        brg2BAD b = null;\n        return b == null ? 3 : 0;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepCase",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepCaseType",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepCase",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepCaseType",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-02L",
+      "note": "A local variable spelled like the invalid class is not a dependency.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2LocalName": "public class BRG2LocalName {\n    public static String probe() {\n        String brg2bad = 'x';\n        return brg2bad;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-02P",
+      "note": "A parameter spelled like the invalid class is not a dependency.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2ParamName": "public class BRG2ParamName {\n    public static String probe(String brg2bad) {\n        return brg2bad;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-02F",
+      "note": "A field spelled like the invalid class is not a dependency.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2FieldName": "public class BRG2FieldName {\n    public String brg2bad = 'x';\n    public String probe() {\n        return brg2bad;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-02M",
+      "note": "A method spelled like the invalid class is not a dependency.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2MethodName": "public class BRG2MethodName {\n    public static String brg2bad() {\n        return 'x';\n    }\n    public static String probe() {\n        return brg2bad();\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-02D",
+      "note": "Name.member() where Name is a local binds to the local, not the class, for dependency purposes.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2LocalDot": "public class BRG2LocalDot {\n    public static Integer probe() {\n        String brg2bad = 'xyz';\n        return brg2bad.length();\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-03",
+      "note": "An inner class shadows the invalid top-level class of the same name; the outer class is not a dependent.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2Shadow": "public class BRG2Shadow {\n    public class BRG2Bad {\n        public Integer one() { return 1; }\n    }\n    public static Integer probe() {\n        BRG2Bad b = new BRG2Bad();\n        return b.one();\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-04",
+      "note": "The line native reports for a root error and for a dependent.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2DepCall": "public class BRG2DepCall {\n    public static Integer two() {\n        return BRG2Bad.one() + 1;\n    }\n}\n",
+        "BRG2DepLate": "// GATE2-04: the class header is on line 3.\n// The reference is on line 6.\npublic class BRG2DepLate {\n    public static Integer two() {\n        Integer pad = 0;\n        return BRG2Bad.one() + pad;\n    }\n}\n",
+        "BRG2DepTwice": "public class BRG2DepTwice {\n    public static Integer two() {\n        Integer pad = 0;\n        Integer first = BRG2Bad.one();\n        pad = pad + 1;\n        BRG2Bad second = null;\n        return first + pad;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepCall",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepLate",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepTwice",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepCall",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepLate",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepTwice",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-05",
+      "note": "Which of two errors in one class native reports, and how many component failures.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad2": "public class BRG2Bad2 {\n    public static Integer one() {\n        Integer x = 'not a number';\n        Integer y = true;\n        return 1;\n    }\n}\n",
+        "BRG2DepBad2": "public class BRG2DepBad2 {\n    public static Integer two() {\n        return BRG2Bad2.one() + 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad2",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2Bad2",
+              "line": 4,
+              "problem": "Illegal assignment from Boolean to Integer"
+            },
+            {
+              "name": "BRG2DepBad2",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad2 : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad2",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2Bad2",
+              "line": 4,
+              "problem": "Illegal assignment from Boolean to Integer"
+            },
+            {
+              "name": "BRG2DepBad2",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad2 : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-05S",
+      "note": "Separates source order from error-kind priority.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad2": "public class BRG2Bad2 {\n    public static Integer one() {\n        Integer y = true;\n        Integer x = 'not a number';\n        return 1;\n    }\n}\n",
+        "BRG2DepBad2": "public class BRG2DepBad2 {\n    public static Integer two() {\n        return BRG2Bad2.one() + 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad2",
+              "line": 3,
+              "problem": "Illegal assignment from Boolean to Integer"
+            },
+            {
+              "name": "BRG2Bad2",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepBad2",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad2 : Illegal assignment from Boolean to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad2",
+              "line": 3,
+              "problem": "Illegal assignment from Boolean to Integer"
+            },
+            {
+              "name": "BRG2Bad2",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepBad2",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad2 : Illegal assignment from Boolean to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-05P",
+      "note": "Whether a later signature error wins over an earlier body error.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2BadPhase": "public class BRG2BadPhase {\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static BRG2NoSuchType two() {\n        return null;\n    }\n}\n",
+        "BRG2DepPhase": "public class BRG2DepPhase {\n    public static Integer two() {\n        return BRG2BadPhase.one() + 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadPhase",
+              "line": 6,
+              "problem": "Invalid type: BRG2NoSuchType"
+            },
+            {
+              "name": "BRG2BadPhase",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepPhase",
+              "line": 6,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadPhase : Invalid type: BRG2NoSuchType"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadPhase",
+              "line": 6,
+              "problem": "Invalid type: BRG2NoSuchType"
+            },
+            {
+              "name": "BRG2BadPhase",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepPhase",
+              "line": 6,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadPhase : Invalid type: BRG2NoSuchType"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-06",
+      "note": "Which dependency a dependent of two invalid classes names, and whether it lists one or several.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2BadA": "public class BRG2BadA {\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n}\n",
+        "BRG2BadB": "public class BRG2BadB {\n    public static Integer one() {\n        Integer y = true;\n        return 1;\n    }\n}\n",
+        "BRG2DepTwo": "public class BRG2DepTwo {\n    public static Integer probe() {\n        Integer b = BRG2BadB.one();\n        Integer a = BRG2BadA.one();\n        return a + b;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadA",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2BadB",
+              "line": 3,
+              "problem": "Illegal assignment from Boolean to Integer"
+            },
+            {
+              "name": "BRG2DepTwo",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadA : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadA",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2BadB",
+              "line": 3,
+              "problem": "Illegal assignment from Boolean to Integer"
+            },
+            {
+              "name": "BRG2DepTwo",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadA : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-07",
+      "note": "Whether a class that reaches the root directly and through a dependent names the root or the first-used dependent.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2Dep3": "public class BRG2Dep3 {\n    public static Integer probe() {\n        Integer t = BRG2DepCall.two();\n        Integer o = BRG2Bad.one();\n        return t + o;\n    }\n}\n",
+        "BRG2DepCall": "public class BRG2DepCall {\n    public static Integer two() {\n        return BRG2Bad.one() + 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2Dep3",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepCall",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2Dep3",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepCall",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-07R",
+      "note": "Separates first-use order from a root-or-nearest preference.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2Dep3R": "public class BRG2Dep3R {\n    public static Integer probe() {\n        Integer o = BRG2Bad.one();\n        Integer t = BRG2DepCall.two();\n        return t + o;\n    }\n}\n",
+        "BRG2DepCall": "public class BRG2DepCall {\n    public static Integer two() {\n        return BRG2Bad.one() + 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2Dep3R",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepCall",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2Dep3R",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepCall",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-08F",
+      "note": "Whether a static field type only is a dependency, and the line native gives for it.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2KindField": "public class BRG2KindField {\n    public static BRG2Bad held;\n    public static Integer probe() {\n        return held == null ? 1 : 0;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindField",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindField",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-08P",
+      "note": "Whether a method parameter type only is a dependency, and the line native gives for it.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2KindParam": "public class BRG2KindParam {\n    public static Integer probe(BRG2Bad b) {\n        return b == null ? 1 : 0;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindParam",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindParam",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-08R",
+      "note": "Whether a return type only is a dependency, and the line native gives for it.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2KindReturn": "public class BRG2KindReturn {\n    public static BRG2Bad probe() {\n        return null;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindReturn",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindReturn",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-08G",
+      "note": "Whether a generic argument List<BRG2Bad> only is a dependency, and the line native gives for it.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2KindGeneric": "public class BRG2KindGeneric {\n    public static Integer probe() {\n        List<BRG2Bad> items = null;\n        return items == null ? 1 : 0;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindGeneric",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindGeneric",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-08C",
+      "note": "Whether a cast only is a dependency, and the line native gives for it.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2KindCast": "public class BRG2KindCast {\n    public static Integer probe() {\n        Object o = null;\n        Object c = (BRG2Bad) o;\n        return c == null ? 1 : 0;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindCast",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindCast",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-08I",
+      "note": "Whether a instanceof only is a dependency, and the line native gives for it.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2KindInstanceof": "public class BRG2KindInstanceof {\n    public static Boolean probe() {\n        Object o = 'x';\n        return o instanceof BRG2Bad;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindInstanceof",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindInstanceof",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-08K",
+      "note": "Whether a BRG2Bad.class only is a dependency, and the line native gives for it.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2KindClassLit": "public class BRG2KindClassLit {\n    public static String probe() {\n        Type t = BRG2Bad.class;\n        return String.valueOf(t);\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindClassLit",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindClassLit",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-08X",
+      "note": "Whether catching an invalid exception class is a dependency.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2BadException": "public class BRG2BadException extends Exception {\n    public Integer code() {\n        Integer x = 'not a number';\n        return 1;\n    }\n}\n",
+        "BRG2KindCatch": "public class BRG2KindCatch {\n    public static Integer probe() {\n        try {\n            return 1;\n        } catch (BRG2BadException e) {\n            return 0;\n        }\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadException",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindCatch",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadException : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadException",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2KindCatch",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadException : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-09",
+      "note": "An invalid interface makes both implementers and users dependents (the reverse of G09). The implementer cannot match two(), so this also shows whether its own conformance error or the dependency wins.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2BadI": "public interface BRG2BadI {\n    Integer one();\n    BRG2NoSuchType two();\n}\n",
+        "BRG2ImplI": "public class BRG2ImplI implements BRG2BadI {\n    public Integer one() {\n        return 1;\n    }\n    public Object two() {\n        return null;\n    }\n}\n",
+        "BRG2UseI": "public class BRG2UseI {\n    public static Integer probe(BRG2BadI i) {\n        return i == null ? 9 : i.one();\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadI",
+              "line": 3,
+              "problem": "Invalid type: BRG2NoSuchType"
+            },
+            {
+              "name": "BRG2ImplI",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadI : Invalid type: BRG2NoSuchType"
+            },
+            {
+              "name": "BRG2UseI",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadI : Invalid type: BRG2NoSuchType"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadI",
+              "line": 3,
+              "problem": "Invalid type: BRG2NoSuchType"
+            },
+            {
+              "name": "BRG2ImplI",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadI : Invalid type: BRG2NoSuchType"
+            },
+            {
+              "name": "BRG2UseI",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadI : Invalid type: BRG2NoSuchType"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-09D",
+      "note": "An implementer with no conformance problem of its own is a dependent of the invalid interface.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2BadI": "public interface BRG2BadI {\n    Integer one();\n    Integer one();\n}\n",
+        "BRG2ImplI": "public class BRG2ImplI implements BRG2BadI {\n    public Integer one() {\n        return 1;\n    }\n}\n",
+        "BRG2UseI": "public class BRG2UseI {\n    public static Integer probe(BRG2BadI i) {\n        return i == null ? 9 : i.one();\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadI",
+              "line": 3,
+              "problem": "Method already defined: one Integer BRG2BadI.one() from the type BRG2BadI"
+            },
+            {
+              "name": "BRG2ImplI",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadI : Method already defined: one Integer BRG2BadI.one() from the type BRG2BadI"
+            },
+            {
+              "name": "BRG2UseI",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadI : Method already defined: one Integer BRG2BadI.one() from the type BRG2BadI"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadI",
+              "line": 3,
+              "problem": "Method already defined: one Integer BRG2BadI.one() from the type BRG2BadI"
+            },
+            {
+              "name": "BRG2ImplI",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadI : Method already defined: one Integer BRG2BadI.one() from the type BRG2BadI"
+            },
+            {
+              "name": "BRG2UseI",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2BadI : Method already defined: one Integer BRG2BadI.one() from the type BRG2BadI"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-10A",
+      "note": "Using an inner class of the invalid class is a dependency on the outer class; which class the message names (BRG2Bad or BRG2Bad.Inner2).",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2DepInner": "public class BRG2DepInner {\n    public static Integer probe() {\n        BRG2Bad.Inner2 x = new BRG2Bad.Inner2();\n        return x.v;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepInner",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepInner",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-10B",
+      "note": "Whether an inherited inner type named through an invalid subclass depends on the subclass, the valid base, or does not resolve.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2BadSub": "public virtual class BRG2BadSub extends BRG2Base {\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n}\n",
+        "BRG2Base": "public virtual class BRG2Base {\n    public class BaseInner {\n        public Integer v = 3;\n    }\n}\n",
+        "BRG2DepInherit": "public class BRG2DepInherit {\n    public static Integer probe() {\n        BRG2BadSub.BaseInner x = null;\n        return x == null ? 1 : 0;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadSub",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepInherit",
+              "line": 3,
+              "problem": "Invalid type: BRG2BadSub.BaseInner"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadSub",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2DepInherit",
+              "line": 3,
+              "problem": "Invalid type: BRG2BadSub.BaseInner"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-10C",
+      "note": "Whether an inherited inner type shadows the invalid top-level class in a subclass.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2ShadowBase": "public virtual class BRG2ShadowBase {\n    public class BRG2Bad {\n        public Integer v = 4;\n    }\n}\n",
+        "BRG2ShadowSub": "public class BRG2ShadowSub extends BRG2ShadowBase {\n    public static Integer probe() {\n        BRG2Bad x = new BRG2Bad();\n        return x.v;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-11A",
+      "note": "A static field in a SOQL bind is a dependency.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2SoqlBind": "public class BRG2SoqlBind {\n    public static Integer probe() {\n        List<Account> rows = [SELECT Id FROM Account WHERE Name = :BRG2Bad.NAME];\n        return rows.size();\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2SoqlBind",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2SoqlBind",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-11B",
+      "note": "A class nested inside a bind expression is a dependency.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2Bad": "public class BRG2Bad {\n    public static final String NAME = 'brg2';\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public static String name() {\n        return NAME;\n    }\n    public class Inner2 {\n        public Integer v = 2;\n    }\n}\n",
+        "BRG2SoqlCall": "public class BRG2SoqlCall {\n    public static Integer probe() {\n        List<Account> rows = [SELECT Id FROM Account WHERE Name = :String.valueOf(BRG2Bad.name())];\n        return rows.size();\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2SoqlCall",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2Bad",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2SoqlCall",
+              "line": 4,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2Bad : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-12",
+      "note": "A class the invalid class depends on is not a dependent.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2BadCaller": "public class BRG2BadCaller {\n    public static Integer one() {\n        Integer h = BRG2Helper.value();\n        Integer x = 'not a number';\n        return h;\n    }\n}\n",
+        "BRG2Helper": "public class BRG2Helper {\n    public static Integer value() {\n        return 7;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadCaller",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadCaller",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-13A",
+      "note": "In a mutual cycle the valid member is a dependent of the invalid one, and the invalid one is only a root.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2CycA": "public class BRG2CycA {\n    public static Integer one() {\n        Integer x = 'not a number';\n        return BRG2CycB.two();\n    }\n    public static Integer base() {\n        return 1;\n    }\n}\n",
+        "BRG2CycB": "public class BRG2CycB {\n    public static Integer two() {\n        return BRG2CycA.base() + 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2CycA",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2CycB",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2CycA : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2CycA",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2CycB",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2CycA : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-13B",
+      "note": "Nesting through a cycle: B should name C, C should name A.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG2RingA": "public class BRG2RingA {\n    public static Integer one() {\n        Integer x = 'not a number';\n        return BRG2RingB.two();\n    }\n    public static Integer base() {\n        return 1;\n    }\n}\n",
+        "BRG2RingB": "public class BRG2RingB {\n    public static Integer two() {\n        return BRG2RingC.three() + 1;\n    }\n}\n",
+        "BRG2RingC": "public class BRG2RingC {\n    public static Integer three() {\n        return BRG2RingA.base() + 2;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2RingA",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2RingB",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2RingC : Dependent class is invalid and needs recompilation:\n Class BRG2RingA : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2RingC",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2RingA : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2RingA",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2RingB",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2RingC : Dependent class is invalid and needs recompilation:\n Class BRG2RingA : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG2RingC",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG2RingA : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-14",
+      "note": "How a class-metadata error is reported and whether its dependents are flagged as dependents or as missing types.",
+      "routes": [
+        "deploy"
+      ],
+      "classApis": {
+        "BRG2OldApi": "12.0"
+      },
+      "classes": {
+        "BRG2DepOld": "public class BRG2DepOld {\n    public static Integer two() {\n        return BRG2OldApi.one() + 1;\n    }\n}\n",
+        "BRG2IndepOld": "public class BRG2IndepOld {\n    public static Integer five() {\n        return 5;\n    }\n}\n",
+        "BRG2OldApi": "public class BRG2OldApi {\n    public static Integer one() {\n        return 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Succeeded",
+          "compile": [],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Succeeded",
+          "compile": [],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-14F",
+      "note": "How a class-metadata error is reported and whether its dependents are flagged as dependents or as missing types.",
+      "routes": [
+        "deploy"
+      ],
+      "classApis": {
+        "BRG2OldApi": "99.0"
+      },
+      "classes": {
+        "BRG2DepOld": "public class BRG2DepOld {\n    public static Integer two() {\n        return BRG2OldApi.one() + 1;\n    }\n}\n",
+        "BRG2IndepOld": "public class BRG2IndepOld {\n    public static Integer five() {\n        return 5;\n    }\n}\n",
+        "BRG2OldApi": "public class BRG2OldApi {\n    public static Integer one() {\n        return 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "classes/BRG2OldApi.cls-meta.xml",
+              "problem": "Invalid api version:99.0"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "classes/BRG2OldApi.cls-meta.xml",
+              "problem": "Invalid api version:99.0"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-07T",
+      "note": "Whether a check-only deploy runs a requested independent test when another class has a compile error.",
+      "routes": [
+        "deploy"
+      ],
+      "tests": [
+        "BRGIndepTest"
+      ],
+      "runtimeTwin": "G11",
+      "runtimeTag": "G07",
+      "classes": {
+        "BRGBad": "public class BRGBad { public static Integer one() { Integer x = 'not a number'; return 1; } }",
+        "BRGIndep": "public class BRGIndep { public static Integer five() { return 5; } }",
+        "BRGIndepTest": "@IsTest private class BRGIndepTest { @IsTest static void observe() { String v; try { v = String.valueOf(BRGIndep.five()); } catch (Exception e) { v = 'EXC|' + e.getTypeName() + '|' + e.getMessage(); } System.assert(false, 'P|G07|' + v); } }"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRGBad",
+              "line": 1,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE2-16",
+      "note": "Whether a requested test in an invalid class yields a test result or only the component failure.",
+      "routes": [
+        "deploy"
+      ],
+      "tests": [
+        "BRG2BadSelfTest"
+      ],
+      "classes": {
+        "BRG2BadSelfTest": "@IsTest\nprivate class BRG2BadSelfTest {\n    @IsTest\n    static void observe() {\n        System.assert(false, 'P|GATE2-16|ran');\n    }\n    static Integer broken() {\n        Integer x = 'not a number';\n        return 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadSelfTest",
+              "line": 8,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG2BadSelfTest",
+              "line": 8,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE3-01",
+      "note": "A setter's implicit value parameter is not a reference to an invalid class named Value.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG3Setter": "public class BRG3Setter {\n    public String label {\n        get;\n        set { label = value == null ? null : value.trim(); }\n    }\n}\n",
+        "BRG3UsesValue": "public class BRG3UsesValue {\n    public static Integer probe() {\n        return Value.one();\n    }\n}\n",
+        "Value": "public class Value {\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG3UsesValue",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Value : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "Value",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG3UsesValue",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Value : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "Value",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE3-01C",
+      "note": "Control for GATE3-01: the same setter with a valid class named Value compiles, and Value.one() resolves.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG3SetterC": "public class BRG3SetterC {\n    public String label {\n        get;\n        set { label = value == null ? null : value.trim() + Value.one(); }\n    }\n}\n",
+        "Value": "public class Value {\n    public static Integer one() {\n        return 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG3SetterC",
+              "line": 4,
+              "problem": "Method does not exist or incorrect signature: void one() from the type String"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG3SetterC",
+              "line": 4,
+              "problem": "Method does not exist or incorrect signature: void one() from the type String"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE3-02",
+      "note": "An ordinary caller with its own error that also calls another invalid class: own error or dependent message?",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG3BadA": "public class BRG3BadA {\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n}\n",
+        "BRG3BadB": "public class BRG3BadB {\n    public static Integer two() {\n        Integer y = 'also not a number';\n        return BRG3BadA.one() + 1;\n    }\n}\n",
+        "BRG3Indep": "public class BRG3Indep {\n    public static Integer three() {\n        return 3;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG3BadA",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG3BadB",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG3BadA",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG3BadB",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE3-02R",
+      "note": "Twin of GATE3-02 with the order swapped: the call to the invalid class comes before the caller's own error.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG3BadA2": "public class BRG3BadA2 {\n    public static Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n}\n",
+        "BRG3BadB2": "public class BRG3BadB2 {\n    public static Integer two() {\n        Integer z = BRG3BadA2.one();\n        Integer y = 'also not a number';\n        return z;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG3BadA2",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG3BadB2",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG3BadA2",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG3BadB2",
+              "line": 4,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE3-03",
+      "note": "Two invalid classes in one reference cycle: does each report its own error, or is one reported as a dependent of the other?",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG3CycA": "public class BRG3CycA {\n    public static Integer one() {\n        Integer x = 'not a number';\n        return BRG3CycB.two();\n    }\n}\n",
+        "BRG3CycB": "public class BRG3CycB {\n    public static Integer two() {\n        Integer y = 'also not a number';\n        return BRG3CycA.one();\n    }\n}\n",
+        "BRG3CycUser": "public class BRG3CycUser {\n    public static Integer probe() {\n        return BRG3CycA.one();\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG3CycA",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG3CycB",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG3CycUser",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG3CycA : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG3CycA",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG3CycB",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG3CycUser",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG3CycA : Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE4-01",
+      "note": "An implementer of an invalid interface that also has an unrelated error of its own: does it report its own error or the dependent message?",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG4BadI": "public interface BRG4BadI {\n    Integer one();\n    BRG4NoSuchType two();\n}\n",
+        "BRG4CallsMix": "public class BRG4CallsMix {\n    public static Integer probe() {\n        return new BRG4ImplMix().one();\n    }\n}\n",
+        "BRG4ImplMix": "public class BRG4ImplMix implements BRG4BadI {\n    public Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n    public Object two() {\n        return null;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadI",
+              "line": 3,
+              "problem": "Invalid type: BRG4NoSuchType"
+            },
+            {
+              "name": "BRG4CallsMix",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG4ImplMix : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG4ImplMix",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadI",
+              "line": 3,
+              "problem": "Invalid type: BRG4NoSuchType"
+            },
+            {
+              "name": "BRG4CallsMix",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG4ImplMix : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG4ImplMix",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE4-01R",
+      "note": "Twin of GATE4-01 with the order swapped: the contract method comes before the own error.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG4BadI": "public interface BRG4BadI {\n    Integer one();\n    BRG4NoSuchType two();\n}\n",
+        "BRG4CallsMixR": "public class BRG4CallsMixR {\n    public static Integer probe() {\n        return new BRG4ImplMixR().one();\n    }\n}\n",
+        "BRG4ImplMixR": "public class BRG4ImplMixR implements BRG4BadI {\n    public Object two() {\n        return null;\n    }\n    public Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadI",
+              "line": 3,
+              "problem": "Invalid type: BRG4NoSuchType"
+            },
+            {
+              "name": "BRG4CallsMixR",
+              "line": 6,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG4ImplMixR : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG4ImplMixR",
+              "line": 6,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadI",
+              "line": 3,
+              "problem": "Invalid type: BRG4NoSuchType"
+            },
+            {
+              "name": "BRG4CallsMixR",
+              "line": 6,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG4ImplMixR : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG4ImplMixR",
+              "line": 6,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE4-01D",
+      "note": "Control: an implementer with no contract problem, whose interface is invalid by a duplicate method (as GATE2-09D), and an own error: own error or dependent message?",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG4BadD": "public interface BRG4BadD {\n    Integer one();\n    Integer one();\n}\n",
+        "BRG4CallsOwnD": "public class BRG4CallsOwnD {\n    public static Integer probe() {\n        return new BRG4ImplOwnD().one();\n    }\n}\n",
+        "BRG4ImplOwnD": "public class BRG4ImplOwnD implements BRG4BadD {\n    public Integer one() {\n        Integer x = 'not a number';\n        return 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadD",
+              "line": 3,
+              "problem": "Method already defined: one Integer BRG4BadD.one() from the type BRG4BadD"
+            },
+            {
+              "name": "BRG4CallsOwnD",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG4ImplOwnD : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG4ImplOwnD",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadD",
+              "line": 3,
+              "problem": "Method already defined: one Integer BRG4BadD.one() from the type BRG4BadD"
+            },
+            {
+              "name": "BRG4CallsOwnD",
+              "line": 3,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG4ImplOwnD : Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG4ImplOwnD",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE4-02",
+      "note": "Transitive supertype: C extends B extends invalid A, and C has no error of its own; it only inherits the abstract make() it does not implement. Is C a dependent of B, of A, or reported by its own contract error?",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG4BadBase": "public abstract class BRG4BadBase {\n    public abstract BRG4NoSuchType make();\n    public Integer base() {\n        return 1;\n    }\n}\n",
+        "BRG4LeafBase": "public class BRG4LeafBase extends BRG4MidBase {\n    public Integer leaf() {\n        return 3;\n    }\n}\n",
+        "BRG4MidBase": "public abstract class BRG4MidBase extends BRG4BadBase {\n    public Integer mid() {\n        return 2;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadBase",
+              "line": 2,
+              "problem": "Invalid type: BRG4NoSuchType"
+            },
+            {
+              "name": "BRG4LeafBase",
+              "line": 2,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG4MidBase : Dependent class is invalid and needs recompilation:\n Class BRG4BadBase : Invalid type: BRG4NoSuchType"
+            },
+            {
+              "name": "BRG4MidBase",
+              "line": 2,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG4BadBase : Invalid type: BRG4NoSuchType"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadBase",
+              "line": 2,
+              "problem": "Invalid type: BRG4NoSuchType"
+            },
+            {
+              "name": "BRG4LeafBase",
+              "line": 2,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG4MidBase : Dependent class is invalid and needs recompilation:\n Class BRG4BadBase : Invalid type: BRG4NoSuchType"
+            },
+            {
+              "name": "BRG4MidBase",
+              "line": 2,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG4BadBase : Invalid type: BRG4NoSuchType"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE4-02O",
+      "note": "Twin of GATE4-02 where C also has an error of its own: own error or dependent message?",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG4BadBase": "public abstract class BRG4BadBase {\n    public abstract BRG4NoSuchType make();\n    public Integer base() {\n        return 1;\n    }\n}\n",
+        "BRG4LeafOwn": "public class BRG4LeafOwn extends BRG4MidBase {\n    public Integer leaf() {\n        Integer x = 'not a number';\n        return 3;\n    }\n}\n",
+        "BRG4MidBase": "public abstract class BRG4MidBase extends BRG4BadBase {\n    public Integer mid() {\n        return 2;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadBase",
+              "line": 2,
+              "problem": "Invalid type: BRG4NoSuchType"
+            },
+            {
+              "name": "BRG4LeafOwn",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG4MidBase",
+              "line": 2,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG4BadBase : Invalid type: BRG4NoSuchType"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadBase",
+              "line": 2,
+              "problem": "Invalid type: BRG4NoSuchType"
+            },
+            {
+              "name": "BRG4LeafOwn",
+              "line": 3,
+              "problem": "Illegal assignment from String to Integer"
+            },
+            {
+              "name": "BRG4MidBase",
+              "line": 2,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class BRG4BadBase : Invalid type: BRG4NoSuchType"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE4-03",
+      "note": "Decoy: an implementer of the invalid interface whose own error is on a local named like the interface. The local does not make the error a contract error.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG4BadI": "public interface BRG4BadI {\n    Integer one();\n    BRG4NoSuchType two();\n}\n",
+        "BRG4DecoyLocal": "public class BRG4DecoyLocal implements BRG4BadI {\n    public Integer one() {\n        return 1;\n    }\n    public Object two() {\n        return null;\n    }\n    public static Integer probe() {\n        Integer BRG4BadI = 'not a number';\n        return 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadI",
+              "line": 3,
+              "problem": "Invalid type: BRG4NoSuchType"
+            },
+            {
+              "name": "BRG4DecoyLocal",
+              "line": 9,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadI",
+              "line": 3,
+              "problem": "Invalid type: BRG4NoSuchType"
+            },
+            {
+              "name": "BRG4DecoyLocal",
+              "line": 9,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    },
+    {
+      "id": "GATE4-03F",
+      "note": "Decoy: an implementer with no contract problem whose own error is a field named like the invalid interface.",
+      "routes": [
+        "deploy"
+      ],
+      "classes": {
+        "BRG4BadD": "public interface BRG4BadD {\n    Integer one();\n    Integer one();\n}\n",
+        "BRG4DecoyField": "public class BRG4DecoyField implements BRG4BadD {\n    public Integer BRG4BadD = 'not a number';\n    public Integer one() {\n        return 1;\n    }\n}\n"
+      },
+      "native": {
+        "62.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadD",
+              "line": 3,
+              "problem": "Method already defined: one Integer BRG4BadD.one() from the type BRG4BadD"
+            },
+            {
+              "name": "BRG4DecoyField",
+              "line": 2,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        },
+        "67.0": {
+          "status": "Failed",
+          "compile": [
+            {
+              "name": "BRG4BadD",
+              "line": 3,
+              "problem": "Method already defined: one Integer BRG4BadD.one() from the type BRG4BadD"
+            },
+            {
+              "name": "BRG4DecoyField",
+              "line": 2,
+              "problem": "Illegal assignment from String to Integer"
+            }
+          ],
+          "testFailures": [],
+          "testPasses": []
+        }
+      }
+    }
+  ]
+}

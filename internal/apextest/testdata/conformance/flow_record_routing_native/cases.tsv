@@ -1,0 +1,8 @@
+case	observation
+T01	OR lookup includes records matching either city field
+T02	numeric lookup compares AnnualRevenue against Decimal scalar ceiling
+T03	whole automatic lookup record assignment preserves Name and Phone
+T04	Record Create writes ID to declared Account record variable Id field
+T05	String decision compares lower mixed and upper case input
+T06	record numeric field Assign0 then Add Decimal input and save by record Id
+T07	null AnnualRevenue candidate excluded by sole numeric less-than-or-equal scalar filter

@@ -1,0 +1,9 @@
+source_api	method	observation
+62.0	callbackFields	{"idToken":null,"state":"synthetic-state","refresh":"synthetic-refresh","token":"synthetic-token","provider":"synthetic-provider"}
+62.0	nullFields	{"error":null,"refreshToken":null,"accessToken":null,"state":null,"refresh":null,"token":null,"provider":null}
+62.0	refreshErrorFields	{"error":"synthetic-error","refreshToken":"synthetic-refresh","accessToken":"synthetic-token"}
+62.0	refreshFields	{"error":null,"refreshToken":"synthetic-refresh","accessToken":"synthetic-token"}
+67.0	callbackFields	{"idToken":null,"state":"synthetic-state","refresh":"synthetic-refresh","token":"synthetic-token","provider":"synthetic-provider"}
+67.0	nullFields	{"error":null,"refreshToken":null,"accessToken":null,"state":null,"refresh":null,"token":null,"provider":null}
+67.0	refreshErrorFields	{"error":"synthetic-error","refreshToken":"synthetic-refresh","accessToken":"synthetic-token"}
+67.0	refreshFields	{"error":null,"refreshToken":"synthetic-refresh","accessToken":"synthetic-token"}

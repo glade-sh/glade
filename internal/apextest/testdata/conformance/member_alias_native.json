@@ -1,0 +1,532 @@
+{
+  "family": "MemberAliasNative",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "nativeObservationCount": 6,
+  "orgIdSha256": "d87c4e5c7f408e6851b96506006f0dc55621cbe95b64ef27e5a2fdeaf9526515",
+  "configuration": "Own Developer scratch org; existing administrator; no permission or sharing changes. No data DML in these observations.",
+  "captureProtocol": "Each helper and test class is deployed at its cell API version. Anonymous retains System.debug transport; @IsTest retains the intentional failing OBS assertion.",
+  "sourcesByAPI": {
+    "62.0": {
+      "classes": {
+        "CursorSlotBase62": "public virtual class CursorSlotBase62 {\n protected Iterator<Object> cursor;\n public CursorSlotBase62(Iterator<Object> cursor) { this.cursor=cursor; }\n public Boolean baseHasNext() { return cursor.hasNext(); }\n public Object baseNext() { return cursor.next(); }\n}\n",
+        "CursorSlotChild62": "public class CursorSlotChild62 extends CursorSlotBase62 {\n private Iterator<Object> cursor;\n public CursorSlotChild62(Iterator<Object> source) { super(source); this.cursor=null; }\n public Boolean childIsNull() { return cursor==null; }\n public Boolean throughSuper() { return super.baseHasNext(); }\n}\n",
+        "FieldSlotBase62": "public virtual class FieldSlotBase62 {\n protected String slot;\n public FieldSlotBase62(String slot) { this.slot=slot; }\n public String baseRead() { return slot; }\n public String baseThisRead() { return this.slot; }\n public void baseWrite(String value) { slot=value; }\n public void baseThisWrite(String value) { this.slot=value; }\n}\n",
+        "FieldSlotChild62": "public class FieldSlotChild62 extends FieldSlotBase62 {\n private String slot;\n public FieldSlotChild62(String seed) { super(seed); this.slot=null; }\n public String childRead() { return slot; }\n public String childThisRead() { return this.slot; }\n public void childWrite(String value) { slot=value; }\n public void childThisWrite(String value) { this.slot=value; }\n public String throughSuper() { return super.baseRead(); }\n}\n",
+        "MemberAliasProbe62": "public class MemberAliasProbe62 {\n public class Ordering implements Comparator<Object> { public Integer compare(Object left,Object right) { return (Integer)left-(Integer)right; } }\n public static void sortValues(List<Object> values) { values.sort(new Ordering()); }\n public static void changeFirst(List<Object> values) { values.set(0,8); }\n public static void unchanged(List<Object> values) { List<Object> view=values; }\n public static void rebind(List<Object> values) { values=new List<Object>{99}; }\n public static String snapshot() {\n  Map<String,Object> out=new Map<String,Object>();\n  FieldSlotChild62 record=new FieldSlotChild62('outer');\n  out.put('initial',new List<String>{record.baseRead(),record.baseThisRead(),record.childRead(),record.childThisRead(),record.throughSuper()});\n  record.childWrite('inner'); out.put('childWrite',new List<String>{record.baseRead(),record.childRead()});\n  record.baseWrite('outer2'); out.put('baseWrite',new List<String>{record.baseRead(),record.childRead()});\n  record.baseThisWrite('outer3'); record.childThisWrite('inner3');\n  out.put('thisWrites',new List<String>{record.baseThisRead(),record.childThisRead(),record.throughSuper()});\n  CursorSlotChild62 cursor=new CursorSlotChild62(new List<Object>{'first','second'}.iterator());\n  List<Object> cursorValues=new List<Object>{cursor.childIsNull(),cursor.throughSuper(),cursor.baseNext(),cursor.baseHasNext(),cursor.baseNext(),cursor.baseHasNext(),cursor.childIsNull()};\n  out.put('cursor',cursorValues);\n  List<Integer> sortable=new List<Integer>{3,1,2}; sortValues(sortable);out.put('sort',sortable);\n  List<Integer> changed=new List<Integer>{1,2}; changeFirst(changed);out.put('set',changed);\n  List<Integer> view=new List<Integer>{4,5}; unchanged(view);out.put('view',view);Object boxed=view;out.put('viewIntegerType',boxed instanceof List<Integer>);\n  List<Integer> rebound=new List<Integer>{4,5};rebind(rebound);out.put('rebind',rebound);\n  List<Object> direct=new List<Object>{3,1,2};sortValues(direct);out.put('direct',direct);\n  return JSON.serialize(out);\n }\n}\n",
+        "MemberAliasTest62": "@IsTest private class MemberAliasTest62 { @IsTest static void capture() { System.assert(false,'OBS|'+MemberAliasProbe62.snapshot()); } }\n"
+      },
+      "classMetadata": {
+        "CursorSlotBase62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "CursorSlotChild62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "FieldSlotBase62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "FieldSlotChild62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "MemberAliasProbe62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "MemberAliasTest62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "anonymous": "System.debug('OBS|'+MemberAliasProbe62.snapshot());\n",
+      "testClass": "MemberAliasTest62",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "4b0a4cb80a53837cca962d7ac4d09487c28a23fb215e3791a46ee8e1b2c94b92",
+        "class:CursorSlotBase62": "2f0fe7d22422be237b921dfa152ca394b56fa7f88df7be4968c8832c541453bc",
+        "class:CursorSlotChild62": "346bb6b68e4368099dba2d35b2b01dad826a09c5566a9b441bc2a9c864fd9ee6",
+        "class:FieldSlotBase62": "fb9f68b9990e54dbee053f34ec0d2d3db5f7191fb92c604bb2338aff2b1a9aad",
+        "class:FieldSlotChild62": "1c6900ff096e6541c3e8fc75bf9a6a7d20f556eaf64a18ea3c2d13f33fa534fa",
+        "class:MemberAliasProbe62": "660a40639aba7edc4b6c2a84c33df0189178014a1573efa5a8714764a6fbbb03",
+        "class:MemberAliasTest62": "57798f6bfc02ce0f490a898dc7a3bfa4ad509c5adfed78913bb2a720213ef901",
+        "classMetadata:CursorSlotBase62": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "classMetadata:CursorSlotChild62": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "classMetadata:FieldSlotBase62": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "classMetadata:FieldSlotChild62": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "classMetadata:MemberAliasProbe62": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "classMetadata:MemberAliasTest62": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+      }
+    },
+    "67.0": {
+      "classes": {
+        "CursorSlotBase67": "public virtual class CursorSlotBase67 {\n protected Iterator<Object> cursor;\n public CursorSlotBase67(Iterator<Object> cursor) { this.cursor=cursor; }\n public Boolean baseHasNext() { return cursor.hasNext(); }\n public Object baseNext() { return cursor.next(); }\n}\n",
+        "CursorSlotChild67": "public class CursorSlotChild67 extends CursorSlotBase67 {\n private Iterator<Object> cursor;\n public CursorSlotChild67(Iterator<Object> source) { super(source); this.cursor=null; }\n public Boolean childIsNull() { return cursor==null; }\n public Boolean throughSuper() { return super.baseHasNext(); }\n}\n",
+        "FieldSlotBase67": "public virtual class FieldSlotBase67 {\n protected String slot;\n public FieldSlotBase67(String slot) { this.slot=slot; }\n public String baseRead() { return slot; }\n public String baseThisRead() { return this.slot; }\n public void baseWrite(String value) { slot=value; }\n public void baseThisWrite(String value) { this.slot=value; }\n}\n",
+        "FieldSlotChild67": "public class FieldSlotChild67 extends FieldSlotBase67 {\n private String slot;\n public FieldSlotChild67(String seed) { super(seed); this.slot=null; }\n public String childRead() { return slot; }\n public String childThisRead() { return this.slot; }\n public void childWrite(String value) { slot=value; }\n public void childThisWrite(String value) { this.slot=value; }\n public String throughSuper() { return super.baseRead(); }\n}\n",
+        "MemberAliasProbe67": "public class MemberAliasProbe67 {\n public class Ordering implements Comparator<Object> { public Integer compare(Object left,Object right) { return (Integer)left-(Integer)right; } }\n public static void sortValues(List<Object> values) { values.sort(new Ordering()); }\n public static void changeFirst(List<Object> values) { values.set(0,8); }\n public static void unchanged(List<Object> values) { List<Object> view=values; }\n public static void rebind(List<Object> values) { values=new List<Object>{99}; }\n public static String snapshot() {\n  Map<String,Object> out=new Map<String,Object>();\n  FieldSlotChild67 record=new FieldSlotChild67('outer');\n  out.put('initial',new List<String>{record.baseRead(),record.baseThisRead(),record.childRead(),record.childThisRead(),record.throughSuper()});\n  record.childWrite('inner'); out.put('childWrite',new List<String>{record.baseRead(),record.childRead()});\n  record.baseWrite('outer2'); out.put('baseWrite',new List<String>{record.baseRead(),record.childRead()});\n  record.baseThisWrite('outer3'); record.childThisWrite('inner3');\n  out.put('thisWrites',new List<String>{record.baseThisRead(),record.childThisRead(),record.throughSuper()});\n  CursorSlotChild67 cursor=new CursorSlotChild67(new List<Object>{'first','second'}.iterator());\n  List<Object> cursorValues=new List<Object>{cursor.childIsNull(),cursor.throughSuper(),cursor.baseNext(),cursor.baseHasNext(),cursor.baseNext(),cursor.baseHasNext(),cursor.childIsNull()};\n  out.put('cursor',cursorValues);\n  List<Integer> sortable=new List<Integer>{3,1,2}; sortValues(sortable);out.put('sort',sortable);\n  List<Integer> changed=new List<Integer>{1,2}; changeFirst(changed);out.put('set',changed);\n  List<Integer> view=new List<Integer>{4,5}; unchanged(view);out.put('view',view);Object boxed=view;out.put('viewIntegerType',boxed instanceof List<Integer>);\n  List<Integer> rebound=new List<Integer>{4,5};rebind(rebound);out.put('rebind',rebound);\n  List<Object> direct=new List<Object>{3,1,2};sortValues(direct);out.put('direct',direct);\n  return JSON.serialize(out);\n }\n}\n",
+        "MemberAliasTest67": "@IsTest private class MemberAliasTest67 { @IsTest static void capture() { System.assert(false,'OBS|'+MemberAliasProbe67.snapshot()); } }\n"
+      },
+      "classMetadata": {
+        "CursorSlotBase67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "CursorSlotChild67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "FieldSlotBase67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "FieldSlotChild67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "MemberAliasProbe67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "MemberAliasTest67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "anonymous": "System.debug('OBS|'+MemberAliasProbe67.snapshot());\n",
+      "testClass": "MemberAliasTest67",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "c85235ef713b589b7c1e6ac9adc61b9bc80cdad066c705321d8c04d757c60659",
+        "class:CursorSlotBase67": "1cd8de7497e476f2b2a488508e4b09b3062ad213e766a560d058a60095a5b0e6",
+        "class:CursorSlotChild67": "4d67a132f517b10efd7bd61c7e5b297e0c2e2a45b4220b6246d41bb92b824e89",
+        "class:FieldSlotBase67": "836c8bcc282024b3d9a4f985b46432db2168bcdafbfe07abdf96a297769d9683",
+        "class:FieldSlotChild67": "0be581a141cc6fdc313a86fd18ba82b98c0a23c18225c05df45200ad470538e5",
+        "class:MemberAliasProbe67": "648a21a9934fd6cd95ed4df579c4610de9257a330fe2294411151f752bc48838",
+        "class:MemberAliasTest67": "4a2542ddbd3fc754bafe2c10ee7565be30a93c2a27245a0a991c0c94cd7222f3",
+        "classMetadata:CursorSlotBase67": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "classMetadata:CursorSlotChild67": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "classMetadata:FieldSlotBase67": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "classMetadata:FieldSlotChild67": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "classMetadata:MemberAliasProbe67": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "classMetadata:MemberAliasTest67": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+      }
+    },
+    "68.0": {
+      "classes": {
+        "CursorSlotBase68": "public virtual class CursorSlotBase68 {\n protected Iterator<Object> cursor;\n public CursorSlotBase68(Iterator<Object> cursor) { this.cursor=cursor; }\n public Boolean baseHasNext() { return cursor.hasNext(); }\n public Object baseNext() { return cursor.next(); }\n}\n",
+        "CursorSlotChild68": "public class CursorSlotChild68 extends CursorSlotBase68 {\n private Iterator<Object> cursor;\n public CursorSlotChild68(Iterator<Object> source) { super(source); this.cursor=null; }\n public Boolean childIsNull() { return cursor==null; }\n public Boolean throughSuper() { return super.baseHasNext(); }\n}\n",
+        "FieldSlotBase68": "public virtual class FieldSlotBase68 {\n protected String slot;\n public FieldSlotBase68(String slot) { this.slot=slot; }\n public String baseRead() { return slot; }\n public String baseThisRead() { return this.slot; }\n public void baseWrite(String value) { slot=value; }\n public void baseThisWrite(String value) { this.slot=value; }\n}\n",
+        "FieldSlotChild68": "public class FieldSlotChild68 extends FieldSlotBase68 {\n private String slot;\n public FieldSlotChild68(String seed) { super(seed); this.slot=null; }\n public String childRead() { return slot; }\n public String childThisRead() { return this.slot; }\n public void childWrite(String value) { slot=value; }\n public void childThisWrite(String value) { this.slot=value; }\n public String throughSuper() { return super.baseRead(); }\n}\n",
+        "MemberAliasProbe68": "public class MemberAliasProbe68 {\n public class Ordering implements Comparator<Object> { public Integer compare(Object left,Object right) { return (Integer)left-(Integer)right; } }\n public static void sortValues(List<Object> values) { values.sort(new Ordering()); }\n public static void changeFirst(List<Object> values) { values.set(0,8); }\n public static void unchanged(List<Object> values) { List<Object> view=values; }\n public static void rebind(List<Object> values) { values=new List<Object>{99}; }\n public static String snapshot() {\n  Map<String,Object> out=new Map<String,Object>();\n  FieldSlotChild68 record=new FieldSlotChild68('outer');\n  out.put('initial',new List<String>{record.baseRead(),record.baseThisRead(),record.childRead(),record.childThisRead(),record.throughSuper()});\n  record.childWrite('inner'); out.put('childWrite',new List<String>{record.baseRead(),record.childRead()});\n  record.baseWrite('outer2'); out.put('baseWrite',new List<String>{record.baseRead(),record.childRead()});\n  record.baseThisWrite('outer3'); record.childThisWrite('inner3');\n  out.put('thisWrites',new List<String>{record.baseThisRead(),record.childThisRead(),record.throughSuper()});\n  CursorSlotChild68 cursor=new CursorSlotChild68(new List<Object>{'first','second'}.iterator());\n  List<Object> cursorValues=new List<Object>{cursor.childIsNull(),cursor.throughSuper(),cursor.baseNext(),cursor.baseHasNext(),cursor.baseNext(),cursor.baseHasNext(),cursor.childIsNull()};\n  out.put('cursor',cursorValues);\n  List<Integer> sortable=new List<Integer>{3,1,2}; sortValues(sortable);out.put('sort',sortable);\n  List<Integer> changed=new List<Integer>{1,2}; changeFirst(changed);out.put('set',changed);\n  List<Integer> view=new List<Integer>{4,5}; unchanged(view);out.put('view',view);Object boxed=view;out.put('viewIntegerType',boxed instanceof List<Integer>);\n  List<Integer> rebound=new List<Integer>{4,5};rebind(rebound);out.put('rebind',rebound);\n  List<Object> direct=new List<Object>{3,1,2};sortValues(direct);out.put('direct',direct);\n  return JSON.serialize(out);\n }\n}\n",
+        "MemberAliasTest68": "@IsTest private class MemberAliasTest68 { @IsTest static void capture() { System.assert(false,'OBS|'+MemberAliasProbe68.snapshot()); } }\n"
+      },
+      "classMetadata": {
+        "CursorSlotBase68": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "CursorSlotChild68": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "FieldSlotBase68": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "FieldSlotChild68": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "MemberAliasProbe68": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "MemberAliasTest68": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "anonymous": "System.debug('OBS|'+MemberAliasProbe68.snapshot());\n",
+      "testClass": "MemberAliasTest68",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "8046899beb84fe3be7e91f28ee0978b0ca9241940e13ebf51918010a52733258",
+        "class:CursorSlotBase68": "d754c22ab6474babc54567be173c86d928a25ad96cc5954635ad1405aa97f0fe",
+        "class:CursorSlotChild68": "22a7c2fe26786067ee25830f94eff72b78a7979dfa16713d25eb48dd8b68e610",
+        "class:FieldSlotBase68": "67550b26f6513d667bd11c3208f8a394a099090cae924007cc14e869bfdd9b94",
+        "class:FieldSlotChild68": "6379e4825dd6c39e5953f9ce27bbab5cf10064c8c3b8ca5db4b333f338f5311b",
+        "class:MemberAliasProbe68": "59be281a3387862c6a27748c0fa66d2945fd987e882226b74aa5ad7a4f604be3",
+        "class:MemberAliasTest68": "d2920be1f66c0f2f8b6efa2bc6b3068d50c98411aeb325d1995f013ccb5e4ab9",
+        "classMetadata:CursorSlotBase68": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+        "classMetadata:CursorSlotChild68": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+        "classMetadata:FieldSlotBase68": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+        "classMetadata:FieldSlotChild68": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+        "classMetadata:MemberAliasProbe68": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+        "classMetadata:MemberAliasTest68": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7"
+      }
+    }
+  },
+  "cells": [
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "observation": {
+        "direct": [
+          1,
+          2,
+          3
+        ],
+        "rebind": [
+          4,
+          5
+        ],
+        "viewIntegerType": true,
+        "view": [
+          4,
+          5
+        ],
+        "set": [
+          8,
+          2
+        ],
+        "sort": [
+          1,
+          2,
+          3
+        ],
+        "cursor": [
+          true,
+          true,
+          "first",
+          true,
+          "second",
+          false,
+          true
+        ],
+        "thisWrites": [
+          "outer3",
+          "inner3",
+          "outer3"
+        ],
+        "baseWrite": [
+          "outer2",
+          "inner"
+        ],
+        "childWrite": [
+          "outer",
+          "inner"
+        ],
+        "initial": [
+          "outer",
+          "outer",
+          null,
+          null,
+          "outer"
+        ]
+      },
+      "evidenceSha256": "70118cf8e904de675b87cf7a6f2c7fd81b7b40e5da536d3dc8487f2a4b1a5c88",
+      "command": "apex run --target-org scratch-org --api-version 62.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "observation": {
+        "direct": [
+          1,
+          2,
+          3
+        ],
+        "rebind": [
+          4,
+          5
+        ],
+        "viewIntegerType": true,
+        "view": [
+          4,
+          5
+        ],
+        "set": [
+          8,
+          2
+        ],
+        "sort": [
+          1,
+          2,
+          3
+        ],
+        "cursor": [
+          true,
+          true,
+          "first",
+          true,
+          "second",
+          false,
+          true
+        ],
+        "thisWrites": [
+          "outer3",
+          "inner3",
+          "outer3"
+        ],
+        "baseWrite": [
+          "outer2",
+          "inner"
+        ],
+        "childWrite": [
+          "outer",
+          "inner"
+        ],
+        "initial": [
+          "outer",
+          "outer",
+          null,
+          null,
+          "outer"
+        ]
+      },
+      "evidenceSha256": "a4b4a2cad0a5c064c73369f344203ff176e8b1366c72a2175448eea1b4a6c8f9",
+      "command": "apex run test --target-org scratch-org --api-version 62.0 --class-names MemberAliasTest62 --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "methodName": "capture",
+        "transport": "System.AssertException intentional observation assertion"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "observation": {
+        "direct": [
+          1,
+          2,
+          3
+        ],
+        "rebind": [
+          4,
+          5
+        ],
+        "viewIntegerType": true,
+        "view": [
+          4,
+          5
+        ],
+        "set": [
+          8,
+          2
+        ],
+        "sort": [
+          1,
+          2,
+          3
+        ],
+        "cursor": [
+          true,
+          true,
+          "first",
+          true,
+          "second",
+          false,
+          true
+        ],
+        "thisWrites": [
+          "outer3",
+          "inner3",
+          "outer3"
+        ],
+        "baseWrite": [
+          "outer2",
+          "inner"
+        ],
+        "childWrite": [
+          "outer",
+          "inner"
+        ],
+        "initial": [
+          "outer",
+          "outer",
+          null,
+          null,
+          "outer"
+        ]
+      },
+      "evidenceSha256": "35a8000e8293ecc0f5a78b3eadb6e30b5370d4a2b39c662224d79ce51cc3f262",
+      "command": "apex run --target-org scratch-org --api-version 67.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "observation": {
+        "direct": [
+          1,
+          2,
+          3
+        ],
+        "rebind": [
+          4,
+          5
+        ],
+        "viewIntegerType": true,
+        "view": [
+          4,
+          5
+        ],
+        "set": [
+          8,
+          2
+        ],
+        "sort": [
+          1,
+          2,
+          3
+        ],
+        "cursor": [
+          true,
+          true,
+          "first",
+          true,
+          "second",
+          false,
+          true
+        ],
+        "thisWrites": [
+          "outer3",
+          "inner3",
+          "outer3"
+        ],
+        "baseWrite": [
+          "outer2",
+          "inner"
+        ],
+        "childWrite": [
+          "outer",
+          "inner"
+        ],
+        "initial": [
+          "outer",
+          "outer",
+          null,
+          null,
+          "outer"
+        ]
+      },
+      "evidenceSha256": "168dcefa400309a385f9a06b602fa83ace0d6b3038a221d6149339c287d09a5a",
+      "command": "apex run test --target-org scratch-org --api-version 67.0 --class-names MemberAliasTest67 --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "methodName": "capture",
+        "transport": "System.AssertException intentional observation assertion"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "anonymous",
+      "observation": {
+        "direct": [
+          1,
+          2,
+          3
+        ],
+        "rebind": [
+          4,
+          5
+        ],
+        "viewIntegerType": true,
+        "view": [
+          4,
+          5
+        ],
+        "set": [
+          8,
+          2
+        ],
+        "sort": [
+          1,
+          2,
+          3
+        ],
+        "cursor": [
+          true,
+          true,
+          "first",
+          true,
+          "second",
+          false,
+          true
+        ],
+        "thisWrites": [
+          "outer3",
+          "inner3",
+          "outer3"
+        ],
+        "baseWrite": [
+          "outer2",
+          "inner"
+        ],
+        "childWrite": [
+          "outer",
+          "inner"
+        ],
+        "initial": [
+          "outer",
+          "outer",
+          null,
+          null,
+          "outer"
+        ]
+      },
+      "evidenceSha256": "765681e7a9ce86a4c7f732008f738925de516c6b4ba9016a78706c21dc01834b",
+      "command": "apex run --target-org scratch-org --api-version 68.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "isTest",
+      "observation": {
+        "direct": [
+          1,
+          2,
+          3
+        ],
+        "rebind": [
+          4,
+          5
+        ],
+        "viewIntegerType": true,
+        "view": [
+          4,
+          5
+        ],
+        "set": [
+          8,
+          2
+        ],
+        "sort": [
+          1,
+          2,
+          3
+        ],
+        "cursor": [
+          true,
+          true,
+          "first",
+          true,
+          "second",
+          false,
+          true
+        ],
+        "thisWrites": [
+          "outer3",
+          "inner3",
+          "outer3"
+        ],
+        "baseWrite": [
+          "outer2",
+          "inner"
+        ],
+        "childWrite": [
+          "outer",
+          "inner"
+        ],
+        "initial": [
+          "outer",
+          "outer",
+          null,
+          null,
+          "outer"
+        ]
+      },
+      "evidenceSha256": "aa9591867783155cdea8540fc0aa6a421e607c70d62a5862e1392cb867850d21",
+      "command": "apex run test --target-org scratch-org --api-version 68.0 --class-names MemberAliasTest68 --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "methodName": "capture",
+        "transport": "System.AssertException intentional observation assertion"
+      }
+    }
+  ],
+  "d7Evidence": {
+    "observationsTsv": "row\tapi\tcontext\tvalue\nMA_62_anonymous\t62\tanonymous\t{\"baseWrite\":[\"outer2\",\"inner\"],\"childWrite\":[\"outer\",\"inner\"],\"cursor\":[true,true,\"first\",true,\"second\",false,true],\"direct\":[1,2,3],\"initial\":[\"outer\",\"outer\",null,null,\"outer\"],\"rebind\":[4,5],\"set\":[8,2],\"sort\":[1,2,3],\"thisWrites\":[\"outer3\",\"inner3\",\"outer3\"],\"view\":[4,5],\"viewIntegerType\":true}\nMA_62_istest\t62\tistest\t{\"baseWrite\":[\"outer2\",\"inner\"],\"childWrite\":[\"outer\",\"inner\"],\"cursor\":[true,true,\"first\",true,\"second\",false,true],\"direct\":[1,2,3],\"initial\":[\"outer\",\"outer\",null,null,\"outer\"],\"rebind\":[4,5],\"set\":[8,2],\"sort\":[1,2,3],\"thisWrites\":[\"outer3\",\"inner3\",\"outer3\"],\"view\":[4,5],\"viewIntegerType\":true}\nMA_67_anonymous\t67\tanonymous\t{\"baseWrite\":[\"outer2\",\"inner\"],\"childWrite\":[\"outer\",\"inner\"],\"cursor\":[true,true,\"first\",true,\"second\",false,true],\"direct\":[1,2,3],\"initial\":[\"outer\",\"outer\",null,null,\"outer\"],\"rebind\":[4,5],\"set\":[8,2],\"sort\":[1,2,3],\"thisWrites\":[\"outer3\",\"inner3\",\"outer3\"],\"view\":[4,5],\"viewIntegerType\":true}\nMA_67_istest\t67\tistest\t{\"baseWrite\":[\"outer2\",\"inner\"],\"childWrite\":[\"outer\",\"inner\"],\"cursor\":[true,true,\"first\",true,\"second\",false,true],\"direct\":[1,2,3],\"initial\":[\"outer\",\"outer\",null,null,\"outer\"],\"rebind\":[4,5],\"set\":[8,2],\"sort\":[1,2,3],\"thisWrites\":[\"outer3\",\"inner3\",\"outer3\"],\"view\":[4,5],\"viewIntegerType\":true}\nMA_68_anonymous\t68\tanonymous\t{\"baseWrite\":[\"outer2\",\"inner\"],\"childWrite\":[\"outer\",\"inner\"],\"cursor\":[true,true,\"first\",true,\"second\",false,true],\"direct\":[1,2,3],\"initial\":[\"outer\",\"outer\",null,null,\"outer\"],\"rebind\":[4,5],\"set\":[8,2],\"sort\":[1,2,3],\"thisWrites\":[\"outer3\",\"inner3\",\"outer3\"],\"view\":[4,5],\"viewIntegerType\":true}\nMA_68_istest\t68\tistest\t{\"baseWrite\":[\"outer2\",\"inner\"],\"childWrite\":[\"outer\",\"inner\"],\"cursor\":[true,true,\"first\",true,\"second\",false,true],\"direct\":[1,2,3],\"initial\":[\"outer\",\"outer\",null,null,\"outer\"],\"rebind\":[4,5],\"set\":[8,2],\"sort\":[1,2,3],\"thisWrites\":[\"outer3\",\"inner3\",\"outer3\"],\"view\":[4,5],\"viewIntegerType\":true}\n",
+    "orgTsvSha256": "b31d7ad9f3b5491c5f5fc1643601b4f025f01ea777caa3aebc00a132f21ce6cc",
+    "runMetadata": "Own scratch alias: scratch-org\nDev Hub: scratch-org\nOrg ID SHA256: d87c4e5c7f408e6851b96506006f0dc55621cbe95b64ef27e5a2fdeaf9526515\nContext: existing administrator, no permission or sharing edits\nAPI: 62.0,67.0,68.0; each deployed class metadata matches source API\nCommand prefix: HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf\nCreate: org create scratch --target-dev-hub scratch-org --alias scratch-org --duration-days 3 --edition developer --wait 15 --json\nDeploy: project deploy start --target-org scratch-org --source-dir force-app --wait 10 --json\nAPI 62.0 anonymous: apex run --target-org scratch-org --api-version 62.0 --file native-capture --json\nAPI 62.0 istest: apex run test --target-org scratch-org --api-version 62.0 --class-names MemberAliasTest62 --synchronous --json\nAPI 67.0 anonymous: apex run --target-org scratch-org --api-version 67.0 --file native-capture --json\nAPI 67.0 istest: apex run test --target-org scratch-org --api-version 67.0 --class-names MemberAliasTest67 --synchronous --json\nAPI 68.0 anonymous: apex run --target-org scratch-org --api-version 68.0 --file native-capture --json\nAPI 68.0 istest: apex run test --target-org scratch-org --api-version 68.0 --class-names MemberAliasTest68 --synchronous --json\n@IsTest intentionally asserts false to transport OBS JSON; exit100 is observed transport, not an unexpected fixture failure.\nCleanup: org delete scratch --target-org scratch-org --no-prompt --json; status0. alias list --json confirms alias scratch-org absent.\n",
+    "orgRunSha256": "4fb54fb6a93b630eb1167daaa7f94c76c78052847575d61ecc5351d2f395f73e",
+    "rawOrgRunSha256": "0fff94dc6c6de0c7accb69daea261cec3fce9079de1cbab5b09ff4546f936067",
+    "normalization": "Only the personal scratch authentication HOME path in exported ORG-RUN.txt is replaced with <scratch-auth-home>. rawOrgRunSha256 identifies the unchanged ignored original; orgRunSha256 identifies the normalized export. Captured Apex source, source digests, org.tsv, native observations and raw receipts are unchanged."
+  }
+}

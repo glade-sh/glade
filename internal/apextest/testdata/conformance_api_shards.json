@@ -1,0 +1,27 @@
+{
+  "TestRunAsDefaultSecurityConformance": [
+    "59.0",
+    "62.0",
+    "66.0",
+    "67.0",
+    "68.0"
+  ],
+  "TestSOQLBindParenOrgConformance": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "TestSOQLBindIndexOrgConformance": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "TestSOQLBindLexicalOrgConformance": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ]
+}

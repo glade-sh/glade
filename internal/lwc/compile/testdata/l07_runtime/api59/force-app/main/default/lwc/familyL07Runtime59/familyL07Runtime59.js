@@ -44,15 +44,49 @@ export default class FamilyL07Runtime59 extends LightningElement {
   const child=this.template.querySelector('c-family-l07-consumer59');
   let marker=(spec.id==="r_property_string"?('owned'):(spec.id==="r_property_empty"?(''):(spec.id==="r_property_null"?(null):(spec.id==="r_property_undefined"?(undefined):(spec.id==="r_property_number"?(7):(spec.id==="r_property_true"?(true):(spec.id==="r_property_false"?(false):(spec.id==="r_property_unicode"?('A\u00e9\u{1F980}'):(spec.id==="r_property_newline"?('A\nB'):(spec.id==="r_property_array"?(['owned']):(spec.id==="r_property_object"?({value:'owned'}):(spec.id==="r_property_throw"?('__THROW__'):(spec.id==="r_property_null_return"?('__NULL_RETURN__'):(spec.id==="r_property_ordinal_zero"?('owned'):(spec.id==="r_property_ordinal_negative"?('owned'):(spec.id==="r_property_ordinal_null"?('owned'):(spec.id==="r_property_ordinal_undefined"?('owned'):(spec.id==="r_property_ordinal_string"?('owned'):(spec.id==="r_property_ordinal_fraction"?('owned'):(spec.id==="r_property_ordinal_nan"?('owned'):(spec.id==="r_property_config_replace"?('owned'):(spec.id==="r_property_config_mutate"?('owned'):(spec.id==="r_property_config_same"?('owned'):(spec.id==="r_property_config_multiple"?('owned'):(spec.id==="r_property_config_undefined_to_value"?('owned'):(spec.id==="r_property_config_value_to_undefined"?('owned'):(spec.id==="r_property_config_null_to_value"?('owned'):(spec.id==="r_property_config_literal_dollar"?('owned'):(spec.id==="r_property_immutable_assign"?('owned'):(spec.id==="r_property_immutable_delete"?('owned'):(spec.id==="r_property_immutable_nested"?('owned'):(spec.id==="r_property_immutable_push"?('owned'):(spec.id==="r_property_immutable_sort"?('owned'):(spec.id==="r_property_immutable_define"?('owned'):(spec.id==="r_property_immutable_clone"?('owned'):(spec.id==="r_property_reconnect"?('owned'):(spec.id==="r_property_disconnect_config"?('owned'):(spec.id==="r_property_rapid"?('owned'):(spec.id==="r_property_rapid_suppress"?('owned'):(spec.id==="r_property_cache_return"?('owned'):(spec.id==="r_property_error_then_value"?('owned'):(spec.id==="r_property_value_then_error"?('owned'):(spec.id==="r_function_string"?('owned'):(spec.id==="r_function_empty"?(''):(spec.id==="r_function_null"?(null):(spec.id==="r_function_undefined"?(undefined):(spec.id==="r_function_number"?(7):(spec.id==="r_function_true"?(true):(spec.id==="r_function_false"?(false):(spec.id==="r_function_unicode"?('A\u00e9\u{1F980}'):(spec.id==="r_function_newline"?('A\nB'):(spec.id==="r_function_array"?(['owned']):(spec.id==="r_function_object"?({value:'owned'}):(spec.id==="r_function_throw"?('__THROW__'):(spec.id==="r_function_null_return"?('__NULL_RETURN__'):(spec.id==="r_function_ordinal_zero"?('owned'):(spec.id==="r_function_ordinal_negative"?('owned'):(spec.id==="r_function_ordinal_null"?('owned'):(spec.id==="r_function_ordinal_undefined"?('owned'):(spec.id==="r_function_ordinal_string"?('owned'):(spec.id==="r_function_ordinal_fraction"?('owned'):(spec.id==="r_function_ordinal_nan"?('owned'):(spec.id==="r_function_config_replace"?('owned'):(spec.id==="r_function_config_mutate"?('owned'):(spec.id==="r_function_config_same"?('owned'):(spec.id==="r_function_config_multiple"?('owned'):(spec.id==="r_function_config_undefined_to_value"?('owned'):(spec.id==="r_function_config_value_to_undefined"?('owned'):(spec.id==="r_function_config_null_to_value"?('owned'):(spec.id==="r_function_config_literal_dollar"?('owned'):(spec.id==="r_function_immutable_assign"?('owned'):(spec.id==="r_function_immutable_delete"?('owned'):(spec.id==="r_function_immutable_nested"?('owned'):(spec.id==="r_function_immutable_push"?('owned'):(spec.id==="r_function_immutable_sort"?('owned'):(spec.id==="r_function_immutable_define"?('owned'):(spec.id==="r_function_immutable_clone"?('owned'):(spec.id==="r_function_reconnect"?('owned'):(spec.id==="r_function_disconnect_config"?('owned'):(spec.id==="r_function_rapid"?('owned'):(spec.id==="r_function_rapid_suppress"?('owned'):(spec.id==="r_function_cache_return"?('owned'):(spec.id==="r_function_error_then_value"?('owned'):(spec.id==="r_function_value_then_error"?('owned'):(spec.id==="r_lds_property_initial"?('owned'):(spec.id==="r_lds_property_notify_unchanged"?('owned'):(spec.id==="r_lds_property_notify_changed"?('owned'):(spec.id==="r_lds_property_reconnect_notify"?('owned'):(spec.id==="r_lds_property_disconnected_notify"?('owned'):(spec.id==="r_lds_property_pending_to_cached"?('owned'):(spec.id==="r_lds_property_pending_to_undefined"?('owned'):(spec.id==="r_lds_property_error_to_cached"?('owned'):(spec.id==="r_lds_property_error_to_undefined"?('owned'):(spec.id==="r_lds_property_switch_back"?('owned'):(spec.id==="r_lds_property_same"?('owned'):(spec.id==="r_lds_property_null"?('owned'):(spec.id==="r_lds_property_undefined"?('owned'):(spec.id==="r_lds_function_initial"?('owned'):(spec.id==="r_lds_function_notify_unchanged"?('owned'):(spec.id==="r_lds_function_notify_changed"?('owned'):(spec.id==="r_lds_function_reconnect_notify"?('owned'):(spec.id==="r_lds_function_disconnected_notify"?('owned'):(spec.id==="r_lds_function_pending_to_cached"?('owned'):(spec.id==="r_lds_function_pending_to_undefined"?('owned'):(spec.id==="r_lds_function_error_to_cached"?('owned'):(spec.id==="r_lds_function_error_to_undefined"?('owned'):(spec.id==="r_lds_function_switch_back"?('owned'):(spec.id==="r_lds_function_same"?('owned'):(spec.id==="r_lds_function_null"?('owned'):(spec.id==="r_lds_function_undefined"?('owned'):'owned')))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))),ordinal=(spec.id==="r_property_string"?(1):(spec.id==="r_property_empty"?(1):(spec.id==="r_property_null"?(1):(spec.id==="r_property_undefined"?(1):(spec.id==="r_property_number"?(1):(spec.id==="r_property_true"?(1):(spec.id==="r_property_false"?(1):(spec.id==="r_property_unicode"?(1):(spec.id==="r_property_newline"?(1):(spec.id==="r_property_array"?(1):(spec.id==="r_property_object"?(1):(spec.id==="r_property_throw"?(1):(spec.id==="r_property_null_return"?(1):(spec.id==="r_property_ordinal_zero"?(0):(spec.id==="r_property_ordinal_negative"?(-1):(spec.id==="r_property_ordinal_null"?(null):(spec.id==="r_property_ordinal_undefined"?(undefined):(spec.id==="r_property_ordinal_string"?('2'):(spec.id==="r_property_ordinal_fraction"?(1.5):(spec.id==="r_property_ordinal_nan"?(NaN):(spec.id==="r_property_config_replace"?(1):(spec.id==="r_property_config_mutate"?(1):(spec.id==="r_property_config_same"?(1):(spec.id==="r_property_config_multiple"?(1):(spec.id==="r_property_config_undefined_to_value"?(1):(spec.id==="r_property_config_value_to_undefined"?(1):(spec.id==="r_property_config_null_to_value"?(1):(spec.id==="r_property_config_literal_dollar"?(1):(spec.id==="r_property_immutable_assign"?(1):(spec.id==="r_property_immutable_delete"?(1):(spec.id==="r_property_immutable_nested"?(1):(spec.id==="r_property_immutable_push"?(1):(spec.id==="r_property_immutable_sort"?(1):(spec.id==="r_property_immutable_define"?(1):(spec.id==="r_property_immutable_clone"?(1):(spec.id==="r_property_reconnect"?(1):(spec.id==="r_property_disconnect_config"?(1):(spec.id==="r_property_rapid"?(1):(spec.id==="r_property_rapid_suppress"?(1):(spec.id==="r_property_cache_return"?(1):(spec.id==="r_property_error_then_value"?(1):(spec.id==="r_property_value_then_error"?(1):(spec.id==="r_function_string"?(1):(spec.id==="r_function_empty"?(1):(spec.id==="r_function_null"?(1):(spec.id==="r_function_undefined"?(1):(spec.id==="r_function_number"?(1):(spec.id==="r_function_true"?(1):(spec.id==="r_function_false"?(1):(spec.id==="r_function_unicode"?(1):(spec.id==="r_function_newline"?(1):(spec.id==="r_function_array"?(1):(spec.id==="r_function_object"?(1):(spec.id==="r_function_throw"?(1):(spec.id==="r_function_null_return"?(1):(spec.id==="r_function_ordinal_zero"?(0):(spec.id==="r_function_ordinal_negative"?(-1):(spec.id==="r_function_ordinal_null"?(null):(spec.id==="r_function_ordinal_undefined"?(undefined):(spec.id==="r_function_ordinal_string"?('2'):(spec.id==="r_function_ordinal_fraction"?(1.5):(spec.id==="r_function_ordinal_nan"?(NaN):(spec.id==="r_function_config_replace"?(1):(spec.id==="r_function_config_mutate"?(1):(spec.id==="r_function_config_same"?(1):(spec.id==="r_function_config_multiple"?(1):(spec.id==="r_function_config_undefined_to_value"?(1):(spec.id==="r_function_config_value_to_undefined"?(1):(spec.id==="r_function_config_null_to_value"?(1):(spec.id==="r_function_config_literal_dollar"?(1):(spec.id==="r_function_immutable_assign"?(1):(spec.id==="r_function_immutable_delete"?(1):(spec.id==="r_function_immutable_nested"?(1):(spec.id==="r_function_immutable_push"?(1):(spec.id==="r_function_immutable_sort"?(1):(spec.id==="r_function_immutable_define"?(1):(spec.id==="r_function_immutable_clone"?(1):(spec.id==="r_function_reconnect"?(1):(spec.id==="r_function_disconnect_config"?(1):(spec.id==="r_function_rapid"?(1):(spec.id==="r_function_rapid_suppress"?(1):(spec.id==="r_function_cache_return"?(1):(spec.id==="r_function_error_then_value"?(1):(spec.id==="r_function_value_then_error"?(1):(spec.id==="r_lds_property_initial"?(1):(spec.id==="r_lds_property_notify_unchanged"?(1):(spec.id==="r_lds_property_notify_changed"?(1):(spec.id==="r_lds_property_reconnect_notify"?(1):(spec.id==="r_lds_property_disconnected_notify"?(1):(spec.id==="r_lds_property_pending_to_cached"?(1):(spec.id==="r_lds_property_pending_to_undefined"?(1):(spec.id==="r_lds_property_error_to_cached"?(1):(spec.id==="r_lds_property_error_to_undefined"?(1):(spec.id==="r_lds_property_switch_back"?(1):(spec.id==="r_lds_property_same"?(1):(spec.id==="r_lds_property_null"?(1):(spec.id==="r_lds_property_undefined"?(1):(spec.id==="r_lds_function_initial"?(1):(spec.id==="r_lds_function_notify_unchanged"?(1):(spec.id==="r_lds_function_notify_changed"?(1):(spec.id==="r_lds_function_reconnect_notify"?(1):(spec.id==="r_lds_function_disconnected_notify"?(1):(spec.id==="r_lds_function_pending_to_cached"?(1):(spec.id==="r_lds_function_pending_to_undefined"?(1):(spec.id==="r_lds_function_error_to_cached"?(1):(spec.id==="r_lds_function_error_to_undefined"?(1):(spec.id==="r_lds_function_switch_back"?(1):(spec.id==="r_lds_function_same"?(1):(spec.id==="r_lds_function_null"?(1):(spec.id==="r_lds_function_undefined"?(1):1))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
   let id,second;const frames=[];this.tokens['L07_ORACLE_'+spec.id+'_CHANGED']='[NAME_CHANGED]';
-  const configure=(...args)=>child.configure(spec.adapter,
-    args.length>0?args[0]:marker,args.length>1?args[1]:ordinal,args.length>2?args[2]:id,args.length>3?args[3]:'replace');
-  const frame=label=>frames.push({label,...child.snapshot(spec.form)});
+  let pending,delivered;
+  const configure=(...args)=>{
+   const nextMarker=args.length>0?args[0]:marker,nextOrdinal=args.length>1?args[1]:ordinal,nextId=args.length>2?args[2]:id;
+   const count=child.snapshot('property').functionEmissions.length+1;
+   child.configure(spec.adapter,nextMarker,nextOrdinal,nextId,args.length>3?args[3]:'replace');
+   // Suppression retains the last delivered value; an in-flight Apex request
+   // remains observable when its next configuration becomes undefined.
+   if(spec.adapter==='apex' && nextMarker!==undefined && nextOrdinal!==undefined)
+    pending={marker:nextMarker,ordinal:nextOrdinal,count};
+   else if(spec.adapter==='lds' && nextId!=null)pending={id:nextId,count};
+   else if(spec.adapter==='lds')pending=delivered;
+  };
+  const waitForWires=async(check=()=>{})=>{
+   if(!pending)return;
+   const deadline=Date.now()+10000;
+   for(;;){
+    check();
+    const state=child.snapshot('property'),latest=state.functionEmissions[state.functionEmissions.length-1];
+    const current=state.current,data=current && current.data;
+    let matches;
+    if(spec.adapter==='lds')matches=data && data.id===pending.id;
+    else if(pending.marker==='__THROW__' || (Number.isFinite(Number(pending.ordinal)) && !Number.isInteger(Number(pending.ordinal))) || (pending.marker!==null && typeof pending.marker==='object'))matches=current && current.error && !current.error.undefined;
+    else if(pending.marker==='__NULL_RETURN__')matches=data===null;
+    else matches=data && (pending.marker===null?data.marker==null:data.marker===String(pending.marker)) && (pending.ordinal===null || !Number.isFinite(Number(pending.ordinal))?data.ordinal==null:data.ordinal===Number(pending.ordinal));
+    if(matches && state.functionEmissions.length>=pending.count && JSON.stringify(current)===JSON.stringify(latest)){
+     delivered=pending;return;
+    }
+    if(Date.now()>=deadline)throw new Error('wire delivery deadline');
+    await wait(20);
+   }
+  };
+  const frame=async label=>{
+   // Pending-request and promise-resolution frames observe their boundary
+   // synchronously; waiting here would hide an early promise resolution.
+   if(label!=='deleted-record-request' && !label.includes('promise-resolved'))await waitForWires();
+   frames.push({label,...child.snapshot(spec.form)});
+  };
   if(spec.adapter==='lds')id=await this.create(spec.id,'A');
   if(spec.operation==='activate')marker=undefined;
   if(spec.operation==='null_activate')marker=null;
   if(spec.operation==='null')id=null;
   if(spec.operation==='undefined')id=undefined;
-  configure();await wait(4000);frame('initial');
+  configure();await wait(4000);await frame('initial');
   const holder=child.parentNode;
   const detach=()=>holder.removeChild(child);
   const reconnect=()=>holder.appendChild(child);
@@ -70,26 +104,39 @@ export default class FamilyL07Runtime59 extends LightningElement {
    case 'rapid_suppress':configure('rapid-a',ordinal,id);await wait(0);configure(undefined,ordinal,id);break;
    case 'cache_return':configure('other',ordinal,id);await wait(0);configure();break;
    case 'error_then_value':configure('__THROW__',ordinal,id);await wait(0);configure('good',ordinal,id);break;
-   case 'value_then_error':configure('good',ordinal,id);await wait(0);configure('__THROW__',ordinal,id);break;
-   case 'reconnect':detach();await wait(30);frame('disconnected');reconnect();break;
-   case 'disconnect_config':detach();configure('detached',ordinal,id);await wait(1000);frame('detached-config');reconnect();break;
+   case 'value_then_error':configure('good',ordinal,id);await wait(0);await waitForWires();configure('__THROW__',ordinal,id);break;
+   case 'reconnect':detach();await wait(30);await frame('disconnected');reconnect();break;
+   case 'disconnect_config':
+    detach();configure('detached',ordinal,id);await wait(1000);
+    {
+     const baseline=frames[0];
+     const check=()=>{
+      const state=child.snapshot('property');
+      if(child.isConnected || child.parentNode!==null || state.connected!==baseline.connected || state.disconnected!==baseline.disconnected)
+       throw new Error('detached wire lifecycle changed');
+     };
+     check();
+     await waitForWires(check);
+     check();
+    }
+    await frame('detached-config');reconnect();break;
    case 'notify_unchanged':
     await changeOwned({recordId:id,name:'L07_ORACLE_'+spec.id+'_A'});
-    await notifyRecordUpdateAvailable([{recordId:id}]);frame('notify-promise-resolved');break;
+    pending={...delivered,count:child.snapshot('property').functionEmissions.length+1};await notifyRecordUpdateAvailable([{recordId:id}]);frame('notify-promise-resolved');break;
    case 'notify_changed':
     await changeOwned({recordId:id,name:'L07_ORACLE_'+spec.id+'_CHANGED'});
-    await notifyRecordUpdateAvailable([{recordId:id}]);frame('notify-promise-resolved');break;
+    pending={...delivered,count:child.snapshot('property').functionEmissions.length+1};await notifyRecordUpdateAvailable([{recordId:id}]);frame('notify-promise-resolved');break;
    case 'reconnect_notify':
-    detach();await wait(30);frame('disconnected');reconnect();await wait(1000);frame('reconnected');
+    detach();await wait(30);await frame('disconnected');reconnect();await wait(1000);await frame('reconnected');
     await changeOwned({recordId:id,name:'L07_ORACLE_'+spec.id+'_CHANGED'});
-    await notifyRecordUpdateAvailable([{recordId:id}]);frame('notify-promise-resolved');break;
+    pending={...delivered,count:child.snapshot('property').functionEmissions.length+1};await notifyRecordUpdateAvailable([{recordId:id}]);frame('notify-promise-resolved');break;
    case 'disconnected_notify':
     detach();await wait(30);
     await changeOwned({recordId:id,name:'L07_ORACLE_'+spec.id+'_CHANGED'});
-    await notifyRecordUpdateAvailable([{recordId:id}]);frame('disconnected-notify-promise-resolved');reconnect();break;
+    pending={...delivered,count:child.snapshot('property').functionEmissions.length+1};await notifyRecordUpdateAvailable([{recordId:id}]);frame('disconnected-notify-promise-resolved');reconnect();break;
    case 'pending_to_cached':case 'pending_to_undefined':case 'switch_back':
     second=await this.create(spec.id,'B');configure(marker,ordinal,second);
-    await wait(spec.operation==='switch_back'?4000:0);frame('intermediate-config');
+    await wait(spec.operation==='switch_back'?4000:0);await frame('intermediate-config');
     configure(marker,ordinal,spec.operation==='pending_to_undefined'?undefined:id);break;
    case 'error_to_cached':case 'error_to_undefined':
     second=await this.create(spec.id,'ERROR');await deleteRecord(second);
@@ -99,9 +146,9 @@ export default class FamilyL07Runtime59 extends LightningElement {
    case 'null':case 'undefined':break;
    default:throw new Error('Unknown owned row');
   }
-  await wait(4000);frame('settled-window');
-  // This is a native page observation of a finite window, never a fabricated
-  // wire error or proof of server delivery outside that window.
+  await wait(4000);await frame('settled-window');
+  // Suppressed configurations retain the finite native no-data window.
+  // Defined configurations fail explicitly at the delivery deadline.
   const current=frames[frames.length-1].current;
   const noData=Boolean(current && (current.undefined===true || (current.data && current.data.undefined===true)) && !current.error);
   return {frames,initialWindowMs:4000,settledWindowMs:4000,noDataOrErrorWithinWindow:noData};

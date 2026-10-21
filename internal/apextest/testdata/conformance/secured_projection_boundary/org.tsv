@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"route":"anonymous control"}
+62.0	isTest	{"hiddenWriteError":"System.DmlException:Operation failed due to fields being inaccessible on Sobject BatchItem__c, check errors on Exception or Result! ","hiddenQueryError":"System.QueryException:Invalid field: 'Hidden__c'","updatedName":"Owned revised","childQueryUpsert":true,"aliasTally":1,"aliasValue":"Ready","aliasCount":1}
+67.0	anonymous	{"route":"anonymous control"}
+67.0	isTest	{"hiddenWriteError":"System.DmlException:Operation failed due to fields being inaccessible on Sobject BatchItem__c, check errors on Exception or Result! ","hiddenQueryError":"System.QueryException:Invalid field: 'Hidden__c'","updatedName":"Owned revised","childQueryUpsert":true,"aliasTally":1,"aliasValue":"Ready","aliasCount":1}

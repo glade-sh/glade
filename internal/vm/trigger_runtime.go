@@ -62,6 +62,79 @@ func (vm *VM) wrapEventBusTriggerFailure(trigger Trigger, records []storage.Reco
 	}
 }
 
+// A trigger exception fails the entire DML batch, unlike a row's addError.
+// Keep its cause separate so fatal VM errors retain their original boundary.
+type triggerExecutionError struct {
+	cause  error
+	detail string
+}
+
+func (e *triggerExecutionError) Error() string { return e.detail }
+func (e *triggerExecutionError) Unwrap() error { return e.cause }
+
+func (vm *VM) wrapTriggerExecutionError(trigger Trigger, err error) error {
+	if hasSuffixFold(trigger.Object, "__e") {
+		return err
+	}
+	var flowFailure *invocableFlowCallerTriggerFailure
+	if errors.As(err, &flowFailure) {
+		return err
+	}
+	var thrown *apexThrowError
+	var value Value
+	var stack []callFrame
+	if errors.As(err, &thrown) {
+		value, stack = thrown.value, thrown.stack
+	} else {
+		message := err.Error()
+		var runtimeErr *RuntimeError
+		if errors.As(err, &runtimeErr) {
+			if runtimeErr.Type != "RuntimeError" {
+				return err
+			}
+			message = runtimeErr.Message
+		}
+		switch message {
+		case "System.FinalException: Record is read-only", "System.FinalException: Collection is read-only":
+			value = Object("System.FinalException")
+			value.Fields["message"] = String(strings.TrimPrefix(message, "System.FinalException: "))
+		default:
+			return err
+		}
+	}
+	if len(stack) == 0 {
+		stack = vm.rawStackFrames()
+	}
+	value = annotateExceptionContext(value, stack)
+	event := strings.ToUpper(trigger.Timing[:1]) + trigger.Timing[1:] + strings.ToUpper(trigger.Operation[:1]) + trigger.Operation[1:]
+	detail := trigger.Name + ": execution of " + event + "\n\ncaused by: " + vm.exceptionQualifiedTypeName(value.Type) + ": " + exceptionMessage(value) + "\n\n" + value.Fields["__stackTrace"].Text
+	return &triggerExecutionError{cause: err, detail: detail}
+}
+
+func (vm *VM) triggerDMLFailure(op string, allOrNone bool, records []storage.Record, prior []dml.Result, input Value, err error) ([]dml.Result, error) {
+	var failure *triggerExecutionError
+	if !errors.As(err, &failure) {
+		return nil, dmlExceptionFromTriggerError(op, err)
+	}
+	failures := make([]dml.Result, len(records))
+	for i, record := range records {
+		failures[i] = dmlFailure(record.ID, failure.detail, "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil)
+	}
+	if hasDMLFailures(prior) {
+		failures = mergeDMLResults(prior, failures)
+	}
+	if !allOrNone {
+		return failures, nil
+	}
+	wrapped := rowDMLException(op, failures, vm.dmlExceptionObjectTypes(input)).(*apexThrowError)
+	var thrown *apexThrowError
+	if errors.As(err, &thrown) {
+		wrapped.value.Fields["__cause"] = thrown.value
+		wrapped.stack = append([]callFrame(nil), thrown.stack...)
+	}
+	return nil, wrapped
+}
+
 func dmlExceptionFromTriggerError(op string, err error) error {
 	var thrown *apexThrowError
 	message := err.Error()
@@ -164,6 +237,7 @@ func (vm *VM) rollbackAfterTriggerFailures(op string, records []storage.Record, 
 		}
 		if strings.EqualFold(op, "insert") || strings.EqualFold(op, "upsert") {
 			if storedID, _, found := storage.LookupRecordByID(current.Records, record.ID); found {
+				vm.recordCreations.Forget(storedID)
 				delete(current.Records, storedID)
 				vm.Org.Objects[objectName] = current
 			}
@@ -519,7 +593,11 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	appendTraceLazy(result, "apex.trigger."+trigger.Name, "apex.trigger", func() map[string]any {
 		return vm.traceTriggerArgs(trigger, len(records))
 	})
+	leaveBeforeUpdate := vm.enterBeforeUpdateTrigger(trigger, records)
+	defer leaveBeforeUpdate()
 	caller := vm.Globals
+	callerFinals := vm.finalLocals
+	callerClosedLocals, callerBindRoute := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute
 	callerClass := vm.currentClass
 	callerNamespace := vm.currentNamespace
 	callerMethod := vm.currentMethod
@@ -531,18 +609,22 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	callerHasStatement := vm.hasStatement
 	frame := make(map[string]Value)
 	ctx := triggerContext(trigger, records, oldRecords)
+	vm.materializePlatformEventTriggerNumbers(trigger.Object, ctx)
 	for key, value := range ctx {
 		frame[key] = value
 	}
 	vm.Globals = frame
+	vm.finalLocals = nil
+	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = nil, ""
 	vm.triggerGlobals = frame
 	vm.currentClass = trigger.Name
 	vm.currentNamespace = strings.TrimSpace(trigger.Namespace)
 	vm.currentMethod = Method{
-		Name:       trigger.Name,
-		ClassName:  trigger.Name,
-		File:       trigger.File,
-		APIVersion: trigger.APIVersion,
+		Name:                trigger.Name,
+		ClassName:           trigger.Name,
+		File:                trigger.File,
+		APIVersion:          trigger.APIVersion,
+		triggerLocalMethods: trigger.LocalMethods,
 	}
 	vm.currentTrigger = true
 	vm.eventBusTriggerContext = nil
@@ -568,6 +650,8 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	defer func() {
 		vm.callStack = vm.callStack[:len(vm.callStack)-1]
 		vm.Globals = caller
+		vm.finalLocals = callerFinals
+		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = callerClosedLocals, callerBindRoute
 		vm.triggerGlobals = callerTriggerGlobals
 		vm.activeTriggerNamespaces = callerTriggerNamespaces
 		vm.currentClass = callerClass
@@ -590,7 +674,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 				return failures, nil
 			}
 		}
-		return nil, vm.wrapEventBusTriggerFailure(trigger, records, err)
+		return nil, vm.wrapEventBusTriggerFailure(trigger, records, vm.wrapTriggerExecutionError(trigger, vm.wrapInvocableFlowCallerTriggerFailure(trigger, records, err)))
 	}
 	if out.signal == signalThrow {
 		if updated.Kind == ValueList {
@@ -599,7 +683,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 				return failures, nil
 			}
 		}
-		return nil, vm.wrapEventBusTriggerFailure(trigger, records, &apexThrowError{value: out.thrown, stack: append([]callFrame(nil), vm.callStack...)})
+		return nil, vm.wrapEventBusTriggerFailure(trigger, records, vm.wrapTriggerExecutionError(trigger, &apexThrowError{value: out.thrown, stack: out.thrownStack}))
 	}
 	if updated.Kind == ValueList {
 		failures := dmlResultsFromSObjectErrors(records, updated.List)
@@ -673,6 +757,27 @@ func (vm *VM) triggerObjectMatches(triggerObject, recordObject string) bool {
 	}
 	return strings.EqualFold(storage.StripAnyNamespaceToken(triggerObject), storage.StripAnyNamespaceToken(recordObject))
 }
+
+// Event subscribers observe whole Number fields with at least one fractional
+// digit. Materialize only the VM context, preserving publication, retry and
+// Flow records in their original storage representation.
+func (vm *VM) materializePlatformEventTriggerNumbers(objectName string, context map[string]Value) {
+	if !vm.hasPlatformEventMetadata(objectName) {
+		return
+	}
+	for _, record := range context["Trigger.new"].List {
+		for name, value := range record.Fields {
+			_, field, known := vm.sObjectFieldDefinition(objectName, name)
+			if !known || field.Type != storage.FieldDecimal || field.Scale != 0 || !strings.EqualFold(field.DisplayType, "DOUBLE") {
+				continue
+			}
+			if number, ok := valueDecimalRat(value); ok && number.IsInt() {
+				record.Fields[name] = decimalFromRat(number, 1)
+			}
+		}
+	}
+}
+
 func triggerContext(trigger Trigger, records, oldRecords []storage.Record) map[string]Value {
 	newValues := make([]Value, 0, len(records))
 	newMap := Map()
@@ -793,7 +898,7 @@ func (vm *VM) recordsFromTriggerRetryInput(value Value) ([]storage.Record, []*Va
 	return records, targets, nil
 }
 
-func (vm *VM) retryPartialTriggerDML(op string, input Value, externalIDField string, options dml.Options, result *Result, checkRecordAccess, checkApexIdentity bool, results []dml.Result, rollback vmDMLRollbackPoint, attempt int) ([]dml.Result, error) {
+func (vm *VM) retryPartialTriggerDML(op string, input Value, externalIDField string, options dml.Options, result *Result, checkRecordAccess, checkApexIdentity bool, resolvedMode string, results []dml.Result, rollback vmDMLRollbackPoint, attempt int) ([]dml.Result, error) {
 	// Complete the first trigger cycle,
 	// roll back its writes, then rerun both events on the surviving inputs.
 	// Apex static observations remain visible across these storage rollbacks.
@@ -829,31 +934,31 @@ func (vm *VM) retryPartialTriggerDML(op string, input Value, externalIDField str
 			next.List = append(next.List, row)
 		}
 	}
-	retried, err := vm.applyDMLWithAccessPolicy(op, next, false, externalIDField, options, result, checkRecordAccess, checkApexIdentity, attempt+1)
+	retried, err := vm.applyDMLWithAccessPolicy(op, next, false, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, attempt+1)
 	if err != nil {
 		return nil, err
 	}
 	return mergeDMLResults(results, retried), nil
 }
 
-func snapshotTriggerDMLInput(value Value, targets []*Value) Value {
+func (vm *VM) snapshotTriggerDMLInput(value Value, targets []*Value) Value {
 	if value.Kind != ValueList {
-		return cloneValuePreserveRefs(value)
+		return vm.cloneValuePreserveRefs(value)
 	}
 	out := value
 	out.List = make([]Value, 0, len(targets))
 	for _, target := range targets {
 		if target != nil {
-			out.List = append(out.List, cloneValuePreserveRefs(*target))
+			out.List = append(out.List, vm.cloneValuePreserveRefs(*target))
 		}
 	}
 	return out
 }
 
-func (vm *VM) applyTriggerDMLChunks(op string, value Value, targets []*Value, allOrNone bool, externalIDField string, options dml.Options, result *Result, checkRecordAccess, checkApexIdentity bool) ([]dml.Result, error) {
+func (vm *VM) applyTriggerDMLChunks(op string, value Value, targets []*Value, allOrNone bool, externalIDField string, options dml.Options, result *Result, checkRecordAccess, checkApexIdentity bool, resolvedMode string) ([]dml.Result, error) {
 	// Only insert/update split here, and each
 	// chunk completes its before/after cycle before the next chunk begins.
-	input := snapshotTriggerDMLInput(value, targets)
+	input := vm.snapshotTriggerDMLInput(value, targets)
 	rollback := vm.beginDMLRollbackPoint(true, false)
 	defer vm.finishDMLRollbackPoint(rollback)
 	results := make([]dml.Result, 0, len(input.List))
@@ -863,7 +968,7 @@ func (vm *VM) applyTriggerDMLChunks(op string, value Value, targets []*Value, al
 		chunk.List = input.List[start:min(start+200, len(input.List))]
 		// The outer call already counted the full DML operation. Attempt zero
 		// gives this chunk its own native two-retry budget without recounting it.
-		saved, err := vm.applyDMLWithAccessPolicy(op, chunk, allOrNone, externalIDField, options, result, checkRecordAccess, checkApexIdentity, 0)
+		saved, err := vm.applyDMLWithAccessPolicy(op, chunk, allOrNone, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, 0)
 		if err != nil {
 			if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
 				return nil, rollbackErr

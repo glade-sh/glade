@@ -1,0 +1,1358 @@
+{
+  "callerApiVersions": [
+    "61.0",
+    "62.0",
+    "65.0",
+    "67.0"
+  ],
+  "flowAPI": "65.0",
+  "projectAPI": "62.0",
+  "routes": [
+    "isTest",
+    "anonymous"
+  ],
+  "namespaceContext": "none",
+  "knownRows": 23,
+  "pendingCoverage": [
+    "Namespace contexts, other typed relationship targets or fields, other Flow source APIs and other caller versions were not observed.",
+    "Text/null comparison controls are named caller65 and Flow65 only; other contexts were not observed.",
+    "Per-source hashes were exported from frozen capture fixtures; no pre-deployment D7 source manifest was retained."
+  ],
+  "captures": [
+    {
+      "context": "api65-identity",
+      "callerAPI": "65.0",
+      "flowAPI": "65.0",
+      "helperAPI": "",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "OwnerFormulaObservation",
+      "marker": "FLOW_OWNER_OBSERVATION ",
+      "sourceManifestKind": "exported-frozen-sources",
+      "sources": {
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls": {
+          "source": "@IsTest\nprivate class OwnerFormulaObservation {\n    private static Map<String,Object> observe(String caseId, String expectedOwnerId) {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'createInterview', 'setupError'=>false};\n        try {\n            Flow.Interview interview = Flow.Interview.createInterview('OwnedOwnerFormula', new Map<String,Object>{'caseId'=>caseId});\n            row.put('stage', 'start');\n            interview.start();\n            row.put('stage', 'readOutputs');\n            Object typedOwner = interview.getVariableValue('typedOwnerId');\n            Object formulaActor = interview.getVariableValue('formulaActorId');\n            Object actor = interview.getVariableValue('actorId');\n            Object ordinaryOwner = interview.getVariableValue('ordinaryOwnerId');\n            Object literalValue = interview.getVariableValue('literalValue');\n            Object selected = interview.getVariableValue('selectedIds');\n            row.put('typedOwnerIsNull',typedOwner==null);\n            row.put('typedOwnerMatchesExpected',(String)typedOwner==expectedOwnerId);\n            row.put('typedOwnerIsCurrentUser',(String)typedOwner==UserInfo.getUserId());\n            row.put('formulaActorIsCurrentUser',(String)formulaActor==UserInfo.getUserId());\n            row.put('actorLength',actor==null?null:((String)actor).length());\n            row.put('currentUserLength',UserInfo.getUserId().length());\n            row.put('actorIdMatches',actor!=null && (Id)(String)actor==(Id)UserInfo.getUserId());\n            row.put('formulaActorIdMatches',formulaActor!=null && (Id)(String)formulaActor==(Id)UserInfo.getUserId());\n            row.put('actorIsNull', actor == null);\n            row.put('actorIsCurrentUser', actor != null && (String)actor == UserInfo.getUserId());\n            row.put('ordinaryOwnerIsNull', ordinaryOwner == null);\n            row.put('ordinaryOwnerMatchesExpected', (String)ordinaryOwner == expectedOwnerId);\n            row.put('literalMatches', (String)literalValue == 'owned');\n            row.put('selectedIsNull', selected == null);\n            if (selected != null) {\n                List<String> values = (List<String>)selected;\n                row.put('firstSelectedLength',values.isEmpty()?null:values[0].length());\n                row.put('firstSelectedIdMatches',!values.isEmpty() && (Id)values[0]==(Id)UserInfo.getUserId());\n                row.put('selectedSize', values.size());\n                row.put('containsCurrentUser', values.contains(UserInfo.getUserId()));\n                row.put('containsExpectedOwner', values.contains(expectedOwnerId));\n                row.put('containsNull', values.contains(null));\n            }\n            row.put('stage', 'complete');\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    private static void emit(String cell, Map<String,Object> row) {\n        row.put('cell', cell);\n        row.put('sourceApi', '65.0');\n        row.put('callerApi', '65.0');\n        System.assertEquals('capture', 'FLOW_OWNER_OBSERVATION ' + JSON.serialize(row));\n    }\n\n    @IsTest static void userOwnedCase() {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'setupCase', 'setupError'=>true};\n        try {\n            Case record = new Case(Subject='Owned formula input', Origin='Phone', Status='New', OwnerId=UserInfo.getUserId());\n            insert record;\n            row = observe(record.Id, record.OwnerId);\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        emit('userOwnedCase', row);\n    }\n\n    @IsTest static void missingLookup() {\n        emit('missingLookup', observe('500000000000071', null));\n    }\n\n    @IsTest static void queueOwnedCase() {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'setupQueue', 'setupError'=>true};\n        try {\n            Case record;\n            System.runAs(new User(Id=UserInfo.getUserId())) {\n                Group owner = new Group(Name='Owned Formula Queue', DeveloperName='OwnedOwnerFormulaQueue', Type='Queue');\n                insert owner;\n                row.put('stage', 'setupQueueObject');\n                insert new QueueSobject(QueueId=owner.Id, SobjectType='Case');\n                row.put('stage', 'setupQueueCase');\n                record = new Case(Subject='Owned queue formula input', Origin='Phone', Status='New', OwnerId=owner.Id);\n                insert record;\n            }\n            row = observe(record.Id, record.OwnerId);\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        emit('queueOwnedCase', row);\n    }\n}\n",
+          "sha256": "3fed1abab195066c716266d567b2946ee01e3142314a8697756f794578657dfe"
+        },
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "356db61093648679fc9b3a801e41d51c94fa51e993380eac65b0bb076a20b6b0"
+        },
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <assignments>\n        <name>CollectOwner</name>\n        <label>Collect Owner</label>\n        <locationX>0</locationX>\n        <locationY>200</locationY>\n        <assignmentItems>\n            <assignToReference>selectedIds</assignToReference>\n            <operator>Add</operator>\n            <value><elementReference>SelectedOwner</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>actorId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>$User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>ordinaryOwnerId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>Fetched.OwnerId</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>literalValue</assignToReference>\n            <operator>Assign</operator>\n            <value><stringValue>owned</stringValue></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>typedOwnerId</assignToReference><operator>Assign</operator>\n            <value><elementReference>Fetched.Owner:User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>formulaActorId</assignToReference><operator>Assign</operator>\n            <value><elementReference>ActorFormula</elementReference></value>\n        </assignmentItems>\n    </assignments>\n    <environments>Default</environments>\n    <formulas>\n        <name>SelectedOwner</name>\n        <dataType>String</dataType>\n        <expression>IF({!Fetched.Owner:User.Id} != null, {!Fetched.Owner:User.Id}, {!$User.Id})</expression>\n    </formulas>\n    <formulas><name>ActorFormula</name><dataType>String</dataType><expression>{!$User.Id}</expression></formulas>\n    <interviewLabel>Owned Owner Formula {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Owned Owner Formula</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value><stringValue>LightningFlowBuilder</stringValue></value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value><stringValue>AUTO_LAYOUT_CANVAS</stringValue></value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordLookups>\n        <name>Fetched</name>\n        <label>Fetch Case</label>\n        <locationX>0</locationX>\n        <locationY>100</locationY>\n        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>\n        <connector><targetReference>CollectOwner</targetReference></connector>\n        <filterLogic>and</filterLogic>\n        <filters>\n            <field>Id</field>\n            <operator>EqualTo</operator>\n            <value><elementReference>caseId</elementReference></value>\n        </filters>\n        <getFirstRecordOnly>true</getFirstRecordOnly>\n        <object>Case</object>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </recordLookups>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector><targetReference>Fetched</targetReference></connector>\n    </start>\n    <status>Active</status>\n    <variables>\n        <name>caseId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>true</isInput>\n        <isOutput>false</isOutput>\n    </variables>\n    <variables>\n        <name>selectedIds</name>\n        <dataType>String</dataType>\n        <isCollection>true</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>actorId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>ordinaryOwnerId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>literalValue</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables><name>typedOwnerId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n    <variables><name>formulaActorId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n</Flow>\n",
+          "sha256": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff"
+        },
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+        }
+      },
+      "sourceDigests": {
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls": "3fed1abab195066c716266d567b2946ee01e3142314a8697756f794578657dfe",
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls-meta.xml": "356db61093648679fc9b3a801e41d51c94fa51e993380eac65b0bb076a20b6b0",
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff",
+        "project/sfdx-project.json": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+      },
+      "rawSHA256": {
+        "org.tsv": "8f558cc478c596d9a923f31140d87ea16d947fcef7b2fb5dcd305c4b74f62c36",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "36b7997003599d2276f04b6d0b40a9227fff737ae68ac480bd38008e7dda0ae7",
+        "deploy.command.json": "1e1ba8918bebd3acbbc363006bafd9020334e3cd1940ca2d759ba5fb58d3fc0a",
+        "ORG-RUN.txt": "fbb4d5071a87050961b4de1c3e90b21ef807965c7ff8c5fbf4abc850f70a0cdd",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "deployment": {
+        "id": "0Afdh00000AbMtSCAV",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 3,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 3
+      },
+      "rows": [
+        {
+          "id": "missingLookup",
+          "native": {
+            "callerApi": "65.0",
+            "sourceApi": "65.0",
+            "cell": "missingLookup",
+            "containsNull": false,
+            "containsExpectedOwner": false,
+            "containsCurrentUser": false,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 15,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": true,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": false,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": true,
+            "setupError": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_OWNER_OBSERVATION {\"callerApi\":\"65.0\",\"sourceApi\":\"65.0\",\"cell\":\"missingLookup\",\"containsNull\":false,\"containsExpectedOwner\":false,\"containsCurrentUser\":false,\"selectedSize\":1,\"firstSelectedIdMatches\":true,\"firstSelectedLength\":15,\"selectedIsNull\":false,\"literalMatches\":true,\"ordinaryOwnerMatchesExpected\":true,\"ordinaryOwnerIsNull\":true,\"actorIsCurrentUser\":false,\"actorIsNull\":false,\"formulaActorIdMatches\":true,\"actorIdMatches\":true,\"currentUserLength\":18,\"actorLength\":15,\"formulaActorIsCurrentUser\":false,\"typedOwnerIsCurrentUser\":false,\"typedOwnerMatchesExpected\":true,\"typedOwnerIsNull\":true,\"setupError\":false,\"stage\":\"complete\"}",
+            "methodName": "missingLookup",
+            "name": "OwnerFormulaObservation",
+            "stackTrace": "Class.OwnerFormulaObservation.emit: line 51, column 1\nClass.OwnerFormulaObservation.missingLookup: line 68, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "queueOwnedCase",
+          "native": {
+            "callerApi": "65.0",
+            "sourceApi": "65.0",
+            "cell": "queueOwnedCase",
+            "containsNull": false,
+            "containsExpectedOwner": false,
+            "containsCurrentUser": false,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 15,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": false,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": false,
+            "typedOwnerMatchesExpected": false,
+            "typedOwnerIsNull": true,
+            "setupError": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_OWNER_OBSERVATION {\"callerApi\":\"65.0\",\"sourceApi\":\"65.0\",\"cell\":\"queueOwnedCase\",\"containsNull\":false,\"containsExpectedOwner\":false,\"containsCurrentUser\":false,\"selectedSize\":1,\"firstSelectedIdMatches\":true,\"firstSelectedLength\":15,\"selectedIsNull\":false,\"literalMatches\":true,\"ordinaryOwnerMatchesExpected\":true,\"ordinaryOwnerIsNull\":false,\"actorIsCurrentUser\":false,\"actorIsNull\":false,\"formulaActorIdMatches\":true,\"actorIdMatches\":true,\"currentUserLength\":18,\"actorLength\":15,\"formulaActorIsCurrentUser\":false,\"typedOwnerIsCurrentUser\":false,\"typedOwnerMatchesExpected\":false,\"typedOwnerIsNull\":true,\"setupError\":false,\"stage\":\"complete\"}",
+            "methodName": "queueOwnedCase",
+            "name": "OwnerFormulaObservation",
+            "stackTrace": "Class.OwnerFormulaObservation.emit: line 51, column 1\nClass.OwnerFormulaObservation.queueOwnedCase: line 89, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "userOwnedCase",
+          "native": {
+            "callerApi": "65.0",
+            "sourceApi": "65.0",
+            "cell": "userOwnedCase",
+            "containsNull": false,
+            "containsExpectedOwner": true,
+            "containsCurrentUser": true,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 18,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": false,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": true,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": false,
+            "setupError": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_OWNER_OBSERVATION {\"callerApi\":\"65.0\",\"sourceApi\":\"65.0\",\"cell\":\"userOwnedCase\",\"containsNull\":false,\"containsExpectedOwner\":true,\"containsCurrentUser\":true,\"selectedSize\":1,\"firstSelectedIdMatches\":true,\"firstSelectedLength\":18,\"selectedIsNull\":false,\"literalMatches\":true,\"ordinaryOwnerMatchesExpected\":true,\"ordinaryOwnerIsNull\":false,\"actorIsCurrentUser\":false,\"actorIsNull\":false,\"formulaActorIdMatches\":true,\"actorIdMatches\":true,\"currentUserLength\":18,\"actorLength\":15,\"formulaActorIsCurrentUser\":false,\"typedOwnerIsCurrentUser\":true,\"typedOwnerMatchesExpected\":true,\"typedOwnerIsNull\":false,\"setupError\":false,\"stage\":\"complete\"}",
+            "methodName": "userOwnedCase",
+            "name": "OwnerFormulaObservation",
+            "stackTrace": "Class.OwnerFormulaObservation.emit: line 51, column 1\nClass.OwnerFormulaObservation.userOwnedCase: line 64, column 1",
+            "type": "Class"
+          }
+        }
+      ],
+      "sourceManifestSHA256": "774206e889d61d2c9652f911be72e6e7e1ec608c6dcffb39b69ee84a13e5ec3b"
+    },
+    {
+      "context": "caller61",
+      "callerAPI": "61.0",
+      "flowAPI": "65.0",
+      "helperAPI": "",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "OwnerFormulaObservation",
+      "marker": "FLOW_OWNER_OBSERVATION ",
+      "sourceManifestKind": "exported-frozen-sources",
+      "sources": {
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls": {
+          "source": "@IsTest\nprivate class OwnerFormulaObservation {\n    private static Map<String,Object> observe(String caseId, String expectedOwnerId) {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'createInterview', 'setupError'=>false};\n        try {\n            Flow.Interview interview = Flow.Interview.createInterview('OwnedOwnerFormula', new Map<String,Object>{'caseId'=>caseId});\n            row.put('stage', 'start');\n            interview.start();\n            row.put('stage', 'readOutputs');\n            Object typedOwner = interview.getVariableValue('typedOwnerId');\n            Object formulaActor = interview.getVariableValue('formulaActorId');\n            Object actor = interview.getVariableValue('actorId');\n            Object ordinaryOwner = interview.getVariableValue('ordinaryOwnerId');\n            Object literalValue = interview.getVariableValue('literalValue');\n            Object selected = interview.getVariableValue('selectedIds');\n            row.put('typedOwnerIsNull',typedOwner==null);\n            row.put('typedOwnerMatchesExpected',(String)typedOwner==expectedOwnerId);\n            row.put('typedOwnerIsCurrentUser',(String)typedOwner==UserInfo.getUserId());\n            row.put('formulaActorIsCurrentUser',(String)formulaActor==UserInfo.getUserId());\n            row.put('actorLength',actor==null?null:((String)actor).length());\n            row.put('currentUserLength',UserInfo.getUserId().length());\n            row.put('actorIdMatches',actor!=null && (Id)(String)actor==(Id)UserInfo.getUserId());\n            row.put('formulaActorIdMatches',formulaActor!=null && (Id)(String)formulaActor==(Id)UserInfo.getUserId());\n            row.put('actorIsNull', actor == null);\n            row.put('actorIsCurrentUser', actor != null && (String)actor == UserInfo.getUserId());\n            row.put('ordinaryOwnerIsNull', ordinaryOwner == null);\n            row.put('ordinaryOwnerMatchesExpected', (String)ordinaryOwner == expectedOwnerId);\n            row.put('literalMatches', (String)literalValue == 'owned');\n            row.put('selectedIsNull', selected == null);\n            if (selected != null) {\n                List<String> values = (List<String>)selected;\n                row.put('firstSelectedLength',values.isEmpty()?null:values[0].length());\n                row.put('firstSelectedIdMatches',!values.isEmpty() && (Id)values[0]==(Id)UserInfo.getUserId());\n                row.put('selectedSize', values.size());\n                row.put('containsCurrentUser', values.contains(UserInfo.getUserId()));\n                row.put('containsExpectedOwner', values.contains(expectedOwnerId));\n                row.put('containsNull', values.contains(null));\n            }\n            row.put('stage', 'complete');\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    private static void emit(String cell, Map<String,Object> row) {\n        row.put('cell', cell);\n        row.put('sourceApi', '65.0');\n        row.put('callerApi', '61.0');\n        System.assertEquals('capture', 'FLOW_OWNER_OBSERVATION ' + JSON.serialize(row));\n    }\n\n    @IsTest static void userOwnedCase() {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'setupCase', 'setupError'=>true};\n        try {\n            Case record = new Case(Subject='Owned formula input', Origin='Phone', Status='New', OwnerId=UserInfo.getUserId());\n            insert record;\n            row = observe(record.Id, record.OwnerId);\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        emit('userOwnedCase', row);\n    }\n\n    @IsTest static void missingLookup() {\n        emit('missingLookup', observe('500000000000071', null));\n    }\n\n    @IsTest static void queueOwnedCase() {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'setupQueue', 'setupError'=>true};\n        try {\n            Case record;\n            System.runAs(new User(Id=UserInfo.getUserId())) {\n                Group owner = new Group(Name='Owned Formula Queue', DeveloperName='OwnedOwnerFormulaQueue', Type='Queue');\n                insert owner;\n                row.put('stage', 'setupQueueObject');\n                insert new QueueSobject(QueueId=owner.Id, SobjectType='Case');\n                row.put('stage', 'setupQueueCase');\n                record = new Case(Subject='Owned queue formula input', Origin='Phone', Status='New', OwnerId=owner.Id);\n                insert record;\n            }\n            row = observe(record.Id, record.OwnerId);\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        emit('queueOwnedCase', row);\n    }\n}\n",
+          "sha256": "03f92655656f99ed902f4af491765b11083e85b98f5084b83ffde2f6740f1cec"
+        },
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>61.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "8907a48d804f442e957280af095b9ba2468af15684cf0f783efa514a4b19968d"
+        },
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <assignments>\n        <name>CollectOwner</name>\n        <label>Collect Owner</label>\n        <locationX>0</locationX>\n        <locationY>200</locationY>\n        <assignmentItems>\n            <assignToReference>selectedIds</assignToReference>\n            <operator>Add</operator>\n            <value><elementReference>SelectedOwner</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>actorId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>$User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>ordinaryOwnerId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>Fetched.OwnerId</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>literalValue</assignToReference>\n            <operator>Assign</operator>\n            <value><stringValue>owned</stringValue></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>typedOwnerId</assignToReference><operator>Assign</operator>\n            <value><elementReference>Fetched.Owner:User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>formulaActorId</assignToReference><operator>Assign</operator>\n            <value><elementReference>ActorFormula</elementReference></value>\n        </assignmentItems>\n    </assignments>\n    <environments>Default</environments>\n    <formulas>\n        <name>SelectedOwner</name>\n        <dataType>String</dataType>\n        <expression>IF({!Fetched.Owner:User.Id} != null, {!Fetched.Owner:User.Id}, {!$User.Id})</expression>\n    </formulas>\n    <formulas><name>ActorFormula</name><dataType>String</dataType><expression>{!$User.Id}</expression></formulas>\n    <interviewLabel>Owned Owner Formula {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Owned Owner Formula</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value><stringValue>LightningFlowBuilder</stringValue></value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value><stringValue>AUTO_LAYOUT_CANVAS</stringValue></value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordLookups>\n        <name>Fetched</name>\n        <label>Fetch Case</label>\n        <locationX>0</locationX>\n        <locationY>100</locationY>\n        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>\n        <connector><targetReference>CollectOwner</targetReference></connector>\n        <filterLogic>and</filterLogic>\n        <filters>\n            <field>Id</field>\n            <operator>EqualTo</operator>\n            <value><elementReference>caseId</elementReference></value>\n        </filters>\n        <getFirstRecordOnly>true</getFirstRecordOnly>\n        <object>Case</object>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </recordLookups>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector><targetReference>Fetched</targetReference></connector>\n    </start>\n    <status>Active</status>\n    <variables>\n        <name>caseId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>true</isInput>\n        <isOutput>false</isOutput>\n    </variables>\n    <variables>\n        <name>selectedIds</name>\n        <dataType>String</dataType>\n        <isCollection>true</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>actorId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>ordinaryOwnerId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>literalValue</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables><name>typedOwnerId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n    <variables><name>formulaActorId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n</Flow>\n",
+          "sha256": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff"
+        },
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+        }
+      },
+      "sourceDigests": {
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls": "03f92655656f99ed902f4af491765b11083e85b98f5084b83ffde2f6740f1cec",
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls-meta.xml": "8907a48d804f442e957280af095b9ba2468af15684cf0f783efa514a4b19968d",
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff",
+        "project/sfdx-project.json": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+      },
+      "rawSHA256": {
+        "org.tsv": "509dc5ceb4226898ba0feb66a04a2e4bb79b173c90d5d6a6d4e7fa381872c5ba",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "f987621c0aacd67b948b1a9a64d10d4b1274a025e861ad111798599935fe7e13",
+        "deploy.command.json": "1e1ba8918bebd3acbbc363006bafd9020334e3cd1940ca2d759ba5fb58d3fc0a",
+        "ORG-RUN.txt": "1fe111730d479c46ec31eae7fdc96a37c7288179980c886cd34a5df44f54450e",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "deployment": {
+        "id": "0Afdh00000AbJPLCA3",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 3,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 3
+      },
+      "rows": [
+        {
+          "id": "missingLookup",
+          "native": {
+            "callerApi": "61.0",
+            "sourceApi": "65.0",
+            "cell": "missingLookup",
+            "containsNull": false,
+            "containsExpectedOwner": false,
+            "containsCurrentUser": false,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 15,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": true,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": false,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": true,
+            "setupError": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_OWNER_OBSERVATION {\"callerApi\":\"61.0\",\"sourceApi\":\"65.0\",\"cell\":\"missingLookup\",\"containsNull\":false,\"containsExpectedOwner\":false,\"containsCurrentUser\":false,\"selectedSize\":1,\"firstSelectedIdMatches\":true,\"firstSelectedLength\":15,\"selectedIsNull\":false,\"literalMatches\":true,\"ordinaryOwnerMatchesExpected\":true,\"ordinaryOwnerIsNull\":true,\"actorIsCurrentUser\":false,\"actorIsNull\":false,\"formulaActorIdMatches\":true,\"actorIdMatches\":true,\"currentUserLength\":18,\"actorLength\":15,\"formulaActorIsCurrentUser\":false,\"typedOwnerIsCurrentUser\":false,\"typedOwnerMatchesExpected\":true,\"typedOwnerIsNull\":true,\"setupError\":false,\"stage\":\"complete\"}",
+            "methodName": "missingLookup",
+            "name": "OwnerFormulaObservation",
+            "stackTrace": "Class.OwnerFormulaObservation.emit: line 51, column 1\nClass.OwnerFormulaObservation.missingLookup: line 68, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "queueOwnedCase",
+          "native": {
+            "callerApi": "61.0",
+            "sourceApi": "65.0",
+            "cell": "queueOwnedCase",
+            "containsNull": false,
+            "containsExpectedOwner": false,
+            "containsCurrentUser": false,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 15,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": false,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": false,
+            "typedOwnerMatchesExpected": false,
+            "typedOwnerIsNull": true,
+            "setupError": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_OWNER_OBSERVATION {\"callerApi\":\"61.0\",\"sourceApi\":\"65.0\",\"cell\":\"queueOwnedCase\",\"containsNull\":false,\"containsExpectedOwner\":false,\"containsCurrentUser\":false,\"selectedSize\":1,\"firstSelectedIdMatches\":true,\"firstSelectedLength\":15,\"selectedIsNull\":false,\"literalMatches\":true,\"ordinaryOwnerMatchesExpected\":true,\"ordinaryOwnerIsNull\":false,\"actorIsCurrentUser\":false,\"actorIsNull\":false,\"formulaActorIdMatches\":true,\"actorIdMatches\":true,\"currentUserLength\":18,\"actorLength\":15,\"formulaActorIsCurrentUser\":false,\"typedOwnerIsCurrentUser\":false,\"typedOwnerMatchesExpected\":false,\"typedOwnerIsNull\":true,\"setupError\":false,\"stage\":\"complete\"}",
+            "methodName": "queueOwnedCase",
+            "name": "OwnerFormulaObservation",
+            "stackTrace": "Class.OwnerFormulaObservation.emit: line 51, column 1\nClass.OwnerFormulaObservation.queueOwnedCase: line 89, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "userOwnedCase",
+          "native": {
+            "callerApi": "61.0",
+            "sourceApi": "65.0",
+            "cell": "userOwnedCase",
+            "containsNull": false,
+            "containsExpectedOwner": true,
+            "containsCurrentUser": true,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 18,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": false,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": true,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": false,
+            "setupError": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_OWNER_OBSERVATION {\"callerApi\":\"61.0\",\"sourceApi\":\"65.0\",\"cell\":\"userOwnedCase\",\"containsNull\":false,\"containsExpectedOwner\":true,\"containsCurrentUser\":true,\"selectedSize\":1,\"firstSelectedIdMatches\":true,\"firstSelectedLength\":18,\"selectedIsNull\":false,\"literalMatches\":true,\"ordinaryOwnerMatchesExpected\":true,\"ordinaryOwnerIsNull\":false,\"actorIsCurrentUser\":false,\"actorIsNull\":false,\"formulaActorIdMatches\":true,\"actorIdMatches\":true,\"currentUserLength\":18,\"actorLength\":15,\"formulaActorIsCurrentUser\":false,\"typedOwnerIsCurrentUser\":true,\"typedOwnerMatchesExpected\":true,\"typedOwnerIsNull\":false,\"setupError\":false,\"stage\":\"complete\"}",
+            "methodName": "userOwnedCase",
+            "name": "OwnerFormulaObservation",
+            "stackTrace": "Class.OwnerFormulaObservation.emit: line 51, column 1\nClass.OwnerFormulaObservation.userOwnedCase: line 64, column 1",
+            "type": "Class"
+          }
+        }
+      ],
+      "sourceManifestSHA256": "76ded178f5573067b9db2b189ff286cb34c9f81fc36e4b2131960b34a20a1d13"
+    },
+    {
+      "context": "caller62",
+      "callerAPI": "62.0",
+      "flowAPI": "65.0",
+      "helperAPI": "",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "OwnerFormulaObservation",
+      "marker": "FLOW_OWNER_OBSERVATION ",
+      "sourceManifestKind": "exported-frozen-sources",
+      "sources": {
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls": {
+          "source": "@IsTest\nprivate class OwnerFormulaObservation {\n    private static Map<String,Object> observe(String caseId, String expectedOwnerId) {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'createInterview', 'setupError'=>false};\n        try {\n            Flow.Interview interview = Flow.Interview.createInterview('OwnedOwnerFormula', new Map<String,Object>{'caseId'=>caseId});\n            row.put('stage', 'start');\n            interview.start();\n            row.put('stage', 'readOutputs');\n            Object typedOwner = interview.getVariableValue('typedOwnerId');\n            Object formulaActor = interview.getVariableValue('formulaActorId');\n            Object actor = interview.getVariableValue('actorId');\n            Object ordinaryOwner = interview.getVariableValue('ordinaryOwnerId');\n            Object literalValue = interview.getVariableValue('literalValue');\n            Object selected = interview.getVariableValue('selectedIds');\n            row.put('typedOwnerIsNull',typedOwner==null);\n            row.put('typedOwnerMatchesExpected',(String)typedOwner==expectedOwnerId);\n            row.put('typedOwnerIsCurrentUser',(String)typedOwner==UserInfo.getUserId());\n            row.put('formulaActorIsCurrentUser',(String)formulaActor==UserInfo.getUserId());\n            row.put('actorLength',actor==null?null:((String)actor).length());\n            row.put('currentUserLength',UserInfo.getUserId().length());\n            row.put('actorIdMatches',actor!=null && (Id)(String)actor==(Id)UserInfo.getUserId());\n            row.put('formulaActorIdMatches',formulaActor!=null && (Id)(String)formulaActor==(Id)UserInfo.getUserId());\n            row.put('actorIsNull', actor == null);\n            row.put('actorIsCurrentUser', actor != null && (String)actor == UserInfo.getUserId());\n            row.put('ordinaryOwnerIsNull', ordinaryOwner == null);\n            row.put('ordinaryOwnerMatchesExpected', (String)ordinaryOwner == expectedOwnerId);\n            row.put('literalMatches', (String)literalValue == 'owned');\n            row.put('selectedIsNull', selected == null);\n            if (selected != null) {\n                List<String> values = (List<String>)selected;\n                row.put('firstSelectedLength',values.isEmpty()?null:values[0].length());\n                row.put('firstSelectedIdMatches',!values.isEmpty() && (Id)values[0]==(Id)UserInfo.getUserId());\n                row.put('selectedSize', values.size());\n                row.put('containsCurrentUser', values.contains(UserInfo.getUserId()));\n                row.put('containsExpectedOwner', values.contains(expectedOwnerId));\n                row.put('containsNull', values.contains(null));\n            }\n            row.put('stage', 'complete');\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    private static void emit(String cell, Map<String,Object> row) {\n        row.put('cell', cell);\n        row.put('sourceApi', '65.0');\n        row.put('callerApi', '62.0');\n        System.assertEquals('capture', 'FLOW_OWNER_OBSERVATION ' + JSON.serialize(row));\n    }\n\n    @IsTest static void userOwnedCase() {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'setupCase', 'setupError'=>true};\n        try {\n            Case record = new Case(Subject='Owned formula input', Origin='Phone', Status='New', OwnerId=UserInfo.getUserId());\n            insert record;\n            row = observe(record.Id, record.OwnerId);\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        emit('userOwnedCase', row);\n    }\n\n    @IsTest static void missingLookup() {\n        emit('missingLookup', observe('500000000000071', null));\n    }\n\n    @IsTest static void queueOwnedCase() {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'setupQueue', 'setupError'=>true};\n        try {\n            Case record;\n            System.runAs(new User(Id=UserInfo.getUserId())) {\n                Group owner = new Group(Name='Owned Formula Queue', DeveloperName='OwnedOwnerFormulaQueue', Type='Queue');\n                insert owner;\n                row.put('stage', 'setupQueueObject');\n                insert new QueueSobject(QueueId=owner.Id, SobjectType='Case');\n                row.put('stage', 'setupQueueCase');\n                record = new Case(Subject='Owned queue formula input', Origin='Phone', Status='New', OwnerId=owner.Id);\n                insert record;\n            }\n            row = observe(record.Id, record.OwnerId);\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        emit('queueOwnedCase', row);\n    }\n}\n",
+          "sha256": "d89cb5e765b69823fdc5354cbac90f22cdcff1c7fa6a0ba9e14f8ed6bdc344ef"
+        },
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+        },
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <assignments>\n        <name>CollectOwner</name>\n        <label>Collect Owner</label>\n        <locationX>0</locationX>\n        <locationY>200</locationY>\n        <assignmentItems>\n            <assignToReference>selectedIds</assignToReference>\n            <operator>Add</operator>\n            <value><elementReference>SelectedOwner</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>actorId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>$User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>ordinaryOwnerId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>Fetched.OwnerId</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>literalValue</assignToReference>\n            <operator>Assign</operator>\n            <value><stringValue>owned</stringValue></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>typedOwnerId</assignToReference><operator>Assign</operator>\n            <value><elementReference>Fetched.Owner:User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>formulaActorId</assignToReference><operator>Assign</operator>\n            <value><elementReference>ActorFormula</elementReference></value>\n        </assignmentItems>\n    </assignments>\n    <environments>Default</environments>\n    <formulas>\n        <name>SelectedOwner</name>\n        <dataType>String</dataType>\n        <expression>IF({!Fetched.Owner:User.Id} != null, {!Fetched.Owner:User.Id}, {!$User.Id})</expression>\n    </formulas>\n    <formulas><name>ActorFormula</name><dataType>String</dataType><expression>{!$User.Id}</expression></formulas>\n    <interviewLabel>Owned Owner Formula {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Owned Owner Formula</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value><stringValue>LightningFlowBuilder</stringValue></value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value><stringValue>AUTO_LAYOUT_CANVAS</stringValue></value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordLookups>\n        <name>Fetched</name>\n        <label>Fetch Case</label>\n        <locationX>0</locationX>\n        <locationY>100</locationY>\n        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>\n        <connector><targetReference>CollectOwner</targetReference></connector>\n        <filterLogic>and</filterLogic>\n        <filters>\n            <field>Id</field>\n            <operator>EqualTo</operator>\n            <value><elementReference>caseId</elementReference></value>\n        </filters>\n        <getFirstRecordOnly>true</getFirstRecordOnly>\n        <object>Case</object>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </recordLookups>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector><targetReference>Fetched</targetReference></connector>\n    </start>\n    <status>Active</status>\n    <variables>\n        <name>caseId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>true</isInput>\n        <isOutput>false</isOutput>\n    </variables>\n    <variables>\n        <name>selectedIds</name>\n        <dataType>String</dataType>\n        <isCollection>true</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>actorId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>ordinaryOwnerId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>literalValue</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables><name>typedOwnerId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n    <variables><name>formulaActorId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n</Flow>\n",
+          "sha256": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff"
+        },
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+        }
+      },
+      "sourceDigests": {
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls": "d89cb5e765b69823fdc5354cbac90f22cdcff1c7fa6a0ba9e14f8ed6bdc344ef",
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls-meta.xml": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff",
+        "project/sfdx-project.json": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+      },
+      "rawSHA256": {
+        "org.tsv": "e234a3887777f187480805f3fa02b846e52fbb88278a3b0c84a7d838fbca9e7a",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "93c24a231ba838f69678b47b0f72d68292400f83c606079b3d48f5d9076a077a",
+        "deploy.command.json": "1e1ba8918bebd3acbbc363006bafd9020334e3cd1940ca2d759ba5fb58d3fc0a",
+        "ORG-RUN.txt": "8f69bd273b3ba07c4e5a47e648b384a2ce78f361c8e626a035ac41645cf88f35",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "deployment": {
+        "id": "0Afdh00000AbUnlCAF",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 3,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 3
+      },
+      "rows": [
+        {
+          "id": "missingLookup",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "65.0",
+            "cell": "missingLookup",
+            "containsNull": false,
+            "containsExpectedOwner": false,
+            "containsCurrentUser": false,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 15,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": true,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": false,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": true,
+            "setupError": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_OWNER_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"65.0\",\"cell\":\"missingLookup\",\"containsNull\":false,\"containsExpectedOwner\":false,\"containsCurrentUser\":false,\"selectedSize\":1,\"firstSelectedIdMatches\":true,\"firstSelectedLength\":15,\"selectedIsNull\":false,\"literalMatches\":true,\"ordinaryOwnerMatchesExpected\":true,\"ordinaryOwnerIsNull\":true,\"actorIsCurrentUser\":false,\"actorIsNull\":false,\"formulaActorIdMatches\":true,\"actorIdMatches\":true,\"currentUserLength\":18,\"actorLength\":15,\"formulaActorIsCurrentUser\":false,\"typedOwnerIsCurrentUser\":false,\"typedOwnerMatchesExpected\":true,\"typedOwnerIsNull\":true,\"setupError\":false,\"stage\":\"complete\"}",
+            "methodName": "missingLookup",
+            "name": "OwnerFormulaObservation",
+            "stackTrace": "Class.OwnerFormulaObservation.emit: line 51, column 1\nClass.OwnerFormulaObservation.missingLookup: line 68, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "queueOwnedCase",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "65.0",
+            "cell": "queueOwnedCase",
+            "containsNull": false,
+            "containsExpectedOwner": false,
+            "containsCurrentUser": false,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 15,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": false,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": false,
+            "typedOwnerMatchesExpected": false,
+            "typedOwnerIsNull": true,
+            "setupError": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_OWNER_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"65.0\",\"cell\":\"queueOwnedCase\",\"containsNull\":false,\"containsExpectedOwner\":false,\"containsCurrentUser\":false,\"selectedSize\":1,\"firstSelectedIdMatches\":true,\"firstSelectedLength\":15,\"selectedIsNull\":false,\"literalMatches\":true,\"ordinaryOwnerMatchesExpected\":true,\"ordinaryOwnerIsNull\":false,\"actorIsCurrentUser\":false,\"actorIsNull\":false,\"formulaActorIdMatches\":true,\"actorIdMatches\":true,\"currentUserLength\":18,\"actorLength\":15,\"formulaActorIsCurrentUser\":false,\"typedOwnerIsCurrentUser\":false,\"typedOwnerMatchesExpected\":false,\"typedOwnerIsNull\":true,\"setupError\":false,\"stage\":\"complete\"}",
+            "methodName": "queueOwnedCase",
+            "name": "OwnerFormulaObservation",
+            "stackTrace": "Class.OwnerFormulaObservation.emit: line 51, column 1\nClass.OwnerFormulaObservation.queueOwnedCase: line 89, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "userOwnedCase",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "65.0",
+            "cell": "userOwnedCase",
+            "containsNull": false,
+            "containsExpectedOwner": true,
+            "containsCurrentUser": true,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 18,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": false,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": true,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": false,
+            "setupError": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_OWNER_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"65.0\",\"cell\":\"userOwnedCase\",\"containsNull\":false,\"containsExpectedOwner\":true,\"containsCurrentUser\":true,\"selectedSize\":1,\"firstSelectedIdMatches\":true,\"firstSelectedLength\":18,\"selectedIsNull\":false,\"literalMatches\":true,\"ordinaryOwnerMatchesExpected\":true,\"ordinaryOwnerIsNull\":false,\"actorIsCurrentUser\":false,\"actorIsNull\":false,\"formulaActorIdMatches\":true,\"actorIdMatches\":true,\"currentUserLength\":18,\"actorLength\":15,\"formulaActorIsCurrentUser\":false,\"typedOwnerIsCurrentUser\":true,\"typedOwnerMatchesExpected\":true,\"typedOwnerIsNull\":false,\"setupError\":false,\"stage\":\"complete\"}",
+            "methodName": "userOwnedCase",
+            "name": "OwnerFormulaObservation",
+            "stackTrace": "Class.OwnerFormulaObservation.emit: line 51, column 1\nClass.OwnerFormulaObservation.userOwnedCase: line 64, column 1",
+            "type": "Class"
+          }
+        }
+      ],
+      "sourceManifestSHA256": "7e4deabbfd79d0a215908fb8c83e741b5d73022f3b38b2db8c87f9652c922701"
+    },
+    {
+      "context": "caller67",
+      "callerAPI": "67.0",
+      "flowAPI": "65.0",
+      "helperAPI": "",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "OwnerFormulaObservation",
+      "marker": "FLOW_OWNER_OBSERVATION ",
+      "sourceManifestKind": "exported-frozen-sources",
+      "sources": {
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls": {
+          "source": "@IsTest\nprivate class OwnerFormulaObservation {\n    private static Map<String,Object> observe(String caseId, String expectedOwnerId) {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'createInterview', 'setupError'=>false};\n        try {\n            Flow.Interview interview = Flow.Interview.createInterview('OwnedOwnerFormula', new Map<String,Object>{'caseId'=>caseId});\n            row.put('stage', 'start');\n            interview.start();\n            row.put('stage', 'readOutputs');\n            Object typedOwner = interview.getVariableValue('typedOwnerId');\n            Object formulaActor = interview.getVariableValue('formulaActorId');\n            Object actor = interview.getVariableValue('actorId');\n            Object ordinaryOwner = interview.getVariableValue('ordinaryOwnerId');\n            Object literalValue = interview.getVariableValue('literalValue');\n            Object selected = interview.getVariableValue('selectedIds');\n            row.put('typedOwnerIsNull',typedOwner==null);\n            row.put('typedOwnerMatchesExpected',(String)typedOwner==expectedOwnerId);\n            row.put('typedOwnerIsCurrentUser',(String)typedOwner==UserInfo.getUserId());\n            row.put('formulaActorIsCurrentUser',(String)formulaActor==UserInfo.getUserId());\n            row.put('actorLength',actor==null?null:((String)actor).length());\n            row.put('currentUserLength',UserInfo.getUserId().length());\n            row.put('actorIdMatches',actor!=null && (Id)(String)actor==(Id)UserInfo.getUserId());\n            row.put('formulaActorIdMatches',formulaActor!=null && (Id)(String)formulaActor==(Id)UserInfo.getUserId());\n            row.put('actorIsNull', actor == null);\n            row.put('actorIsCurrentUser', actor != null && (String)actor == UserInfo.getUserId());\n            row.put('ordinaryOwnerIsNull', ordinaryOwner == null);\n            row.put('ordinaryOwnerMatchesExpected', (String)ordinaryOwner == expectedOwnerId);\n            row.put('literalMatches', (String)literalValue == 'owned');\n            row.put('selectedIsNull', selected == null);\n            if (selected != null) {\n                List<String> values = (List<String>)selected;\n                row.put('firstSelectedLength',values.isEmpty()?null:values[0].length());\n                row.put('firstSelectedIdMatches',!values.isEmpty() && (Id)values[0]==(Id)UserInfo.getUserId());\n                row.put('selectedSize', values.size());\n                row.put('containsCurrentUser', values.contains(UserInfo.getUserId()));\n                row.put('containsExpectedOwner', values.contains(expectedOwnerId));\n                row.put('containsNull', values.contains(null));\n            }\n            row.put('stage', 'complete');\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    private static void emit(String cell, Map<String,Object> row) {\n        row.put('cell', cell);\n        row.put('sourceApi', '65.0');\n        row.put('callerApi', '67.0');\n        System.assertEquals('capture', 'FLOW_OWNER_OBSERVATION ' + JSON.serialize(row));\n    }\n\n    @IsTest static void userOwnedCase() {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'setupCase', 'setupError'=>true};\n        try {\n            Case record = new Case(Subject='Owned formula input', Origin='Phone', Status='New', OwnerId=UserInfo.getUserId());\n            insert record;\n            row = observe(record.Id, record.OwnerId);\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        emit('userOwnedCase', row);\n    }\n\n    @IsTest static void missingLookup() {\n        emit('missingLookup', observe('500000000000071', null));\n    }\n\n    @IsTest static void queueOwnedCase() {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'setupQueue', 'setupError'=>true};\n        try {\n            Case record;\n            System.runAs(new User(Id=UserInfo.getUserId())) {\n                Group owner = new Group(Name='Owned Formula Queue', DeveloperName='OwnedOwnerFormulaQueue', Type='Queue');\n                insert owner;\n                row.put('stage', 'setupQueueObject');\n                insert new QueueSobject(QueueId=owner.Id, SobjectType='Case');\n                row.put('stage', 'setupQueueCase');\n                record = new Case(Subject='Owned queue formula input', Origin='Phone', Status='New', OwnerId=owner.Id);\n                insert record;\n            }\n            row = observe(record.Id, record.OwnerId);\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        emit('queueOwnedCase', row);\n    }\n}\n",
+          "sha256": "4d44cf5173818ba7eb0c6a87a959a199f662cc3359e3df6da0180721330774ae"
+        },
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <assignments>\n        <name>CollectOwner</name>\n        <label>Collect Owner</label>\n        <locationX>0</locationX>\n        <locationY>200</locationY>\n        <assignmentItems>\n            <assignToReference>selectedIds</assignToReference>\n            <operator>Add</operator>\n            <value><elementReference>SelectedOwner</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>actorId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>$User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>ordinaryOwnerId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>Fetched.OwnerId</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>literalValue</assignToReference>\n            <operator>Assign</operator>\n            <value><stringValue>owned</stringValue></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>typedOwnerId</assignToReference><operator>Assign</operator>\n            <value><elementReference>Fetched.Owner:User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>formulaActorId</assignToReference><operator>Assign</operator>\n            <value><elementReference>ActorFormula</elementReference></value>\n        </assignmentItems>\n    </assignments>\n    <environments>Default</environments>\n    <formulas>\n        <name>SelectedOwner</name>\n        <dataType>String</dataType>\n        <expression>IF({!Fetched.Owner:User.Id} != null, {!Fetched.Owner:User.Id}, {!$User.Id})</expression>\n    </formulas>\n    <formulas><name>ActorFormula</name><dataType>String</dataType><expression>{!$User.Id}</expression></formulas>\n    <interviewLabel>Owned Owner Formula {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Owned Owner Formula</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value><stringValue>LightningFlowBuilder</stringValue></value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value><stringValue>AUTO_LAYOUT_CANVAS</stringValue></value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordLookups>\n        <name>Fetched</name>\n        <label>Fetch Case</label>\n        <locationX>0</locationX>\n        <locationY>100</locationY>\n        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>\n        <connector><targetReference>CollectOwner</targetReference></connector>\n        <filterLogic>and</filterLogic>\n        <filters>\n            <field>Id</field>\n            <operator>EqualTo</operator>\n            <value><elementReference>caseId</elementReference></value>\n        </filters>\n        <getFirstRecordOnly>true</getFirstRecordOnly>\n        <object>Case</object>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </recordLookups>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector><targetReference>Fetched</targetReference></connector>\n    </start>\n    <status>Active</status>\n    <variables>\n        <name>caseId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>true</isInput>\n        <isOutput>false</isOutput>\n    </variables>\n    <variables>\n        <name>selectedIds</name>\n        <dataType>String</dataType>\n        <isCollection>true</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>actorId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>ordinaryOwnerId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>literalValue</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables><name>typedOwnerId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n    <variables><name>formulaActorId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n</Flow>\n",
+          "sha256": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff"
+        },
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+        }
+      },
+      "sourceDigests": {
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls": "4d44cf5173818ba7eb0c6a87a959a199f662cc3359e3df6da0180721330774ae",
+        "project/force-app/main/default/classes/OwnerFormulaObservation.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff",
+        "project/sfdx-project.json": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+      },
+      "rawSHA256": {
+        "org.tsv": "d194005f33185a7acbee1430b1c80d5d9da47bf2da04e10325727e56613700ca",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "5e0a5e06191a61a90fa032729806b4ce6ab966e8d7f743de04be3a60ec44554d",
+        "deploy.command.json": "1e1ba8918bebd3acbbc363006bafd9020334e3cd1940ca2d759ba5fb58d3fc0a",
+        "ORG-RUN.txt": "069db81ee42fb6003949510239fa6b109b8f446f8a28ccaf4e007c5217b0194f",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "deployment": {
+        "id": "0Afdh00000AbUpNCAV",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 3,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 3
+      },
+      "rows": [
+        {
+          "id": "missingLookup",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "65.0",
+            "cell": "missingLookup",
+            "containsNull": false,
+            "containsExpectedOwner": false,
+            "containsCurrentUser": false,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 15,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": true,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": false,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": true,
+            "setupError": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_OWNER_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"65.0\",\"cell\":\"missingLookup\",\"containsNull\":false,\"containsExpectedOwner\":false,\"containsCurrentUser\":false,\"selectedSize\":1,\"firstSelectedIdMatches\":true,\"firstSelectedLength\":15,\"selectedIsNull\":false,\"literalMatches\":true,\"ordinaryOwnerMatchesExpected\":true,\"ordinaryOwnerIsNull\":true,\"actorIsCurrentUser\":false,\"actorIsNull\":false,\"formulaActorIdMatches\":true,\"actorIdMatches\":true,\"currentUserLength\":18,\"actorLength\":15,\"formulaActorIsCurrentUser\":false,\"typedOwnerIsCurrentUser\":false,\"typedOwnerMatchesExpected\":true,\"typedOwnerIsNull\":true,\"setupError\":false,\"stage\":\"complete\"}",
+            "methodName": "missingLookup",
+            "name": "OwnerFormulaObservation",
+            "stackTrace": "Class.OwnerFormulaObservation.emit: line 51, column 1\nClass.OwnerFormulaObservation.missingLookup: line 68, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "queueOwnedCase",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "65.0",
+            "cell": "queueOwnedCase",
+            "containsNull": false,
+            "containsExpectedOwner": false,
+            "containsCurrentUser": false,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 15,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": false,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": false,
+            "typedOwnerMatchesExpected": false,
+            "typedOwnerIsNull": true,
+            "setupError": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_OWNER_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"65.0\",\"cell\":\"queueOwnedCase\",\"containsNull\":false,\"containsExpectedOwner\":false,\"containsCurrentUser\":false,\"selectedSize\":1,\"firstSelectedIdMatches\":true,\"firstSelectedLength\":15,\"selectedIsNull\":false,\"literalMatches\":true,\"ordinaryOwnerMatchesExpected\":true,\"ordinaryOwnerIsNull\":false,\"actorIsCurrentUser\":false,\"actorIsNull\":false,\"formulaActorIdMatches\":true,\"actorIdMatches\":true,\"currentUserLength\":18,\"actorLength\":15,\"formulaActorIsCurrentUser\":false,\"typedOwnerIsCurrentUser\":false,\"typedOwnerMatchesExpected\":false,\"typedOwnerIsNull\":true,\"setupError\":false,\"stage\":\"complete\"}",
+            "methodName": "queueOwnedCase",
+            "name": "OwnerFormulaObservation",
+            "stackTrace": "Class.OwnerFormulaObservation.emit: line 51, column 1\nClass.OwnerFormulaObservation.queueOwnedCase: line 89, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "userOwnedCase",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "65.0",
+            "cell": "userOwnedCase",
+            "containsNull": false,
+            "containsExpectedOwner": true,
+            "containsCurrentUser": true,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 18,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": false,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": true,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": false,
+            "setupError": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_OWNER_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"65.0\",\"cell\":\"userOwnedCase\",\"containsNull\":false,\"containsExpectedOwner\":true,\"containsCurrentUser\":true,\"selectedSize\":1,\"firstSelectedIdMatches\":true,\"firstSelectedLength\":18,\"selectedIsNull\":false,\"literalMatches\":true,\"ordinaryOwnerMatchesExpected\":true,\"ordinaryOwnerIsNull\":false,\"actorIsCurrentUser\":false,\"actorIsNull\":false,\"formulaActorIdMatches\":true,\"actorIdMatches\":true,\"currentUserLength\":18,\"actorLength\":15,\"formulaActorIsCurrentUser\":false,\"typedOwnerIsCurrentUser\":true,\"typedOwnerMatchesExpected\":true,\"typedOwnerIsNull\":false,\"setupError\":false,\"stage\":\"complete\"}",
+            "methodName": "userOwnedCase",
+            "name": "OwnerFormulaObservation",
+            "stackTrace": "Class.OwnerFormulaObservation.emit: line 51, column 1\nClass.OwnerFormulaObservation.userOwnedCase: line 64, column 1",
+            "type": "Class"
+          }
+        }
+      ],
+      "sourceManifestSHA256": "27c7c9e72f21f03749f3768b964f3d4170d60ecaeee7c2730dd528d275932302"
+    },
+    {
+      "context": "anonymous61",
+      "callerAPI": "61.0",
+      "flowAPI": "65.0",
+      "helperAPI": "65.0",
+      "projectAPI": "62.0",
+      "transportAPI": "61.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "testClass": "",
+      "marker": "FLOW_OWNER_OBSERVATION|",
+      "sourceManifestKind": "exported-frozen-sources",
+      "sources": {
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls": {
+          "source": "public class OwnerFormulaProbe {\n    public static Map<String,Object> observe(String caseId, String expectedOwnerId) {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'createInterview', 'setupError'=>false};\n        try {\n            Flow.Interview interview = Flow.Interview.createInterview('OwnedOwnerFormula', new Map<String,Object>{'caseId'=>caseId});\n            row.put('stage', 'start');\n            interview.start();\n            row.put('stage', 'readOutputs');\n            Object typedOwner = interview.getVariableValue('typedOwnerId');\n            Object formulaActor = interview.getVariableValue('formulaActorId');\n            Object actor = interview.getVariableValue('actorId');\n            Object ordinaryOwner = interview.getVariableValue('ordinaryOwnerId');\n            Object literalValue = interview.getVariableValue('literalValue');\n            Object selected = interview.getVariableValue('selectedIds');\n            row.put('typedOwnerIsNull',typedOwner==null);\n            row.put('typedOwnerMatchesExpected',(String)typedOwner==expectedOwnerId);\n            row.put('typedOwnerIsCurrentUser',(String)typedOwner==UserInfo.getUserId());\n            row.put('formulaActorIsCurrentUser',(String)formulaActor==UserInfo.getUserId());\n            row.put('actorLength',actor==null?null:((String)actor).length());\n            row.put('currentUserLength',UserInfo.getUserId().length());\n            row.put('actorIdMatches',actor!=null && (Id)(String)actor==(Id)UserInfo.getUserId());\n            row.put('formulaActorIdMatches',formulaActor!=null && (Id)(String)formulaActor==(Id)UserInfo.getUserId());\n            row.put('actorIsNull', actor == null);\n            row.put('actorIsCurrentUser', actor != null && (String)actor == UserInfo.getUserId());\n            row.put('ordinaryOwnerIsNull', ordinaryOwner == null);\n            row.put('ordinaryOwnerMatchesExpected', (String)ordinaryOwner == expectedOwnerId);\n            row.put('literalMatches', (String)literalValue == 'owned');\n            row.put('selectedIsNull', selected == null);\n            if (selected != null) {\n                List<String> values = (List<String>)selected;\n                row.put('firstSelectedLength',values.isEmpty()?null:values[0].length());\n                row.put('firstSelectedIdMatches',!values.isEmpty() && (Id)values[0]==(Id)UserInfo.getUserId());\n                row.put('selectedSize', values.size());\n                row.put('containsCurrentUser', values.contains(UserInfo.getUserId()));\n                row.put('containsExpectedOwner', values.contains(expectedOwnerId));\n                row.put('containsNull', values.contains(null));\n            }\n            row.put('stage', 'complete');\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    public static Map<String,Object> userOwnedCase() {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'setupCase', 'setupError'=>true};\n        try {\n            Case record = new Case(Subject='Owned formula input', Origin='Phone', Status='New', OwnerId=UserInfo.getUserId());\n            insert record;\n            row = observe(record.Id, record.OwnerId);\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    public static Map<String,Object> missingLookup() {\n        return observe('500000000000071', null);\n    }\n}\n",
+          "sha256": "b5a3a7a48da0a1578e2a905020d368ca975e132832e2bbb28baff192f7a1fd77"
+        },
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "356db61093648679fc9b3a801e41d51c94fa51e993380eac65b0bb076a20b6b0"
+        },
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <assignments>\n        <name>CollectOwner</name>\n        <label>Collect Owner</label>\n        <locationX>0</locationX>\n        <locationY>200</locationY>\n        <assignmentItems>\n            <assignToReference>selectedIds</assignToReference>\n            <operator>Add</operator>\n            <value><elementReference>SelectedOwner</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>actorId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>$User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>ordinaryOwnerId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>Fetched.OwnerId</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>literalValue</assignToReference>\n            <operator>Assign</operator>\n            <value><stringValue>owned</stringValue></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>typedOwnerId</assignToReference><operator>Assign</operator>\n            <value><elementReference>Fetched.Owner:User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>formulaActorId</assignToReference><operator>Assign</operator>\n            <value><elementReference>ActorFormula</elementReference></value>\n        </assignmentItems>\n    </assignments>\n    <environments>Default</environments>\n    <formulas>\n        <name>SelectedOwner</name>\n        <dataType>String</dataType>\n        <expression>IF({!Fetched.Owner:User.Id} != null, {!Fetched.Owner:User.Id}, {!$User.Id})</expression>\n    </formulas>\n    <formulas><name>ActorFormula</name><dataType>String</dataType><expression>{!$User.Id}</expression></formulas>\n    <interviewLabel>Owned Owner Formula {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Owned Owner Formula</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value><stringValue>LightningFlowBuilder</stringValue></value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value><stringValue>AUTO_LAYOUT_CANVAS</stringValue></value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordLookups>\n        <name>Fetched</name>\n        <label>Fetch Case</label>\n        <locationX>0</locationX>\n        <locationY>100</locationY>\n        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>\n        <connector><targetReference>CollectOwner</targetReference></connector>\n        <filterLogic>and</filterLogic>\n        <filters>\n            <field>Id</field>\n            <operator>EqualTo</operator>\n            <value><elementReference>caseId</elementReference></value>\n        </filters>\n        <getFirstRecordOnly>true</getFirstRecordOnly>\n        <object>Case</object>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </recordLookups>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector><targetReference>Fetched</targetReference></connector>\n    </start>\n    <status>Active</status>\n    <variables>\n        <name>caseId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>true</isInput>\n        <isOutput>false</isOutput>\n    </variables>\n    <variables>\n        <name>selectedIds</name>\n        <dataType>String</dataType>\n        <isCollection>true</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>actorId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>ordinaryOwnerId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>literalValue</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables><name>typedOwnerId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n    <variables><name>formulaActorId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n</Flow>\n",
+          "sha256": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff"
+        },
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+        }
+      },
+      "sourceDigests": {
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls": "b5a3a7a48da0a1578e2a905020d368ca975e132832e2bbb28baff192f7a1fd77",
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls-meta.xml": "356db61093648679fc9b3a801e41d51c94fa51e993380eac65b0bb076a20b6b0",
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff",
+        "project/sfdx-project.json": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4",
+        "source.apex": "759c1ba4a02fcc9992add0cb5685ee35ccf78cd7b8c4dad16eeb505ce0c10462"
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "3b65d646c587be59860d7ad935feb6367ef8118e044a506130a99fceb6ed5743",
+        "org.tsv": "fa131a9afa93d6a5cab03b7d122863dcf33e8daf9e89575e327f3c7be1871325",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "source.apex": "759c1ba4a02fcc9992add0cb5685ee35ccf78cd7b8c4dad16eeb505ce0c10462",
+        "run.json": "09d6c3fa246f59aff5259d10e9e6dc9888eaada1f2d4ffd422fbe66e150ee045",
+        "ORG-RUN.txt": "1b2264cd0558a59cae11c326430b698c3d2dbc9db320836826e88a06ec875370",
+        "deploy.json": "c2cfe878d4ca364f5762d67f9475f39d618af34c4ea36d2eb003e539adfdf385",
+        "setup-ORG-RUN.txt": "2081d4d02685ef74d2b291ba8d745baeee7663d550f970b0420529883f6c1492"
+      },
+      "deployment": {
+        "id": "0Afdh00000AbV3tCAF",
+        "status": "Succeeded",
+        "done": true,
+        "checkOnly": false,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 0,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 0
+      },
+      "rows": [
+        {
+          "id": "missingLookup",
+          "native": {
+            "callerApi": "61.0",
+            "sourceApi": "65.0",
+            "cell": "missingLookup",
+            "containsNull": false,
+            "containsExpectedOwner": false,
+            "containsCurrentUser": false,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 15,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": true,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": false,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": true,
+            "setupError": false,
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "userOwnedCase",
+          "native": {
+            "callerApi": "61.0",
+            "sourceApi": "65.0",
+            "cell": "userOwnedCase",
+            "containsNull": false,
+            "containsExpectedOwner": true,
+            "containsCurrentUser": true,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 18,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": false,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": true,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": false,
+            "setupError": false,
+            "stage": "complete"
+          }
+        }
+      ],
+      "source": {
+        "source": "String callerApi = '61.0';\nSavepoint ownedSavepoint = Database.setSavepoint();\ntry {\n    Map<String,Object> userRow = OwnerFormulaProbe.userOwnedCase();\n    userRow.put('cell', 'userOwnedCase');\n    userRow.put('sourceApi', '65.0');\n    userRow.put('callerApi', callerApi);\n    System.debug('FLOW_OWNER_OBSERVATION|' + JSON.serialize(userRow));\n\n    Map<String,Object> missingRow = OwnerFormulaProbe.missingLookup();\n    missingRow.put('cell', 'missingLookup');\n    missingRow.put('sourceApi', '65.0');\n    missingRow.put('callerApi', callerApi);\n    System.debug('FLOW_OWNER_OBSERVATION|' + JSON.serialize(missingRow));\n} finally {\n    Database.rollback(ownedSavepoint);\n}\n",
+        "sha256": "759c1ba4a02fcc9992add0cb5685ee35ccf78cd7b8c4dad16eeb505ce0c10462"
+      },
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "sourceManifestSHA256": "95ca897e5dd6ee857c9bb056aa0af2b740a1e20ff9a4641b6b5967946342554f"
+    },
+    {
+      "context": "anonymous62",
+      "callerAPI": "62.0",
+      "flowAPI": "65.0",
+      "helperAPI": "65.0",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "testClass": "",
+      "marker": "FLOW_OWNER_OBSERVATION|",
+      "sourceManifestKind": "exported-frozen-sources",
+      "sources": {
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls": {
+          "source": "public class OwnerFormulaProbe {\n    public static Map<String,Object> observe(String caseId, String expectedOwnerId) {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'createInterview', 'setupError'=>false};\n        try {\n            Flow.Interview interview = Flow.Interview.createInterview('OwnedOwnerFormula', new Map<String,Object>{'caseId'=>caseId});\n            row.put('stage', 'start');\n            interview.start();\n            row.put('stage', 'readOutputs');\n            Object typedOwner = interview.getVariableValue('typedOwnerId');\n            Object formulaActor = interview.getVariableValue('formulaActorId');\n            Object actor = interview.getVariableValue('actorId');\n            Object ordinaryOwner = interview.getVariableValue('ordinaryOwnerId');\n            Object literalValue = interview.getVariableValue('literalValue');\n            Object selected = interview.getVariableValue('selectedIds');\n            row.put('typedOwnerIsNull',typedOwner==null);\n            row.put('typedOwnerMatchesExpected',(String)typedOwner==expectedOwnerId);\n            row.put('typedOwnerIsCurrentUser',(String)typedOwner==UserInfo.getUserId());\n            row.put('formulaActorIsCurrentUser',(String)formulaActor==UserInfo.getUserId());\n            row.put('actorLength',actor==null?null:((String)actor).length());\n            row.put('currentUserLength',UserInfo.getUserId().length());\n            row.put('actorIdMatches',actor!=null && (Id)(String)actor==(Id)UserInfo.getUserId());\n            row.put('formulaActorIdMatches',formulaActor!=null && (Id)(String)formulaActor==(Id)UserInfo.getUserId());\n            row.put('actorIsNull', actor == null);\n            row.put('actorIsCurrentUser', actor != null && (String)actor == UserInfo.getUserId());\n            row.put('ordinaryOwnerIsNull', ordinaryOwner == null);\n            row.put('ordinaryOwnerMatchesExpected', (String)ordinaryOwner == expectedOwnerId);\n            row.put('literalMatches', (String)literalValue == 'owned');\n            row.put('selectedIsNull', selected == null);\n            if (selected != null) {\n                List<String> values = (List<String>)selected;\n                row.put('firstSelectedLength',values.isEmpty()?null:values[0].length());\n                row.put('firstSelectedIdMatches',!values.isEmpty() && (Id)values[0]==(Id)UserInfo.getUserId());\n                row.put('selectedSize', values.size());\n                row.put('containsCurrentUser', values.contains(UserInfo.getUserId()));\n                row.put('containsExpectedOwner', values.contains(expectedOwnerId));\n                row.put('containsNull', values.contains(null));\n            }\n            row.put('stage', 'complete');\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    public static Map<String,Object> userOwnedCase() {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'setupCase', 'setupError'=>true};\n        try {\n            Case record = new Case(Subject='Owned formula input', Origin='Phone', Status='New', OwnerId=UserInfo.getUserId());\n            insert record;\n            row = observe(record.Id, record.OwnerId);\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    public static Map<String,Object> missingLookup() {\n        return observe('500000000000071', null);\n    }\n}\n",
+          "sha256": "b5a3a7a48da0a1578e2a905020d368ca975e132832e2bbb28baff192f7a1fd77"
+        },
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "356db61093648679fc9b3a801e41d51c94fa51e993380eac65b0bb076a20b6b0"
+        },
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <assignments>\n        <name>CollectOwner</name>\n        <label>Collect Owner</label>\n        <locationX>0</locationX>\n        <locationY>200</locationY>\n        <assignmentItems>\n            <assignToReference>selectedIds</assignToReference>\n            <operator>Add</operator>\n            <value><elementReference>SelectedOwner</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>actorId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>$User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>ordinaryOwnerId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>Fetched.OwnerId</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>literalValue</assignToReference>\n            <operator>Assign</operator>\n            <value><stringValue>owned</stringValue></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>typedOwnerId</assignToReference><operator>Assign</operator>\n            <value><elementReference>Fetched.Owner:User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>formulaActorId</assignToReference><operator>Assign</operator>\n            <value><elementReference>ActorFormula</elementReference></value>\n        </assignmentItems>\n    </assignments>\n    <environments>Default</environments>\n    <formulas>\n        <name>SelectedOwner</name>\n        <dataType>String</dataType>\n        <expression>IF({!Fetched.Owner:User.Id} != null, {!Fetched.Owner:User.Id}, {!$User.Id})</expression>\n    </formulas>\n    <formulas><name>ActorFormula</name><dataType>String</dataType><expression>{!$User.Id}</expression></formulas>\n    <interviewLabel>Owned Owner Formula {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Owned Owner Formula</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value><stringValue>LightningFlowBuilder</stringValue></value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value><stringValue>AUTO_LAYOUT_CANVAS</stringValue></value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordLookups>\n        <name>Fetched</name>\n        <label>Fetch Case</label>\n        <locationX>0</locationX>\n        <locationY>100</locationY>\n        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>\n        <connector><targetReference>CollectOwner</targetReference></connector>\n        <filterLogic>and</filterLogic>\n        <filters>\n            <field>Id</field>\n            <operator>EqualTo</operator>\n            <value><elementReference>caseId</elementReference></value>\n        </filters>\n        <getFirstRecordOnly>true</getFirstRecordOnly>\n        <object>Case</object>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </recordLookups>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector><targetReference>Fetched</targetReference></connector>\n    </start>\n    <status>Active</status>\n    <variables>\n        <name>caseId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>true</isInput>\n        <isOutput>false</isOutput>\n    </variables>\n    <variables>\n        <name>selectedIds</name>\n        <dataType>String</dataType>\n        <isCollection>true</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>actorId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>ordinaryOwnerId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>literalValue</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables><name>typedOwnerId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n    <variables><name>formulaActorId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n</Flow>\n",
+          "sha256": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff"
+        },
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+        }
+      },
+      "sourceDigests": {
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls": "b5a3a7a48da0a1578e2a905020d368ca975e132832e2bbb28baff192f7a1fd77",
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls-meta.xml": "356db61093648679fc9b3a801e41d51c94fa51e993380eac65b0bb076a20b6b0",
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff",
+        "project/sfdx-project.json": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4",
+        "source.apex": "0dd539434a21c7e6fc45f063c303fbf5629c31d30b44066b2e7c6d600b6b978e"
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "ee022bcd0ad7de99151ed977f16ae333cff504adf5aab814ca27098a47fcb25a",
+        "org.tsv": "0e494d896b21b676f4e0ded5f7942ba7023d7e0f179dfa2066b3757c71f934b8",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "source.apex": "0dd539434a21c7e6fc45f063c303fbf5629c31d30b44066b2e7c6d600b6b978e",
+        "run.json": "56a50d26dfd62676ea987a2c8bbbc6db02948a85f7812ba7527b6c42800d8724",
+        "ORG-RUN.txt": "abef738529fd3224a66ae418d03381a1173b65602896e69812b1a00a9b849fa2",
+        "deploy.json": "c2cfe878d4ca364f5762d67f9475f39d618af34c4ea36d2eb003e539adfdf385",
+        "setup-ORG-RUN.txt": "2081d4d02685ef74d2b291ba8d745baeee7663d550f970b0420529883f6c1492"
+      },
+      "deployment": {
+        "id": "0Afdh00000AbV3tCAF",
+        "status": "Succeeded",
+        "done": true,
+        "checkOnly": false,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 0,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 0
+      },
+      "rows": [
+        {
+          "id": "missingLookup",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "65.0",
+            "cell": "missingLookup",
+            "containsNull": false,
+            "containsExpectedOwner": false,
+            "containsCurrentUser": false,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 15,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": true,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": false,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": true,
+            "setupError": false,
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "userOwnedCase",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "65.0",
+            "cell": "userOwnedCase",
+            "containsNull": false,
+            "containsExpectedOwner": true,
+            "containsCurrentUser": true,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 18,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": false,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": true,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": false,
+            "setupError": false,
+            "stage": "complete"
+          }
+        }
+      ],
+      "source": {
+        "source": "String callerApi = '62.0';\nSavepoint ownedSavepoint = Database.setSavepoint();\ntry {\n    Map<String,Object> userRow = OwnerFormulaProbe.userOwnedCase();\n    userRow.put('cell', 'userOwnedCase');\n    userRow.put('sourceApi', '65.0');\n    userRow.put('callerApi', callerApi);\n    System.debug('FLOW_OWNER_OBSERVATION|' + JSON.serialize(userRow));\n\n    Map<String,Object> missingRow = OwnerFormulaProbe.missingLookup();\n    missingRow.put('cell', 'missingLookup');\n    missingRow.put('sourceApi', '65.0');\n    missingRow.put('callerApi', callerApi);\n    System.debug('FLOW_OWNER_OBSERVATION|' + JSON.serialize(missingRow));\n} finally {\n    Database.rollback(ownedSavepoint);\n}\n",
+        "sha256": "0dd539434a21c7e6fc45f063c303fbf5629c31d30b44066b2e7c6d600b6b978e"
+      },
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "sourceManifestSHA256": "910b684dfb1188dfb336b9ae6d5d88ac4e2a44445c0e33b9c95c268a4085d9eb"
+    },
+    {
+      "context": "anonymous65",
+      "callerAPI": "65.0",
+      "flowAPI": "65.0",
+      "helperAPI": "65.0",
+      "projectAPI": "62.0",
+      "transportAPI": "65.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "testClass": "",
+      "marker": "FLOW_OWNER_OBSERVATION|",
+      "sourceManifestKind": "exported-frozen-sources",
+      "sources": {
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls": {
+          "source": "public class OwnerFormulaProbe {\n    public static Map<String,Object> observe(String caseId, String expectedOwnerId) {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'createInterview', 'setupError'=>false};\n        try {\n            Flow.Interview interview = Flow.Interview.createInterview('OwnedOwnerFormula', new Map<String,Object>{'caseId'=>caseId});\n            row.put('stage', 'start');\n            interview.start();\n            row.put('stage', 'readOutputs');\n            Object typedOwner = interview.getVariableValue('typedOwnerId');\n            Object formulaActor = interview.getVariableValue('formulaActorId');\n            Object actor = interview.getVariableValue('actorId');\n            Object ordinaryOwner = interview.getVariableValue('ordinaryOwnerId');\n            Object literalValue = interview.getVariableValue('literalValue');\n            Object selected = interview.getVariableValue('selectedIds');\n            row.put('typedOwnerIsNull',typedOwner==null);\n            row.put('typedOwnerMatchesExpected',(String)typedOwner==expectedOwnerId);\n            row.put('typedOwnerIsCurrentUser',(String)typedOwner==UserInfo.getUserId());\n            row.put('formulaActorIsCurrentUser',(String)formulaActor==UserInfo.getUserId());\n            row.put('actorLength',actor==null?null:((String)actor).length());\n            row.put('currentUserLength',UserInfo.getUserId().length());\n            row.put('actorIdMatches',actor!=null && (Id)(String)actor==(Id)UserInfo.getUserId());\n            row.put('formulaActorIdMatches',formulaActor!=null && (Id)(String)formulaActor==(Id)UserInfo.getUserId());\n            row.put('actorIsNull', actor == null);\n            row.put('actorIsCurrentUser', actor != null && (String)actor == UserInfo.getUserId());\n            row.put('ordinaryOwnerIsNull', ordinaryOwner == null);\n            row.put('ordinaryOwnerMatchesExpected', (String)ordinaryOwner == expectedOwnerId);\n            row.put('literalMatches', (String)literalValue == 'owned');\n            row.put('selectedIsNull', selected == null);\n            if (selected != null) {\n                List<String> values = (List<String>)selected;\n                row.put('firstSelectedLength',values.isEmpty()?null:values[0].length());\n                row.put('firstSelectedIdMatches',!values.isEmpty() && (Id)values[0]==(Id)UserInfo.getUserId());\n                row.put('selectedSize', values.size());\n                row.put('containsCurrentUser', values.contains(UserInfo.getUserId()));\n                row.put('containsExpectedOwner', values.contains(expectedOwnerId));\n                row.put('containsNull', values.contains(null));\n            }\n            row.put('stage', 'complete');\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    public static Map<String,Object> userOwnedCase() {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'setupCase', 'setupError'=>true};\n        try {\n            Case record = new Case(Subject='Owned formula input', Origin='Phone', Status='New', OwnerId=UserInfo.getUserId());\n            insert record;\n            row = observe(record.Id, record.OwnerId);\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    public static Map<String,Object> missingLookup() {\n        return observe('500000000000071', null);\n    }\n}\n",
+          "sha256": "b5a3a7a48da0a1578e2a905020d368ca975e132832e2bbb28baff192f7a1fd77"
+        },
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "356db61093648679fc9b3a801e41d51c94fa51e993380eac65b0bb076a20b6b0"
+        },
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <assignments>\n        <name>CollectOwner</name>\n        <label>Collect Owner</label>\n        <locationX>0</locationX>\n        <locationY>200</locationY>\n        <assignmentItems>\n            <assignToReference>selectedIds</assignToReference>\n            <operator>Add</operator>\n            <value><elementReference>SelectedOwner</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>actorId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>$User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>ordinaryOwnerId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>Fetched.OwnerId</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>literalValue</assignToReference>\n            <operator>Assign</operator>\n            <value><stringValue>owned</stringValue></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>typedOwnerId</assignToReference><operator>Assign</operator>\n            <value><elementReference>Fetched.Owner:User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>formulaActorId</assignToReference><operator>Assign</operator>\n            <value><elementReference>ActorFormula</elementReference></value>\n        </assignmentItems>\n    </assignments>\n    <environments>Default</environments>\n    <formulas>\n        <name>SelectedOwner</name>\n        <dataType>String</dataType>\n        <expression>IF({!Fetched.Owner:User.Id} != null, {!Fetched.Owner:User.Id}, {!$User.Id})</expression>\n    </formulas>\n    <formulas><name>ActorFormula</name><dataType>String</dataType><expression>{!$User.Id}</expression></formulas>\n    <interviewLabel>Owned Owner Formula {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Owned Owner Formula</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value><stringValue>LightningFlowBuilder</stringValue></value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value><stringValue>AUTO_LAYOUT_CANVAS</stringValue></value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordLookups>\n        <name>Fetched</name>\n        <label>Fetch Case</label>\n        <locationX>0</locationX>\n        <locationY>100</locationY>\n        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>\n        <connector><targetReference>CollectOwner</targetReference></connector>\n        <filterLogic>and</filterLogic>\n        <filters>\n            <field>Id</field>\n            <operator>EqualTo</operator>\n            <value><elementReference>caseId</elementReference></value>\n        </filters>\n        <getFirstRecordOnly>true</getFirstRecordOnly>\n        <object>Case</object>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </recordLookups>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector><targetReference>Fetched</targetReference></connector>\n    </start>\n    <status>Active</status>\n    <variables>\n        <name>caseId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>true</isInput>\n        <isOutput>false</isOutput>\n    </variables>\n    <variables>\n        <name>selectedIds</name>\n        <dataType>String</dataType>\n        <isCollection>true</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>actorId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>ordinaryOwnerId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>literalValue</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables><name>typedOwnerId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n    <variables><name>formulaActorId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n</Flow>\n",
+          "sha256": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff"
+        },
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+        }
+      },
+      "sourceDigests": {
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls": "b5a3a7a48da0a1578e2a905020d368ca975e132832e2bbb28baff192f7a1fd77",
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls-meta.xml": "356db61093648679fc9b3a801e41d51c94fa51e993380eac65b0bb076a20b6b0",
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff",
+        "project/sfdx-project.json": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4",
+        "source.apex": "287fd55da6957e6daf9b03f28e3a926ef1cc8a162b066783993d821b7a50a1fb"
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "26a51e4811e663b8799347347f15c309a0a6b967a15281da435d5a9e2bacc542",
+        "org.tsv": "71fe713ea348fd0baa438a51fd6447c9b7412c14059ae2c56671eb55bd383f7d",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "source.apex": "287fd55da6957e6daf9b03f28e3a926ef1cc8a162b066783993d821b7a50a1fb",
+        "run.json": "50c6ca4fa769d975411d344a20e203a83c4ec41aac1e2fecccc256a3e0ed7227",
+        "ORG-RUN.txt": "2623f377cb386662934ab2c5e50672a2d4e82eb8950af02f8574e7d0eff74046",
+        "deploy.json": "c2cfe878d4ca364f5762d67f9475f39d618af34c4ea36d2eb003e539adfdf385",
+        "setup-ORG-RUN.txt": "2081d4d02685ef74d2b291ba8d745baeee7663d550f970b0420529883f6c1492"
+      },
+      "deployment": {
+        "id": "0Afdh00000AbV3tCAF",
+        "status": "Succeeded",
+        "done": true,
+        "checkOnly": false,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 0,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 0
+      },
+      "rows": [
+        {
+          "id": "missingLookup",
+          "native": {
+            "callerApi": "65.0",
+            "sourceApi": "65.0",
+            "cell": "missingLookup",
+            "containsNull": false,
+            "containsExpectedOwner": false,
+            "containsCurrentUser": false,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 15,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": true,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": false,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": true,
+            "setupError": false,
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "userOwnedCase",
+          "native": {
+            "callerApi": "65.0",
+            "sourceApi": "65.0",
+            "cell": "userOwnedCase",
+            "containsNull": false,
+            "containsExpectedOwner": true,
+            "containsCurrentUser": true,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 18,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": false,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": true,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": false,
+            "setupError": false,
+            "stage": "complete"
+          }
+        }
+      ],
+      "source": {
+        "source": "String callerApi = '65.0';\nSavepoint ownedSavepoint = Database.setSavepoint();\ntry {\n    Map<String,Object> userRow = OwnerFormulaProbe.userOwnedCase();\n    userRow.put('cell', 'userOwnedCase');\n    userRow.put('sourceApi', '65.0');\n    userRow.put('callerApi', callerApi);\n    System.debug('FLOW_OWNER_OBSERVATION|' + JSON.serialize(userRow));\n\n    Map<String,Object> missingRow = OwnerFormulaProbe.missingLookup();\n    missingRow.put('cell', 'missingLookup');\n    missingRow.put('sourceApi', '65.0');\n    missingRow.put('callerApi', callerApi);\n    System.debug('FLOW_OWNER_OBSERVATION|' + JSON.serialize(missingRow));\n} finally {\n    Database.rollback(ownedSavepoint);\n}\n",
+        "sha256": "287fd55da6957e6daf9b03f28e3a926ef1cc8a162b066783993d821b7a50a1fb"
+      },
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "sourceManifestSHA256": "71d02e0fcd8e16af3bc97ccf645cd531a13ab72d15d32604b940ec88a1b28a7d"
+    },
+    {
+      "context": "anonymous67",
+      "callerAPI": "67.0",
+      "flowAPI": "65.0",
+      "helperAPI": "65.0",
+      "projectAPI": "62.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "testClass": "",
+      "marker": "FLOW_OWNER_OBSERVATION|",
+      "sourceManifestKind": "exported-frozen-sources",
+      "sources": {
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls": {
+          "source": "public class OwnerFormulaProbe {\n    public static Map<String,Object> observe(String caseId, String expectedOwnerId) {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'createInterview', 'setupError'=>false};\n        try {\n            Flow.Interview interview = Flow.Interview.createInterview('OwnedOwnerFormula', new Map<String,Object>{'caseId'=>caseId});\n            row.put('stage', 'start');\n            interview.start();\n            row.put('stage', 'readOutputs');\n            Object typedOwner = interview.getVariableValue('typedOwnerId');\n            Object formulaActor = interview.getVariableValue('formulaActorId');\n            Object actor = interview.getVariableValue('actorId');\n            Object ordinaryOwner = interview.getVariableValue('ordinaryOwnerId');\n            Object literalValue = interview.getVariableValue('literalValue');\n            Object selected = interview.getVariableValue('selectedIds');\n            row.put('typedOwnerIsNull',typedOwner==null);\n            row.put('typedOwnerMatchesExpected',(String)typedOwner==expectedOwnerId);\n            row.put('typedOwnerIsCurrentUser',(String)typedOwner==UserInfo.getUserId());\n            row.put('formulaActorIsCurrentUser',(String)formulaActor==UserInfo.getUserId());\n            row.put('actorLength',actor==null?null:((String)actor).length());\n            row.put('currentUserLength',UserInfo.getUserId().length());\n            row.put('actorIdMatches',actor!=null && (Id)(String)actor==(Id)UserInfo.getUserId());\n            row.put('formulaActorIdMatches',formulaActor!=null && (Id)(String)formulaActor==(Id)UserInfo.getUserId());\n            row.put('actorIsNull', actor == null);\n            row.put('actorIsCurrentUser', actor != null && (String)actor == UserInfo.getUserId());\n            row.put('ordinaryOwnerIsNull', ordinaryOwner == null);\n            row.put('ordinaryOwnerMatchesExpected', (String)ordinaryOwner == expectedOwnerId);\n            row.put('literalMatches', (String)literalValue == 'owned');\n            row.put('selectedIsNull', selected == null);\n            if (selected != null) {\n                List<String> values = (List<String>)selected;\n                row.put('firstSelectedLength',values.isEmpty()?null:values[0].length());\n                row.put('firstSelectedIdMatches',!values.isEmpty() && (Id)values[0]==(Id)UserInfo.getUserId());\n                row.put('selectedSize', values.size());\n                row.put('containsCurrentUser', values.contains(UserInfo.getUserId()));\n                row.put('containsExpectedOwner', values.contains(expectedOwnerId));\n                row.put('containsNull', values.contains(null));\n            }\n            row.put('stage', 'complete');\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    public static Map<String,Object> userOwnedCase() {\n        Map<String,Object> row = new Map<String,Object>{'stage'=>'setupCase', 'setupError'=>true};\n        try {\n            Case record = new Case(Subject='Owned formula input', Origin='Phone', Status='New', OwnerId=UserInfo.getUserId());\n            insert record;\n            row = observe(record.Id, record.OwnerId);\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    public static Map<String,Object> missingLookup() {\n        return observe('500000000000071', null);\n    }\n}\n",
+          "sha256": "b5a3a7a48da0a1578e2a905020d368ca975e132832e2bbb28baff192f7a1fd77"
+        },
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "356db61093648679fc9b3a801e41d51c94fa51e993380eac65b0bb076a20b6b0"
+        },
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <assignments>\n        <name>CollectOwner</name>\n        <label>Collect Owner</label>\n        <locationX>0</locationX>\n        <locationY>200</locationY>\n        <assignmentItems>\n            <assignToReference>selectedIds</assignToReference>\n            <operator>Add</operator>\n            <value><elementReference>SelectedOwner</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>actorId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>$User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>ordinaryOwnerId</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>Fetched.OwnerId</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>literalValue</assignToReference>\n            <operator>Assign</operator>\n            <value><stringValue>owned</stringValue></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>typedOwnerId</assignToReference><operator>Assign</operator>\n            <value><elementReference>Fetched.Owner:User.Id</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>formulaActorId</assignToReference><operator>Assign</operator>\n            <value><elementReference>ActorFormula</elementReference></value>\n        </assignmentItems>\n    </assignments>\n    <environments>Default</environments>\n    <formulas>\n        <name>SelectedOwner</name>\n        <dataType>String</dataType>\n        <expression>IF({!Fetched.Owner:User.Id} != null, {!Fetched.Owner:User.Id}, {!$User.Id})</expression>\n    </formulas>\n    <formulas><name>ActorFormula</name><dataType>String</dataType><expression>{!$User.Id}</expression></formulas>\n    <interviewLabel>Owned Owner Formula {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Owned Owner Formula</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value><stringValue>LightningFlowBuilder</stringValue></value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value><stringValue>AUTO_LAYOUT_CANVAS</stringValue></value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordLookups>\n        <name>Fetched</name>\n        <label>Fetch Case</label>\n        <locationX>0</locationX>\n        <locationY>100</locationY>\n        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>\n        <connector><targetReference>CollectOwner</targetReference></connector>\n        <filterLogic>and</filterLogic>\n        <filters>\n            <field>Id</field>\n            <operator>EqualTo</operator>\n            <value><elementReference>caseId</elementReference></value>\n        </filters>\n        <getFirstRecordOnly>true</getFirstRecordOnly>\n        <object>Case</object>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </recordLookups>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector><targetReference>Fetched</targetReference></connector>\n    </start>\n    <status>Active</status>\n    <variables>\n        <name>caseId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>true</isInput>\n        <isOutput>false</isOutput>\n    </variables>\n    <variables>\n        <name>selectedIds</name>\n        <dataType>String</dataType>\n        <isCollection>true</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>actorId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>ordinaryOwnerId</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>literalValue</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables><name>typedOwnerId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n    <variables><name>formulaActorId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n</Flow>\n",
+          "sha256": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff"
+        },
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+        }
+      },
+      "sourceDigests": {
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls": "b5a3a7a48da0a1578e2a905020d368ca975e132832e2bbb28baff192f7a1fd77",
+        "project/force-app/main/default/classes/OwnerFormulaProbe.cls-meta.xml": "356db61093648679fc9b3a801e41d51c94fa51e993380eac65b0bb076a20b6b0",
+        "project/force-app/main/default/flows/OwnedOwnerFormula.flow-meta.xml": "2042e1f11856979bf6ed26e20082b30c55ea22d9e22e59e20853e5de32ec45ff",
+        "project/sfdx-project.json": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4",
+        "source.apex": "2c768cd4d96240af501c0aaa0fb6088836d32e2ec9f69ead9b59878222751df3"
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "ef71d9468288f4fe426a3bffc8d172dd9cdfd840720170696b7847e7e62410bb",
+        "org.tsv": "a0c4d5b89a09ad2ca3bf9d9833e956b23a234f9e9ae614fab0f866001d729eae",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "source.apex": "2c768cd4d96240af501c0aaa0fb6088836d32e2ec9f69ead9b59878222751df3",
+        "run.json": "08611a02287a31d7fc1d3cb496eb5581661bbb678c2a66d6328a6892e3605a6e",
+        "ORG-RUN.txt": "0edf1d152923382ad6c35483abf35680d0b91ec545656578bf7000361c870fa2",
+        "deploy.json": "c2cfe878d4ca364f5762d67f9475f39d618af34c4ea36d2eb003e539adfdf385",
+        "setup-ORG-RUN.txt": "2081d4d02685ef74d2b291ba8d745baeee7663d550f970b0420529883f6c1492"
+      },
+      "deployment": {
+        "id": "0Afdh00000AbV3tCAF",
+        "status": "Succeeded",
+        "done": true,
+        "checkOnly": false,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 0,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 0
+      },
+      "rows": [
+        {
+          "id": "missingLookup",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "65.0",
+            "cell": "missingLookup",
+            "containsNull": false,
+            "containsExpectedOwner": false,
+            "containsCurrentUser": false,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 15,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": true,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": false,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": true,
+            "setupError": false,
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "userOwnedCase",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "65.0",
+            "cell": "userOwnedCase",
+            "containsNull": false,
+            "containsExpectedOwner": true,
+            "containsCurrentUser": true,
+            "selectedSize": 1,
+            "firstSelectedIdMatches": true,
+            "firstSelectedLength": 18,
+            "selectedIsNull": false,
+            "literalMatches": true,
+            "ordinaryOwnerMatchesExpected": true,
+            "ordinaryOwnerIsNull": false,
+            "actorIsCurrentUser": false,
+            "actorIsNull": false,
+            "formulaActorIdMatches": true,
+            "actorIdMatches": true,
+            "currentUserLength": 18,
+            "actorLength": 15,
+            "formulaActorIsCurrentUser": false,
+            "typedOwnerIsCurrentUser": true,
+            "typedOwnerMatchesExpected": true,
+            "typedOwnerIsNull": false,
+            "setupError": false,
+            "stage": "complete"
+          }
+        }
+      ],
+      "source": {
+        "source": "String callerApi = '67.0';\nSavepoint ownedSavepoint = Database.setSavepoint();\ntry {\n    Map<String,Object> userRow = OwnerFormulaProbe.userOwnedCase();\n    userRow.put('cell', 'userOwnedCase');\n    userRow.put('sourceApi', '65.0');\n    userRow.put('callerApi', callerApi);\n    System.debug('FLOW_OWNER_OBSERVATION|' + JSON.serialize(userRow));\n\n    Map<String,Object> missingRow = OwnerFormulaProbe.missingLookup();\n    missingRow.put('cell', 'missingLookup');\n    missingRow.put('sourceApi', '65.0');\n    missingRow.put('callerApi', callerApi);\n    System.debug('FLOW_OWNER_OBSERVATION|' + JSON.serialize(missingRow));\n} finally {\n    Database.rollback(ownedSavepoint);\n}\n",
+        "sha256": "2c768cd4d96240af501c0aaa0fb6088836d32e2ec9f69ead9b59878222751df3"
+      },
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "sourceManifestSHA256": "af4785f230fc5fcb1606947b500e19d6f96c7a60bacccf2deba37f8a3d0b1b64"
+    },
+    {
+      "context": "null-controls",
+      "callerAPI": "65.0",
+      "flowAPI": "65.0",
+      "helperAPI": "",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "NullFormulaObservation",
+      "marker": "FLOW_NULL_OBSERVATION ",
+      "sourceManifestKind": "exported-frozen-sources",
+      "sources": {
+        "project/force-app/main/default/classes/NullFormulaObservation.cls": {
+          "source": "@IsTest\nprivate class NullFormulaObservation {\n    private static Map<String,Object> observe(String textInput) {\n        Map<String,Object> row = new Map<String,Object>{\n            'stage'=>'createInterview',\n            'suppliedInputIsNull'=>textInput == null,\n            'suppliedInputLength'=>textInput == null ? null : textInput.length()\n        };\n        try {\n            Flow.Interview interview = Flow.Interview.createInterview('OwnedNullFormula', new Map<String,Object>{'textInput'=>textInput});\n            row.put('stage', 'start');\n            interview.start();\n            row.put('stage', 'readOutputs');\n            Object retainedInput = interview.getVariableValue('textInput');\n            row.put('textInputIsNull', retainedInput == null);\n            row.put('textInputLength', retainedInput == null ? null : ((String)retainedInput).length());\n            row.put('neqNull', interview.getVariableValue('neqNull'));\n            row.put('eqNull', interview.getVariableValue('eqNull'));\n            row.put('neqText', interview.getVariableValue('neqText'));\n            row.put('stage', 'complete');\n        } catch (Exception issue) {\n            row.put('exceptionType', issue.getTypeName());\n            row.put('exceptionMessage', issue.getMessage());\n        }\n        return row;\n    }\n\n    private static void emit(String cell, Map<String,Object> row) {\n        row.put('cell', cell);\n        row.put('sourceApi', '65.0');\n        row.put('callerApi', '65.0');\n        System.assertEquals('capture', 'FLOW_NULL_OBSERVATION ' + JSON.serialize(row));\n    }\n\n    @IsTest static void nonemptyInput() { emit('nonemptyInput', observe('owned')); }\n    @IsTest static void nullInput() { emit('nullInput', observe(null)); }\n    @IsTest static void emptyInput() { emit('emptyInput', observe('')); }\n}\n",
+          "sha256": "019773cbb8e6ecfe270dc09efb8610f95969e345adc2a71667e4aee35399b9ee"
+        },
+        "project/force-app/main/default/classes/NullFormulaObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "356db61093648679fc9b3a801e41d51c94fa51e993380eac65b0bb076a20b6b0"
+        },
+        "project/force-app/main/default/flows/OwnedNullFormula.flow-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>65.0</apiVersion>\n    <assignments>\n        <name>ObserveNull</name>\n        <label>Observe Null</label>\n        <locationX>0</locationX>\n        <locationY>100</locationY>\n        <assignmentItems>\n            <assignToReference>neqNull</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>NotEqualNull</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>eqNull</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>EqualNull</elementReference></value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>neqText</assignToReference>\n            <operator>Assign</operator>\n            <value><elementReference>NotEqualText</elementReference></value>\n        </assignmentItems>\n    </assignments>\n    <environments>Default</environments>\n    <formulas>\n        <name>NotEqualNull</name>\n        <dataType>Boolean</dataType>\n        <expression>{!textInput} != null</expression>\n    </formulas>\n    <formulas>\n        <name>EqualNull</name>\n        <dataType>Boolean</dataType>\n        <expression>{!textInput} = null</expression>\n    </formulas>\n    <formulas>\n        <name>NotEqualText</name>\n        <dataType>Boolean</dataType>\n        <expression>{!textInput} != \"owned\"</expression>\n    </formulas>\n    <interviewLabel>Owned Null Formula {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Owned Null Formula</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value><stringValue>LightningFlowBuilder</stringValue></value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value><stringValue>AUTO_LAYOUT_CANVAS</stringValue></value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector><targetReference>ObserveNull</targetReference></connector>\n    </start>\n    <status>Active</status>\n    <variables>\n        <name>textInput</name>\n        <dataType>String</dataType>\n        <isCollection>false</isCollection>\n        <isInput>true</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>neqNull</name>\n        <dataType>Boolean</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>eqNull</name>\n        <dataType>Boolean</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n    <variables>\n        <name>neqText</name>\n        <dataType>Boolean</dataType>\n        <isCollection>false</isCollection>\n        <isInput>false</isInput>\n        <isOutput>true</isOutput>\n    </variables>\n</Flow>\n",
+          "sha256": "b32ba944bd5a2795886c2af810227986038e6c6f279c58f656d76e79104e3905"
+        },
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+        }
+      },
+      "sourceDigests": {
+        "project/force-app/main/default/classes/NullFormulaObservation.cls": "019773cbb8e6ecfe270dc09efb8610f95969e345adc2a71667e4aee35399b9ee",
+        "project/force-app/main/default/classes/NullFormulaObservation.cls-meta.xml": "356db61093648679fc9b3a801e41d51c94fa51e993380eac65b0bb076a20b6b0",
+        "project/force-app/main/default/flows/OwnedNullFormula.flow-meta.xml": "b32ba944bd5a2795886c2af810227986038e6c6f279c58f656d76e79104e3905",
+        "project/sfdx-project.json": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+      },
+      "rawSHA256": {
+        "org.tsv": "e7dff4399dbcb6685a1d30b9ac6c9012d588161378b512d0f21190455383c882",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "c6fbe0d32e90816b5a50826c936923bd9b9abdcf77cc412e26d0d39ed7815de8",
+        "deploy.command.json": "00637c7cf8f651a198d04b2a6462000f1e1ac8a975a80dfd3ea6c69dd719c977",
+        "ORG-RUN.txt": "cb7d3ce6b44010fb7af4916a7a33c8b2da55b9c4e6f3d8a70c4758fc795842e8",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "deployment": {
+        "id": "0Afdh00000AbVdNCAV",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 3,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 3
+      },
+      "rows": [
+        {
+          "id": "emptyInput",
+          "native": {
+            "callerApi": "65.0",
+            "sourceApi": "65.0",
+            "cell": "emptyInput",
+            "neqText": true,
+            "eqNull": true,
+            "neqNull": false,
+            "textInputLength": 0,
+            "textInputIsNull": false,
+            "suppliedInputLength": 0,
+            "suppliedInputIsNull": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_NULL_OBSERVATION {\"callerApi\":\"65.0\",\"sourceApi\":\"65.0\",\"cell\":\"emptyInput\",\"neqText\":true,\"eqNull\":true,\"neqNull\":false,\"textInputLength\":0,\"textInputIsNull\":false,\"suppliedInputLength\":0,\"suppliedInputIsNull\":false,\"stage\":\"complete\"}",
+            "methodName": "emptyInput",
+            "name": "NullFormulaObservation",
+            "stackTrace": "Class.NullFormulaObservation.emit: line 32, column 1\nClass.NullFormulaObservation.emptyInput: line 37, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "nonemptyInput",
+          "native": {
+            "callerApi": "65.0",
+            "sourceApi": "65.0",
+            "cell": "nonemptyInput",
+            "neqText": false,
+            "eqNull": false,
+            "neqNull": true,
+            "textInputLength": 5,
+            "textInputIsNull": false,
+            "suppliedInputLength": 5,
+            "suppliedInputIsNull": false,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_NULL_OBSERVATION {\"callerApi\":\"65.0\",\"sourceApi\":\"65.0\",\"cell\":\"nonemptyInput\",\"neqText\":false,\"eqNull\":false,\"neqNull\":true,\"textInputLength\":5,\"textInputIsNull\":false,\"suppliedInputLength\":5,\"suppliedInputIsNull\":false,\"stage\":\"complete\"}",
+            "methodName": "nonemptyInput",
+            "name": "NullFormulaObservation",
+            "stackTrace": "Class.NullFormulaObservation.emit: line 32, column 1\nClass.NullFormulaObservation.nonemptyInput: line 35, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "nullInput",
+          "native": {
+            "callerApi": "65.0",
+            "sourceApi": "65.0",
+            "cell": "nullInput",
+            "neqText": true,
+            "eqNull": true,
+            "neqNull": false,
+            "textInputLength": null,
+            "textInputIsNull": true,
+            "suppliedInputLength": null,
+            "suppliedInputIsNull": true,
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: FLOW_NULL_OBSERVATION {\"callerApi\":\"65.0\",\"sourceApi\":\"65.0\",\"cell\":\"nullInput\",\"neqText\":true,\"eqNull\":true,\"neqNull\":false,\"textInputLength\":null,\"textInputIsNull\":true,\"suppliedInputLength\":null,\"suppliedInputIsNull\":true,\"stage\":\"complete\"}",
+            "methodName": "nullInput",
+            "name": "NullFormulaObservation",
+            "stackTrace": "Class.NullFormulaObservation.emit: line 32, column 1\nClass.NullFormulaObservation.nullInput: line 36, column 1",
+            "type": "Class"
+          }
+        }
+      ],
+      "sourceManifestSHA256": "a7efff67975e658ca6755c86b50957094a0b483e64fda573a047dee03b6a730d"
+    }
+  ]
+}

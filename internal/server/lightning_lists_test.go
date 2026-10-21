@@ -132,8 +132,8 @@ func TestL11ListInlineEditControls(t *testing.T) {
 			Columns any `json:"displayColumns"`
 		} `json:"list_info"`
 	}
-	if err := json.Unmarshal(data, &versions); err != nil || len(versions) != 2 {
-		t.Fatalf("invalid native L11 editability controls: %v", err)
+	if err := json.Unmarshal(data, &versions); err != nil || len(versions) != 3 {
+		t.Fatalf("invalid native L11 editability controls (59.0, 67.0 and the API 68 observations): %v", err)
 	}
 	for _, api := range []string{"59.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {

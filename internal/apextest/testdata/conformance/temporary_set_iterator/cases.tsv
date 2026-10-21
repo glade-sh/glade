@@ -1,0 +1,4 @@
+case	shape
+temporary_remove_add	Temporary Set iterator consumes one member before removal and addition
+temporary_add_only	Temporary Set iterator consumes one member before addition
+stored_remove_add	Stored Set iterator consumes one member before removal and addition without continuation

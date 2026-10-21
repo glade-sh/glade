@@ -221,7 +221,7 @@ func TestConformanceRunnerMatchesFreshRows(t *testing.T) {
 				t.Fatal(err)
 			}
 			users := org.Objects["User"]
-			user := users.Records["005000000000001"]
+			user := users.Records[storage.DefaultUserID]
 			user.Fields["LocaleSidKey"] = storage.StringValue("en_US")
 			user.Fields["LanguageLocaleKey"] = storage.StringValue("en_US")
 			user.Fields["TimeZoneSidKey"] = storage.StringValue("America/Los_Angeles")
@@ -491,7 +491,7 @@ func TestConformanceRunnerIsolatesRowDML(t *testing.T) {
 		t.Fatal(err)
 	}
 	users := org.Objects["User"]
-	user := users.Records["005000000000001"]
+	user := users.Records[storage.DefaultUserID]
 	user.Fields["LocaleSidKey"] = storage.StringValue("en_US")
 	users.Records[user.ID] = user
 	org.Objects["User"] = users

@@ -1,0 +1,42 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "anonymousEvidence": {
+    "62.0": "native-capture",
+    "67.0": "native-capture",
+    "68.0": "native-capture"
+  },
+  "namedRouteCarry": {
+    "owner": "expressions null Boolean and control flow",
+    "reason": "Native @IsTest observations for R001/C001/C003 at 62.0, 67.0 and 68.0 are not retained. These local named-route controls reuse the anonymous answers; no native named-route parity is claimed."
+  },
+  "rows": [
+    {
+      "id": "R001",
+      "source": "Object r; Boolean a=true; Boolean b=true; r=a && b;",
+      "diagnostics": []
+    },
+    {
+      "id": "C001",
+      "source": "Boolean x=1;",
+      "diagnostics": [
+        "error: Illegal assignment from Integer to Boolean"
+      ]
+    },
+    {
+      "id": "C003",
+      "source": "Boolean x=true+false;",
+      "diagnostics": [
+        "error: Arithmetic expressions must use numeric arguments"
+      ],
+      "diagnosticCarry": {
+        "owner": "expressions null Boolean and control flow",
+        "reason": "Native C003 wording is Arithmetic expressions must use numeric arguments; the existing local GLADESEMA019 explanation differs on both routes. Assert the native rejection and diagnostic count, log wording differences, and accept an improved native message. Exact native wording is not claimed while the gap remains."
+      }
+    }
+  ],
+  "toolsCheckpoint": "capture-revision-4"
+}

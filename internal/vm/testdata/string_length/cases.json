@@ -1,0 +1,52 @@
+[
+  {
+    "id": "ascii_max",
+    "expression": "'x'.repeat(10000000)",
+    "body": "String value;\ntry {\n    value = 'x'.repeat(10000000);\n} catch (Exception e) {\n    System.assert(false, 'CAUGHT|' + e.getTypeName() + '|' + e.getMessage());\n}\nSystem.assertEquals(10000000, value.length());\n"
+  },
+  {
+    "id": "ascii_over",
+    "expression": "'x'.repeat(10000001)",
+    "body": "String value;\ntry {\n    value = 'x'.repeat(10000001);\n} catch (Exception e) {\n    System.assert(false, 'CAUGHT|' + e.getTypeName() + '|' + e.getMessage());\n}\nSystem.assertEquals(10000001, value.length());\n"
+  },
+  {
+    "id": "bmp_max",
+    "expression": "'é'.repeat(10000000)",
+    "body": "String value;\ntry {\n    value = 'é'.repeat(10000000);\n} catch (Exception e) {\n    System.assert(false, 'CAUGHT|' + e.getTypeName() + '|' + e.getMessage());\n}\nSystem.assertEquals(10000000, value.length());\n"
+  },
+  {
+    "id": "bmp_over",
+    "expression": "'é'.repeat(10000001)",
+    "body": "String value;\ntry {\n    value = 'é'.repeat(10000001);\n} catch (Exception e) {\n    System.assert(false, 'CAUGHT|' + e.getTypeName() + '|' + e.getMessage());\n}\nSystem.assertEquals(10000001, value.length());\n"
+  },
+  {
+    "id": "supplementary_max",
+    "expression": "'😀'.repeat(5000000)",
+    "body": "String value;\ntry {\n    value = '😀'.repeat(5000000);\n} catch (Exception e) {\n    System.assert(false, 'CAUGHT|' + e.getTypeName() + '|' + e.getMessage());\n}\nSystem.assertEquals(10000000, value.length());\n"
+  },
+  {
+    "id": "supplementary_over",
+    "expression": "'😀'.repeat(5000001)",
+    "body": "String value;\ntry {\n    value = '😀'.repeat(5000001);\n} catch (Exception e) {\n    System.assert(false, 'CAUGHT|' + e.getTypeName() + '|' + e.getMessage());\n}\nSystem.assertEquals(10000002, value.length());\n"
+  },
+  {
+    "id": "concat_max",
+    "expression": "'x'.repeat(9999999) + 'x'",
+    "body": "String value;\ntry {\n    value = 'x'.repeat(9999999) + 'x';\n} catch (Exception e) {\n    System.assert(false, 'CAUGHT|' + e.getTypeName() + '|' + e.getMessage());\n}\nSystem.assertEquals(10000000, value.length());\n"
+  },
+  {
+    "id": "concat_over",
+    "expression": "'x'.repeat(10000000) + 'x'",
+    "body": "String value;\ntry {\n    value = 'x'.repeat(10000000) + 'x';\n} catch (Exception e) {\n    System.assert(false, 'CAUGHT|' + e.getTypeName() + '|' + e.getMessage());\n}\nSystem.assertEquals(10000001, value.length());\n"
+  },
+  {
+    "id": "separator_below",
+    "expression": "'x'.repeat('-', 5000000)",
+    "body": "String value;\ntry {\n    value = 'x'.repeat('-', 5000000);\n} catch (Exception e) {\n    System.assert(false, 'CAUGHT|' + e.getTypeName() + '|' + e.getMessage());\n}\nSystem.assertEquals(9999999, value.length());\n"
+  },
+  {
+    "id": "separator_over",
+    "expression": "'x'.repeat('-', 5000001)",
+    "body": "String value;\ntry {\n    value = 'x'.repeat('-', 5000001);\n} catch (Exception e) {\n    System.assert(false, 'CAUGHT|' + e.getTypeName() + '|' + e.getMessage());\n}\nSystem.assertEquals(10000001, value.length());\n"
+  }
+]

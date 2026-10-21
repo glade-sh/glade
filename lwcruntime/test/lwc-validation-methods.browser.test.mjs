@@ -1,14 +1,7 @@
 import assert from "node:assert/strict";
-import path from "node:path";
 import test from "node:test";
-import { pathToFileURL } from "node:url";
+import { chromium } from "./shared-playwright.mjs";
 import { startValidationMethodsServer } from "./validation-methods-harness.mjs";
-
-const playwrightPath = process.env.GLADE_LWC_PLAYWRIGHT_MODULE;
-const playwrightModule = playwrightPath
-  ? await import(pathToFileURL(path.extname(playwrightPath) ? playwrightPath : path.join(playwrightPath, "index.mjs")).href)
-  : await import("playwright");
-const { chromium } = playwrightModule;
 
 async function clickAndReadState(page, buttonName, expectedStep) {
   await page.getByRole("button", { name: buttonName, exact: true }).click();

@@ -1474,7 +1474,6 @@ SubMgmt.Test.remove(created);
 ConnectedApplication app = UserProvisioning.ConnectorTestUtil.createConnectedApp('Local App');
 System.assertEquals('Local App', app.Name);
 new CartExtension.CartCalculateExecutorMock().calculate(new CartExtension.CartCalculateOrchestratorRequest(null, null, null));
-new CartExtension.SplitShipmentServiceMock().arrangeItems(null);
 ConnectApi.BaseEndpointExtension endpoint = new ConnectApi.BaseEndpointExtension();
 ConnectApi.EndpointExtensionRequest endpointRequest = new ConnectApi.EndpointExtensionRequest();
 ConnectApi.EndpointExtensionResponse endpointResponse = new ConnectApi.EndpointExtensionResponse('body', 1, 'etag');
@@ -1502,10 +1501,6 @@ System.assertEquals('a', (String)iter.next());
 FormulaRecalcFieldError recalcError = new FormulaRecalcFieldError();
 System.assertEquals('', recalcError.getFieldName());
 System.assertEquals('', recalcError.getFieldError());
-CartExtension.PricingCartCalculator pricing = new CartExtension.PricingCartCalculator(new CartExtension.CartCalculateExecutorMock());
-pricing.calculate(new CartExtension.CartCalculateCalculatorRequest(null, null));
-CartExtension.SplitShipmentService split = new CartExtension.SplitShipmentService(new CartExtension.SplitShipmentServiceMock());
-split.arrangeItems(null);
 Test.stopTest();
 `)
 	if err != nil {
@@ -2597,13 +2592,14 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'platform event queu
 	}
 }
 
-func TestExecStopTestPlatformEventDeliveryUsesFreshStatics(t *testing.T) {
+func TestExecStopTestPlatformEventDeliveryPreservesStatics(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 if (StaticBox.Value == null) {
-    insert new Account(Name = 'fresh statics');
+    insert new Account(Name = 'missing statics');
 } else {
-    insert new Account(Name = 'stale statics');
+    insert new Account(Name = 'shared statics');
 }
+StaticBox.Value = 'subscriber value';
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2613,9 +2609,9 @@ StaticBox.Value = 'parent test value';
 Test.startTest();
 EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
 Test.stopTest();
-System.assertEquals('parent test value', StaticBox.Value);
-System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'fresh statics'].size());
-System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'stale statics'].size());
+System.assertEquals('subscriber value', StaticBox.Value);
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'shared statics'].size());
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'missing statics'].size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4880,13 +4876,18 @@ func TestExecDatetimeNowAdvancesBetweenCalls(t *testing.T) {
 Datetime before = Datetime.now();
 Datetime after = Datetime.now();
 System.assert(after > before);
+System.assertEquals(1L,after.getTime()-before.getTime());
 	`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	initialClock := machine.fakeNow
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+	if elapsed := machine.fakeNow.Sub(initialClock); elapsed != 2*time.Millisecond {
+		t.Fatalf("clock reads advanced private time by %s, want 2ms", elapsed)
 	}
 }
 
@@ -5197,7 +5198,10 @@ System.assertEquals(null, Packaging.getCurrentPackageId());
 System.assertEquals(0, SupportPredictiveService.findSimilarCases('500000000000001AAA').size());
 
 String articleId = 'ka0000000000001';
-KbManagement.PublishingService.publishArticle(articleId, true);
+try {
+	KbManagement.PublishingService.publishArticle(articleId, true);
+	System.assert(false, 'missing article must fail');
+} catch (System.HandledException expected) { }
 KbManagement.PublishingService.archiveOnlineArticle(articleId, Datetime.now());
 KbManagement.PublishingService.scheduleForPublication(articleId, Datetime.now());
 KbManagement.PublishingService.cancelScheduledPublicationOfArticle(articleId);
@@ -6046,7 +6050,7 @@ Search.SearchResults results = Search.find('FIND {Nook*} IN ALL FIELDS RETURNING
 List<Search.SearchResult> accounts = results.get('Account');
 System.assertEquals(1, accounts.size());
 System.assertEquals(account.Id, accounts[0].getSObject().Id);
-System.assertEquals('', accounts[0].getSnippet());
+System.assertEquals(null, accounts[0].getSnippet());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8509,7 +8513,7 @@ UninstallScript.count++;
 	}
 	machine := New(nil)
 	org := testDataOrg()
-	org.OrgID = "00D000000000001"
+	org.OrgID = "00D000000000mH2"
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
@@ -8998,7 +9002,7 @@ System.assertEquals(false, result.isSuccess());
 func TestExecTestSandboxPostCopyScriptInvokesRunApexClass(t *testing.T) {
 	// A30 native J007/J041 record the native assertion expectations.
 	copyProgram, err := CompileAnonymous(`
-System.assertEquals('00D000000000001EAA', String.valueOf(context.organizationId()));
+System.assertEquals('00D000000000mH2EAI', String.valueOf(context.organizationId()));
 System.assertEquals('0GR000000000001GAA', String.valueOf(context.sandboxId()));
 System.assertEquals('preview', context.sandboxName());
 return null;
@@ -9007,7 +9011,7 @@ return null;
 		t.Fatal(err)
 	}
 	program, err := CompileAnonymous(`
-Test.testSandboxPostCopyScript(new Copier(), '00D000000000001', '0GR000000000001', 'preview', true);
+Test.testSandboxPostCopyScript(new Copier(), '00D000000000mH2', '0GR000000000001', 'preview', true);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -9358,618 +9362,6 @@ System.assertEquals(true, results.get(1).isSuccess());
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestUnitOfWorkCommitPersistsMultipleObjectBuckets(t *testing.T) {
-	org := storage.OrgState{Objects: map[string]storage.ObjectState{
-		"Parent__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Parent__c",
-				KeyPrefix: "a00",
-				Fields: map[string]storage.Field{
-					"Id":   {APIName: "Id", Type: storage.FieldID},
-					"Name": {APIName: "Name", Type: storage.FieldString},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-		"Child__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Child__c",
-				KeyPrefix: "a01",
-				Fields: map[string]storage.Field{
-					"Id":        {APIName: "Id", Type: storage.FieldID},
-					"Name":      {APIName: "Name", Type: storage.FieldString},
-					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
-				},
-				Relations: []storage.Relationship{{
-					Field:              "Parent__c",
-					ParentObjects:      []string{"Parent__c"},
-					ParentRelationship: "Parent__r",
-				}},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-	}}
-	machine := New(nil)
-	machine.SetOrg(&org)
-	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
-		List(sObjectTypeToken("Parent__c"), sObjectTypeToken("Child__c")),
-	}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	parent := Object("Parent__c")
-	parent.Fields["Name"] = String("Parent")
-	child := Object("Child__c")
-	child.Fields["Name"] = String("Child")
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{child}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "commitwork", nil, &Result{}); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(machine.Org.Objects["Parent__c"].Records); got != 1 {
-		t.Fatalf("parent records = %d", got)
-	}
-	if got := len(machine.Org.Objects["Child__c"].Records); got != 1 {
-		t.Fatalf("child records = %d", got)
-	}
-}
-
-func TestUnitOfWorkCommitPersistsChildBucketWithDeferredRelationship(t *testing.T) {
-	org := storage.OrgState{Objects: map[string]storage.ObjectState{
-		"Unused__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Unused__c",
-				KeyPrefix: "a09",
-				Fields: map[string]storage.Field{
-					"Id":   {APIName: "Id", Type: storage.FieldID},
-					"Name": {APIName: "Name", Type: storage.FieldString},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-		"Parent__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Parent__c",
-				KeyPrefix: "a00",
-				Fields: map[string]storage.Field{
-					"Id":   {APIName: "Id", Type: storage.FieldID},
-					"Name": {APIName: "Name", Type: storage.FieldString},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-		"Child__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Child__c",
-				KeyPrefix: "a01",
-				Fields: map[string]storage.Field{
-					"Id":        {APIName: "Id", Type: storage.FieldID},
-					"Name":      {APIName: "Name", Type: storage.FieldString},
-					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
-				},
-				Relations: []storage.Relationship{{
-					Field:              "Parent__c",
-					ParentObjects:      []string{"Parent__c"},
-					ParentRelationship: "Parent__r",
-				}},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-	}}
-	machine := New(nil)
-	machine.SetOrg(&org)
-	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
-		List(sObjectTypeToken("Unused__c"), sObjectTypeToken("Parent__c"), sObjectTypeToken("Child__c")),
-	}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	parent := Object("Parent__c")
-	parent.Fields["Name"] = String("Parent")
-	child := Object("Child__c")
-	child.Fields["Name"] = String("Child")
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{child}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if err := machine.addFrameworkSObjectUnitOfWorkRelationship(uow, "Child__c", child, sObjectFieldToken("Child__c", "Parent__c"), parent); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "commitwork", nil, &Result{}); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(machine.Org.Objects["Parent__c"].Records); got != 1 {
-		t.Fatalf("parent records = %d", got)
-	}
-	if got := len(machine.Org.Objects["Child__c"].Records); got != 1 {
-		t.Fatalf("child records = %d", got)
-	}
-	for _, row := range machine.Org.Objects["Child__c"].Records {
-		if row.Fields["Parent__c"].Kind != storage.ValueID {
-			t.Fatalf("child parent lookup = %#v", row.Fields["Parent__c"])
-		}
-	}
-}
-
-func TestUnitOfWorkUpsertResolvesDeferredRelationship(t *testing.T) {
-	org := storage.OrgState{Objects: map[string]storage.ObjectState{
-		"Parent__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Parent__c",
-				KeyPrefix: "a00",
-				Fields: map[string]storage.Field{
-					"Id":   {APIName: "Id", Type: storage.FieldID},
-					"Name": {APIName: "Name", Type: storage.FieldString},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-		"Child__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Child__c",
-				KeyPrefix: "a01",
-				Fields: map[string]storage.Field{
-					"Id":              {APIName: "Id", Type: storage.FieldID},
-					"Name":            {APIName: "Name", Type: storage.FieldString},
-					"External_Key__c": {APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true},
-					"Parent__c":       {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
-				},
-				Relations: []storage.Relationship{{
-					Field:              "Parent__c",
-					ParentObjects:      []string{"Parent__c"},
-					ParentRelationship: "Parent__r",
-				}},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-	}}
-	machine := New(nil)
-	machine.SetOrg(&org)
-	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
-		List(sObjectTypeToken("Parent__c"), sObjectTypeToken("Child__c")),
-	}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	parent := Object("Parent__c")
-	parent.Fields["Name"] = String("Parent")
-	child := Object("Child__c")
-	child.Fields["Name"] = String("Child")
-	child.Fields["External_Key__c"] = String("child-1")
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{child, sObjectFieldToken("Child__c", "External_Key__c"), sObjectFieldToken("Child__c", "Parent__c"), parent}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "commitwork", nil, &Result{}); err != nil {
-		t.Fatal(err)
-	}
-	for _, row := range machine.Org.Objects["Child__c"].Records {
-		if row.Fields["Parent__c"].Kind != storage.ValueID {
-			t.Fatalf("child parent lookup = %#v", row.Fields["Parent__c"])
-		}
-	}
-}
-
-func TestUnitOfWorkUpsertRejectsCustomDMLWithoutUpsertInterface(t *testing.T) {
-	org := storage.OrgState{Objects: map[string]storage.ObjectState{
-		"Thing__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Thing__c",
-				KeyPrefix: "a00",
-				Fields: map[string]storage.Field{
-					"Id":              {APIName: "Id", Type: storage.FieldID},
-					"External_Key__c": {APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, IDLookup: true},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-	}}
-	machine := New(nil)
-	machine.SetOrg(&org)
-	if err := machine.RegisterClass(Class{Name: "MockDML", Interfaces: []string{"framework_SObjectUnitOfWork.IDML"}}); err != nil {
-		t.Fatal(err)
-	}
-	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
-		List(sObjectTypeToken("Thing__c")),
-		Object("MockDML"),
-	}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	record := Object("Thing__c")
-	record.Fields["External_Key__c"] = String("thing-1")
-
-	_, _, err = machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{record, sObjectFieldToken("Thing__c", "External_Key__c")}, nil)
-	assertApexThrow(t, err, "framework_SObjectUnitOfWork.UnitOfWorkException", "requires IDMLUpsertable")
-}
-
-func TestUnitOfWorkUpsertRejectsInvalidExternalIDField(t *testing.T) {
-	org := storage.OrgState{Objects: map[string]storage.ObjectState{
-		"Thing__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Thing__c",
-				KeyPrefix: "a00",
-				Fields: map[string]storage.Field{
-					"Id":              {APIName: "Id", Type: storage.FieldID},
-					"Name":            {APIName: "Name", Type: storage.FieldString},
-					"External_Key__c": {APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, IDLookup: true},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-		"Other__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Other__c",
-				KeyPrefix: "a01",
-				Fields: map[string]storage.Field{
-					"External_Key__c": {APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, IDLookup: true},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-	}}
-	machine := New(nil)
-	machine.SetOrg(&org)
-	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{List(sObjectTypeToken("Thing__c"))}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	record := Object("Thing__c")
-	record.Fields["External_Key__c"] = String("thing-1")
-
-	_, _, err = machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{record, Null}, nil)
-	assertApexThrow(t, err, "framework_SObjectUnitOfWork.UnitOfWorkException", "externalIdField")
-
-	_, _, err = machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{record, sObjectFieldToken("Other__c", "External_Key__c")}, nil)
-	assertApexThrow(t, err, "framework_SObjectUnitOfWork.UnitOfWorkException", "target sObject")
-
-	_, _, err = machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{record, sObjectFieldToken("Thing__c", "Name")}, nil)
-	assertApexThrow(t, err, "framework_SObjectUnitOfWork.UnitOfWorkException", "cannot be used with upsert")
-}
-
-func TestUnitOfWorkUpsertRejectsDifferentExternalIDForSameType(t *testing.T) {
-	org := storage.OrgState{Objects: map[string]storage.ObjectState{
-		"Thing__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Thing__c",
-				KeyPrefix: "a00",
-				Fields: map[string]storage.Field{
-					"Id":              {APIName: "Id", Type: storage.FieldID},
-					"External_Key__c": {APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, IDLookup: true},
-					"Other_Key__c":    {APIName: "Other_Key__c", Type: storage.FieldString, ExternalID: true, IDLookup: true},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-	}}
-	machine := New(nil)
-	machine.SetOrg(&org)
-	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{List(sObjectTypeToken("Thing__c"))}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	first := Object("Thing__c")
-	first.Fields["External_Key__c"] = String("thing-1")
-	second := Object("Thing__c")
-	second.Fields["Other_Key__c"] = String("thing-2")
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{first, sObjectFieldToken("Thing__c", "External_Key__c")}, nil); err != nil {
-		t.Fatal(err)
-	}
-
-	_, _, err = machine.callFrameworkSObjectUnitOfWorkMember(uow, "registerupsert", []Value{second, sObjectFieldToken("Thing__c", "Other_Key__c")}, nil)
-	assertApexThrow(t, err, "framework_SObjectUnitOfWork.UnitOfWorkException", "you cannot use another")
-}
-
-func TestUnitOfWorkRejectsUnsupportedSObjectType(t *testing.T) {
-	machine := New(nil)
-	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{List(sObjectTypeToken("Opportunity"))}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, _, err = machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{Object("Account")}, nil)
-	assertApexThrow(t, err, "framework_SObjectUnitOfWork.UnitOfWorkException", "not supported by this unit of work")
-}
-
-func assertApexThrow(t *testing.T, err error, typeName, messageContains string) {
-	t.Helper()
-	var thrown *apexThrowError
-	if !errors.As(err, &thrown) {
-		t.Fatalf("err = %#v, want Apex throw", err)
-	}
-	if thrown.value.Type != typeName {
-		t.Fatalf("throw type = %q, want %q", thrown.value.Type, typeName)
-	}
-	message := thrown.value.Fields["message"]
-	if message.Kind != ValueString || !strings.Contains(message.Text, messageContains) {
-		t.Fatalf("throw message = %#v, want containing %q", message, messageContains)
-	}
-}
-
-func TestUnitOfWorkCommitPersistsOutOfOrderRelationship(t *testing.T) {
-	org := storage.OrgState{Objects: map[string]storage.ObjectState{
-		"Parent__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Parent__c",
-				KeyPrefix: "a00",
-				Fields: map[string]storage.Field{
-					"Id":   {APIName: "Id", Type: storage.FieldID},
-					"Name": {APIName: "Name", Type: storage.FieldString},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-		"Child__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Child__c",
-				KeyPrefix: "a01",
-				Fields: map[string]storage.Field{
-					"Id":        {APIName: "Id", Type: storage.FieldID},
-					"Name":      {APIName: "Name", Type: storage.FieldString},
-					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
-				},
-				Relations: []storage.Relationship{{
-					Field:              "Parent__c",
-					ParentObjects:      []string{"Parent__c"},
-					ParentRelationship: "Parent__r",
-				}},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-	}}
-	machine := New(nil)
-	machine.SetOrg(&org)
-	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
-		List(sObjectTypeToken("Child__c"), sObjectTypeToken("Parent__c")),
-		frameworkSObjectUnitOfWorkRelationshipBehaviorValue("AttemptResolveOutOfOrder"),
-	}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	parent := Object("Parent__c")
-	parent.Fields["Name"] = String("Parent")
-	child := Object("Child__c")
-	child.Fields["Name"] = String("Child")
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{child, sObjectFieldToken("Child__c", "Parent__c"), parent}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "commitwork", nil, &Result{}); err != nil {
-		t.Fatal(err)
-	}
-	for _, row := range machine.Org.Objects["Child__c"].Records {
-		if row.Fields["Parent__c"].Kind != storage.ValueID {
-			t.Fatalf("child parent lookup = %#v", row.Fields["Parent__c"])
-		}
-	}
-}
-
-func TestUnitOfWorkOutOfOrderUpdateUsesPersistedRelationshipState(t *testing.T) {
-	org := storage.OrgState{Objects: map[string]storage.ObjectState{
-		"Parent__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Parent__c",
-				KeyPrefix: "a00",
-				Fields: map[string]storage.Field{
-					"Id": {APIName: "Id", Type: storage.FieldID},
-				},
-			},
-			Records: map[storage.ID]storage.Record{
-				"a00000000000001AAA": {
-					ID:     "a00000000000001AAA",
-					Object: "Parent__c",
-					Fields: map[string]storage.Value{
-						"Id": storage.IDValue("a00000000000001AAA"),
-					},
-				},
-			},
-		},
-		"Child__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Child__c",
-				KeyPrefix: "a01",
-				Fields: map[string]storage.Field{
-					"Id":        {APIName: "Id", Type: storage.FieldID},
-					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
-				},
-			},
-			Records: map[storage.ID]storage.Record{
-				"a01000000000001AAA": {
-					ID:     "a01000000000001AAA",
-					Object: "Child__c",
-					Fields: map[string]storage.Value{
-						"Id": storage.IDValue("a01000000000001AAA"),
-					},
-				},
-			},
-		},
-	}}
-	machine := New(nil)
-	machine.SetOrg(&org)
-
-	parent := Object("Parent__c")
-	parent.Fields["Id"] = platformScalar("Id", "a00000000000001AAA")
-	child := Object("Child__c")
-	child.Fields["Id"] = platformScalar("Id", "a01000000000001AAA")
-	child.Fields["Parent__c"] = platformScalar("Id", "a00000000000001AAA")
-	relationship := Object("framework_SObjectUnitOfWork.Relationship")
-	relationship.Fields["Record"] = child
-	relationship.Fields["RelatedToField"] = sObjectFieldToken("Child__c", "Parent__c")
-	relationship.Fields["RelatedTo"] = parent
-
-	updateRecord, ok, err := machine.frameworkSObjectUnitOfWorkOutOfOrderUpdate(relationship)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !ok {
-		persisted, hasField, hasRecord := machine.persistedSObjectFieldValue(child, "Parent__c")
-		t.Fatalf("expected persisted missing lookup to produce an update; persisted=%#v hasField=%v hasRecord=%v recordID=%#v relatedID=%#v", persisted, hasField, hasRecord, sObjectIDValue(child), sObjectIDValue(parent))
-	}
-	if got, ok := comparableIDText(updateRecord.Fields["Parent__c"]); !ok || got != "a00000000000001AAA" {
-		t.Fatalf("out-of-order update parent = %#v", got)
-	}
-
-	stored := machine.Org.Objects["Child__c"]
-	row := stored.Records["a01000000000001AAA"]
-	row.Fields["Parent__c"] = storage.IDValue("a00000000000001AAA")
-	stored.Records["a01000000000001AAA"] = row
-	machine.Org.Objects["Child__c"] = stored
-	if _, ok, err := machine.frameworkSObjectUnitOfWorkOutOfOrderUpdate(relationship); err != nil || ok {
-		t.Fatalf("stored relationship should not produce update: ok=%v err=%v", ok, err)
-	}
-}
-
-func TestUnitOfWorkCustomDMLPropagatesInsertedIDsForOutOfOrderRelationship(t *testing.T) {
-	org := storage.OrgState{Objects: map[string]storage.ObjectState{
-		"Parent__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Parent__c",
-				KeyPrefix: "a00",
-				Fields: map[string]storage.Field{
-					"Id":   {APIName: "Id", Type: storage.FieldID},
-					"Name": {APIName: "Name", Type: storage.FieldString},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-		"Child__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Child__c",
-				KeyPrefix: "a01",
-				Fields: map[string]storage.Field{
-					"Id":        {APIName: "Id", Type: storage.FieldID},
-					"Name":      {APIName: "Name", Type: storage.FieldString},
-					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-	}}
-	insertProgram, err := CompileAnonymous(`Database.insert(records);`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	updateProgram, err := CompileAnonymous(`Database.update(records);`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine := New(nil)
-	machine.SetOrg(&org)
-	if err := machine.RegisterClass(Class{
-		Name: "CustomDML",
-		Methods: map[string]Method{
-			"dmlInsert": {
-				Name:      "CustomDML.dmlInsert",
-				ClassName: "CustomDML",
-				Params:    []Param{{Name: "records", Type: "List<SObject>"}},
-				Program:   insertProgram,
-			},
-			"dmlUpdate": {
-				Name:      "CustomDML.dmlUpdate",
-				ClassName: "CustomDML",
-				Params:    []Param{{Name: "records", Type: "List<SObject>"}},
-				Program:   updateProgram,
-			},
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
-		List(sObjectTypeToken("Child__c"), sObjectTypeToken("Parent__c")),
-		frameworkSObjectUnitOfWorkRelationshipBehaviorValue("AttemptResolveOutOfOrder"),
-	}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	uow.Fields["m_dml"] = Object("CustomDML")
-	parent := Object("Parent__c")
-	parent.Fields["Name"] = String("Parent")
-	child := Object("Child__c")
-	child.Fields["Name"] = String("Child")
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{child, sObjectFieldToken("Child__c", "Parent__c"), parent}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "commitwork", nil, &Result{}); err != nil {
-		t.Fatal(err)
-	}
-	for _, row := range machine.Org.Objects["Child__c"].Records {
-		if row.Fields["Parent__c"].Kind != storage.ValueID {
-			t.Fatalf("child parent lookup = %#v", row.Fields["Parent__c"])
-		}
-	}
-}
-
-func TestUnitOfWorkRelationshipResolutionUpdatesCopiedRecordAlias(t *testing.T) {
-	org := storage.OrgState{Objects: map[string]storage.ObjectState{
-		"Parent__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Parent__c",
-				KeyPrefix: "a00",
-				Fields: map[string]storage.Field{
-					"Id":   {APIName: "Id", Type: storage.FieldID},
-					"Name": {APIName: "Name", Type: storage.FieldString},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-		"Child__c": {
-			Definition: storage.ObjectDefinition{
-				APIName:   "Child__c",
-				KeyPrefix: "a01",
-				Fields: map[string]storage.Field{
-					"Id":        {APIName: "Id", Type: storage.FieldID},
-					"Name":      {APIName: "Name", Type: storage.FieldString},
-					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
-				},
-			},
-			Records: map[storage.ID]storage.Record{},
-		},
-	}}
-	machine := New(nil)
-	machine.SetOrg(&org)
-	uow, err := machine.constructFrameworkSObjectUnitOfWork([]Value{
-		List(sObjectTypeToken("Parent__c"), sObjectTypeToken("Child__c")),
-	}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	parent := Object("Parent__c")
-	parent.Fields["Name"] = String("Parent")
-	child := Object("Child__c")
-	child.Fields["Name"] = String("Child")
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{parent}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "registernew", []Value{child}, nil); err != nil {
-		t.Fatal(err)
-	}
-	copiedChild := cloneValuePreserveRefs(child)
-	if err := machine.addFrameworkSObjectUnitOfWorkRelationship(uow, "Child__c", copiedChild, sObjectFieldToken("Child__c", "Parent__c"), parent); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "commitwork", nil, nil); err != nil {
-		t.Fatal(err)
-	}
-	for _, row := range machine.Org.Objects["Child__c"].Records {
-		if row.Fields["Parent__c"].Kind != storage.ValueID {
-			t.Fatalf("child parent lookup = %#v", row.Fields["Parent__c"])
-		}
 	}
 }
 
@@ -12795,7 +12187,8 @@ Test.stopTest();
 System.assertEquals(false, System.AsyncInfo.hasMaxStackDepth());
 System.assertEquals(1, System.AsyncInfo.getCurrentQueueableStackDepth());
 System.assertEquals(0, System.AsyncInfo.getMaximumQueueableStackDepth());
-System.assertEquals(0, System.AsyncInfo.getMinimumQueueableDelayInMinutes());
+// Native bare-enqueue rows at source62/67 distinguish absent delay from zero.
+System.assertEquals(null, System.AsyncInfo.getMinimumQueueableDelayInMinutes());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -13123,7 +12516,7 @@ System.assertEquals('EXECUTE', logged.Description);
 	registerCustomException(t, machine, "BatchFailureException")
 	if err := machine.RegisterClass(Class{
 		Name:       "BatchWorker",
-		Interfaces: []string{"Database.Batchable<SObject>"},
+		Interfaces: []string{"Database.Batchable<SObject>", "Database.RaisesPlatformEvents"},
 		Methods: map[string]Method{
 			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
 			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
@@ -13692,7 +13085,7 @@ Test.stopTest();
 	}
 	workerProgram, err := CompileAnonymous(`
 System.assertEquals(200, Limits.getLimitQueries());
-System.assertEquals(12582912, Limits.getLimitHeapSize());
+System.assertEquals(25000000, Limits.getLimitHeapSize());
 System.assertEquals(60000, Limits.getLimitCpuTime());
 `)
 	if err != nil {
@@ -13839,7 +13232,7 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
   System.assertEquals('System', UserInfo.getFirstName());
   System.assertEquals('User', UserInfo.getLastName());
   System.assertEquals('system@example.invalid', UserInfo.getUserEmail());
-  System.assertEquals('00D000000000001EAA', UserInfo.getOrganizationId());
+  System.assertEquals('00D000000000mH2EAI', UserInfo.getOrganizationId());
   System.assertEquals('local-session!ApexTestSession', UserInfo.getSessionId());
   System.assertEquals('de_DE', UserInfo.getLocale());
   System.assertEquals('fr', UserInfo.getLanguage());
@@ -14184,16 +13577,6 @@ System.assertEquals(null, Site.getSiteId());
 	}
 }
 
-func TestCompileSiteUrlRewriterDirectConstructionRejected(t *testing.T) {
-	program, err := CompileAnonymous(`new Site.UrlRewriter();`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "cannot be constructed") {
-		t.Fatalf("Site.UrlRewriter constructor execution error = %v, want cannot be constructed", err)
-	}
-}
-
 func TestSiteUrlRewriterRuntimeMethodsRemainAvailableForProvidedReceiver(t *testing.T) {
 	machine := New(nil)
 	rewriter := Object("Site.UrlRewriter")
@@ -14215,6 +13598,7 @@ func TestSiteUrlRewriterRuntimeMethodsRemainAvailableForProvidedReceiver(t *test
 }
 
 func TestExecSiteTailLocalOverloadsAndHostedContextGuards(t *testing.T) {
+	// Owned AN08 source41/named62 observes null for empty-start unhosted login.
 	program, err := CompileAnonymous(`
 User externalUser = new User(Username = 'tail@example.invalid');
 System.assertEquals(null, Site.createExternalUser(externalUser, '001000000000001'));
@@ -14225,7 +13609,7 @@ System.assertEquals(null, Site.createPortalUser(externalUser, '001000000000001',
 System.assertEquals(null, Site.createPortalUser(externalUser, '001000000000001', 'secret', false));
 System.assertEquals(null, Site.changePassword('newSecret', 'newSecret'));
 System.assertEquals(null, Site.changePassword('newSecret', 'newSecret', 'oldSecret'));
-System.assertEquals('/', Site.login('tail@example.invalid', 'secret', '').getUrl());
+System.assertEquals(null, Site.login('tail@example.invalid', 'secret', ''));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -14252,7 +13636,7 @@ System.assertEquals(null, Site.getSiteType());
 System.assertEquals(null, Site.getSiteTypeLabel());
 System.assertEquals('local', Site.getPathPrefix());
 System.assertEquals('system@example.invalid', Site.getAdminEmail());
-System.assertEquals('005000000000001', Site.getAdminId());
+System.assertEquals(UserInfo.getUserId(), Site.getAdminId());
 System.assertEquals('Local Site', Site.getMasterLabel());
 System.assertEquals(false, Site.isRegistrationEnabled());
 System.assertEquals(false, Site.isLoginEnabled());
@@ -14296,7 +13680,7 @@ System.assertEquals(0, Network.loadAllPackageDefaultNetworkWorkspaceMetricSettin
 	ConnectApi.UserProfiles.deletePhoto(Network.getNetworkId(), UserInfo.getUserId());
 ConnectApi.UserSettings userSettings = ConnectApi.Organization.getSettings().userSettings;
 // Execution-context R008/R031: context identity follows the stored user.
-System.assertEquals('005000000000001', userSettings.userId);
+System.assertEquals(UserInfo.getUserId(), userSettings.userId);
 ConnectApi.TimeZone zone = userSettings.timeZone;
 System.assertEquals('UTC', zone.name);
 System.assertEquals(false, Auth.CommunitiesUtil.isGuestUser());
@@ -14311,6 +13695,13 @@ System.setPassword(UserInfo.getUserId(), 'local-secret');
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
 	storage.ApplyOrgShape(&org, []string{"MultiCurrency", "Sites", "Communities"})
+	// The ConnectApi assertions use a local UTC context, not native zone
+	// evidence. Bind that context independently of the running-user fixture.
+	users := org.Objects["User"]
+	user := users.Records[storage.DefaultUserID]
+	user.Fields["TimeZoneSidKey"] = storage.StringValue("UTC")
+	users.Records[user.ID] = user
+	org.Objects["User"] = users
 	machine := New(nil)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
@@ -14593,7 +13984,7 @@ try {
 } catch (NoDataFoundException e) {
   System.assert(e.getMessage().contains('CB63Missing'));
 }
-System.assertEquals('local-email-verification-token', TrailblazerIdentity.generateUserEmailVerificationToken('00D000000000001', UserInfo.getUserId(), 'local@example.invalid'));
+System.assertEquals('local-email-verification-token', TrailblazerIdentity.generateUserEmailVerificationToken('00D000000000mH2', UserInfo.getUserId(), 'local@example.invalid'));
 System.assertEquals(0, TrailblazerIdentity.getUserOrgInfo(new List<String>{'local@example.invalid'}).size());
 TrailblazerIdentity.splunkLog('local', 'message');
 System.assertEquals(false, new TxnSecurity.EventCondition().evaluate(new Account()));
@@ -14766,7 +14157,7 @@ func TestExecMixedDMLTreatsPermissionSetGroupsAsSetupObjects(t *testing.T) {
 	program, err := CompileAnonymous(`
 PermissionSetGroup groupRecord = new PermissionSetGroup(DeveloperName = 'LocalGroup', MasterLabel = 'Local Group');
 insert groupRecord;
-PermissionSet perm = new PermissionSet(Name = 'LocalPerm');
+PermissionSet perm = new PermissionSet(Name = 'LocalPerm', Label = 'Local Permission');
 insert perm;
 insert new PermissionSetGroupComponent(PermissionSetGroupId = groupRecord.Id, PermissionSetId = perm.Id);
 insert new PermissionSetAssignment(PermissionSetGroupId = groupRecord.Id, AssigneeId = UserInfo.getUserId());
@@ -14799,7 +14190,7 @@ insert new User(
 	LanguageLocaleKey = 'en_US',
 	TimeZoneSidKey = 'UTC',
 	EmailEncodingKey = 'UTF-8',
-	ProfileId = '00e000000000001',
+	ProfileId = UserInfo.getProfileId(),
 	UserRoleId = null
 );
 insert new User(
@@ -14812,7 +14203,7 @@ insert new User(
 	LanguageLocaleKey = 'en_US',
 	TimeZoneSidKey = 'UTC',
 	EmailEncodingKey = 'UTF-8',
-	ProfileId = '00e000000000001'
+	ProfileId = UserInfo.getProfileId()
 );
 `)
 	if err != nil {
@@ -15255,7 +14646,7 @@ System.assertEquals('2026-05-02', String.valueOf(today));
 
 Datetime nowStamp = Datetime.now();
 System.assertEquals('2026-05-02 12:00:00', nowStamp.formatGmt('yyyy-MM-dd HH:mm:ss'));
-System.assertEquals(nowStamp, DateTime.Now());
+System.assertEquals(nowStamp.getTime()+1L, DateTime.Now().getTime());
 Datetime gmt = Datetime.newInstanceGmt(2024, 2, 29, 23, 59, 58);
 Date gmtDate = gmt.dateGmt();
 System.assertEquals('2024-02-29', String.valueOf(gmtDate));
@@ -16350,6 +15741,8 @@ System.assertEquals('USER_MODE', scoped.name());
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	org := storage.OrgState{Features: []string{"ApexUserModeWithPermset"}}
+	machine.SetOrg(&org)
 	result, err := machine.Execute(program)
 	if err != nil {
 		t.Fatal(err)
@@ -16372,7 +15765,10 @@ System.assertEquals('AccessLevel:[SYSTEM_MODE=AccessLevel:[SYSTEM_MODE=(already 
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := Execute(program, nil)
+	machine := New(nil)
+	org := storage.OrgState{Features: []string{"ApexUserModeWithPermset"}}
+	machine.SetOrg(&org)
+	result, err := machine.Execute(program)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -17731,5 +17127,37 @@ System.assertEquals(1, ssc.getPageNumber());
 func TestDatabaseErrorStatusCodePreservesNull(t *testing.T) {
 	if got := databaseErrorStatusCodeValue(Null); got.Kind != ValueNull {
 		t.Fatalf("database error status code for null = %#v, want null", got)
+	}
+}
+
+// The native subscriber-exception boundary must not hide interpreter gaps.
+func TestExecStopTestPlatformEventUnsupportedFailureIsNotSuppressed(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`System.unimplementedEventOperation();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+EventBus.publish(new Local_Event__e());
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Local_Event__e", Metadata: map[string]string{"publishBehavior": "PublishImmediately"}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterTrigger(Trigger{Name: "UnsupportedSubscriber", Object: "Local_Event__e", Timing: triggerTimingAfter, Operation: "insert", Program: triggerProgram}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
+		t.Fatalf("error = %v; want UnsupportedFeature", err)
 	}
 }

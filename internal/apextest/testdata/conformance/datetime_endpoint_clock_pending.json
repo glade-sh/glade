@@ -1,0 +1,78 @@
+{
+  "disposition": "PENDING-ROWS",
+  "scope": "Static Datetime endpoints versus a fresh now sample; include source API54 endpoint initialization and matched/mixed version controls. Timing/equality hypothesis only, no clock or comparator change.",
+  "apis": [
+    "54.0",
+    "61.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "contexts": [
+    "anonymous",
+    "@IsTest(SeeAllData=false)"
+  ],
+  "metadataCells": [
+    {
+      "helperApi": "54.0",
+      "callerApi": "54.0"
+    },
+    {
+      "helperApi": "54.0",
+      "callerApi": "61.0"
+    },
+    {
+      "helperApi": "54.0",
+      "callerApi": "62.0"
+    },
+    {
+      "helperApi": "54.0",
+      "callerApi": "67.0"
+    },
+    {
+      "helperApi": "54.0",
+      "callerApi": "68.0"
+    },
+    {
+      "helperApi": "61.0",
+      "callerApi": "61.0"
+    },
+    {
+      "helperApi": "61.0",
+      "callerApi": "62.0"
+    },
+    {
+      "helperApi": "61.0",
+      "callerApi": "67.0"
+    },
+    {
+      "helperApi": "61.0",
+      "callerApi": "68.0"
+    },
+    {
+      "helperApi": "62.0",
+      "callerApi": "62.0"
+    },
+    {
+      "helperApi": "67.0",
+      "callerApi": "67.0"
+    },
+    {
+      "helperApi": "68.0",
+      "callerApi": "68.0"
+    }
+  ],
+  "classes": {
+    "EndpointBounds": "public class EndpointBounds {public static Datetime lower=Datetime.now().addDays(-10);public static Datetime upper=Datetime.now().addDays(10);public static Datetime minimum(){return lower;}public static Datetime maximum(){return upper;}}"
+  },
+  "body": "Datetime lower=EndpointBounds.minimum();Datetime upper=EndpointBounds.maximum();Datetime fresh=Datetime.now();payload.put('lowerEqualsFresh',lower==fresh.addDays(-10));payload.put('upperEqualsFresh',upper==fresh.addDays(10));payload.put('lowerDeltaMs',fresh.addDays(-10).getTime()-lower.getTime());payload.put('upperDeltaMs',fresh.addDays(10).getTime()-upper.getTime());Datetime one=Datetime.now();Datetime two=Datetime.now();payload.put('consecutiveEquals',one==two);payload.put('consecutiveDeltaMs',two.getTime()-one.getTime());Datetime fixed=Datetime.newInstanceGmt(2040,1,2,3,4,5);Datetime plusOne=Datetime.newInstance(fixed.getTime()+1);payload.put('millisecondEquals',fixed==plusOne);payload.put('millisecondEqualsMethod',fixed.equals(plusOne));payload.put('millisecondDelta',plusOne.getTime()-fixed.getTime());",
+  "anonymousEnvelope": "Map<String,Object> payload=new Map<String,Object>();BODY System.assert(false,'ENDPOINT|'+JSON.serialize(payload));",
+  "namedEnvelope": "@IsTest private class EndpointCapture {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();BODY System.assert(false,'ENDPOINT|'+JSON.serialize(payload));}}",
+  "controls": [
+    "Integer value=17;",
+    "Caught and uncaught empty List<Integer> indexed at0"
+  ],
+  "expectedNative": "UNKNOWN. Record compile outcome, exact equality booleans and getTime deltas. Retain source metadata, timezone, release, route and native output. Do not derive native answers from local deterministic clock increments.",
+  "candidatePolicy": "If native rows establish different clock sampling/equality behavior, implement only the observed contract and preserve elapsed-time controls. Otherwise carry fresh-time equality assertions as timing-sensitive tests.",
+  "metadata": "EndpointBounds carries the static endpoint declaration version. Capture helper54/caller54 for the legacy shape, helper54/newer callers to isolate caller effects, and the listed61/62/67/68 controls. Record helper and caller metadata independently."
+}

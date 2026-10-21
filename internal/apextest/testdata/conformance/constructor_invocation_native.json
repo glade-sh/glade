@@ -1,0 +1,433 @@
+{
+  "Rows": [
+    {
+      "API": "62.0",
+      "Route": "anonymous",
+      "ID": "SINGLE",
+      "Method": "single",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor62.observe('SINGLE')));",
+      "Classes": {
+        "OwnedCtor62": "public class OwnedCtor62 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA62Test": "@IsTest private class PcConstructorCountsA62Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor62.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor62.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor62.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA62Test",
+      "Native": {
+        "size": 2,
+        "marks": [
+          "list"
+        ]
+      }
+    },
+    {
+      "API": "62.0",
+      "Route": "isTest",
+      "ID": "SINGLE",
+      "Method": "single",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor62.observe('SINGLE')));",
+      "Classes": {
+        "OwnedCtor62": "public class OwnedCtor62 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA62Test": "@IsTest private class PcConstructorCountsA62Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor62.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor62.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor62.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA62Test",
+      "Native": {
+        "size": 2,
+        "marks": [
+          "list"
+        ]
+      }
+    },
+    {
+      "API": "62.0",
+      "Route": "anonymous",
+      "ID": "CHAIN",
+      "Method": "chain",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor62.observe('CHAIN')));",
+      "Classes": {
+        "OwnedCtor62": "public class OwnedCtor62 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA62Test": "@IsTest private class PcConstructorCountsA62Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor62.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor62.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor62.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA62Test",
+      "Native": {
+        "size": 1,
+        "marks": [
+          "list",
+          "chain"
+        ]
+      }
+    },
+    {
+      "API": "62.0",
+      "Route": "isTest",
+      "ID": "CHAIN",
+      "Method": "chain",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor62.observe('CHAIN')));",
+      "Classes": {
+        "OwnedCtor62": "public class OwnedCtor62 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA62Test": "@IsTest private class PcConstructorCountsA62Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor62.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor62.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor62.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA62Test",
+      "Native": {
+        "size": 1,
+        "marks": [
+          "list",
+          "chain"
+        ]
+      }
+    },
+    {
+      "API": "62.0",
+      "Route": "anonymous",
+      "ID": "WRAPPER",
+      "Method": "wrapper",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor62.observe('WRAPPER')));",
+      "Classes": {
+        "OwnedCtor62": "public class OwnedCtor62 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA62Test": "@IsTest private class PcConstructorCountsA62Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor62.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor62.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor62.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA62Test",
+      "Native": {
+        "secondSame": true,
+        "firstSame": true,
+        "inputSize": 2,
+        "size": 2,
+        "marks": [
+          "list"
+        ]
+      }
+    },
+    {
+      "API": "62.0",
+      "Route": "isTest",
+      "ID": "WRAPPER",
+      "Method": "wrapper",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor62.observe('WRAPPER')));",
+      "Classes": {
+        "OwnedCtor62": "public class OwnedCtor62 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA62Test": "@IsTest private class PcConstructorCountsA62Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor62.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor62.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor62.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA62Test",
+      "Native": {
+        "secondSame": true,
+        "firstSame": true,
+        "inputSize": 2,
+        "size": 2,
+        "marks": [
+          "list"
+        ]
+      }
+    },
+    {
+      "API": "67.0",
+      "Route": "anonymous",
+      "ID": "SINGLE",
+      "Method": "single",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor67.observe('SINGLE')));",
+      "Classes": {
+        "OwnedCtor67": "public class OwnedCtor67 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA67Test": "@IsTest private class PcConstructorCountsA67Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor67.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor67.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor67.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA67Test",
+      "Native": {
+        "size": 2,
+        "marks": [
+          "list"
+        ]
+      }
+    },
+    {
+      "API": "67.0",
+      "Route": "isTest",
+      "ID": "SINGLE",
+      "Method": "single",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor67.observe('SINGLE')));",
+      "Classes": {
+        "OwnedCtor67": "public class OwnedCtor67 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA67Test": "@IsTest private class PcConstructorCountsA67Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor67.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor67.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor67.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA67Test",
+      "Native": {
+        "size": 2,
+        "marks": [
+          "list"
+        ]
+      }
+    },
+    {
+      "API": "67.0",
+      "Route": "anonymous",
+      "ID": "CHAIN",
+      "Method": "chain",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor67.observe('CHAIN')));",
+      "Classes": {
+        "OwnedCtor67": "public class OwnedCtor67 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA67Test": "@IsTest private class PcConstructorCountsA67Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor67.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor67.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor67.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA67Test",
+      "Native": {
+        "size": 1,
+        "marks": [
+          "list",
+          "chain"
+        ]
+      }
+    },
+    {
+      "API": "67.0",
+      "Route": "isTest",
+      "ID": "CHAIN",
+      "Method": "chain",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor67.observe('CHAIN')));",
+      "Classes": {
+        "OwnedCtor67": "public class OwnedCtor67 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA67Test": "@IsTest private class PcConstructorCountsA67Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor67.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor67.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor67.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA67Test",
+      "Native": {
+        "size": 1,
+        "marks": [
+          "list",
+          "chain"
+        ]
+      }
+    },
+    {
+      "API": "67.0",
+      "Route": "anonymous",
+      "ID": "WRAPPER",
+      "Method": "wrapper",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor67.observe('WRAPPER')));",
+      "Classes": {
+        "OwnedCtor67": "public class OwnedCtor67 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA67Test": "@IsTest private class PcConstructorCountsA67Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor67.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor67.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor67.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA67Test",
+      "Native": {
+        "secondSame": true,
+        "firstSame": true,
+        "inputSize": 2,
+        "size": 2,
+        "marks": [
+          "list"
+        ]
+      }
+    },
+    {
+      "API": "67.0",
+      "Route": "isTest",
+      "ID": "WRAPPER",
+      "Method": "wrapper",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor67.observe('WRAPPER')));",
+      "Classes": {
+        "OwnedCtor67": "public class OwnedCtor67 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA67Test": "@IsTest private class PcConstructorCountsA67Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor67.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor67.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor67.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA67Test",
+      "Native": {
+        "secondSame": true,
+        "firstSame": true,
+        "inputSize": 2,
+        "size": 2,
+        "marks": [
+          "list"
+        ]
+      }
+    },
+    {
+      "API": "68.0",
+      "Route": "anonymous",
+      "ID": "SINGLE",
+      "Method": "single",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor68.observe('SINGLE')));",
+      "Classes": {
+        "OwnedCtor68": "public class OwnedCtor68 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA68Test": "@IsTest private class PcConstructorCountsA68Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor68.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor68.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor68.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA68Test",
+      "Native": {
+        "size": 2,
+        "marks": [
+          "list"
+        ]
+      }
+    },
+    {
+      "API": "68.0",
+      "Route": "isTest",
+      "ID": "SINGLE",
+      "Method": "single",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor68.observe('SINGLE')));",
+      "Classes": {
+        "OwnedCtor68": "public class OwnedCtor68 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA68Test": "@IsTest private class PcConstructorCountsA68Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor68.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor68.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor68.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA68Test",
+      "Native": {
+        "size": 2,
+        "marks": [
+          "list"
+        ]
+      }
+    },
+    {
+      "API": "68.0",
+      "Route": "anonymous",
+      "ID": "CHAIN",
+      "Method": "chain",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor68.observe('CHAIN')));",
+      "Classes": {
+        "OwnedCtor68": "public class OwnedCtor68 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA68Test": "@IsTest private class PcConstructorCountsA68Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor68.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor68.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor68.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA68Test",
+      "Native": {
+        "size": 1,
+        "marks": [
+          "list",
+          "chain"
+        ]
+      }
+    },
+    {
+      "API": "68.0",
+      "Route": "isTest",
+      "ID": "CHAIN",
+      "Method": "chain",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor68.observe('CHAIN')));",
+      "Classes": {
+        "OwnedCtor68": "public class OwnedCtor68 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA68Test": "@IsTest private class PcConstructorCountsA68Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor68.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor68.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor68.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA68Test",
+      "Native": {
+        "size": 1,
+        "marks": [
+          "list",
+          "chain"
+        ]
+      }
+    },
+    {
+      "API": "68.0",
+      "Route": "anonymous",
+      "ID": "WRAPPER",
+      "Method": "wrapper",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor68.observe('WRAPPER')));",
+      "Classes": {
+        "OwnedCtor68": "public class OwnedCtor68 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA68Test": "@IsTest private class PcConstructorCountsA68Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor68.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor68.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor68.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA68Test",
+      "Native": {
+        "secondSame": true,
+        "firstSame": true,
+        "inputSize": 2,
+        "size": 2,
+        "marks": [
+          "list"
+        ]
+      }
+    },
+    {
+      "API": "68.0",
+      "Route": "isTest",
+      "ID": "WRAPPER",
+      "Method": "wrapper",
+      "Anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor68.observe('WRAPPER')));",
+      "Classes": {
+        "OwnedCtor68": "public class OwnedCtor68 {\n public class Parcel {\n  public List<String> marks=new List<String>();\n  public List<SObject> records=new List<SObject>();\n  public Parcel(List<SObject> records){marks.add('list');this.records.addAll(records);}\n  public Parcel(Integer count){this(new List<SObject>{new Account(Name='owned')});marks.add('chain');}\n }\n public static Map<String,Object> observe(String shape){\n  List<SObject> records=new List<SObject>{new Account(Name='first'),new Account(Name='second')};\n  Parcel value;\n  if(shape=='CHAIN')value=new Parcel(1);else value=new Parcel(records);\n  Map<String,Object> out=new Map<String,Object>{'marks'=>value.marks,'size'=>value.records.size()};\n  if(shape=='WRAPPER'){out.put('inputSize',records.size());out.put('firstSame',value.records[0]===records[0]);out.put('secondSame',value.records[1]===records[1]);}\n  return out;\n }\n}",
+        "PcConstructorCountsA68Test": "@IsTest private class PcConstructorCountsA68Test {\n@IsTest static void single(){System.assert(false,'NATIVE_RESULT|SINGLE|'+JSON.serialize(OwnedCtor68.observe('SINGLE')));}\n@IsTest static void chain(){System.assert(false,'NATIVE_RESULT|CHAIN|'+JSON.serialize(OwnedCtor68.observe('CHAIN')));}\n@IsTest static void wrapper(){System.assert(false,'NATIVE_RESULT|WRAPPER|'+JSON.serialize(OwnedCtor68.observe('WRAPPER')));}\n}"
+      },
+      "TestClass": "PcConstructorCountsA68Test",
+      "Native": {
+        "secondSame": true,
+        "firstSame": true,
+        "inputSize": 2,
+        "size": 2,
+        "marks": [
+          "list"
+        ]
+      }
+    }
+  ],
+  "Rejections": [
+    {
+      "API": "62.0",
+      "Message": "Method already defined: <init> void OwnedDuplicate62.<init>(String) from the type OwnedDuplicate62",
+      "Source": "public class OwnedDuplicate62 { public OwnedDuplicate62(String value){} public OwnedDuplicate62(String value){} }"
+    },
+    {
+      "API": "67.0",
+      "Message": "Method already defined: <init> void OwnedDuplicate67.<init>(String) from the type OwnedDuplicate67",
+      "Source": "public class OwnedDuplicate67 { public OwnedDuplicate67(String value){} public OwnedDuplicate67(String value){} }"
+    },
+    {
+      "API": "68.0",
+      "Message": "Method already defined: <init> void OwnedDuplicate68.<init>(String) from the type OwnedDuplicate68",
+      "Source": "public class OwnedDuplicate68 { public OwnedDuplicate68(String value){} public OwnedDuplicate68(String value){} }"
+    }
+  ],
+  "boundary": {
+    "sameFullnameDuplicateSource": "No native runtime row: one org metadata fullname cannot simultaneously name two source bodies. Duplicate registrations and dependency overlays are loader-only controls.",
+    "agreement": "Legal single/overloaded list constructor executes once; explicit this chain executes its two authored bodies; wrapper preserves two elements/identity. Does not establish loader overlay parity."
+  },
+  "toolsMirror": "capture-revision-093083241259418284085470154683174964762817445752471905941144138888726521116627",
+  "nativeFilesSha256": {
+    "CAPTURE-LOG.txt": "fdc6a048c87e115ee1cf00255ac47923d5ccbe9bc9c851713e15bffb92751fae",
+    "anonymous62-CHAIN.apex": "c1084583c083ea48d2c776ab5703ae41a86246f97fdee3e92b3f8d4cc393451b",
+    "anonymous62-CHAIN.json": "2cefb6fb37d628b6f091851f778d14f281b4ff4432ca060f1e43557de5ac75d6",
+    "anonymous62-SINGLE.apex": "48493886f3355c90d6ab565b830089c5e5da5f217cca8ee181a571dc9ae8d9db",
+    "anonymous62-SINGLE.json": "860f73028e76de531bd92ccf9e7dbfe9ed2c834e8dff2127ae6215c472ff6793",
+    "anonymous62-WRAPPER.apex": "9bb53278ca8fac2803df50d0ca8863dd4455e33633d049094fb3b88591b3c753",
+    "anonymous62-WRAPPER.json": "41497315ebc63b45999ac761db815dd1c9fe2007c076c1a761431a1e23aff23f",
+    "anonymous67-CHAIN.apex": "9d7d10b32af91b3144d2e9f304f9e99fd8e00191b305b707eba7ccdf4984042c",
+    "anonymous67-CHAIN.json": "59466010151491118a4bce5df965168601bc70b3f09405b5b540a8b0a9ada447",
+    "anonymous67-SINGLE.apex": "9de8067393c7e9ed9e22c64c04a63666747815e0d5536566612ddde046fe6673",
+    "anonymous67-SINGLE.json": "c2d2f7b29209424123f42fc9b22c78d8560b93c1b1a657a4a9b39d84af9e950a",
+    "anonymous67-WRAPPER.apex": "44ac148724792441ce7882e7d19457226b8d36f66f1a40b67cd28696a9af29ba",
+    "anonymous67-WRAPPER.json": "c68ac06df211da9c9c3a3444f024467ca782b2cac7947760731666dee76fd3b1",
+    "anonymous68-CHAIN.apex": "43f78d53e0014f450de59637c4171aa9e8d6d69e3862843f482c5979a198ee0b",
+    "anonymous68-CHAIN.json": "55b40ce0a1b5cfcdadaf1f26019e9a9e4f1c171e77aadd29bb8ed7ce9eedd309",
+    "anonymous68-SINGLE.apex": "ea56d19f7bc44c97554b72b6f0e759b7caa2b56ebd39ad1c8f9cf8ed52e2a97f",
+    "anonymous68-SINGLE.json": "53d459632d4869de915068ff5e67baeab654975a616d77e198bbb26bceeb25b4",
+    "anonymous68-WRAPPER.apex": "f90773937eac10ee8023d790b028950aadeba50e48418fe98a7e30876d7edf5c",
+    "anonymous68-WRAPPER.json": "5cfc0d1ed4393b57ec2a803b8c062d8e2cccb840e6c7d4473cb1e954dc919d1f",
+    "api62/force-app/main/default/classes/OwnedCtor62.cls": "b71680bbc37866615ed85b4b0652c457904ae5a3c1f24d1b0165060e1f606b14",
+    "api62/force-app/main/default/classes/OwnedCtor62.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "api62/force-app/main/default/classes/PcConstructorCountsA62Test.cls": "99d4ef5cc2410bc1efdf689ccc6bfca3ad88aa807df74b1e805dbb8433f1a10d",
+    "api62/force-app/main/default/classes/PcConstructorCountsA62Test.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "api62/sfdx-project.json": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb",
+    "api67/force-app/main/default/classes/OwnedCtor67.cls": "d2b9949f277c31a4f7791f4904cffaefd4c9a1dd88149e777efd3e689ec1c054",
+    "api67/force-app/main/default/classes/OwnedCtor67.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "api67/force-app/main/default/classes/PcConstructorCountsA67Test.cls": "bc34dcb3c290c0882bc71308709ddf62e72f8940db04cc4b8edef8e22a43cfbc",
+    "api67/force-app/main/default/classes/PcConstructorCountsA67Test.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "api67/sfdx-project.json": "5b7b79fe9ddb6530eeadb5d1bbb09f96b0737b4785616bf2fd317262bcd69554",
+    "api68/force-app/main/default/classes/OwnedCtor68.cls": "5c04ac7262da05861293edf029c0cabc32fee10cf7997a4fe11a88c9a0b401d7",
+    "api68/force-app/main/default/classes/OwnedCtor68.cls-meta.xml": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+    "api68/force-app/main/default/classes/PcConstructorCountsA68Test.cls": "71bc378f3866b91c7af553df27e26fa8a022bc0d470931c3a34a9141de95173c",
+    "api68/force-app/main/default/classes/PcConstructorCountsA68Test.cls-meta.xml": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+    "api68/sfdx-project.json": "2d5e26f4dbb230674309e87aed0a65b1f013d20ba6abee212a29fafc47b3cd95",
+    "cleanup/CAPTURE-LOG.txt": "9b20dfbc82f46e27216118b1cac4a643d3cc8dd6b137781a83071b850791e775",
+    "cleanup/alias-verification.json": "85026443d9629db591cec6f12b72e6d920ae29716f217396732fa4086e3eb981",
+    "cleanup/delete.json": "8606d11c45aebed687af7aca010d3a06e562432b0c32bfbd7ac3a8d4afe25ed6",
+    "deploy62.json": "faa7fe0b03bcb381e304b3eef3a92f7a54b0e90d931a111a1b00e35ae01bc66c",
+    "deploy67.json": "9a478b55cd3fa1adeed11dc47e3c304434c3f507a4d86c39e27794fad528925b",
+    "deploy68.json": "39891b76db92eab91422d497f5a7c1e4d8275fcd59d0257de8504ba8a3d3eaf7",
+    "duplicate62.json": "a5ba799aac4d37cc04695ceca7fd91b013d51e76f7e2f39ed3dbdd36a479728d",
+    "duplicate67.json": "d49a8b929b26576f1e37db0844e39f33faffa3d55ed8e8c57a47203d80d16223",
+    "duplicate68.json": "84de9c2fc3fdb81d03ba4c1082c5a48afe63f04d4cdefd35671fd678a5e96f6a",
+    "invalid62/force-app/main/default/classes/OwnedDuplicate62.cls": "6ee6ff09eebd31103c2b1a3bf43242eafc533df1f7dc24759a4af3e46991c97e",
+    "invalid62/force-app/main/default/classes/OwnedDuplicate62.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "invalid62/sfdx-project.json": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb",
+    "invalid67/force-app/main/default/classes/OwnedDuplicate67.cls": "f4f4c05530dd02f2f65cf89958ac8b4285ed4016addc447119f1212797821d47",
+    "invalid67/force-app/main/default/classes/OwnedDuplicate67.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "invalid67/sfdx-project.json": "5b7b79fe9ddb6530eeadb5d1bbb09f96b0737b4785616bf2fd317262bcd69554",
+    "invalid68/force-app/main/default/classes/OwnedDuplicate68.cls": "c414dad099559217c8cad682a0988521b9b327aa2d50ec77d41bb12da3a298cb",
+    "invalid68/force-app/main/default/classes/OwnedDuplicate68.cls-meta.xml": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+    "invalid68/sfdx-project.json": "2d5e26f4dbb230674309e87aed0a65b1f013d20ba6abee212a29fafc47b3cd95",
+    "isTest62.json": "bf9f1e664ede1a7ee0bd756af73e65f864dbcc9cdb11f9b8bc88cfdf6b85e976",
+    "isTest67.json": "f3f1f141adafc1a37167228374b2a79ca995f35d722aed1c7f1cd0d9a338758d",
+    "isTest68.json": "a9be8a0c2beceefb5ac645bb146b5a09f9cf11c15f7bea5c13999d1e32232ec7",
+    "org.tsv": "aa0e67c96793085e630c5133974e02648e6b755ce88f5c8aaf076c8c251e6849",
+    "packet.json": "4a78cc203114369c48904f402a65998dc12fcef610fab7c174fbdc2886f21991"
+  }
+}

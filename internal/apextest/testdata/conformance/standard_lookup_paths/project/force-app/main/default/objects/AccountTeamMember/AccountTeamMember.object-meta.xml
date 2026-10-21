@@ -1,0 +1,1 @@
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><fields><fullName>AccountId</fullName><type>Lookup</type></fields><fields><fullName>UserId</fullName><type>Lookup</type></fields></CustomObject>

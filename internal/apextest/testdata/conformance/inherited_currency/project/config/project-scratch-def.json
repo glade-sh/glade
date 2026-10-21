@@ -1,0 +1,1 @@
+{"orgName": "Synthetic field observations", "edition": "Developer", "features": ["MultiCurrency", "OrderManagement", "OrderSaveBehaviorBoth"], "settings": {"orderSettings": {"enableOrders": true, "enableEnhancedCommerceOrders": true}, "orderManagementSettings": {"enableOrderManagement": true}}}

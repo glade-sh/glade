@@ -139,8 +139,33 @@ an empty class file instead of silently omitting their outputs.
 Unfiltered, unsharded runs maintain `.glade/test-durations.json`. Duration
 history balances later shards; the assignment is deterministic for the same
 selected classes, shard count, and history. `--write-class-shards` writes
-`shard-NNN.txt` class lists and exits without running tests. The default
-per-test timeout is five minutes. On memory-constrained hosts,
+`shard-NNN.txt` class lists and exits without running tests.
+
+The per-test wall-clock cap defaults to **10 minutes** and also applies to
+`@TestSetup`. Choose a Go duration such as `90s` or `15m` with
+`GLADE_TEST_TIMEOUT`; `--test-timeout` takes precedence over the environment,
+then the default. Invalid or negative settings are errors. `0` disables the
+per-test cap. This policy also applies to daemon, watch, and `glade dev`
+test/watch runs. CPU and governor limits are independent and unchanged.
+Timeout failures name the applied setting and explain how to raise or disable it.
+The VM checks cancellation every 64 Apex statements. A long native operation
+(such as a SOQL/DML scan, JSON conversion, regex or sort) can run beyond the
+cap before reaching the next cancellation check.
+
+Keep an explicit cap in CI:
+
+```bash
+glade test --test-timeout 2m
+```
+
+For a longer local run or to disable the cap:
+
+```bash
+GLADE_TEST_TIMEOUT=15m glade test
+GLADE_TEST_TIMEOUT=0 glade test
+```
+
+On memory-constrained hosts,
 `--gc-aggressive` trades more frequent garbage collection for lower heap
 growth.
 
@@ -257,6 +282,39 @@ glade test --project . --junit reports/glade-junit.xml
 
 Saved run artifacts and CI annotations are covered in [Add Glade to CI](/guide/ci-artifacts).
 
+## Running user and limits
+
+The default local running user uses `America/Los_Angeles`. Local Datetime
+construction, date components, and `format()` follow the current user's time
+zone; GMT methods keep GMT semantics. Set `TimeZoneSidKey` explicitly on users
+you insert for `System.runAs` rather than relying on a default.
+
+When the project has no profile metadata, Glade keeps that running user
+permissive for custom-object CRUD and field-level security. Salesforce's
+Standard User can have no access to a new custom object. In the captured
+restricted-user cases, native describe access is false, user-mode DML is denied,
+and API 67 plain `INSERT` without grants raises `System.SecurityException`
+(the captured API 62 insert succeeds).
+
+Three captured differences are intentional: the no-profile Glade default stays
+permissive; `Security.stripInaccessible(CREATABLE)` retains `Name` where native
+Salesforce removes it; and an API 67 plain `COUNT()` denial reports
+`System.QueryException` locally versus `System.SecurityException` natively.
+Use `test.permissionSets: [Access_Set]` in `glade.yml` to assign a project's
+permission-set grants to the running test user. This does not select a profile
+or change the no-profile default. For restricted access, use a restricted
+profile and that user's own assignments under `System.runAs`.
+
+The checked Winter '27 `Limits.getLimitHeapSize()` values are 10,000,000 bytes
+for synchronous Apex (including tests and Scheduled Apex) and 25,000,000 for
+Queueable, future, and Batchable execution. Local heap usage is an approximation;
+these reported caps do not establish exact hosted allocation accounting.
+
+During `Test.stopTest()`, ordinary Apex exceptions from platform-event
+subscribers do not fail the enclosing test. Writes made before the exception
+remain visible. Retry/checkpoint handling and internal VM errors have separate
+paths; this rule does not suppress every asynchronous failure.
+
 ## Outcomes
 
 Local test runs separate assertion failures from load errors, compile errors,
@@ -265,8 +323,24 @@ assertion means the test ran and failed. An unsupported feature means
 the runtime stopped at a known unsupported Salesforce API. Unsupported test
 outcomes count as errors and exit with code `1`.
 
+A compile error blocks only the classes it reaches. A class with a compile
+error, and every class that references it directly or through other classes,
+is excluded and its tests report `compile_error`; all other tests run. A local
+variable, parameter, field, method, inner class, or setter `value` that shares
+a class's name is not a reference, and neither is a `Type.forName` string. A
+class with errors of its own reports them, even when it also references an
+invalid class. The console, JUnit,
+GitHub annotation, and HTML reports, and the JSON `excludedClasses` list, name
+each excluded class, the class it depends on, and the root class with the
+error. The run exits with code `1` while any class is excluded, even when every
+test that ran passed. Triggers referencing an invalid class are excluded too;
+unrelated tests still run. An attributable missing-package dependency excludes
+static references to its namespace and their dependents. Unattributed errors
+and class metadata errors, such as an unsupported `apiVersion`, retain the
+whole-project fallback.
+
 Read the JSON `summary` counts: `total`, `passed`, `failed`, `errors`, `skipped`,
-and `unsupported`. A run with zero selected tests can exit with code `0`; it
+`unsupported`, and `excludedClasses`. A run with zero selected tests can exit with code `0`; it
 does not provide test execution evidence. Run an explicit relevant test or
 suite if an affected selection is empty. JSON `status=partial` means at least
 one selected test was skipped without a failure; inspect the skipped cases

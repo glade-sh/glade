@@ -1,0 +1,3 @@
+source_api	status	diagnostic
+62.0	COMPILE_ERROR	Method does not exist or incorrect signature: void count(System.ListIterator<Account>) from the type InlineCursorReject
+67.0	COMPILE_ERROR	Method does not exist or incorrect signature: void count(System.ListIterator<Account>) from the type InlineCursorReject
