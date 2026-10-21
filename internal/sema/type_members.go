@@ -1301,6 +1301,13 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 							fields:   make(map[string]typesys.MemberSymbol),
 							methods:  make(map[string][]typesys.MemberSymbol),
 						}
+						// A relationship-only entry shadows the lazy platform
+						// object. Keep a known standard parent synthetic so its
+						// standard fields hydrate beside the child relationship.
+						if standardName, known := semaStandardSObjectNameForKey(parentKey); known {
+							parentMembers.name = standardName
+							parentMembers.syntheticStandardSObject = true
+						}
 					}
 				} else if parentMembers.fields == nil {
 					parentMembers = typeMembers{
