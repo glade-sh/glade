@@ -43,7 +43,11 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 			}
 		}
 	}
-	units, err := captureRuntimeSourceUnits(index, generation, bodies)
+	var loadedRoots []string
+	if capturedProject != nil {
+		loadedRoots = loadedProjectRoots(*capturedProject)
+	}
+	units, err := captureRuntimeSourceUnitsInRoots(index, generation, bodies, loadedRoots)
 	if err != nil {
 		return err
 	}
@@ -113,6 +117,52 @@ func sourceRootPath(root, path string) (string, error) {
 		return "", fmt.Errorf("path %q is outside source root %q", path, root)
 	}
 	return filepath.Clean(path), nil
+}
+
+// loadedProjectRoots lists the root of the project and of every loaded
+// dependency or shim project beneath it, the same set the index reads from.
+func loadedProjectRoots(snapshot project.Project) []string {
+	seen := make(map[*project.Project]bool)
+	var roots []string
+	var visit func(*project.Project)
+	visit = func(p *project.Project) {
+		if p == nil || seen[p] {
+			return
+		}
+		seen[p] = true
+		if strings.TrimSpace(p.Root) != "" {
+			roots = append(roots, p.Root)
+		}
+		for _, dep := range p.ManagedPackageDependencies {
+			if dep.Status == "loaded" {
+				visit(dep.Project)
+			}
+		}
+		for _, shim := range p.PackageShims {
+			if shim.Status == "loaded" {
+				visit(shim.Project)
+			}
+		}
+	}
+	visit(&snapshot)
+	return roots
+}
+
+// containingSourceRoot returns the deepest loaded root that contains path. It
+// falls back to primary so a path outside every root is rejected by the
+// containment check against the primary root.
+func containingSourceRoot(path, primary string, loaded []string) string {
+	best := primary
+	bestDepth := -1
+	for _, candidate := range append([]string{primary}, loaded...) {
+		if _, err := sourceRootPath(candidate, path); err != nil {
+			continue
+		}
+		if depth := len(filepath.Clean(candidate)); depth > bestDepth {
+			best, bestDepth = candidate, depth
+		}
+	}
+	return best
 }
 
 func readSourceRootFile(root, path string) ([]byte, error) {
