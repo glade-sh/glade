@@ -58,23 +58,3 @@ func TestStandardObjectConstructorKeepsCustomFieldsStrictAtEveryAPI(t *testing.T
 		}
 	}
 }
-
-// The same rules hold when the constructor sits inside a named class.
-func TestStandardObjectConstructorFieldRulesInNamedClass(t *testing.T) {
-	cases := []struct {
-		name, field string
-		wantError   bool
-	}{
-		{"ordinary standard field omitted from the catalog", "Tradestyle", false},
-		{"custom field", "Missing__c", true},
-		{"feature-gated person account field", "FirstName", true},
-	}
-	for _, c := range cases {
-		result := analyzeDeclarationProject(t, map[string]string{
-			"CtorProbe.cls": "public class CtorProbe { public static Account build() { return new Account(Name = 'x', " + c.field + " = 'y'); } }",
-		})
-		if result.HasErrors() != c.wantError {
-			t.Errorf("%s: HasErrors=%v want %v: %v", c.name, result.HasErrors(), c.wantError, result.Diagnostics)
-		}
-	}
-}

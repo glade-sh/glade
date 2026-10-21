@@ -655,12 +655,27 @@ func semaIsSObjectTypeFields(typeName string) bool {
 
 // semaOpenStandardSObjectForConstructor reports whether absent constructor
 // fields on this standard object cannot be treated as errors.
-func semaOpenStandardSObjectForConstructor(members typeMembers) bool {
+func semaOpenStandardSObjectForConstructor(members typeMembers, fieldName string) bool {
 	if strings.EqualFold(members.name, "AuthSession") {
+		return false
+	}
+	// Custom and managed objects and custom fields have complete metadata,
+	// and a field that exists only under an org feature is a compile error
+	// when the feature is off. Neither is a catalog gap.
+	if strings.Contains(members.name, "__") || semaCustomFieldSuffix(fieldName) {
+		return false
+	}
+	if storage.StandardObjectFieldRequiresFeature(members.name, fieldName) {
 		return false
 	}
 	_, standard := semaStandardSObjectNameForKey(normalizeName(members.name))
 	return standard
+}
+
+func semaCustomFieldSuffix(fieldName string) bool {
+	lower := strings.ToLower(fieldName)
+	return strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__r") || strings.HasSuffix(lower, "__x") ||
+		strings.HasSuffix(lower, "__pc") || strings.HasSuffix(lower, "__pr")
 }
 
 func semaOpenSObjectFieldMember(typeName, fieldName string, model *semaTypeMemberView) (resolvedMember, bool) {
@@ -3399,7 +3414,7 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 				// can omit real standard fields (for example Account.Tradestyle).
 				// Standard objects keep the open fallback, as field reads do.
 				// AuthSession has a complete captured surface and stays strict.
-				if members, _, known := semaLookupTypeMembers(model, resolvedTypeName); known && members.sobject && !members.partialSObject && !members.externalPackageSObject && !strings.EqualFold(members.name, "SObject") && !semaOpenStandardSObjectForConstructor(members) {
+				if members, _, known := semaLookupTypeMembers(model, resolvedTypeName); known && members.sobject && !members.partialSObject && !members.externalPackageSObject && !strings.EqualFold(members.name, "SObject") && !semaOpenStandardSObjectForConstructor(members, arg.Name) {
 					message := "Field does not exist: " + arg.Name + " on " + resolvedTypeName
 					item := semaFieldAccessDiagnostic(typ, member, arg.Name, message, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)
 					item.NativeMessage = message

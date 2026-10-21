@@ -88,3 +88,27 @@ func StandardFeatureObjectNames(features []string) []string {
 	sort.Strings(result)
 	return result
 }
+
+// StandardObjectFieldRequiresFeature reports whether a standard field exists
+// only when an org feature is enabled. Such a field is absent from a clean
+// org's describe, so its absence is not a catalog gap.
+func StandardObjectFieldRequiresFeature(objectName, fieldName string) bool {
+	if canonical, known := ResolveKnownStandardObjectName(objectName); known {
+		objectName = canonical
+	}
+	if entry, ok := standardObjectCatalogEntryFor(objectName); ok {
+		for _, fields := range entry.FeatureFields {
+			for key, field := range fields {
+				if stringsEqualFold(key, fieldName) || stringsEqualFold(field.APIName, fieldName) {
+					return true
+				}
+			}
+		}
+	}
+	for _, gate := range standardOptionalFieldFeatures {
+		if stringsEqualFold(objectName, gate.object) && stringsEqualFold(fieldName, gate.field) {
+			return true
+		}
+	}
+	return isStateAndCountryPicklistField(fieldName)
+}
