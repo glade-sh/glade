@@ -1,6 +1,12 @@
 # Release Notes
 
-## Unreleased
+## v0.3.0
+
+v0.3.0 expands offline Salesforce development support: Apex 62.0-68.0, LWC and
+Visualforce 59.0-68.0. Supported local behavior remains bounded by the
+[compatibility policy](COMPATIBILITY.md) and the hosted-service limits below.
+
+### What is new
 
 - `glade playground --example refinement-service --once` now materializes a
   testable managed demo project without starting a server. It refuses to replace
@@ -12,22 +18,6 @@
 - The five-minute Quickstart verifies a clean check and exactly one named test,
   and separates Apex source, LWC bundle, local HTTP route, and Salesforce
   validation contracts.
-
-Consumers of `glade doctor --json` should recognize schema `1.1` before relying
-on `status` or `exitCode`: those fields now describe Apex check/test readiness,
-while LWC-toolchain and local-data health remain independently reported.
-- Stop old test servers with the original binary before upgrading. If a daemon
-  uses an incompatible protocol, `glade test daemon stop` reports an error and
-  preserves its socket and PID file so it can still be stopped.
-
-## v0.3.0
-
-v0.3.0 expands offline Salesforce development support: Apex 62.0-68.0, LWC and
-Visualforce 59.0-68.0. Supported local behavior remains bounded by the
-[compatibility policy](COMPATIBILITY.md) and the hosted-service limits below.
-
-### What is new
-
 - **Apex semantics.** The supported source window is 62.0 through 68.0; LWC and
   Visualforce support spans 59.0 through 68.0. Runtime fixes improve method and
   interface dispatch, namespace-qualified and shadowed names, casts, collection
@@ -65,6 +55,13 @@ Visualforce 59.0-68.0. Supported local behavior remains bounded by the
 
 ### Behavior to check when upgrading
 
+Consumers of `glade doctor --json` should recognize schema `1.1` before relying
+on `status` or `exitCode`: those fields now describe Apex check/test readiness,
+while LWC-toolchain and local-data health remain independently reported.
+
+- Stop old test servers with the original binary before upgrading. If a daemon
+  uses an incompatible protocol, `glade test daemon stop` reports an error and
+  preserves its socket and PID file so it can still be stopped.
 - Compile errors exclude the invalid class, dependent classes, and triggers
   referencing it. Unrelated tests still run; any exclusion exits `1`.
 - The default local running user uses `America/Los_Angeles`. Set

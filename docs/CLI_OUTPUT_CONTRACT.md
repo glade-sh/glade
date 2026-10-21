@@ -81,7 +81,7 @@ for skipped unreadable or malformed automation files, and `GLADEAUTO004` for
 invalid supported Flow definitions. The first three are warnings; the last is
 an error. A skipped file does not disable other automation files.
 
-`glade doctor --json` uses its own schema, currently `1.0`, including
+`glade doctor --json` uses its own schema, currently `1.1`, including
 `parserOK`; do not infer its shape from the priority-command envelope.
 
 ## Diagnostics

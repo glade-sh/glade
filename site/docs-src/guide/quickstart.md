@@ -45,7 +45,7 @@ treat a playground Pass with source errors as successful validation.
 :::
 
 The bundled `RefinementServiceTest` first shipped in v0.2.14 and is included in
-the v0.2.15 stable release. You can open that larger browser example after the
+the v0.3.0 release. You can open that larger browser example after the
 terminal-only first run below.
 
 ### 2A. Create the sample project
@@ -109,9 +109,8 @@ GLADE_EXAMPLE_DIR="$(mktemp -d)"
 glade playground --data-root "$GLADE_EXAMPLE_DIR/playground" --db "$GLADE_EXAMPLE_DIR/org.sqlite" --example refinement-service --open
 ```
 
-Stop the browser workbench with Ctrl-C. The next Glade release adds a
-no-server project materializer. Until that binary is published, keep using the
-stable `--open` route above.
+Stop the browser workbench with Ctrl-C. v0.3.0 also includes a no-server
+project materializer; see the [playground CLI reference](/reference/cli#glade-playground).
 
 ## Route B: Use my Salesforce DX project
 

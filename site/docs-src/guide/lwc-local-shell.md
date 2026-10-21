@@ -36,8 +36,8 @@ When developing Glade from a source checkout, install that checkout's toolchain
 with `glade toolchain install --from path/to/glade`. Do not run `--from .` in a
 Salesforce project; it is not a Glade source tree.
 
-Each LWC bundle must declare an exact checked `<apiVersion>` of `65.0`, `66.0`,
-or `67.0`. The bundle version is independent of the Apex project default and
+Explicit LWC bundle versions must be whole versions from 59.0 through 68.0.
+Unversioned bundles use compiler default 68.0. The bundle version is independent of the Apex project default and
 local HTTP endpoint version. Keep the version intended for Salesforce. Do not
 raise it merely to make local preview compile.
 
