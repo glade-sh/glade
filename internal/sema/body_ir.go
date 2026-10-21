@@ -653,6 +653,16 @@ func semaIsSObjectTypeFields(typeName string) bool {
 		strings.EqualFold(typeName, "Schema.SObjectFields")
 }
 
+// semaOpenStandardSObjectForConstructor reports whether absent constructor
+// fields on this standard object cannot be treated as errors.
+func semaOpenStandardSObjectForConstructor(members typeMembers) bool {
+	if strings.EqualFold(members.name, "AuthSession") {
+		return false
+	}
+	_, standard := semaStandardSObjectNameForKey(normalizeName(members.name))
+	return standard
+}
+
 func semaOpenSObjectFieldMember(typeName, fieldName string, model *semaTypeMemberView) (resolvedMember, bool) {
 	members, _, ok := semaLookupTypeMembers(model, typeName)
 	if !ok || !members.sobject {
@@ -3385,7 +3395,11 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 			// resolution can instead return an opaque compatibility fallback.
 			field, exists := semaResolveField(model, resolvedTypeName, arg.Name, make(map[string]bool))
 			if !exists {
-				if members, _, known := semaLookupTypeMembers(model, resolvedTypeName); known && members.sobject && !members.partialSObject && !members.externalPackageSObject && !strings.EqualFold(members.name, "SObject") {
+				// The standard baseline is one clean org's describe export, so it
+				// can omit real standard fields (for example Account.Tradestyle).
+				// Standard objects keep the open fallback, as field reads do.
+				// AuthSession has a complete captured surface and stays strict.
+				if members, _, known := semaLookupTypeMembers(model, resolvedTypeName); known && members.sobject && !members.partialSObject && !members.externalPackageSObject && !strings.EqualFold(members.name, "SObject") && !semaOpenStandardSObjectForConstructor(members) {
 					message := "Field does not exist: " + arg.Name + " on " + resolvedTypeName
 					item := semaFieldAccessDiagnostic(typ, member, arg.Name, message, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)
 					item.NativeMessage = message
