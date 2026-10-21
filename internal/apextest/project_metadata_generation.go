@@ -31,7 +31,7 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 			paths = append(paths, loaded.PermissionSetGroupFiles...)
 			paths = append(paths, resource.SetupRecordMetadataFiles(loaded)...)
 			for _, path := range paths {
-				data, err := os.ReadFile(path)
+				data, err := os.ReadFile(path) // #nosec G304 -- metadata path comes from the loaded project snapshot.
 				if err != nil {
 					return err
 				}
@@ -70,7 +70,7 @@ func (cache *sourceCache) readCapturedProjectMetadata(path string) ([]byte, erro
 	if prepared {
 		return nil, incompleteSourceSnapshotError("missing captured project metadata " + path)
 	}
-	return os.ReadFile(path)
+	return os.ReadFile(path) // #nosec G304 -- indexed project metadata path for an uncaptured snapshot.
 }
 
 func (cache *sourceCache) capturedProjectSnapshot(root string) (project.Project, error) {

@@ -55,7 +55,7 @@ func captureRuntimeSourceUnits(index typesys.Index, generation *runtimeMetadataG
 			marker := filepath.Join(dir, "sfdx-project.json")
 			input, captured := generation.inputs[marker]
 			if !captured {
-				data, err := os.ReadFile(marker)
+				data, err := os.ReadFile(marker) // #nosec G304 -- fixed SFDX marker name under an indexed source ancestor.
 				if err != nil && !os.IsNotExist(err) {
 					return nil, err
 				}
