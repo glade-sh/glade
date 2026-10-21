@@ -83,6 +83,7 @@
       "TestTryTestServerRunFailsClosedOnProtocolMismatch",
       "TestWriteClassShardsValidatesImplicitParallelismBeforeArtifacts"
     ],
+    "./internal/gladehome": null,
     "./internal/lsp": null,
     "./internal/lwc/compile": [
       "TestBrowserAPIParallelism",
@@ -112,6 +113,7 @@
     "./internal/dap": 131,
     "./internal/dml": 102,
     "./internal/gladecli": 431,
+    "./internal/gladehome": 40,
     "./internal/lsp": 109,
     "./internal/lwc/compile": 120,
     "./internal/playground": 420,
