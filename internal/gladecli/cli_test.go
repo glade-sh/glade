@@ -3865,7 +3865,7 @@ private class BadBodyTest {
 	if len(envelope.Tests) != 1 || envelope.Tests[0].Problem == nil ||
 		!strings.Contains(envelope.Tests[0].Problem.Message, "Invalid type: MissingHelper") ||
 		!strings.Contains(envelope.Tests[0].Problem.Message, "MissingHelper") {
-		t.Fatalf("test cases = %#v", envelope.Tests)
+		t.Fatalf("test cases = %#v; stdout=%s", envelope.Tests, stdout.String())
 	}
 }
 

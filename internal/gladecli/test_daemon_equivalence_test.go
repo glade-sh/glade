@@ -377,6 +377,21 @@ func TestNoCacheRoutingContract(t *testing.T) {
 	})
 }
 
+// A connected invocation selects the published index; loading the local project
+// would also discover the additional failing test written after server startup.
+func TestConnectedRunUsesPublishedTestSelection(t *testing.T) {
+	fixture := newDaemonEquivalenceFixture(t, daemonEquivalenceScenario{
+		classes: map[string]string{
+			"PublishedTest": `@IsTest private class PublishedTest { @IsTest static void passes() { System.assert(true); } }`,
+		},
+	})
+	stopServer := startDaemonEquivalenceServer(t, fixture.projectRoot)
+	defer stopServer()
+	poisonDaemonEquivalenceLocalLoad(t, fixture.projectRoot)
+	connected := runNoCacheRoutingInvocation(t, fixture.projectRoot, "--connect", "--no-cache")
+	assertNoCacheRoutingResult(t, connected, 1, "PublishedTest.passes")
+}
+
 func runNoCacheRoutingInvocation(t *testing.T, root string, extraArgs ...string) testreport.Run {
 	t.Helper()
 	args := []string{"test", "--project", root, "--json", "--no-progress"}

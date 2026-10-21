@@ -31,6 +31,7 @@ import (
 func TestMessagingOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected, Group string
+		NamedExpected             string
 		Compile                   bool
 		NativeDiagnostic          string
 		FloorExpected             string
@@ -175,7 +176,11 @@ func TestMessagingOrgConformance(t *testing.T) {
 				if strings.HasPrefix(tc.Expected, "COMPILE_ERROR") {
 					continue
 				}
-				fmt.Fprintf(&namedSource, "@IsTest static void observed%s(){\n%s\n}\n", tc.ID, body(tc))
+				namedCase := tc
+				if tc.NamedExpected != "" {
+					namedCase.Expected = tc.NamedExpected
+				}
+				fmt.Fprintf(&namedSource, "@IsTest static void observed%s(){\n%s\n}\n", tc.ID, body(namedCase))
 			}
 			namedSource.WriteString("}\n")
 			// One compilation and linked shared runner per source API. Each selected
