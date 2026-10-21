@@ -15,7 +15,6 @@ func TestGoToolchainPins(t *testing.T) {
 		want string
 	}{
 		{"go.mod", "\ngo " + version + "\n"},
-		{"Dockerfile", "FROM golang:" + version + " AS build"},
 		{"docs/AI_SETUP.md", "Go `" + version + "`"},
 	} {
 		t.Run(route.path, func(t *testing.T) {
@@ -28,6 +27,16 @@ func TestGoToolchainPins(t *testing.T) {
 			}
 		})
 	}
+	t.Run("Dockerfile image digest", func(t *testing.T) {
+		data, err := os.ReadFile(filepath.Join("..", "Dockerfile"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := regexp.MustCompile(`(?m)^FROM golang:` + regexp.QuoteMeta(version) + `@sha256:[0-9a-f]{64} AS build$`)
+		if !want.Match(data) {
+			t.Errorf("Dockerfile must pin the Go build image %s by digest", version)
+		}
+	})
 	for _, workflow := range []string{"ci", "race", "security", "release", "browser"} {
 		t.Run(workflow+" workflow", func(t *testing.T) {
 			data, err := os.ReadFile(filepath.Join("..", ".github", "workflows", workflow+".yml"))
