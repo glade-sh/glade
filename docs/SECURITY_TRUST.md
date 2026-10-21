@@ -12,7 +12,14 @@ not public issues. If GitHub reporting is unavailable, use
 
 - `govulncheck` checks reachable vulnerabilities in Go dependencies and the Go
   standard library.
-- CodeQL runs the Go security-extended query suite.
+- CodeQL runs the Go security-extended query suite with event-specific query
+  filters. Both initialization profiles declare `**/*_generated.go` in
+  `paths-ignore`. Analysis keeps a 90-minute step budget and a 100-minute job
+  budget. Go uses a manual build;
+  [GitHub documents](https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/alerts-in-generated-code)
+  that compiled Go analysis follows the build, so this path setting alone does
+  not prove generated Go is excluded from the database or that analysis will
+  finish within the budget. Hosted execution still needs verification.
 - `gosec` uploads SARIF for source-pattern review.
 - `npm audit --omit=dev --audit-level=high` checks packaged JavaScript
   production dependencies in the LWC toolchain and VS Code extension.
