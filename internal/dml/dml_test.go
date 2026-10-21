@@ -7785,27 +7785,35 @@ func fileTestOrg() storage.OrgState {
 // record is rejected with the setup hint. Apex cannot set such a field (the
 // compiler and put() both reject it), so records from other routes reach here.
 func TestInsertPersonAccountFieldWithoutFeatureNamesSetup(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Setenv("GLADE_ROOT", "")
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
 	engine := NewEngine(&org)
 
-	// Repeat the direct-record route to expose field-map iteration changes.
-	for attempt := 0; attempt < 64; attempt++ {
-		t.Run(fmt.Sprintf("direct_record_%02d", attempt), func(t *testing.T) {
-			insert := engine.Insert([]storage.Record{{
-				Object: "Account",
-				Fields: map[string]storage.Value{
-					"FirstName": storage.StringValue("Ari"),
-					"LastName":  storage.StringValue("Vale"),
-				},
-			}})
+	// Each field is absent in the captured native schema. Check them separately:
+	// two invalid fields in a Go map have no defined validation order.
+	for _, field := range []string{"FirstName", "LastName"} {
+		t.Run("direct_record_"+field, func(t *testing.T) {
+			for attempt := 0; attempt < 64; attempt++ {
+				insert := engine.Insert([]storage.Record{{
+					Object: "Account",
+					Fields: map[string]storage.Value{
+						field: storage.StringValue("Ari"),
+					},
+				}})
 
-			if len(insert) != 1 || insert[0].Success {
-				t.Fatalf("insert result = %#v", insert)
-			}
-			for _, want := range []string{"FirstName", "PersonAccounts", "org.features", "config/project-scratch-def.json"} {
-				if !strings.Contains(insert[0].Error, want) {
-					t.Errorf("insert error %q does not contain %q", insert[0].Error, want)
+				if len(insert) != 1 || insert[0].Success {
+					t.Fatalf("insert result = %#v", insert)
+				}
+				if insert[0].StatusCode != "INVALID_FIELD_FOR_INSERT_UPDATE" {
+					t.Fatalf("insert status = %q", insert[0].StatusCode)
+				}
+				for _, want := range []string{field, "PersonAccounts", "org.features", "config/project-scratch-def.json"} {
+					if !strings.Contains(insert[0].Error, want) {
+						t.Errorf("insert error %q does not contain %q", insert[0].Error, want)
+					}
 				}
 			}
 		})
