@@ -7789,20 +7789,25 @@ func TestInsertPersonAccountFieldWithoutFeatureNamesSetup(t *testing.T) {
 	storage.EnsureDeterministicPlatformData(&org)
 	engine := NewEngine(&org)
 
-	insert := engine.Insert([]storage.Record{{
-		Object: "Account",
-		Fields: map[string]storage.Value{
-			"FirstName": storage.StringValue("Ari"),
-			"LastName":  storage.StringValue("Vale"),
-		},
-	}})
+	// Repeat the direct-record route to expose field-map iteration changes.
+	for attempt := 0; attempt < 64; attempt++ {
+		t.Run(fmt.Sprintf("direct_record_%02d", attempt), func(t *testing.T) {
+			insert := engine.Insert([]storage.Record{{
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"FirstName": storage.StringValue("Ari"),
+					"LastName":  storage.StringValue("Vale"),
+				},
+			}})
 
-	if len(insert) != 1 || insert[0].Success {
-		t.Fatalf("insert result = %#v", insert)
-	}
-	for _, want := range []string{"FirstName", "PersonAccounts", "org.features", "config/project-scratch-def.json"} {
-		if !strings.Contains(insert[0].Error, want) {
-			t.Errorf("insert error %q does not contain %q", insert[0].Error, want)
-		}
+			if len(insert) != 1 || insert[0].Success {
+				t.Fatalf("insert result = %#v", insert)
+			}
+			for _, want := range []string{"FirstName", "PersonAccounts", "org.features", "config/project-scratch-def.json"} {
+				if !strings.Contains(insert[0].Error, want) {
+					t.Errorf("insert error %q does not contain %q", insert[0].Error, want)
+				}
+			}
+		})
 	}
 }
