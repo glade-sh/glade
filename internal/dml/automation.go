@@ -688,7 +688,7 @@ func (e *Engine) applyFlowEffects(flowName, objectName string, record *storage.R
 			"object": objectName,
 			"record": string(record.ID),
 		})
-		if handled, err := e.applyBuiltinFlowAction(flowName, action, *record, definition, lookupOutputs); handled {
+		if handled, err := e.applyBuiltinFlowAction(flowName, action, *record, definition, lookupOutputs, nil); handled {
 			if err != nil {
 				return changed, err
 			}
@@ -760,6 +760,9 @@ type flowFrame struct {
 	textTemplates       map[string]string
 	priorCollections    map[string]bool
 	assigned            map[string]bool
+	// autolaunched marks an interview started by Flow.Interview or
+	// Invocable.Action rather than a record-triggered run.
+	autolaunched bool
 }
 
 func newFlowFrame() *flowFrame {
@@ -1061,7 +1064,7 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 			"object": objectName,
 			"record": string(record.ID),
 		})
-		if handled, err := e.applyBuiltinFlowAction(flowName, step.Action, *record, definition, frame.lookupOutputs); handled {
+		if handled, err := e.applyBuiltinFlowAction(flowName, step.Action, *record, definition, frame.lookupOutputs, frame); handled {
 			if err != nil {
 				return false, err
 			}
@@ -2411,7 +2414,7 @@ func flowActionsNeedLookupOutputs(actions []storage.FlowAction) bool {
 	return false
 }
 
-func (e *Engine) applyBuiltinFlowAction(flowName string, action storage.FlowAction, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput) (bool, error) {
+func (e *Engine) applyBuiltinFlowAction(flowName string, action storage.FlowAction, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput, frame *flowFrame) (bool, error) {
 	if isNoOpFlowSideEffectAction(action) {
 		e.traceAutomation("apex.flow.side_effect_action", map[string]any{
 			"flow":       flowName,
@@ -2423,14 +2426,14 @@ func (e *Engine) applyBuiltinFlowAction(flowName string, action storage.FlowActi
 	}
 	if !strings.EqualFold(action.ActionType, "chatterPost") && !strings.EqualFold(action.ActionName, "chatterPost") {
 		if strings.EqualFold(action.ActionType, "emailSimple") || strings.EqualFold(action.ActionName, "emailSimple") {
-			return true, e.executeFlowEmailSimple(flowName, action, source, sourceDefinition, lookupOutputs)
+			return true, e.executeFlowEmailSimple(flowName, action, source, sourceDefinition, lookupOutputs, frame)
 		}
 		if strings.EqualFold(action.ActionType, "emailAlert") || strings.EqualFold(action.ActionName, "emailAlert") {
-			return true, e.executeFlowEmailSimple(flowName, action, source, sourceDefinition, lookupOutputs)
+			return true, e.executeFlowEmailSimple(flowName, action, source, sourceDefinition, lookupOutputs, frame)
 		}
 		return false, nil
 	}
-	inputs, ok := e.flowActionInputValues(action, source, sourceDefinition, lookupOutputs)
+	inputs, ok := e.flowActionInputValues(action, source, sourceDefinition, lookupOutputs, frame)
 	if !ok {
 		return true, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s has unsupported chatterPost input", action.Name)
 	}
@@ -2481,10 +2484,20 @@ func isNoOpFlowSideEffectActionName(name string) bool {
 	}
 }
 
-func (e *Engine) executeFlowEmailSimple(flowName string, action storage.FlowAction, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput) error {
-	inputs, ok := e.flowActionInputValues(action, source, sourceDefinition, lookupOutputs)
+func (e *Engine) executeFlowEmailSimple(flowName string, action storage.FlowAction, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput, frame *flowFrame) error {
+	inputs, ok := e.flowActionInputValues(action, source, sourceDefinition, lookupOutputs, frame)
 	if !ok {
 		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s has unsupported email input", action.Name)
+	}
+	if frame != nil && frame.autolaunched && !flowEmailLogOnSend(inputs["logemailonsend"]) {
+		// Send Email records an EmailMessage only when logEmailOnSend is true.
+		e.traceAutomation("apex.flow.email", map[string]any{
+			"flow":   flowName,
+			"action": action.Name,
+			"record": string(source.ID),
+			"logged": false,
+		})
+		return nil
 	}
 	storage.EnsureStandardObject(e.Org, "EmailMessage")
 	if e.IDs.Prefixes["EmailMessage"] == "" && e.Org.Objects["EmailMessage"].Definition.KeyPrefix != "" {
@@ -2516,14 +2529,14 @@ func (e *Engine) executeFlowEmailSimple(flowName string, action storage.FlowActi
 	return nil
 }
 
-func (e *Engine) flowActionInputValues(action storage.FlowAction, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput) (map[string]storage.Value, bool) {
+func (e *Engine) flowActionInputValues(action storage.FlowAction, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput, frame *flowFrame) (map[string]storage.Value, bool) {
 	out := make(map[string]storage.Value, len(action.Inputs))
 	for _, input := range action.Inputs {
 		name := strings.ToLower(strings.TrimSpace(input.Name))
 		if name == "" {
 			return nil, false
 		}
-		value, ok := e.flowActionInputValue(input, source, sourceDefinition, lookupOutputs)
+		value, ok := e.flowActionInputValue(input, source, sourceDefinition, lookupOutputs, frame)
 		if !ok {
 			return nil, false
 		}
@@ -2532,7 +2545,7 @@ func (e *Engine) flowActionInputValues(action storage.FlowAction, source storage
 	return out, true
 }
 
-func (e *Engine) flowActionInputValue(input storage.WorkflowFieldUpdate, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput) (storage.Value, bool) {
+func (e *Engine) flowActionInputValue(input storage.WorkflowFieldUpdate, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput, frame *flowFrame) (storage.Value, bool) {
 	namespace := ""
 	if e.Org != nil {
 		namespace = e.Org.Namespace
@@ -2544,11 +2557,21 @@ func (e *Engine) flowActionInputValue(input storage.WorkflowFieldUpdate, source 
 			}
 			return value, true
 		}
+		// Autolaunched interviews hold their variables in the frame, not on a
+		// triggering record.
+		if frame != nil {
+			if value, ok := frame.scalars[flowFrameKey(input.SourceField)]; ok {
+				return value.Clone(), true
+			}
+		}
 		value, ok := sourceRecordResolvedFieldValue(source, sourceDefinition, namespace, input.SourceField)
 		if !ok {
 			return storage.Value{}, false
 		}
 		return value, true
+	}
+	if frame != nil && strings.TrimSpace(input.Formula) != "" {
+		return e.flowContextFormulaValue(input.Formula, frame)
 	}
 	if strings.TrimSpace(input.LiteralValue) != "" {
 		return storage.StringValue(e.interpolateFlowString(input.LiteralValue, source, sourceDefinition, lookupOutputs)), true
@@ -3800,4 +3823,11 @@ func workflowValueString(value storage.Value) string {
 	default:
 		return ""
 	}
+}
+
+func flowEmailLogOnSend(value storage.Value) bool {
+	if value.Kind == storage.ValueBoolean {
+		return value.Boolean
+	}
+	return strings.EqualFold(strings.TrimSpace(workflowValueString(value)), "true")
 }
