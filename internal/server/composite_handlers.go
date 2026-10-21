@@ -9,10 +9,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -251,6 +253,14 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 	}}
 	if s.Index != nil {
 		index = *s.Index
+	} else if s.Org != nil {
+		// Without a project, the live org is the only schema. Its fields are
+		// not in the index, so open each org object instead of rejecting
+		// fields that the org defines.
+		for name := range s.Org.Objects {
+			index.Objects = append(index.Objects, schema.Object{Name: name, Partial: true})
+		}
+		sort.Slice(index.Objects, func(i, j int) bool { return index.Objects[i].Name < index.Objects[j].Name })
 	}
 	analysis := sema.AnalyzeAnonymous(index, source, apiVersion)
 	if len(analysis.Diagnostics) > 0 {
