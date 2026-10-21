@@ -64,7 +64,11 @@ def run(config, index):
             raise ValueError(f"empty race discovery for {package}")
         regex = "^(?:" + "|".join(re.escape(n) for n in selected) + ")$" if selected else "^$"
         (directory / "selection.json").write_text(json.dumps({"package": package, "tests": selected, "regex": regex}, indent=2) + "\n")
-        command = [GO, "test", "-race", "-json", "-vet=off", "-count=1", "-timeout=12m", "-run", regex, package]
+        # The whole package selected: "." runs every test and keeps the argument
+        # short. One name-per-test regex exceeds Linux's 128 KiB argument limit
+        # once a package has several thousand tests.
+        run_regex = "." if selected and selected == discovered else regex
+        command = [GO, "test", "-race", "-json", "-vet=off", "-count=1", "-timeout=12m", "-run", run_regex, package]
         terminal = {}
         expected_package = "github.com/glade-sh/glade/" + package.removeprefix("./")
         package_results = []
