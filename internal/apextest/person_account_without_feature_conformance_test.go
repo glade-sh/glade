@@ -144,6 +144,27 @@ func TestPersonAccountWithoutFeatureNativeConformance(t *testing.T) {
 			if index.HasErrors() {
 				t.Fatal(index.Diagnostics)
 			}
+			// org.tsv ACCOUNT_CTOR/<api> is COMPILE_REJECTED, so the captured
+			// constructor must be rejected at compile time with the native text.
+			nativeConstructor, err := os.ReadFile(filepath.Join(dir, "native/anonymous/person_account_constructor.apex"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			rejected := sema.AnalyzeAnonymous(index, string(nativeConstructor), api)
+			nativeMessage := constructor.value["message"].(string)
+			var reported []string
+			for _, item := range rejected.Diagnostics {
+				message := item.NativeMessage
+				if message == "" {
+					message = item.Message
+				}
+				reported = append(reported, message)
+			}
+			if len(reported) == 0 || reported[0] != nativeMessage {
+				t.Fatalf("native constructor rejection <%s>; Glade diagnostics=%v", nativeMessage, reported)
+			}
+			// The DML source reaches the same fields dynamically, which compiles
+			// on both sides and fails when the field is written.
 			if analysis := sema.AnalyzeAnonymous(index, string(source), api); analysis.HasErrors() {
 				t.Fatal(analysis.Diagnostics)
 			}
@@ -161,19 +182,12 @@ func TestPersonAccountWithoutFeatureNativeConformance(t *testing.T) {
 			_, execErr := runner.execute(program)
 			var runtimeErr *vm.RuntimeError
 			if !errors.As(execErr, &runtimeErr) {
-				t.Fatalf("insert error = %v; want DML rejection", execErr)
+				t.Fatalf("insert error = %v; want put rejection", execErr)
 			}
+			// org.tsv DYNAMIC_DML/<api>: the native put() throws before any insert.
 			message := runtimeErr.ExceptionMessage()
-			if strings.Contains(message, "IsPersonAccount") {
-				t.Fatalf("DML normalization leaked an internal field: %s", message)
-			}
-			if !strings.Contains(message, "FirstName") && !strings.Contains(message, "LastName") {
-				t.Errorf("DML diagnostic %q does not identify the rejected Person Account field", message)
-			}
-			for _, want := range []string{"PersonAccounts", "org.features", "config/project-scratch-def.json", "features"} {
-				if !strings.Contains(message, want) {
-					t.Errorf("DML diagnostic %q does not contain %q", message, want)
-				}
+			if message != "Invalid field FirstName for Account" {
+				t.Errorf("put diagnostic = %q; want the native %q", message, firstName["message"])
 			}
 		})
 	}

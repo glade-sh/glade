@@ -7780,3 +7780,29 @@ func fileTestOrg() storage.OrgState {
 	storage.EnsureDeterministicPlatformData(&org)
 	return org
 }
+
+// Without the PersonAccounts feature, a Person Account field on an Account
+// record is rejected with the setup hint. Apex cannot set such a field (the
+// compiler and put() both reject it), so records from other routes reach here.
+func TestInsertPersonAccountFieldWithoutFeatureNamesSetup(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"FirstName": storage.StringValue("Ari"),
+			"LastName":  storage.StringValue("Vale"),
+		},
+	}})
+
+	if len(insert) != 1 || insert[0].Success {
+		t.Fatalf("insert result = %#v", insert)
+	}
+	for _, want := range []string{"FirstName", "PersonAccounts", "org.features", "config/project-scratch-def.json"} {
+		if !strings.Contains(insert[0].Error, want) {
+			t.Errorf("insert error %q does not contain %q", insert[0].Error, want)
+		}
+	}
+}
